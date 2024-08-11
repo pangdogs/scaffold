@@ -24,7 +24,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func genJsonData(tableMsg proto.Message, outDir string, multiline bool, indent string) (string, error) {
@@ -33,7 +32,7 @@ func genJsonData(tableMsg proto.Message, outDir string, multiline bool, indent s
 		Indent:    indent,
 	}.Marshal(tableMsg)
 
-	outFile := filepath.Join(outDir, strings.TrimSuffix(string(tableMsg.ProtoReflect().Descriptor().Name()), "Table")+".json")
+	outFile := filepath.Join(outDir, string(tableMsg.ProtoReflect().Descriptor().Name())+".json")
 
 	os.MkdirAll(outDir, os.ModePerm)
 	err = os.WriteFile(outFile, tableData, os.ModePerm)

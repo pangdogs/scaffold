@@ -106,7 +106,7 @@ extend google.protobuf.EnumValueOptions {
 
 	outFilePath, _ := filepath.Abs(filepath.Join(outDir, fmt.Sprintf("%s.proto", DependencyProtobuf)))
 
-	t := template.Must(template.New("code").
+	t := template.Must(template.New("proto").
 		Funcs(template.FuncMap{
 			"Add": func(n ...int) int { return pie.Sum(n) },
 		}).
@@ -264,7 +264,7 @@ message {{TableName .ProtobufType}} {
 		}
 	})
 
-	t := template.Must(template.New("code").
+	t := template.Must(template.New("proto").
 		Funcs(template.FuncMap{
 			"Incr":      func(n int) int { return n + 1 },
 			"Add":       func(n ...int) int { return pie.Sum(n) },

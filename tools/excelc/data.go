@@ -119,9 +119,7 @@ func loadDependencyProtobuf() {
 	}
 }
 
-func loadProtobuf(excelPath string) {
-	pbPath := filepath.Join(viper.GetString("pb_dir"), snake2Camel(strings.TrimSuffix(filepath.Base(excelPath), filepath.Ext(excelPath)))+".protoset")
-
+func loadProtobuf(pbPath string) {
 	pbData, err := os.ReadFile(pbPath)
 	if err != nil {
 		panic(fmt.Errorf("读取Protobuf文件 %q 失败，%s", pbPath, err))
@@ -166,7 +164,7 @@ func genData(excelPath string) {
 	}
 	defer excelFile.Close()
 
-	loadProtobuf(excelPath)
+	loadProtobuf(filepath.Join(viper.GetString("pb_dir"), snake2Camel(strings.TrimSuffix(filepath.Base(excelPath), filepath.Ext(excelPath)))+".protoset"))
 
 	tableMsg := genProtobufMessage(excelFile)
 	if tableMsg == nil {

@@ -696,34 +696,23 @@ func parseStructValue(value string) (*yaml.Node, error) {
 }
 
 type Extensions struct {
-	UniqueIndex, UniqueSortedIndex, IndexTyp, IndexFields,
-	Separator, FieldAlias, EnumValueAlias protoreflect.ExtensionType
+	IsColumns, IsTable,
+	Separator, FieldAlias, UniqueIndex, UniqueSortedIndex, IsRows, IndexTyp, IndexFields,
+	EnumValueAlias protoreflect.ExtensionType
 }
 
 func parseExtensions(pbTypes *protoregistry.Types) (*Extensions, error) {
 	extensions := &Extensions{}
 	var err error
 
-	extName := protoreflect.FullName(fmt.Sprintf("%s.UniqueIndex", viper.GetString("pb_package")))
-	extensions.UniqueIndex, err = pbTypes.FindExtensionByName(extName)
+	extName := protoreflect.FullName(fmt.Sprintf("%s.IsColumns", viper.GetString("pb_package")))
+	extensions.IsColumns, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.UniqueSortedIndex", viper.GetString("pb_package")))
-	extensions.UniqueSortedIndex, err = pbTypes.FindExtensionByName(extName)
-	if err != nil {
-		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
-	}
-
-	extName = protoreflect.FullName(fmt.Sprintf("%s.IndexTyp", viper.GetString("pb_package")))
-	extensions.IndexTyp, err = pbTypes.FindExtensionByName(extName)
-	if err != nil {
-		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
-	}
-
-	extName = protoreflect.FullName(fmt.Sprintf("%s.IndexFields", viper.GetString("pb_package")))
-	extensions.IndexFields, err = pbTypes.FindExtensionByName(extName)
+	extName = protoreflect.FullName(fmt.Sprintf("%s.IsTable", viper.GetString("pb_package")))
+	extensions.IsTable, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
 	}
@@ -736,6 +725,36 @@ func parseExtensions(pbTypes *protoregistry.Types) (*Extensions, error) {
 
 	extName = protoreflect.FullName(fmt.Sprintf("%s.FieldAlias", viper.GetString("pb_package")))
 	extensions.FieldAlias, err = pbTypes.FindExtensionByName(extName)
+	if err != nil {
+		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
+	}
+
+	extName = protoreflect.FullName(fmt.Sprintf("%s.UniqueIndex", viper.GetString("pb_package")))
+	extensions.UniqueIndex, err = pbTypes.FindExtensionByName(extName)
+	if err != nil {
+		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
+	}
+
+	extName = protoreflect.FullName(fmt.Sprintf("%s.UniqueSortedIndex", viper.GetString("pb_package")))
+	extensions.UniqueSortedIndex, err = pbTypes.FindExtensionByName(extName)
+	if err != nil {
+		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
+	}
+
+	extName = protoreflect.FullName(fmt.Sprintf("%s.IsRows", viper.GetString("pb_package")))
+	extensions.IsRows, err = pbTypes.FindExtensionByName(extName)
+	if err != nil {
+		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
+	}
+
+	extName = protoreflect.FullName(fmt.Sprintf("%s.IndexTyp", viper.GetString("pb_package")))
+	extensions.IndexTyp, err = pbTypes.FindExtensionByName(extName)
+	if err != nil {
+		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
+	}
+
+	extName = protoreflect.FullName(fmt.Sprintf("%s.IndexFields", viper.GetString("pb_package")))
+	extensions.IndexFields, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
 	}
