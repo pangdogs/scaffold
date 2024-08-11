@@ -12,6 +12,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/xuri/excelize/v2 v2.8.1
 	google.golang.org/protobuf v1.34.2
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -106,5 +107,4 @@ require (
 	google.golang.org/grpc v1.64.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
