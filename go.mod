@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	git.golaxy.org/core v0.3.32
-	git.golaxy.org/framework v0.2.27
+	git.golaxy.org/framework v0.2.28
 	github.com/elliotchance/pie/v2 v2.8.1
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/form/v4 v4.2.1
