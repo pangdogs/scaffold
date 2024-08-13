@@ -526,16 +526,73 @@ func setFieldFromString(msg protoreflect.Message, field protoreflect.FieldDescri
 
 	case protoreflect.MessageKind:
 		fieldValue, err := parseStructValue(value)
-		if err != nil {
-			return err
-		}
 
-		if len(fieldValue.Content) <= 0 {
-			return nil
-		}
-		fieldValue = fieldValue.Content[0]
+		if field.IsList() {
+			if err != nil {
+				sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
 
-		return setFieldStructValue(msg, field, fieldValue, extensions)
+				for _, v := range strings.Split(value, sep) {
+					childValue, err := parseStructValue(v)
+					if err != nil {
+						return err
+					}
+
+					if childValue.Kind != yaml.DocumentNode || len(childValue.Content) <= 0 {
+						continue
+					}
+					childValue = childValue.Content[0]
+
+					if childValue.Kind != yaml.MappingNode {
+						return fmt.Errorf("YAML配置 %q 不是MappingNode，无法为对象类型赋值", childValue.Value)
+					}
+
+					err = setFieldStructValue(msg, field, childValue, extensions)
+					if err != nil {
+						return err
+					}
+				}
+
+			} else {
+				if fieldValue.Kind != yaml.DocumentNode || len(fieldValue.Content) <= 0 {
+					return nil
+				}
+				fieldValue = fieldValue.Content[0]
+
+				switch fieldValue.Kind {
+				case yaml.SequenceNode:
+					for _, c := range fieldValue.Content {
+						if c.Kind != yaml.MappingNode {
+							return fmt.Errorf("YAML配置 %q 不是MappingNode，无法为对象类型赋值", c.Value)
+						}
+						err := setFieldStructValue(msg, field, c, extensions)
+						if err != nil {
+							return err
+						}
+					}
+				case yaml.MappingNode:
+					err := setFieldStructValue(msg, field, fieldValue, extensions)
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+		} else {
+			if err != nil {
+				return err
+			}
+
+			if fieldValue.Kind != yaml.DocumentNode || len(fieldValue.Content) <= 0 {
+				return nil
+			}
+			fieldValue = fieldValue.Content[0]
+
+			if fieldValue.Kind != yaml.MappingNode {
+				return fmt.Errorf("YAML配置 %q 不是MappingNode，无法为对象类型赋值", value)
+			}
+
+			return setFieldStructValue(msg, field, fieldValue, extensions)
+		}
 	}
 
 	return nil
@@ -678,11 +735,13 @@ func parseEnumValue(enumDesc protoreflect.EnumDescriptor, value string, extensio
 }
 
 func parseStructValue(value string) (*yaml.Node, error) {
-	if !strings.HasPrefix(value, "{") {
-		value = "{\n" + value
-	}
-	if !strings.HasSuffix(value, "}") {
-		value += "\n}"
+	if !strings.HasPrefix(value, "[") {
+		if !strings.HasPrefix(value, "{") {
+			value = "{\n" + value
+		}
+		if !strings.HasSuffix(value, "}") {
+			value += "\n}"
+		}
 	}
 
 	node := &yaml.Node{}
