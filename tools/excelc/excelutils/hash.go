@@ -80,12 +80,13 @@ func AnyToHash(h hash.Hash64, v any) error {
 	case protoreflect.EnumNumber:
 		return AnyToHash(h, int32(iv))
 	case protoreflect.Message:
-		var err error
-		iv.Range(func(f protoreflect.FieldDescriptor, v protoreflect.Value) bool {
-			err = AnyToHash(h, v)
-			return err == nil
-		})
-		return err
+		for i := 0; i < iv.Descriptor().Fields().Len(); i++ {
+			err := AnyToHash(h, iv.Get(iv.Descriptor().Fields().Get(i)))
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	case protoreflect.List:
 		for i := range iv.Len() {
 			if err := AnyToHash(h, iv.Get(i)); err != nil {
@@ -101,7 +102,7 @@ func AnyToHash(h hash.Hash64, v any) error {
 			return true
 		})
 
-		sort.SliceStable(keys, func(i, j int) bool {
+		sort.Slice(keys, func(i, j int) bool {
 			return mapKeyOrder(keys[i], keys[j])
 		})
 
