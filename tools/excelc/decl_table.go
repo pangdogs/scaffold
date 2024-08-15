@@ -149,9 +149,63 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 
 		columnType := Type(columnDesc.Type)
 
+		mapped := columnType.IsMap()
+		if mapped {
+			k, v := columnType.KV()
+
+			var kDecl, vDecl *Decl
+
+			if !k.CanK() {
+				panic(fmt.Errorf("读取Excel文件 %q Sheet %q 失败，列 %q 类型 %q，错误的Key类型", file.Path, sheet, columnDesc.Name, columnType))
+			}
+
+			kDecl = &Decl{
+				Type:      k,
+				IsBuiltin: true,
+			}
+
+			if v.IsBuiltin() {
+				vDecl = &Decl{
+					Type:      v,
+					IsBuiltin: true,
+				}
+			} else {
+				var ok bool
+				vDecl, ok = globalDecls.Get(v)
+				if !ok {
+					panic(fmt.Errorf("读取Excel文件 %q Sheet %q 失败，列 %q 类型 %q，未定义的Value类型", file.Path, sheet, columnDesc.Name, columnType))
+				}
+			}
+
+			columnDecl := &Decl{
+				Type:  columnType,
+				IsMap: true,
+				Mapping: &Mapping{
+					K: kDecl,
+					V: vDecl,
+				},
+			}
+
+			meta, err := parseMeta(columnDesc.Meta)
+			if err != nil {
+				panic(fmt.Errorf("读取Excel文件 %q Sheet %q 失败，列 %q 解析Meta %q 失败，%s", file.Path, SheetTypes, columnDesc.Name, columnDesc.Meta, err))
+			}
+
+			columnField := &Field{
+				Decl:     columnDecl,
+				IsColumn: true,
+				Name:     columnDesc.Name,
+				Meta:     meta,
+				Comment:  columnDesc.Comment,
+			}
+
+			tableDecl.Fields.Add(columnField.Name, columnField)
+			continue
+		}
+
 		repeated := columnType.IsRepeated()
 		if repeated {
-			columnType = columnType.GetChild()
+			columnType = columnType.Child()
 		}
 
 		var columnDecl *Decl
@@ -182,7 +236,7 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 		if repeated {
 			parent := &Field{
 				Decl: &Decl{
-					Type:       columnType.GetParent(),
+					Type:       columnType.Repeated(),
 					IsRepeated: true,
 					Child:      columnField,
 				},

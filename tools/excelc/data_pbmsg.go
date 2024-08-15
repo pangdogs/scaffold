@@ -577,6 +577,22 @@ func setFieldFromString(msg protoreflect.Message, field protoreflect.FieldDescri
 				}
 			}
 
+		} else if field.IsMap() {
+			if err != nil {
+				return err
+			}
+
+			if fieldValue.Kind != yaml.DocumentNode || len(fieldValue.Content) <= 0 {
+				return nil
+			}
+			fieldValue = fieldValue.Content[0]
+
+			if fieldValue.Kind != yaml.MappingNode {
+				return fmt.Errorf("YAML配置 %q 不是MappingNode，无法为对象类型赋值", value)
+			}
+
+			return setMappingValue(msg, field, fieldValue, extensions)
+
 		} else {
 			if err != nil {
 				return err
@@ -708,6 +724,139 @@ func makeStructValue(ty protoreflect.MessageType, value *yaml.Node, extensions *
 	return msg, nil
 }
 
+func setMappingValue(msg protoreflect.Message, field protoreflect.FieldDescriptor, value *yaml.Node, extensions *Extensions) error {
+	if !field.IsMap() {
+		return errors.New("field type not mapping")
+	}
+
+	if value.Kind != yaml.MappingNode {
+		return errors.New("field value is not a mapping node")
+	}
+
+	mapping := msg.Mutable(field).Map()
+	kType := field.MapKey()
+	vType := field.MapValue()
+
+	for i := 0; i < len(value.Content); i += 2 {
+		k := value.Content[i]
+		v := value.Content[i+1]
+
+		var ik, iv any
+
+		switch kType.Kind() {
+		case protoreflect.BoolKind:
+			b, err := strconv.ParseBool(k.Value)
+			if err != nil {
+				return err
+			}
+			ik = b
+		case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+			n, err := strconv.ParseInt(k.Value, 10, 32)
+			if err != nil {
+				return err
+			}
+			ik = int32(n)
+		case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+			n, err := strconv.ParseInt(k.Value, 10, 64)
+			if err != nil {
+				return err
+			}
+			ik = n
+		case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+			n, err := strconv.ParseUint(k.Value, 10, 32)
+			if err != nil {
+				return err
+			}
+			ik = uint32(n)
+		case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+			n, err := strconv.ParseUint(k.Value, 10, 64)
+			if err != nil {
+				return err
+			}
+			ik = n
+		case protoreflect.StringKind:
+			ik = k.Value
+		}
+
+		switch vType.Kind() {
+		case protoreflect.BoolKind:
+			b, err := strconv.ParseBool(v.Value)
+			if err != nil {
+				return err
+			}
+			iv = b
+		case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+			n, err := strconv.ParseInt(v.Value, 10, 32)
+			if err != nil {
+				return err
+			}
+			iv = int32(n)
+		case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+			n, err := strconv.ParseInt(v.Value, 10, 64)
+			if err != nil {
+				return err
+			}
+			iv = n
+		case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+			n, err := strconv.ParseUint(v.Value, 10, 32)
+			if err != nil {
+				return err
+			}
+			iv = uint32(n)
+		case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+			n, err := strconv.ParseUint(v.Value, 10, 64)
+			if err != nil {
+				return err
+			}
+			iv = n
+		case protoreflect.FloatKind:
+			n, err := strconv.ParseFloat(v.Value, 32)
+			if err != nil {
+				return err
+			}
+			iv = float32(n)
+		case protoreflect.DoubleKind:
+			n, err := strconv.ParseFloat(v.Value, 64)
+			if err != nil {
+				return err
+			}
+			iv = n
+		case protoreflect.StringKind:
+			iv = v.Value
+		case protoreflect.BytesKind:
+			bs, err := base64.URLEncoding.DecodeString(v.Value)
+			if err != nil {
+				return err
+			}
+			iv = bs
+		case protoreflect.EnumKind:
+			enumValue, err := parseEnumValue(field.Enum(), v.Value, extensions)
+			if err != nil {
+				return err
+			}
+			iv = enumValue
+		case protoreflect.MessageKind:
+			if v.Kind != yaml.MappingNode {
+				return fmt.Errorf("YAML配置 %q 不是MappingNode，无法为对象类型赋值", v.Value)
+			}
+
+			ty, err := protoregistry.GlobalTypes.FindMessageByName(vType.Message().FullName())
+			if err != nil {
+				return err
+			}
+
+			iv, err = makeStructValue(ty, v, extensions)
+			if err != nil {
+				return err
+			}
+		}
+
+		mapping.Set(protoreflect.ValueOf(ik).MapKey(), protoreflect.ValueOf(iv))
+	}
+
+	return nil
+}
+
 func parseEnumValue(enumDesc protoreflect.EnumDescriptor, value string, extensions *Extensions) (protoreflect.Value, error) {
 	enumValueDesc := enumDesc.Values().ByName(protoreflect.Name(value))
 	if enumValueDesc != nil {
@@ -737,10 +886,7 @@ func parseEnumValue(enumDesc protoreflect.EnumDescriptor, value string, extensio
 func parseStructValue(value string) (*yaml.Node, error) {
 	if !strings.HasPrefix(value, "[") {
 		if !strings.HasPrefix(value, "{") {
-			value = "{\n" + value
-		}
-		if !strings.HasSuffix(value, "}") {
-			value += "\n}"
+			value = "{\n" + value + "\n}"
 		}
 	}
 

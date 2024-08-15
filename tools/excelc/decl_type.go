@@ -64,20 +64,47 @@ func (ty Type) IsRepeated() bool {
 	return strings.HasSuffix(string(ty), "[]") || strings.HasPrefix(string(ty), "[]") || strings.HasPrefix(string(ty), "repeated ")
 }
 
-func (ty Type) GetChild() Type {
-	if strings.HasPrefix(string(ty), "[]") {
-		return Type(strings.TrimPrefix(string(ty), "[]"))
+func (ty Type) IsMap() bool {
+	return strings.HasPrefix(string(ty), "map<") && strings.HasSuffix(string(ty), ">")
+}
+
+func (ty Type) CanK() bool {
+	switch ty {
+	case Int32, Int64, Uint32, Uint64, Sint32, Sint64, Fixed32, Fixed64, Sfixed32, Sfixed64, Bool, String:
+		return true
+	default:
+		return false
 	}
-	if strings.HasSuffix(string(ty), "[]") {
-		return Type(strings.TrimSuffix(string(ty), "[]"))
-	}
-	if strings.HasPrefix(string(ty), "repeated ") {
-		return Type(strings.TrimPrefix(string(ty), "repeated "))
+}
+
+func (ty Type) Child() Type {
+	if ty.IsRepeated() {
+		if strings.HasPrefix(string(ty), "[]") {
+			return Type(strings.TrimSpace(strings.TrimPrefix(string(ty), "[]")))
+		}
+		if strings.HasSuffix(string(ty), "[]") {
+			return Type(strings.TrimSpace(strings.TrimSuffix(string(ty), "[]")))
+		}
+		if strings.HasPrefix(string(ty), "repeated ") {
+			return Type(strings.TrimSpace(strings.TrimPrefix(string(ty), "repeated ")))
+		}
 	}
 	panic(fmt.Errorf("not repeated: %s", ty))
 }
 
-func (ty Type) GetParent() Type {
+func (ty Type) KV() (k Type, v Type) {
+	if ty.IsMap() {
+		t := strings.TrimSuffix(strings.TrimPrefix(string(ty), "map<"), ">")
+		s := strings.Split(t, ",")
+		if len(s) != 2 {
+			panic(fmt.Errorf("invalid map: %s", ty))
+		}
+		return Type(strings.TrimSpace(s[0])), Type(strings.TrimSpace(s[1]))
+	}
+	panic(fmt.Errorf("not map: %s", ty))
+}
+
+func (ty Type) Repeated() Type {
 	return Type(string(ty) + "[]")
 }
 
@@ -167,6 +194,10 @@ func (f *Field) ProtobufMeta() string {
 	return fmt.Sprintf(" [%s]", sb.String())
 }
 
+type Mapping struct {
+	K, V *Decl
+}
+
 type Decl struct {
 	File        string
 	Sheet       string
@@ -178,10 +209,12 @@ type Decl struct {
 	IsEnum      bool
 	IsEnumValue bool
 	IsRepeated  bool
+	IsMap       bool
 	Fields      generic.UnorderedSliceMap[string, *Field]
 	FieldsAlias generic.UnorderedSliceMap[string, *Field]
 	Child       *Field
-	Value       string
+	Mapping     *Mapping
+	EnumValue   string
 }
 
 func (d *Decl) EnumFields() generic.UnorderedSliceMap[string, *Field] {
@@ -192,8 +225,8 @@ func (d *Decl) EnumFields() generic.UnorderedSliceMap[string, *Field] {
 	})
 
 	sort.SliceStable(fields, func(i, j int) bool {
-		a, _ := strconv.Atoi(fields[i].V.Value)
-		b, _ := strconv.Atoi(fields[j].V.Value)
+		a, _ := strconv.Atoi(fields[i].V.EnumValue)
+		b, _ := strconv.Atoi(fields[j].V.EnumValue)
 		return a < b
 	})
 
@@ -460,7 +493,7 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 
 		repeated := fieldType.IsRepeated()
 		if repeated {
-			fieldType = fieldType.GetChild()
+			fieldType = fieldType.Child()
 		}
 
 		if !fieldType.IsBuiltin() {
@@ -496,7 +529,7 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 			}
 
 			if typeDecl.IsEnum {
-				field.Value = fieldDesc.EnumValue
+				field.EnumValue = fieldDesc.EnumValue
 			} else {
 				field.Default = fieldDesc.Default
 			}
@@ -516,7 +549,7 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 		if repeated {
 			parent := &Field{
 				Decl: &Decl{
-					Type:       fieldType.GetParent(),
+					Type:       fieldType.Repeated(),
 					IsRepeated: true,
 					Child:      field,
 				},

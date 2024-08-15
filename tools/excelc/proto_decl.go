@@ -168,7 +168,7 @@ package {{.Package}};
 message {{.Type}} {
 	enum Enum {
 		{{- range .EnumFields}}
-		{{.K}} = {{.V.Value}}{{- .V.ProtobufMeta -}}; // {{.V.Alias}} - {{.V.Comment}}
+		{{.K}} = {{.V.EnumValue}}{{- .V.ProtobufMeta -}}; // {{.V.Alias}} - {{.V.Comment}}
 		{{- end}}
 	}
 }
