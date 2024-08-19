@@ -95,7 +95,7 @@ func (m *_PropView) save(ps *PropSync, service string, data []byte, revision int
 
 func (m *_PropView) sync(ps *PropSync, revision int64, op string, args ...any) {
 	for _, dst := range ps.syncTo {
-		if gate.CliDetails.DomainNode.Equal(dst) {
+		if gate.CliDetails.DomainUnicast.Equal(dst) {
 			// 同步至实体客户端
 			rpcutil.ProxyEntity(m, ps.entity.GetId()).OneWayCliRPC("DoSync", ps.name, revision, op, args)
 
