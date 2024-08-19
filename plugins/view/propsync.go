@@ -34,8 +34,8 @@ type IPropSync interface {
 	Save(service string) error
 	// Managed 托管的属性
 	Managed() IProp
-	// Mem Mem
-	Mem() any
+	// Atti Atti
+	Atti() any
 	// Reflected 反射值
 	Reflected() reflect.Value
 }
@@ -43,7 +43,7 @@ type IPropSync interface {
 type iPropSync interface {
 	init(view IPropView, entity ec.Entity, name string, reflected reflect.Value)
 	setSyncTo(syncTo []string)
-	setMem(m any)
+	setAtti(atti any)
 	sync(revision int64, op string, args ...any)
 }
 
@@ -52,7 +52,7 @@ type PropSync struct {
 	view      IPropView
 	entity    ec.Entity
 	name      string
-	mem       any
+	atti      any
 	reflected reflect.Value
 	syncTo    []string
 }
@@ -68,8 +68,8 @@ func (ps *PropSync) setSyncTo(syncTo []string) {
 	ps.syncTo = syncTo
 }
 
-func (ps *PropSync) setMem(m any) {
-	ps.mem = m
+func (ps *PropSync) setAtti(atti any) {
+	ps.atti = atti
 }
 
 // Load 加载数据
@@ -82,9 +82,9 @@ func (ps *PropSync) Save(service string, data []byte, revision int64) error {
 	return ps.view.save(ps, service, data, revision)
 }
 
-// Mem Mem
-func (ps *PropSync) Mem() any {
-	return ps.mem
+// Atti Atti
+func (ps *PropSync) Atti() any {
+	return ps.atti
 }
 
 // Reflected 反射值

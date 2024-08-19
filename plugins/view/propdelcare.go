@@ -36,8 +36,8 @@ func (c PropCreatorT[T]) SyncTo(to ...string) PropCreatorT[T] {
 	return c
 }
 
-func (c PropCreatorT[T]) Mem(m any) PropCreatorT[T] {
-	c.ps.setMem(m)
+func (c PropCreatorT[T]) Atti(atti any) PropCreatorT[T] {
+	c.ps.setAtti(atti)
 	return c
 }
 
