@@ -95,15 +95,15 @@ func (m *_PropView) save(ps *PropSync, service string, data []byte, revision int
 
 func (m *_PropView) sync(ps *PropSync, revision int64, op string, args ...any) {
 	for _, dst := range ps.syncTo {
-		if gate.CliDetails.EqualNodeSubdomain(dst) {
+		if gate.CliDetails.DomainNode.Equal(dst) {
 			// 同步至实体客户端
 			rpcutil.ProxyEntity(m, ps.entity.GetId()).OneWayCliRPC("DoSync", ps.name, revision, op, args)
 
-		} else if gate.CliDetails.InMulticastSubdomain(dst) {
+		} else if gate.CliDetails.DomainMulticast.Contains(dst) {
 			// 同步至指定分组
 			rpcutil.ProxyGroup(m, dst).OneWayCliRPCToEntity(ps.entity.GetId(), "DoSync", ps.name, revision, op, args)
 
-		} else if gate.CliDetails.EqualBroadcastSubdomain(dst) {
+		} else if gate.CliDetails.DomainBroadcast.Equal(dst) {
 			// 同步至包含实体的所有分组
 			rpcutil.ProxyEntity(m, ps.entity.GetId()).GroupOneWayCliRPC("DoSync", ps.name, revision, op, args)
 
