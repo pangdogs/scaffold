@@ -105,7 +105,7 @@ func (m *_PropView) sync(ps *PropSync, revision int64, op string, args ...any) {
 
 		} else if gate.CliDetails.DomainBroadcast.Equal(dst) {
 			// 同步至包含实体的所有分组
-			rpcutil.ProxyEntity(m, ps.entity.GetId()).GroupOneWayCliRPC("DoSync", ps.name, revision, op, args)
+			rpcutil.ProxyEntity(m, ps.entity.GetId()).OneWayCliRPCToGroups("DoSync", ps.name, revision, op, args)
 
 		} else {
 			// 同步至其他服务
