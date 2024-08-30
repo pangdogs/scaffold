@@ -31,6 +31,7 @@ import (
 	"git.golaxy.org/framework/plugins/gate"
 	"git.golaxy.org/framework/plugins/log"
 	"git.golaxy.org/framework/plugins/rpc"
+	"git.golaxy.org/framework/plugins/rpc/rpcli"
 	"git.golaxy.org/framework/plugins/rpc/rpcutil"
 	"reflect"
 )
@@ -97,15 +98,15 @@ func (m *_PropView) sync(ps *PropSync, revision int64, op string, args ...any) {
 	for _, dst := range ps.syncTo {
 		if gate.CliDetails.DomainUnicast.Equal(dst) {
 			// 同步至实体客户端
-			rpcutil.ProxyEntity(m, ps.entity.GetId()).OneWayCliRPC("DoSync", ps.name, revision, op, args)
+			rpcutil.ProxyEntity(m, ps.entity.GetId()).CliOnewayRPC(rpcli.Main, "DoSync", ps.name, revision, op, args)
 
 		} else if gate.CliDetails.DomainMulticast.Contains(dst) {
 			// 同步至指定分组
-			rpcutil.ProxyGroup(m, dst).OneWayCliRPCToEntity(ps.entity.GetId(), "DoSync", ps.name, revision, op, args)
+			rpcutil.ProxyGroup(m, dst).CliOnewayRPC(ps.entity.GetId().String(), "DoSync", ps.name, revision, op, args)
 
 		} else if gate.CliDetails.DomainBroadcast.Equal(dst) {
 			// 同步至包含实体的所有分组
-			rpcutil.ProxyEntity(m, ps.entity.GetId()).OneWayCliRPCToGroups("DoSync", ps.name, revision, op, args)
+			rpcutil.ProxyEntity(m, ps.entity.GetId()).BroadcastCliOnewayRPC(rpcli.Main, "DoSync", ps.name, revision, op, args)
 
 		} else {
 			// 同步至其他服务
