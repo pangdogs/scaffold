@@ -102,7 +102,8 @@ func (m *_PropView) sync(ps *PropSync, revision int64, op string, args ...any) {
 
 		} else if gate.CliDetails.DomainMulticast.Contains(dst) {
 			// 同步至指定分组
-			rpcutil.ProxyGroup(m, dst).CliOnewayRPC(ps.entity.GetId().String(), "DoSync", ps.name, revision, op, args)
+			group, _ := gate.CliDetails.DomainMulticast.Relative(dst)
+			rpcutil.ProxyGroup(m, dst).CliOnewayRPC(group, "DoSync", ps.entity.GetId(), ps.name, revision, op, args)
 
 		} else if gate.CliDetails.DomainBroadcast.Equal(dst) {
 			// 同步至包含实体的所有分组
