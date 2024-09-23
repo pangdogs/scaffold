@@ -40,6 +40,7 @@ func main() {
 const (
 	protoPackage   = protogen.GoImportPath("google.golang.org/protobuf/proto")
 	variantPackage = protogen.GoImportPath("git.golaxy.org/framework/net/gap/variant")
+	ioPackage      = protogen.GoImportPath("io")
 )
 
 func generateFile(gen *protogen.Plugin, file *protogen.File) {
@@ -66,7 +67,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 		g.P("\tif err != nil {")
 		g.P("\t\treturn 0, err")
 		g.P("\t}")
-		g.P("\treturn x.Size(), nil")
+		g.P("\treturn x.Size(), ", ioPackage.Ident("EOF"))
 		g.P("}")
 		g.P()
 
