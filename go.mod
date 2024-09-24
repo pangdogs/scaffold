@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	git.golaxy.org/core v0.3.36
-	git.golaxy.org/framework v0.2.45
+	git.golaxy.org/framework v0.2.46-0.20240924104533-64c211932157
 	github.com/elliotchance/pie/v2 v2.9.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/form/v4 v4.2.1
