@@ -3,8 +3,8 @@ module git.golaxy.org/scaffold
 go 1.23
 
 require (
-	git.golaxy.org/core v0.3.39
-	git.golaxy.org/framework v0.2.49
+	git.golaxy.org/core v0.3.40
+	git.golaxy.org/framework v0.2.50
 	github.com/elliotchance/pie/v2 v2.9.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/form/v4 v4.2.1
