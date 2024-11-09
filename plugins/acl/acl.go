@@ -29,26 +29,23 @@ import (
 	"time"
 )
 
-// IACL 访问控制表
+// IACL 访问控制表接口
 type IACL interface {
 	// Enabled 是否开启
-	Enabled() bool
-	// AllowMobile 检测手机号是否允许
-	AllowMobile(mobile string) bool
-	// AllowGuest 检测游客是否允许
-	AllowGuest() bool
+	Enabled(tag string) bool
+	// Allowed 是否允许
+	Allowed(tag, item string) bool
 }
 
 func newACL(...any) IACL {
 	return &_ACL{
-		setting: viper.New(),
+		config: viper.New(),
 	}
 }
 
 type _ACL struct {
 	framework.IServiceInstance
-	setting *viper.Viper
-	tab     *map[string]struct{}
+	config *viper.Viper
 }
 
 func (acl *_ACL) InitSP(ctx service.Context) {
@@ -63,11 +60,11 @@ func (acl *_ACL) InitSP(ctx service.Context) {
 		return
 	}
 
-	acl.setting.SetConfigType(acl.GetConf().GetStringOrDefault("acl.format", "json"))
+	acl.config.SetConfigType(acl.GetConf().GetStringOrDefault("acl.format", "json"))
 
 	if localFilePath != "" {
-		acl.setting.SetConfigFile(localFilePath)
-		if err := acl.setting.ReadInConfig(); err != nil {
+		acl.config.SetConfigFile(localFilePath)
+		if err := acl.config.ReadInConfig(); err != nil {
 			log.Panicf(acl, "read acl local config %q failed, %s", localFilePath, err)
 		}
 		log.Infof(acl, "load acl local config %q config ok", localFilePath)
@@ -77,37 +74,21 @@ func (acl *_ACL) InitSP(ctx service.Context) {
 	remoteEndpoint := acl.GetConf().GetStringOrDefault("acl.remote_endpoint", "")
 
 	if remoteFilePath != "" {
-		if err := acl.setting.AddRemoteProvider(remoteProvider, remoteEndpoint, remoteFilePath); err != nil {
+		if err := acl.config.AddRemoteProvider(remoteProvider, remoteEndpoint, remoteFilePath); err != nil {
 			log.Panicf(acl, "read acl remote config [%q, %q, %q] failed, %s", remoteProvider, remoteEndpoint, remoteFilePath, err)
 		}
-		if err := acl.setting.ReadRemoteConfig(); err != nil {
+		if err := acl.config.ReadRemoteConfig(); err != nil {
 			log.Panicf(acl, "read acl remote config [%q, %q, %q] failed, %s", remoteProvider, remoteEndpoint, remoteFilePath, err)
 		}
 
 		log.Infof(acl, "load acl remote config [%q, %q, %q] ok", remoteProvider, remoteEndpoint, remoteFilePath)
 	}
 
-	hotFix := func() {
-		aclTab := map[string]struct{}{}
-
-		for _, v := range acl.setting.GetStringSlice("allow.mobile_list") {
-			aclTab["mobile:allow:"+v] = struct{}{}
-		}
-
-		for _, v := range acl.setting.GetStringSlice("deny.mobile_list") {
-			aclTab["mobile:deny:"+v] = struct{}{}
-		}
-
-		acl.tab = &aclTab
-	}
-	hotFix()
-
 	if localFilePath != "" {
-		acl.setting.OnConfigChange(func(e fsnotify.Event) {
-			hotFix()
+		acl.config.OnConfigChange(func(e fsnotify.Event) {
 			log.Infof(acl, "reload acl local config %q ok", localFilePath)
 		})
-		acl.setting.WatchConfig()
+		acl.config.WatchConfig()
 	}
 
 	if remoteFilePath != "" {
@@ -115,12 +96,11 @@ func (acl *_ACL) InitSP(ctx service.Context) {
 			for {
 				time.Sleep(time.Second * 3)
 
-				err := acl.setting.WatchRemoteConfig()
+				err := acl.config.WatchRemoteConfig()
 				if err != nil {
 					log.Errorf(acl, "watch acl remote config [%q, %q, %q] changes failed, %s", remoteProvider, remoteEndpoint, remoteFilePath, err)
 					continue
 				}
-				hotFix()
 
 				log.Infof(acl, "reload acl remote config [%q, %q, %q] ok", remoteProvider, remoteEndpoint, remoteFilePath)
 			}
@@ -133,38 +113,21 @@ func (acl *_ACL) ShutSP(ctx service.Context) {
 }
 
 // Enabled 是否开启
-func (acl *_ACL) Enabled() bool {
-	return acl.setting.GetBool("allow.enable") || acl.setting.GetBool("deny.enable")
+func (acl *_ACL) Enabled(tag string) bool {
+	return acl.config.GetBool(tag+".allow.enable") || acl.config.GetBool(tag+".deny.enable")
 }
 
-// AllowMobile 检测手机号是否允许
-func (acl *_ACL) AllowMobile(mobile string) bool {
-	aclTab := *acl.tab
-	if aclTab == nil {
-		return false
+// Allowed 是否允许
+func (acl *_ACL) Allowed(tag, item string) bool {
+	if acl.config.GetBool(tag + ".allow.enable") {
+		return acl.config.GetBool(tag + ".allow.items." + item)
 	}
 
-	if acl.setting.GetBool("allow.enable") {
-		_, ok := aclTab["mobile:allow:"+mobile]
-		if !ok {
-			return false
-		}
-	}
-
-	if acl.setting.GetBool("deny.enable") {
-		_, ok := aclTab["mobile:deny:"+mobile]
-		if ok {
+	if acl.config.GetBool(tag + ".deny.enable") {
+		if acl.config.GetBool(tag + ".deny.items." + item) {
 			return false
 		}
 	}
 
 	return true
-}
-
-// AllowGuest 检测游客是否允许
-func (acl *_ACL) AllowGuest() bool {
-	if !acl.setting.GetBool("deny.enable") {
-		return true
-	}
-	return acl.setting.GetBool("deny.guest")
 }
