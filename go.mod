@@ -3,13 +3,14 @@ module git.golaxy.org/scaffold
 go 1.23
 
 require (
-	git.golaxy.org/core v0.3.46
-	git.golaxy.org/framework v0.2.51
+	git.golaxy.org/core v0.3.47
+	git.golaxy.org/framework v0.2.53
 	github.com/elliotchance/pie/v2 v2.9.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/form/v4 v4.2.1
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
+	github.com/traefik/yaegi v0.16.1
 	github.com/xuri/excelize/v2 v2.8.1
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/yaml.v3 v3.0.1

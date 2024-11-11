@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-// IACL 访问控制表接口
+// IACL 访问控制表插件接口
 type IACL interface {
 	// Enabled 是否开启
 	Enabled(tag string) bool

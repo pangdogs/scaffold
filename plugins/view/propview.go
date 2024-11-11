@@ -47,7 +47,7 @@ var (
 	ErrMethodParameterTypeMismatch  = variant.Errorln(-9, "op method parameter type mismatch")
 )
 
-// IPropView 属性视图支持
+// IPropView 属性视图插件接口
 type IPropView interface {
 	iPropView
 }
