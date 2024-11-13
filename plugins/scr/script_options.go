@@ -35,7 +35,7 @@ type (
 // ScriptOptions 所有选项
 type ScriptOptions struct {
 	PathList    []string         // 脚本目录列表
-	SymbolsList []interp.Exports // 导出符号列表
+	SymbolsList []interp.Exports // 脚本可用的符号列表
 	AutoHotFix  bool             // 自动热更新
 	LoadingCB   LoadingCB        // 加载完成回调
 	LoadedCB    LoadedCB         // 加载完成回调
@@ -63,7 +63,7 @@ func (_Option) PathList(l ...string) option.Setting[ScriptOptions] {
 	}
 }
 
-// SymbolsList 导出符号列表
+// SymbolsList 脚本可用的符号列表
 func (_Option) SymbolsList(l ...interp.Exports) option.Setting[ScriptOptions] {
 	return func(options *ScriptOptions) {
 		options.SymbolsList = l

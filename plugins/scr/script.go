@@ -66,6 +66,8 @@ func (s *_Script) InitSP(svcCtx service.Context) {
 	}
 	s.intp = intp
 
+	log.Infof(s.svcCtx, "init script load %+v ok", s.options.PathList)
+
 	if s.options.AutoHotFix {
 		s.autoHotFix()
 	}
@@ -158,10 +160,16 @@ func (s *_Script) autoHotFix() {
 				s.reloading.Add(1)
 
 				go func() {
-					time.Sleep(10 * time.Second)
+					time.Sleep(3 * time.Second)
 
 					if s.reloading.Add(-1) != 0 {
 						return
+					}
+
+					select {
+					case <-s.svcCtx.Done():
+						return
+					default:
 					}
 
 					intp, err := s.load()
