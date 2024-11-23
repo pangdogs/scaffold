@@ -24,6 +24,7 @@ import (
 	"git.golaxy.org/core"
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/runtime"
+	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/core/utils/uid"
 	"git.golaxy.org/framework"
@@ -66,14 +67,14 @@ type _PropView struct {
 	framework.IRuntimeInstance
 }
 
-func (m *_PropView) InitRP(ctx runtime.Context) {
-	log.Debugf(ctx, "init plugin %q", self.Name)
+func (m *_PropView) Init(_ service.Context, rtCtx runtime.Context) {
+	log.Debugf(rtCtx, "init plugin %q", self.Name)
 
-	m.IRuntimeInstance = framework.GetRuntimeInstance(ctx)
+	m.IRuntimeInstance = framework.GetRuntimeInstance(rtCtx)
 }
 
-func (m *_PropView) ShutRP(ctx runtime.Context) {
-	log.Debugf(ctx, "shut plugin %q", self.Name)
+func (m *_PropView) Shut(_ service.Context, rtCtx runtime.Context) {
+	log.Debugf(rtCtx, "shut plugin %q", self.Name)
 }
 
 func (m *_PropView) load(ps *PropSync, service string) ([]byte, int64, error) {

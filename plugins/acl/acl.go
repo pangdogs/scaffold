@@ -20,6 +20,7 @@
 package acl
 
 import (
+	"git.golaxy.org/core/runtime"
 	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/reinterpret"
 	"git.golaxy.org/framework"
@@ -48,10 +49,10 @@ type _ACL struct {
 	config *viper.Viper
 }
 
-func (acl *_ACL) InitSP(ctx service.Context) {
-	log.Infof(ctx, "init plugin %q", self.Name)
+func (acl *_ACL) Init(svcCtx service.Context, _ runtime.Context) {
+	log.Infof(svcCtx, "init plugin %q", self.Name)
 
-	acl.IServiceInstance = reinterpret.Cast[framework.IServiceInstance](ctx)
+	acl.IServiceInstance = reinterpret.Cast[framework.IServiceInstance](svcCtx)
 
 	localFilePath := acl.GetConf().GetStringOrDefault("acl.local_path", "")
 	remoteFilePath := acl.GetConf().GetStringOrDefault("acl.remote_path", "")
@@ -108,8 +109,8 @@ func (acl *_ACL) InitSP(ctx service.Context) {
 	}
 }
 
-func (acl *_ACL) ShutSP(ctx service.Context) {
-	log.Infof(ctx, "shut plugin %q", self.Name)
+func (acl *_ACL) Shut(svcCtx service.Context, _ runtime.Context) {
+	log.Infof(svcCtx, "shut plugin %q", self.Name)
 }
 
 // Enabled 是否开启

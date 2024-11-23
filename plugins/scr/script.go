@@ -21,6 +21,7 @@ package scr
 
 import (
 	"fmt"
+	"git.golaxy.org/core/runtime"
 	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/option"
 	"git.golaxy.org/framework/plugins/log"
@@ -56,8 +57,8 @@ type _Script struct {
 	reloading atomic.Int64
 }
 
-// InitSP 初始化服务插件
-func (s *_Script) InitSP(svcCtx service.Context) {
+// Init 初始化插件
+func (s *_Script) Init(svcCtx service.Context, _ runtime.Context) {
 	s.svcCtx = svcCtx
 
 	intp, err := s.load()
@@ -73,8 +74,8 @@ func (s *_Script) InitSP(svcCtx service.Context) {
 	}
 }
 
-// ShutSP 关闭服务插件
-func (s *_Script) ShutSP(svcCtx service.Context) {
+// Shut 关闭插件
+func (s *_Script) Shut(svcCtx service.Context, _ runtime.Context) {
 	log.Infof(svcCtx, "shut plugin %q", self.Name)
 }
 
