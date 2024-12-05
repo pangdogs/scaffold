@@ -17,4 +17,5 @@ Based on the [**Golaxy Distributed Service Development Framework**](https://gith
 | Directory | Description |
 | --------- | ----------- |
 | [/plugins/acl](https://github.com/pangdogs/scaffold/tree/main/plugins/acl) | Access Control List (`ACL`) plugin, generally used for the Login service. |
+| [/plugins/scr](https://github.com/pangdogs/scaffold/tree/main/plugins/scr) | Golang Scripting (`Golang Script`) plugin, supports the interpretation and execution of Golang code, used for supporting logic code hotfixes. |
 | [/plugins/view](https://github.com/pangdogs/scaffold/tree/main/plugins/view) | Property View plugin, used to support the synchronization of entity properties. |
