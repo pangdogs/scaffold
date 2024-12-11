@@ -19,7 +19,14 @@
 
 package fwlib
 
-import "reflect"
+import (
+	_ "git.golaxy.org/framework/plugins/db/sqldb"
+	_ "github.com/glebarez/sqlite"
+	_ "github.com/redis/go-redis/v9"
+	_ "go.mongodb.org/mongo-driver/mongo"
+	_ "gorm.io/gorm"
+	"reflect"
+)
 
 var Symbols = map[string]map[string]reflect.Value{}
 
