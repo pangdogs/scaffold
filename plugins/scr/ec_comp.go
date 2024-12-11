@@ -140,7 +140,7 @@ func (c *ComponentEnableUpdateAndLateUpdate) LateUpdate() {
 func ComponentWith(name, script string) pt.ComponentAttribute {
 	idx := strings.LastIndexByte(script, '.')
 	if idx < 0 {
-		panic(fmt.Errorf("script type %q format is invalid", script))
+		panic(fmt.Errorf("incorrect script %q format", script))
 	}
 
 	scriptPkg := script[:idx]
@@ -153,7 +153,7 @@ func ComponentWith(name, script string) pt.ComponentAttribute {
 func ComponentWithT[T any](name, script string) pt.ComponentAttribute {
 	idx := strings.LastIndexByte(script, '.')
 	if idx < 0 {
-		panic(fmt.Errorf("script type %q format is invalid", script))
+		panic(fmt.Errorf("incorrect script %q format", script))
 	}
 
 	scriptPkg := script[:idx]
