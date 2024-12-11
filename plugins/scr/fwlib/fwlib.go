@@ -20,8 +20,8 @@
 package fwlib
 
 import (
-	_ "git.golaxy.org/framework/plugins/db/sqldb"
 	_ "github.com/glebarez/sqlite"
+	_ "github.com/go-redsync/redsync/v4"
 	_ "github.com/redis/go-redis/v9"
 	_ "go.mongodb.org/mongo-driver/mongo"
 	_ "gorm.io/gorm"
