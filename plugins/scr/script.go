@@ -25,13 +25,10 @@ import (
 	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/option"
 	"git.golaxy.org/framework/plugins/log"
+	"git.golaxy.org/scaffold/plugins/scr/dynamic"
 	"git.golaxy.org/scaffold/plugins/scr/fwlib"
 	"github.com/fsnotify/fsnotify"
-	"github.com/traefik/yaegi/interp"
 	"github.com/traefik/yaegi/stdlib"
-	"io/fs"
-	"path/filepath"
-	"reflect"
 	"sync/atomic"
 	"time"
 )
@@ -40,8 +37,8 @@ import (
 type IScript interface {
 	// Hotfix 热更新
 	Hotfix() error
-	// Eval 执行脚本
-	Eval(src string) (reflect.Value, error)
+	// Solution 解决方案
+	Solution() *dynamic.Solution
 }
 
 func newScript(setting ...option.Setting[ScriptOptions]) IScript {
@@ -53,7 +50,7 @@ func newScript(setting ...option.Setting[ScriptOptions]) IScript {
 type _Script struct {
 	svcCtx    service.Context
 	options   ScriptOptions
-	intp      *interp.Interpreter
+	solution  *dynamic.Solution
 	reloading atomic.Int64
 }
 
@@ -61,13 +58,13 @@ type _Script struct {
 func (s *_Script) Init(svcCtx service.Context, _ runtime.Context) {
 	s.svcCtx = svcCtx
 
-	intp, err := s.load()
+	solution, err := s.loadSolution()
 	if err != nil {
-		log.Panicf(s.svcCtx, "init script load %+v failed, %s", s.options.PathList, err)
+		log.Panicf(s.svcCtx, "init load solution %q projects %+v failed, %s", s.options.PkgRoot, s.options.Projects, err)
 	}
-	s.intp = intp
+	s.solution = solution
 
-	log.Infof(s.svcCtx, "init script load %+v ok", s.options.PathList)
+	log.Infof(s.svcCtx, "init load solution %q projects %+v ok", s.options.PkgRoot, s.options.Projects)
 
 	if s.options.AutoHotFix {
 		s.autoHotFix()
@@ -81,70 +78,51 @@ func (s *_Script) Shut(svcCtx service.Context, _ runtime.Context) {
 
 // Hotfix 热更新
 func (s *_Script) Hotfix() error {
-	intp, err := s.load()
+	solution, err := s.loadSolution()
 	if err != nil {
 		return err
 	}
-	s.intp = intp
+	s.solution = solution
 
 	return nil
 }
 
-// Eval 执行脚本
-func (s *_Script) Eval(src string) (reflect.Value, error) {
-	return s.intp.Eval(src)
+// Solution 解决方案
+func (s *_Script) Solution() *dynamic.Solution {
+	return s.solution
 }
 
-func (s *_Script) load() (*interp.Interpreter, error) {
-	intp := interp.New(interp.Options{})
-	intp.Use(stdlib.Symbols)
-	intp.Use(fwlib.Symbols)
+func (s *_Script) loadSolution() (*dynamic.Solution, error) {
+	solution := dynamic.NewSolution(s.options.PkgRoot)
+	solution.Use(stdlib.Symbols)
+	solution.Use(fwlib.Symbols)
 
-	for _, symbols := range s.options.SymbolsList {
-		intp.Use(symbols)
+	if err := s.options.LoadingCB.Invoke(func(err error) bool { return err != nil }, solution); err != nil {
+		return nil, fmt.Errorf("loading callback error occurred, %s", err)
 	}
 
-	if err := s.options.LoadingCB.Invoke(func(error) bool { return true }, intp); err != nil {
-		return nil, err
-	}
-
-	for _, path := range s.options.PathList {
-		err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
-			if !d.IsDir() {
-				return nil
-			}
-
-			if _, err := intp.EvalPath(path); err != nil {
-				return fmt.Errorf("load script path %q failed, %s", path, err)
-			}
-
-			if _, err := intp.Eval(fmt.Sprintf(`import "%s"`, path)); err != nil {
-				return fmt.Errorf("import script path %q failed, %s", path, err)
-			}
-
-			return nil
-		})
-		if err != nil {
-			return nil, err
+	for _, project := range s.options.Projects {
+		if err := solution.Load(project); err != nil {
+			return nil, fmt.Errorf("load solution %q project %+v failed, %s", s.options.PkgRoot, project.LocalPath, err)
 		}
 	}
 
-	if err := s.options.LoadedCB.Invoke(func(error) bool { return true }, intp); err != nil {
-		return nil, err
+	if err := s.options.LoadedCB.Invoke(func(err error) bool { return err != nil }, solution); err != nil {
+		return nil, fmt.Errorf("loaded callback error occurred, %s", err)
 	}
 
-	return intp, nil
+	return solution, nil
 }
 
 func (s *_Script) autoHotFix() {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Panicf(s.svcCtx, "auto hotfix script watch %+v failed, %s", s.options.PathList, err)
+		log.Panicf(s.svcCtx, "auto hotfix watch projects %+v failed, %s", s.options.Projects, err)
 	}
 
-	for _, path := range s.options.PathList {
-		if err = watcher.AddWith(path); err != nil {
-			log.Panicf(s.svcCtx, "auto hotfix script watch %q failed, %s", path, err)
+	for _, project := range s.options.Projects {
+		if err = watcher.Add(project.LocalPath); err != nil {
+			log.Panicf(s.svcCtx, "auto hotfix watch projects %+v failed, %s", s.options.Projects, err)
 		}
 	}
 
@@ -156,7 +134,7 @@ func (s *_Script) autoHotFix() {
 					return
 				}
 
-				log.Infof(s.svcCtx, "auto hotfix script detecting %q changes, preparing to reload in 10s", e)
+				log.Infof(s.svcCtx, "auto hotfix detecting %q changes, preparing to reload in 10s", e)
 
 				s.reloading.Add(1)
 
@@ -173,24 +151,23 @@ func (s *_Script) autoHotFix() {
 					default:
 					}
 
-					intp, err := s.load()
+					solution, err := s.loadSolution()
 					if err != nil {
-						log.Errorf(s.svcCtx, "auto hotfix script reload %+v failed, %s", s.options.PathList, err)
-						return
+						log.Panicf(s.svcCtx, "auto hotfix load solution %q projects %+v failed, %s", s.options.PkgRoot, s.options.Projects, err)
 					}
-					s.intp = intp
+					s.solution = solution
 
-					log.Infof(s.svcCtx, "auto hotfix script reload %+v ok", s.options.PathList)
+					log.Infof(s.svcCtx, "auto hotfix load solution %q projects %+v ok", s.options.PkgRoot, s.options.Projects)
 				}()
 
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
-				log.Errorf(s.svcCtx, "auto hotfix script watch %+v failed, %s", s.options.PathList, err)
+				log.Errorf(s.svcCtx, "auto hotfix watch projects %+v failed, %s", s.options.Projects, err)
 			}
 		}
 	}()
 
-	log.Infof(s.svcCtx, "auto hotfix script watch %+v ok", s.options.PathList)
+	log.Infof(s.svcCtx, "auto hotfix watch projects %+v ok", s.options.Projects)
 }

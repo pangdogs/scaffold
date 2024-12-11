@@ -19,8 +19,145 @@
 
 package scr
 
-import "git.golaxy.org/framework"
+import (
+	"fmt"
+	"git.golaxy.org/core/ec/pt"
+	"git.golaxy.org/core/utils/types"
+	"git.golaxy.org/framework"
+	"reflect"
+	"strings"
+)
 
-type ComponentBehavior struct {
+// Component 脚本化组件
+type Component struct {
 	framework.ComponentBehavior
+}
+
+func (c *Component) bindMethod(method string) any {
+	scriptPkg, ok := c.GetBuiltin().Extra.Get("script_pkg")
+	if !ok {
+		return nil
+	}
+
+	scriptIdent, ok := c.GetBuiltin().Extra.Get("script_ident")
+	if !ok {
+		return nil
+	}
+
+	thisMethod := Using(c.GetService()).Solution().BindMethod(c.GetReflected().Interface(), scriptPkg.(string), scriptIdent.(string), method)
+	if thisMethod == nil {
+		return nil
+	}
+
+	return thisMethod
+}
+
+// Callee 被调函数
+func (c *Component) Callee(method string) reflect.Value {
+	return reflect.ValueOf(c.bindMethod(method))
+}
+
+// Awake 生命周期Awake
+func (c *Component) Awake() {
+	method, _ := c.bindMethod("Awake").(func())
+	if method != nil {
+		method()
+	}
+}
+
+// Start 生命周期Start
+func (c *Component) Start() {
+	method, _ := c.bindMethod("Start").(func())
+	if method != nil {
+		method()
+	}
+}
+
+// Shut 生命周期Shut
+func (c *Component) Shut() {
+	method, _ := c.bindMethod("Shut").(func())
+	if method != nil {
+		method()
+	}
+}
+
+// Dispose 生命周期Dispose
+func (c *Component) Dispose() {
+	method, _ := c.bindMethod("Dispose").(func())
+	if method != nil {
+		method()
+	}
+}
+
+// ComponentEnableUpdate 脚本化组件，支持Update
+type ComponentEnableUpdate struct {
+	Component
+}
+
+// Update 生命周期Update
+func (c *ComponentEnableUpdate) Update() {
+	method, _ := c.bindMethod("Update").(func())
+	if method != nil {
+		method()
+	}
+}
+
+// ComponentEnableLateUpdate 脚本化组件，支持LateUpdate
+type ComponentEnableLateUpdate struct {
+	Component
+}
+
+// LateUpdate 生命周期LateUpdate
+func (c *ComponentEnableLateUpdate) LateUpdate() {
+	method, _ := c.bindMethod("LateUpdate").(func())
+	if method != nil {
+		method()
+	}
+}
+
+// ComponentEnableUpdateAndLateUpdate 脚本化组件，支持Update、LateUpdate
+type ComponentEnableUpdateAndLateUpdate struct {
+	Component
+}
+
+// Update 生命周期Update
+func (c *ComponentEnableUpdateAndLateUpdate) Update() {
+	method, _ := c.bindMethod("Update").(func())
+	if method != nil {
+		method()
+	}
+}
+
+// LateUpdate 生命周期LateUpdate
+func (c *ComponentEnableUpdateAndLateUpdate) LateUpdate() {
+	method, _ := c.bindMethod("LateUpdate").(func())
+	if method != nil {
+		method()
+	}
+}
+
+// ComponentWith 创建脚本化组件原型属性，用于注册实体原型时自定义相关属性
+func ComponentWith(name, script string) pt.ComponentAttribute {
+	idx := strings.LastIndexByte(script, '.')
+	if idx < 0 {
+		panic(fmt.Errorf("script type %q format is invalid", script))
+	}
+
+	scriptPkg := script[:idx]
+	scriptIdent := script[idx+1:]
+
+	return pt.ComponentWith(Component{}, name, true, map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
+}
+
+// ComponentWithT 创建脚本化组件原型属性，用于注册实体原型时自定义相关属性
+func ComponentWithT[T any](name, script string) pt.ComponentAttribute {
+	idx := strings.LastIndexByte(script, '.')
+	if idx < 0 {
+		panic(fmt.Errorf("script type %q format is invalid", script))
+	}
+
+	scriptPkg := script[:idx]
+	scriptIdent := script[idx+1:]
+
+	return pt.ComponentWith(types.ZeroT[T](), name, true, map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
 }

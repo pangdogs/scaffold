@@ -22,23 +22,23 @@ package scr
 import (
 	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/core/utils/option"
-	"github.com/traefik/yaegi/interp"
+	"git.golaxy.org/scaffold/plugins/scr/dynamic"
 )
 
 type (
 	// LoadingCB 开始加载回调
-	LoadingCB = generic.DelegateAction1[*interp.Interpreter]
+	LoadingCB = generic.DelegateAction1[*dynamic.Solution]
 	// LoadedCB 加载完成回调
-	LoadedCB = generic.DelegateAction1[*interp.Interpreter]
+	LoadedCB = generic.DelegateAction1[*dynamic.Solution]
 )
 
 // ScriptOptions 所有选项
 type ScriptOptions struct {
-	PathList    []string         // 脚本目录列表
-	SymbolsList []interp.Exports // 脚本可用的符号列表
-	AutoHotFix  bool             // 自动热更新
-	LoadingCB   LoadingCB        // 加载完成回调
-	LoadedCB    LoadedCB         // 加载完成回调
+	PkgRoot    string             // 包根路径
+	Projects   []*dynamic.Project // 脚本工程列表
+	AutoHotFix bool               // 自动热更新
+	LoadingCB  LoadingCB          // 加载完成回调
+	LoadedCB   LoadedCB           // 加载完成回调
 }
 
 var With _Option
@@ -48,25 +48,17 @@ type _Option struct{}
 // Default 默认值
 func (_Option) Default() option.Setting[ScriptOptions] {
 	return func(options *ScriptOptions) {
-		With.PathList().Apply(options)
-		With.SymbolsList().Apply(options)
+		With.Projects().Apply(options)
 		With.AutoHotFix(true).Apply(options)
 		With.LoadingCB(nil).Apply(options)
 		With.LoadedCB(nil).Apply(options)
 	}
 }
 
-// PathList 脚本目录列表
-func (_Option) PathList(l ...string) option.Setting[ScriptOptions] {
+// Projects 脚本工程列表
+func (_Option) Projects(projects ...*dynamic.Project) option.Setting[ScriptOptions] {
 	return func(options *ScriptOptions) {
-		options.PathList = l
-	}
-}
-
-// SymbolsList 脚本可用的符号列表
-func (_Option) SymbolsList(l ...interp.Exports) option.Setting[ScriptOptions] {
-	return func(options *ScriptOptions) {
-		options.SymbolsList = l
+		options.Projects = projects
 	}
 }
 
