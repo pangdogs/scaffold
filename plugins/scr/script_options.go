@@ -48,10 +48,18 @@ type _Option struct{}
 // Default 默认值
 func (_Option) Default() option.Setting[ScriptOptions] {
 	return func(options *ScriptOptions) {
+		With.PkgRoot("").Apply(options)
 		With.Projects().Apply(options)
 		With.AutoHotFix(true).Apply(options)
 		With.LoadingCB(nil).Apply(options)
 		With.LoadedCB(nil).Apply(options)
+	}
+}
+
+// PkgRoot 包根路径
+func (_Option) PkgRoot(pkgRoot string) option.Setting[ScriptOptions] {
+	return func(options *ScriptOptions) {
+		options.PkgRoot = pkgRoot
 	}
 }
 
