@@ -192,7 +192,7 @@ func (s *_Script) autoHotFix() {
 		}
 	}()
 
-	log.Panicf(s.svcCtx, "auto hotfix solution %q watch changes ok, projects: %q",
+	log.Infof(s.svcCtx, "auto hotfix solution %q watch changes ok, projects: %q",
 		s.options.PkgRoot,
 		pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
 			return fmt.Sprintf("%s - %s", project.PkgRoot, project.LocalPath)
