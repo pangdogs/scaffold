@@ -27,6 +27,7 @@ import (
 	"git.golaxy.org/framework/plugins/log"
 	"git.golaxy.org/scaffold/plugins/scr/dynamic"
 	"git.golaxy.org/scaffold/plugins/scr/fwlib"
+	"github.com/elliotchance/pie/v2"
 	"github.com/fsnotify/fsnotify"
 	"github.com/pangdogs/yaegi/stdlib"
 	"sync/atomic"
@@ -60,11 +61,14 @@ func (s *_Script) Init(svcCtx service.Context, _ runtime.Context) {
 
 	solution, err := s.loadSolution()
 	if err != nil {
-		log.Panicf(s.svcCtx, "init load solution %q projects %+v failed, %s", s.options.PkgRoot, s.options.Projects, err)
+		log.Panicf(s.svcCtx, "init load solution %q failed, %s", s.options.PkgRoot, err)
 	}
 	s.solution = solution
 
-	log.Infof(s.svcCtx, "init load solution %q projects %+v ok", s.options.PkgRoot, s.options.Projects)
+	log.Infof(s.svcCtx, "init load solution %q ok, projects: %q", s.options.PkgRoot,
+		pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
+			return fmt.Sprintf("%s - %s", project.PkgRoot, project.LocalPath)
+		}))
 
 	if s.options.AutoHotFix {
 		s.autoHotFix()
@@ -103,7 +107,7 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 
 	for _, project := range s.options.Projects {
 		if err := solution.Load(project); err != nil {
-			return nil, fmt.Errorf("load solution %q project %+v failed, %s", s.options.PkgRoot, project.LocalPath, err)
+			return nil, fmt.Errorf("load project %q failed, %s", fmt.Sprintf("%s - %s", project.PkgRoot, project.LocalPath), err)
 		}
 	}
 
@@ -117,12 +121,22 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 func (s *_Script) autoHotFix() {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Panicf(s.svcCtx, "auto hotfix watch projects %+v failed, %s", s.options.Projects, err)
+		log.Panicf(s.svcCtx, "auto hotfix solution %q watch changes failed, projects: %q, %s",
+			s.options.PkgRoot,
+			pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
+				return fmt.Sprintf("%s - %s", project.PkgRoot, project.LocalPath)
+			}),
+			err)
 	}
 
 	for _, project := range s.options.Projects {
 		if err = watcher.Add(project.LocalPath); err != nil {
-			log.Panicf(s.svcCtx, "auto hotfix watch projects %+v failed, %s", s.options.Projects, err)
+			log.Panicf(s.svcCtx, "auto hotfix solution %q watch changes failed, projects: %q, %s",
+				s.options.PkgRoot,
+				pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
+					return fmt.Sprintf("%s - %s", project.PkgRoot, project.LocalPath)
+				}),
+				err)
 		}
 	}
 
@@ -134,7 +148,7 @@ func (s *_Script) autoHotFix() {
 					return
 				}
 
-				log.Infof(s.svcCtx, "auto hotfix detecting %q changes, preparing to reload in 10s", e)
+				log.Infof(s.svcCtx, "auto hotfix solution %q detecting %q changes, preparing to reload in 10s", s.options.PkgRoot, e)
 
 				s.reloading.Add(1)
 
@@ -153,21 +167,34 @@ func (s *_Script) autoHotFix() {
 
 					solution, err := s.loadSolution()
 					if err != nil {
-						log.Panicf(s.svcCtx, "auto hotfix load solution %q projects %+v failed, %s", s.options.PkgRoot, s.options.Projects, err)
+						log.Errorf(s.svcCtx, "auto hotfix load solution %q failed, %s", s.options.PkgRoot, err)
+						return
 					}
 					s.solution = solution
 
-					log.Infof(s.svcCtx, "auto hotfix load solution %q projects %+v ok", s.options.PkgRoot, s.options.Projects)
+					log.Infof(s.svcCtx, "auto hotfix load solution %q ok, projects: %q", s.options.PkgRoot,
+						pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
+							return fmt.Sprintf("%s - %s", project.PkgRoot, project.LocalPath)
+						}))
 				}()
 
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
-				log.Errorf(s.svcCtx, "auto hotfix watch projects %+v failed, %s", s.options.Projects, err)
+				log.Errorf(s.svcCtx, "auto hotfix solution %q watch changes failed, projects: %q, %s",
+					s.options.PkgRoot,
+					pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
+						return fmt.Sprintf("%s - %s", project.PkgRoot, project.LocalPath)
+					}),
+					err)
 			}
 		}
 	}()
 
-	log.Infof(s.svcCtx, "auto hotfix watch projects %+v ok", s.options.Projects)
+	log.Panicf(s.svcCtx, "auto hotfix solution %q watch changes ok, projects: %q",
+		s.options.PkgRoot,
+		pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
+			return fmt.Sprintf("%s - %s", project.PkgRoot, project.LocalPath)
+		}))
 }

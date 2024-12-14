@@ -93,7 +93,7 @@ func (s *Solution) Load(project *Project) error {
 	if err := s.lib.Compile(s.interp); err != nil {
 		return err
 	}
-
+	
 	return nil
 }
 
