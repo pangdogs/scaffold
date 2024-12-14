@@ -54,12 +54,8 @@ type _git_golaxy_org_scaffold_plugins_view_IProp struct {
 func (W _git_golaxy_org_scaffold_plugins_view_IProp) Marshal() ([]byte, int64, error) {
 	return W.WMarshal()
 }
-func (W _git_golaxy_org_scaffold_plugins_view_IProp) Reset() {
-	W.WReset()
-}
-func (W _git_golaxy_org_scaffold_plugins_view_IProp) Revision() int64 {
-	return W.WRevision()
-}
+func (W _git_golaxy_org_scaffold_plugins_view_IProp) Reset()          { W.WReset() }
+func (W _git_golaxy_org_scaffold_plugins_view_IProp) Revision() int64 { return W.WRevision() }
 func (W _git_golaxy_org_scaffold_plugins_view_IProp) Unmarshal(data []byte, revision int64) error {
 	return W.WUnmarshal(data, revision)
 }
@@ -78,27 +74,19 @@ type _git_golaxy_org_scaffold_plugins_view_IPropSync struct {
 	WUnmarshal func(data []byte, revision int64) error
 }
 
-func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Atti() any {
-	return W.WAtti()
-}
+func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Atti() any { return W.WAtti() }
 func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Load(service string) error {
 	return W.WLoad(service)
 }
-func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Managed() view.IProp {
-	return W.WManaged()
-}
+func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Managed() view.IProp { return W.WManaged() }
 func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Marshal() ([]byte, int64, error) {
 	return W.WMarshal()
 }
 func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Reflected() reflect.Value {
 	return W.WReflected()
 }
-func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Reset() {
-	W.WReset()
-}
-func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Revision() int64 {
-	return W.WRevision()
-}
+func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Reset()          { W.WReset() }
+func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Revision() int64 { return W.WRevision() }
 func (W _git_golaxy_org_scaffold_plugins_view_IPropSync) Save(service string) error {
 	return W.WSave(service)
 }

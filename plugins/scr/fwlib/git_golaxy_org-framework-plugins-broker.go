@@ -26,6 +26,8 @@ func init() {
 
 		// type definitions
 		"DeliveryReliability":     reflect.ValueOf((*broker.DeliveryReliability)(nil)),
+		"ErrorHandler":            reflect.ValueOf((*broker.ErrorHandler)(nil)),
+		"EventHandler":            reflect.ValueOf((*broker.EventHandler)(nil)),
 		"IBroker":                 reflect.ValueOf((*broker.IBroker)(nil)),
 		"IChanSubscriber":         reflect.ValueOf((*broker.IChanSubscriber)(nil)),
 		"IChanSubscriberSettings": reflect.ValueOf((*broker.IChanSubscriberSettings)(nil)),
@@ -35,6 +37,7 @@ func init() {
 		"ISyncSubscriber":         reflect.ValueOf((*broker.ISyncSubscriber)(nil)),
 		"ISyncSubscriberSettings": reflect.ValueOf((*broker.ISyncSubscriberSettings)(nil)),
 		"SubscriberOptions":       reflect.ValueOf((*broker.SubscriberOptions)(nil)),
+		"UnsubscribedCB":          reflect.ValueOf((*broker.UnsubscribedCB)(nil)),
 
 		// interface wrapper definitions
 		"_IBroker":                 reflect.ValueOf((*_git_golaxy_org_framework_plugins_broker_IBroker)(nil)),
@@ -130,18 +133,14 @@ func (W _git_golaxy_org_framework_plugins_broker_IChanSubscriber) Deadline() (de
 func (W _git_golaxy_org_framework_plugins_broker_IChanSubscriber) Done() <-chan struct{} {
 	return W.WDone()
 }
-func (W _git_golaxy_org_framework_plugins_broker_IChanSubscriber) Err() error {
-	return W.WErr()
-}
+func (W _git_golaxy_org_framework_plugins_broker_IChanSubscriber) Err() error { return W.WErr() }
 func (W _git_golaxy_org_framework_plugins_broker_IChanSubscriber) EventChan() (<-chan broker.IEvent, error) {
 	return W.WEventChan()
 }
 func (W _git_golaxy_org_framework_plugins_broker_IChanSubscriber) Pattern() string {
 	return W.WPattern()
 }
-func (W _git_golaxy_org_framework_plugins_broker_IChanSubscriber) Queue() string {
-	return W.WQueue()
-}
+func (W _git_golaxy_org_framework_plugins_broker_IChanSubscriber) Queue() string { return W.WQueue() }
 func (W _git_golaxy_org_framework_plugins_broker_IChanSubscriber) Unsubscribe() <-chan struct{} {
 	return W.WUnsubscribe()
 }
@@ -176,21 +175,13 @@ type _git_golaxy_org_framework_plugins_broker_IEvent struct {
 func (W _git_golaxy_org_framework_plugins_broker_IEvent) Ack(ctx context.Context) error {
 	return W.WAck(ctx)
 }
-func (W _git_golaxy_org_framework_plugins_broker_IEvent) Message() []byte {
-	return W.WMessage()
-}
+func (W _git_golaxy_org_framework_plugins_broker_IEvent) Message() []byte { return W.WMessage() }
 func (W _git_golaxy_org_framework_plugins_broker_IEvent) Nak(ctx context.Context) error {
 	return W.WNak(ctx)
 }
-func (W _git_golaxy_org_framework_plugins_broker_IEvent) Pattern() string {
-	return W.WPattern()
-}
-func (W _git_golaxy_org_framework_plugins_broker_IEvent) Queue() string {
-	return W.WQueue()
-}
-func (W _git_golaxy_org_framework_plugins_broker_IEvent) Topic() string {
-	return W.WTopic()
-}
+func (W _git_golaxy_org_framework_plugins_broker_IEvent) Pattern() string { return W.WPattern() }
+func (W _git_golaxy_org_framework_plugins_broker_IEvent) Queue() string   { return W.WQueue() }
+func (W _git_golaxy_org_framework_plugins_broker_IEvent) Topic() string   { return W.WTopic() }
 
 // _git_golaxy_org_framework_plugins_broker_ISubscriber is an interface wrapper for ISubscriber type
 type _git_golaxy_org_framework_plugins_broker_ISubscriber struct {
@@ -211,15 +202,9 @@ func (W _git_golaxy_org_framework_plugins_broker_ISubscriber) Deadline() (deadli
 func (W _git_golaxy_org_framework_plugins_broker_ISubscriber) Done() <-chan struct{} {
 	return W.WDone()
 }
-func (W _git_golaxy_org_framework_plugins_broker_ISubscriber) Err() error {
-	return W.WErr()
-}
-func (W _git_golaxy_org_framework_plugins_broker_ISubscriber) Pattern() string {
-	return W.WPattern()
-}
-func (W _git_golaxy_org_framework_plugins_broker_ISubscriber) Queue() string {
-	return W.WQueue()
-}
+func (W _git_golaxy_org_framework_plugins_broker_ISubscriber) Err() error      { return W.WErr() }
+func (W _git_golaxy_org_framework_plugins_broker_ISubscriber) Pattern() string { return W.WPattern() }
+func (W _git_golaxy_org_framework_plugins_broker_ISubscriber) Queue() string   { return W.WQueue() }
 func (W _git_golaxy_org_framework_plugins_broker_ISubscriber) Unsubscribe() <-chan struct{} {
 	return W.WUnsubscribe()
 }
@@ -260,18 +245,14 @@ func (W _git_golaxy_org_framework_plugins_broker_ISyncSubscriber) Deadline() (de
 func (W _git_golaxy_org_framework_plugins_broker_ISyncSubscriber) Done() <-chan struct{} {
 	return W.WDone()
 }
-func (W _git_golaxy_org_framework_plugins_broker_ISyncSubscriber) Err() error {
-	return W.WErr()
-}
+func (W _git_golaxy_org_framework_plugins_broker_ISyncSubscriber) Err() error { return W.WErr() }
 func (W _git_golaxy_org_framework_plugins_broker_ISyncSubscriber) Next() (broker.IEvent, error) {
 	return W.WNext()
 }
 func (W _git_golaxy_org_framework_plugins_broker_ISyncSubscriber) Pattern() string {
 	return W.WPattern()
 }
-func (W _git_golaxy_org_framework_plugins_broker_ISyncSubscriber) Queue() string {
-	return W.WQueue()
-}
+func (W _git_golaxy_org_framework_plugins_broker_ISyncSubscriber) Queue() string { return W.WQueue() }
 func (W _git_golaxy_org_framework_plugins_broker_ISyncSubscriber) Unsubscribe() <-chan struct{} {
 	return W.WUnsubscribe()
 }

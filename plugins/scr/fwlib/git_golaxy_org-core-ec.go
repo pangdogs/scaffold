@@ -7,6 +7,7 @@ import (
 	"git.golaxy.org/core/event"
 	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/core/utils/iface"
+	"git.golaxy.org/core/utils/meta"
 	"git.golaxy.org/core/utils/option"
 	"git.golaxy.org/core/utils/uid"
 	"reflect"
@@ -157,57 +158,33 @@ type _git_golaxy_org_core_ec_Component struct {
 func (W _git_golaxy_org_core_ec_Component) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
-func (W _git_golaxy_org_core_ec_Component) DestroySelf() {
-	W.WDestroySelf()
-}
-func (W _git_golaxy_org_core_ec_Component) Done() <-chan struct{} {
-	return W.WDone()
-}
-func (W _git_golaxy_org_core_ec_Component) Err() error {
-	return W.WErr()
-}
+func (W _git_golaxy_org_core_ec_Component) DestroySelf()          { W.WDestroySelf() }
+func (W _git_golaxy_org_core_ec_Component) Done() <-chan struct{} { return W.WDone() }
+func (W _git_golaxy_org_core_ec_Component) Err() error            { return W.WErr() }
 func (W _git_golaxy_org_core_ec_Component) EventComponentDestroySelf() event.IEvent {
 	return W.WEventComponentDestroySelf()
 }
-func (W _git_golaxy_org_core_ec_Component) GetBuiltin() ec.BuiltinComponent {
-	return W.WGetBuiltin()
-}
+func (W _git_golaxy_org_core_ec_Component) GetBuiltin() ec.BuiltinComponent { return W.WGetBuiltin() }
 func (W _git_golaxy_org_core_ec_Component) GetConcurrentContext() iface.Cache {
 	return W.WGetConcurrentContext()
 }
 func (W _git_golaxy_org_core_ec_Component) GetCurrentContext() iface.Cache {
 	return W.WGetCurrentContext()
 }
-func (W _git_golaxy_org_core_ec_Component) GetEntity() ec.Entity {
-	return W.WGetEntity()
-}
-func (W _git_golaxy_org_core_ec_Component) GetId() uid.Id {
-	return W.WGetId()
-}
-func (W _git_golaxy_org_core_ec_Component) GetName() string {
-	return W.WGetName()
-}
-func (W _git_golaxy_org_core_ec_Component) GetNonRemovable() bool {
-	return W.WGetNonRemovable()
-}
-func (W _git_golaxy_org_core_ec_Component) GetReflected() reflect.Value {
-	return W.WGetReflected()
-}
-func (W _git_golaxy_org_core_ec_Component) GetState() ec.ComponentState {
-	return W.WGetState()
-}
+func (W _git_golaxy_org_core_ec_Component) GetEntity() ec.Entity        { return W.WGetEntity() }
+func (W _git_golaxy_org_core_ec_Component) GetId() uid.Id               { return W.WGetId() }
+func (W _git_golaxy_org_core_ec_Component) GetName() string             { return W.WGetName() }
+func (W _git_golaxy_org_core_ec_Component) GetNonRemovable() bool       { return W.WGetNonRemovable() }
+func (W _git_golaxy_org_core_ec_Component) GetReflected() reflect.Value { return W.WGetReflected() }
+func (W _git_golaxy_org_core_ec_Component) GetState() ec.ComponentState { return W.WGetState() }
 func (W _git_golaxy_org_core_ec_Component) String() string {
 	if W.WString == nil {
 		return ""
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_ec_Component) Terminated() <-chan struct{} {
-	return W.WTerminated()
-}
-func (W _git_golaxy_org_core_ec_Component) Value(key any) any {
-	return W.WValue(key)
-}
+func (W _git_golaxy_org_core_ec_Component) Terminated() <-chan struct{} { return W.WTerminated() }
+func (W _git_golaxy_org_core_ec_Component) Value(key any) any           { return W.WValue(key) }
 
 // _git_golaxy_org_core_ec_ComponentPT is an interface wrapper for ComponentPT type
 type _git_golaxy_org_core_ec_ComponentPT struct {
@@ -217,15 +194,9 @@ type _git_golaxy_org_core_ec_ComponentPT struct {
 	WPrototype  func() string
 }
 
-func (W _git_golaxy_org_core_ec_ComponentPT) Construct() ec.Component {
-	return W.WConstruct()
-}
-func (W _git_golaxy_org_core_ec_ComponentPT) InstanceRT() reflect.Type {
-	return W.WInstanceRT()
-}
-func (W _git_golaxy_org_core_ec_ComponentPT) Prototype() string {
-	return W.WPrototype()
-}
+func (W _git_golaxy_org_core_ec_ComponentPT) Construct() ec.Component  { return W.WConstruct() }
+func (W _git_golaxy_org_core_ec_ComponentPT) InstanceRT() reflect.Type { return W.WInstanceRT() }
+func (W _git_golaxy_org_core_ec_ComponentPT) Prototype() string        { return W.WPrototype() }
 
 // _git_golaxy_org_core_ec_ConcurrentEntity is an interface wrapper for ConcurrentEntity type
 type _git_golaxy_org_core_ec_ConcurrentEntity struct {
@@ -244,21 +215,13 @@ type _git_golaxy_org_core_ec_ConcurrentEntity struct {
 func (W _git_golaxy_org_core_ec_ConcurrentEntity) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
-func (W _git_golaxy_org_core_ec_ConcurrentEntity) Done() <-chan struct{} {
-	return W.WDone()
-}
-func (W _git_golaxy_org_core_ec_ConcurrentEntity) Err() error {
-	return W.WErr()
-}
+func (W _git_golaxy_org_core_ec_ConcurrentEntity) Done() <-chan struct{} { return W.WDone() }
+func (W _git_golaxy_org_core_ec_ConcurrentEntity) Err() error            { return W.WErr() }
 func (W _git_golaxy_org_core_ec_ConcurrentEntity) GetConcurrentContext() iface.Cache {
 	return W.WGetConcurrentContext()
 }
-func (W _git_golaxy_org_core_ec_ConcurrentEntity) GetId() uid.Id {
-	return W.WGetId()
-}
-func (W _git_golaxy_org_core_ec_ConcurrentEntity) GetPT() ec.EntityPT {
-	return W.WGetPT()
-}
+func (W _git_golaxy_org_core_ec_ConcurrentEntity) GetId() uid.Id      { return W.WGetId() }
+func (W _git_golaxy_org_core_ec_ConcurrentEntity) GetPT() ec.EntityPT { return W.WGetPT() }
 func (W _git_golaxy_org_core_ec_ConcurrentEntity) String() string {
 	if W.WString == nil {
 		return ""
@@ -268,9 +231,7 @@ func (W _git_golaxy_org_core_ec_ConcurrentEntity) String() string {
 func (W _git_golaxy_org_core_ec_ConcurrentEntity) Terminated() <-chan struct{} {
 	return W.WTerminated()
 }
-func (W _git_golaxy_org_core_ec_ConcurrentEntity) Value(key any) any {
-	return W.WValue(key)
-}
+func (W _git_golaxy_org_core_ec_ConcurrentEntity) Value(key any) any { return W.WValue(key) }
 
 // _git_golaxy_org_core_ec_Entity is an interface wrapper for Entity type
 type _git_golaxy_org_core_ec_Entity struct {
@@ -278,6 +239,7 @@ type _git_golaxy_org_core_ec_Entity struct {
 	WAddComponent                         func(name string, components ...ec.Component) error
 	WContainsComponent                    func(name string) bool
 	WContainsComponentById                func(id uid.Id) bool
+	WContainsComponentByPT                func(prototype string) bool
 	WCountComponents                      func() int
 	WDeadline                             func() (deadline time.Time, ok bool)
 	WDestroySelf                          func()
@@ -294,12 +256,13 @@ type _git_golaxy_org_core_ec_Entity struct {
 	WFilterComponents                     func(fun generic.Func1[ec.Component, bool]) []ec.Component
 	WGetComponent                         func(name string) ec.Component
 	WGetComponentById                     func(id uid.Id) ec.Component
+	WGetComponentByPT                     func(prototype string) ec.Component
 	WGetComponents                        func() []ec.Component
 	WGetConcurrentContext                 func() iface.Cache
 	WGetCurrentContext                    func() iface.Cache
 	WGetId                                func() uid.Id
 	WGetInstanceFaceCache                 func() iface.Cache
-	WGetMeta                              func() generic.SliceMap[string, any]
+	WGetMeta                              func() meta.Meta
 	WGetPT                                func() ec.EntityPT
 	WGetReflected                         func() reflect.Value
 	WGetScope                             func() ec.Scope
@@ -324,21 +287,16 @@ func (W _git_golaxy_org_core_ec_Entity) ContainsComponent(name string) bool {
 func (W _git_golaxy_org_core_ec_Entity) ContainsComponentById(id uid.Id) bool {
 	return W.WContainsComponentById(id)
 }
-func (W _git_golaxy_org_core_ec_Entity) CountComponents() int {
-	return W.WCountComponents()
+func (W _git_golaxy_org_core_ec_Entity) ContainsComponentByPT(prototype string) bool {
+	return W.WContainsComponentByPT(prototype)
 }
+func (W _git_golaxy_org_core_ec_Entity) CountComponents() int { return W.WCountComponents() }
 func (W _git_golaxy_org_core_ec_Entity) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
-func (W _git_golaxy_org_core_ec_Entity) DestroySelf() {
-	W.WDestroySelf()
-}
-func (W _git_golaxy_org_core_ec_Entity) Done() <-chan struct{} {
-	return W.WDone()
-}
-func (W _git_golaxy_org_core_ec_Entity) Err() error {
-	return W.WErr()
-}
+func (W _git_golaxy_org_core_ec_Entity) DestroySelf()          { W.WDestroySelf() }
+func (W _git_golaxy_org_core_ec_Entity) Done() <-chan struct{} { return W.WDone() }
+func (W _git_golaxy_org_core_ec_Entity) Err() error            { return W.WErr() }
 func (W _git_golaxy_org_core_ec_Entity) EventComponentMgrAddComponents() event.IEvent {
 	return W.WEventComponentMgrAddComponents()
 }
@@ -372,36 +330,25 @@ func (W _git_golaxy_org_core_ec_Entity) GetComponent(name string) ec.Component {
 func (W _git_golaxy_org_core_ec_Entity) GetComponentById(id uid.Id) ec.Component {
 	return W.WGetComponentById(id)
 }
-func (W _git_golaxy_org_core_ec_Entity) GetComponents() []ec.Component {
-	return W.WGetComponents()
+func (W _git_golaxy_org_core_ec_Entity) GetComponentByPT(prototype string) ec.Component {
+	return W.WGetComponentByPT(prototype)
 }
+func (W _git_golaxy_org_core_ec_Entity) GetComponents() []ec.Component { return W.WGetComponents() }
 func (W _git_golaxy_org_core_ec_Entity) GetConcurrentContext() iface.Cache {
 	return W.WGetConcurrentContext()
 }
 func (W _git_golaxy_org_core_ec_Entity) GetCurrentContext() iface.Cache {
 	return W.WGetCurrentContext()
 }
-func (W _git_golaxy_org_core_ec_Entity) GetId() uid.Id {
-	return W.WGetId()
-}
+func (W _git_golaxy_org_core_ec_Entity) GetId() uid.Id { return W.WGetId() }
 func (W _git_golaxy_org_core_ec_Entity) GetInstanceFaceCache() iface.Cache {
 	return W.WGetInstanceFaceCache()
 }
-func (W _git_golaxy_org_core_ec_Entity) GetMeta() generic.SliceMap[string, any] {
-	return W.WGetMeta()
-}
-func (W _git_golaxy_org_core_ec_Entity) GetPT() ec.EntityPT {
-	return W.WGetPT()
-}
-func (W _git_golaxy_org_core_ec_Entity) GetReflected() reflect.Value {
-	return W.WGetReflected()
-}
-func (W _git_golaxy_org_core_ec_Entity) GetScope() ec.Scope {
-	return W.WGetScope()
-}
-func (W _git_golaxy_org_core_ec_Entity) GetState() ec.EntityState {
-	return W.WGetState()
-}
+func (W _git_golaxy_org_core_ec_Entity) GetMeta() meta.Meta          { return W.WGetMeta() }
+func (W _git_golaxy_org_core_ec_Entity) GetPT() ec.EntityPT          { return W.WGetPT() }
+func (W _git_golaxy_org_core_ec_Entity) GetReflected() reflect.Value { return W.WGetReflected() }
+func (W _git_golaxy_org_core_ec_Entity) GetScope() ec.Scope          { return W.WGetScope() }
+func (W _git_golaxy_org_core_ec_Entity) GetState() ec.EntityState    { return W.WGetState() }
 func (W _git_golaxy_org_core_ec_Entity) GetTreeNodeParent() (ec.Entity, bool) {
 	return W.WGetTreeNodeParent()
 }
@@ -411,12 +358,8 @@ func (W _git_golaxy_org_core_ec_Entity) GetTreeNodeState() ec.TreeNodeState {
 func (W _git_golaxy_org_core_ec_Entity) RangeComponents(fun generic.Func1[ec.Component, bool]) {
 	W.WRangeComponents(fun)
 }
-func (W _git_golaxy_org_core_ec_Entity) RemoveComponent(name string) {
-	W.WRemoveComponent(name)
-}
-func (W _git_golaxy_org_core_ec_Entity) RemoveComponentById(id uid.Id) {
-	W.WRemoveComponentById(id)
-}
+func (W _git_golaxy_org_core_ec_Entity) RemoveComponent(name string)   { W.WRemoveComponent(name) }
+func (W _git_golaxy_org_core_ec_Entity) RemoveComponentById(id uid.Id) { W.WRemoveComponentById(id) }
 func (W _git_golaxy_org_core_ec_Entity) ReversedRangeComponents(fun generic.Func1[ec.Component, bool]) {
 	W.WReversedRangeComponents(fun)
 }
@@ -426,12 +369,8 @@ func (W _git_golaxy_org_core_ec_Entity) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_ec_Entity) Terminated() <-chan struct{} {
-	return W.WTerminated()
-}
-func (W _git_golaxy_org_core_ec_Entity) Value(key any) any {
-	return W.WValue(key)
-}
+func (W _git_golaxy_org_core_ec_Entity) Terminated() <-chan struct{} { return W.WTerminated() }
+func (W _git_golaxy_org_core_ec_Entity) Value(key any) any           { return W.WValue(key) }
 
 // _git_golaxy_org_core_ec_EntityPT is an interface wrapper for EntityPT type
 type _git_golaxy_org_core_ec_EntityPT struct {
@@ -454,30 +393,16 @@ func (W _git_golaxy_org_core_ec_EntityPT) Component(idx int) ec.BuiltinComponent
 func (W _git_golaxy_org_core_ec_EntityPT) ComponentAwakeOnFirstTouch() *bool {
 	return W.WComponentAwakeOnFirstTouch()
 }
-func (W _git_golaxy_org_core_ec_EntityPT) ComponentUniqueID() *bool {
-	return W.WComponentUniqueID()
-}
-func (W _git_golaxy_org_core_ec_EntityPT) Components() []ec.BuiltinComponent {
-	return W.WComponents()
-}
+func (W _git_golaxy_org_core_ec_EntityPT) ComponentUniqueID() *bool          { return W.WComponentUniqueID() }
+func (W _git_golaxy_org_core_ec_EntityPT) Components() []ec.BuiltinComponent { return W.WComponents() }
 func (W _git_golaxy_org_core_ec_EntityPT) Construct(settings ...option.Setting[ec.EntityOptions]) ec.Entity {
 	return W.WConstruct(settings...)
 }
-func (W _git_golaxy_org_core_ec_EntityPT) CountComponents() int {
-	return W.WCountComponents()
-}
-func (W _git_golaxy_org_core_ec_EntityPT) Extra() generic.SliceMap[string, any] {
-	return W.WExtra()
-}
-func (W _git_golaxy_org_core_ec_EntityPT) InstanceRT() reflect.Type {
-	return W.WInstanceRT()
-}
-func (W _git_golaxy_org_core_ec_EntityPT) Prototype() string {
-	return W.WPrototype()
-}
-func (W _git_golaxy_org_core_ec_EntityPT) Scope() *ec.Scope {
-	return W.WScope()
-}
+func (W _git_golaxy_org_core_ec_EntityPT) CountComponents() int                 { return W.WCountComponents() }
+func (W _git_golaxy_org_core_ec_EntityPT) Extra() generic.SliceMap[string, any] { return W.WExtra() }
+func (W _git_golaxy_org_core_ec_EntityPT) InstanceRT() reflect.Type             { return W.WInstanceRT() }
+func (W _git_golaxy_org_core_ec_EntityPT) Prototype() string                    { return W.WPrototype() }
+func (W _git_golaxy_org_core_ec_EntityPT) Scope() *ec.Scope                     { return W.WScope() }
 
 // _git_golaxy_org_core_ec_EventComponentDestroySelf is an interface wrapper for EventComponentDestroySelf type
 type _git_golaxy_org_core_ec_EventComponentDestroySelf struct {

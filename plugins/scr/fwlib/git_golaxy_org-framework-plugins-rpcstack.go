@@ -3,8 +3,6 @@
 package fwlib
 
 import (
-	"git.golaxy.org/core/utils/generic"
-	"git.golaxy.org/framework/net/gap/variant"
 	"git.golaxy.org/framework/plugins/rpcstack"
 	"reflect"
 )
@@ -23,6 +21,7 @@ func init() {
 		"Call":      reflect.ValueOf((*rpcstack.Call)(nil)),
 		"CallChain": reflect.ValueOf((*rpcstack.CallChain)(nil)),
 		"IRPCStack": reflect.ValueOf((*rpcstack.IRPCStack)(nil)),
+		"Variables": reflect.ValueOf((*rpcstack.Variables)(nil)),
 
 		// interface wrapper definitions
 		"_IRPCStack": reflect.ValueOf((*_git_golaxy_org_framework_plugins_rpcstack_IRPCStack)(nil)),
@@ -32,13 +31,13 @@ func init() {
 // _git_golaxy_org_framework_plugins_rpcstack_IRPCStack is an interface wrapper for IRPCStack type
 type _git_golaxy_org_framework_plugins_rpcstack_IRPCStack struct {
 	IValue     interface{}
-	WCallChain func() variant.CallChain
-	WVariables func() *generic.UnorderedSliceMap[string, any]
+	WCallChain func() rpcstack.CallChain
+	WVariables func() *rpcstack.Variables
 }
 
-func (W _git_golaxy_org_framework_plugins_rpcstack_IRPCStack) CallChain() variant.CallChain {
+func (W _git_golaxy_org_framework_plugins_rpcstack_IRPCStack) CallChain() rpcstack.CallChain {
 	return W.WCallChain()
 }
-func (W _git_golaxy_org_framework_plugins_rpcstack_IRPCStack) Variables() *generic.UnorderedSliceMap[string, any] {
+func (W _git_golaxy_org_framework_plugins_rpcstack_IRPCStack) Variables() *rpcstack.Variables {
 	return W.WVariables()
 }

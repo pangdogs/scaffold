@@ -4,9 +4,9 @@ package fwlib
 
 import (
 	"git.golaxy.org/core/utils/async"
-	"git.golaxy.org/framework/net/gap/variant"
 	"git.golaxy.org/framework/plugins/rpc"
 	"git.golaxy.org/framework/plugins/rpc/callpath"
+	"git.golaxy.org/framework/plugins/rpcstack"
 	"reflect"
 )
 
@@ -39,13 +39,13 @@ func init() {
 // _git_golaxy_org_framework_plugins_rpc_IRPC is an interface wrapper for IRPC type
 type _git_golaxy_org_framework_plugins_rpc_IRPC struct {
 	IValue     interface{}
-	WOnewayRPC func(dst string, cc variant.CallChain, cp callpath.CallPath, args ...any) error
-	WRPC       func(dst string, cc variant.CallChain, cp callpath.CallPath, args ...any) async.AsyncRetT[any]
+	WOnewayRPC func(dst string, cc rpcstack.CallChain, cp callpath.CallPath, args ...any) error
+	WRPC       func(dst string, cc rpcstack.CallChain, cp callpath.CallPath, args ...any) async.AsyncRet
 }
 
-func (W _git_golaxy_org_framework_plugins_rpc_IRPC) OnewayRPC(dst string, cc variant.CallChain, cp callpath.CallPath, args ...any) error {
+func (W _git_golaxy_org_framework_plugins_rpc_IRPC) OnewayRPC(dst string, cc rpcstack.CallChain, cp callpath.CallPath, args ...any) error {
 	return W.WOnewayRPC(dst, cc, cp, args...)
 }
-func (W _git_golaxy_org_framework_plugins_rpc_IRPC) RPC(dst string, cc variant.CallChain, cp callpath.CallPath, args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_framework_plugins_rpc_IRPC) RPC(dst string, cc rpcstack.CallChain, cp callpath.CallPath, args ...any) async.AsyncRet {
 	return W.WRPC(dst, cc, cp, args...)
 }

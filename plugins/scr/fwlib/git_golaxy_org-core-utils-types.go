@@ -10,14 +10,20 @@ import (
 func init() {
 	Symbols["git.golaxy.org/core/utils/types/types"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"Bytes2String":     reflect.ValueOf(types.Bytes2String),
-		"FullName":         reflect.ValueOf(types.FullName),
-		"FullNameRT":       reflect.ValueOf(types.FullNameRT),
-		"Name":             reflect.ValueOf(types.Name),
-		"NameRT":           reflect.ValueOf(types.NameRT),
-		"Panic2Err":        reflect.ValueOf(types.Panic2Err),
-		"String2Bytes":     reflect.ValueOf(types.String2Bytes),
-		"WriteAnyFullName": reflect.ValueOf(types.WriteAnyFullName),
-		"WriteFullNameRT":  reflect.ValueOf(types.WriteFullNameRT),
+		"Bytes2String":    reflect.ValueOf(types.Bytes2String),
+		"FullName":        reflect.ValueOf(types.FullName),
+		"FullNameRT":      reflect.ValueOf(types.FullNameRT),
+		"Name":            reflect.ValueOf(types.Name),
+		"NameRT":          reflect.ValueOf(types.NameRT),
+		"New":             reflect.ValueOf(types.New),
+		"NewCopied":       reflect.ValueOf(types.NewCopied),
+		"NewCopiedRT":     reflect.ValueOf(types.NewCopiedRT),
+		"NewRT":           reflect.ValueOf(types.NewRT),
+		"Panic2Err":       reflect.ValueOf(types.Panic2Err),
+		"String2Bytes":    reflect.ValueOf(types.String2Bytes),
+		"WriteFullName":   reflect.ValueOf(types.WriteFullName),
+		"WriteFullNameRT": reflect.ValueOf(types.WriteFullNameRT),
+		"Zero":            reflect.ValueOf(types.Zero),
+		"ZeroRT":          reflect.ValueOf(types.ZeroRT),
 	}
 }

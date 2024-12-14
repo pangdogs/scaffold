@@ -58,18 +58,12 @@ type _git_golaxy_org_core_event_IEventCtrl struct {
 	WOpen  func()
 }
 
-func (W _git_golaxy_org_core_event_IEventCtrl) Clean() {
-	W.WClean()
-}
-func (W _git_golaxy_org_core_event_IEventCtrl) Close() {
-	W.WClose()
-}
+func (W _git_golaxy_org_core_event_IEventCtrl) Clean() { W.WClean() }
+func (W _git_golaxy_org_core_event_IEventCtrl) Close() { W.WClose() }
 func (W _git_golaxy_org_core_event_IEventCtrl) Init(autoRecover bool, reportError chan error, recursion event.EventRecursion) {
 	W.WInit(autoRecover, reportError, recursion)
 }
-func (W _git_golaxy_org_core_event_IEventCtrl) Open() {
-	W.WOpen()
-}
+func (W _git_golaxy_org_core_event_IEventCtrl) Open() { W.WOpen() }
 
 // _git_golaxy_org_core_event_IEventTab is an interface wrapper for IEventTab type
 type _git_golaxy_org_core_event_IEventTab struct {
@@ -78,9 +72,5 @@ type _git_golaxy_org_core_event_IEventTab struct {
 	WEvent func(id uint64) event.IEvent
 }
 
-func (W _git_golaxy_org_core_event_IEventTab) Ctrl() event.IEventCtrl {
-	return W.WCtrl()
-}
-func (W _git_golaxy_org_core_event_IEventTab) Event(id uint64) event.IEvent {
-	return W.WEvent(id)
-}
+func (W _git_golaxy_org_core_event_IEventTab) Ctrl() event.IEventCtrl       { return W.WCtrl() }
+func (W _git_golaxy_org_core_event_IEventTab) Event(id uint64) event.IEvent { return W.WEvent(id) }

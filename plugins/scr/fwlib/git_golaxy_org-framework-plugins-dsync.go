@@ -19,7 +19,9 @@ func init() {
 		"With":           reflect.ValueOf(&dsync.With).Elem(),
 
 		// type definitions
+		"DelayFunc":          reflect.ValueOf((*dsync.DelayFunc)(nil)),
 		"DistMutexOptions":   reflect.ValueOf((*dsync.DistMutexOptions)(nil)),
+		"GenValueFunc":       reflect.ValueOf((*dsync.GenValueFunc)(nil)),
 		"IDistMutex":         reflect.ValueOf((*dsync.IDistMutex)(nil)),
 		"IDistMutexSettings": reflect.ValueOf((*dsync.IDistMutexSettings)(nil)),
 		"IDistSync":          reflect.ValueOf((*dsync.IDistSync)(nil)),
@@ -49,21 +51,15 @@ func (W _git_golaxy_org_framework_plugins_dsync_IDistMutex) Extend(ctx context.C
 func (W _git_golaxy_org_framework_plugins_dsync_IDistMutex) Lock(ctx context.Context) error {
 	return W.WLock(ctx)
 }
-func (W _git_golaxy_org_framework_plugins_dsync_IDistMutex) Name() string {
-	return W.WName()
-}
+func (W _git_golaxy_org_framework_plugins_dsync_IDistMutex) Name() string { return W.WName() }
 func (W _git_golaxy_org_framework_plugins_dsync_IDistMutex) Unlock(ctx context.Context) error {
 	return W.WUnlock(ctx)
 }
-func (W _git_golaxy_org_framework_plugins_dsync_IDistMutex) Until() time.Time {
-	return W.WUntil()
-}
+func (W _git_golaxy_org_framework_plugins_dsync_IDistMutex) Until() time.Time { return W.WUntil() }
 func (W _git_golaxy_org_framework_plugins_dsync_IDistMutex) Valid(ctx context.Context) (bool, error) {
 	return W.WValid(ctx)
 }
-func (W _git_golaxy_org_framework_plugins_dsync_IDistMutex) Value() string {
-	return W.WValue()
-}
+func (W _git_golaxy_org_framework_plugins_dsync_IDistMutex) Value() string { return W.WValue() }
 
 // _git_golaxy_org_framework_plugins_dsync_IDistMutexSettings is an interface wrapper for IDistMutexSettings type
 type _git_golaxy_org_framework_plugins_dsync_IDistMutexSettings struct {

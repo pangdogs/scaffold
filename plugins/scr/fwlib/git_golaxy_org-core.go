@@ -43,6 +43,7 @@ func init() {
 
 		// type definitions
 		"AwaitDirector":                               reflect.ValueOf((*core.AwaitDirector)(nil)),
+		"CustomGC":                                    reflect.ValueOf((*core.CustomGC)(nil)),
 		"EntityCreator":                               reflect.ValueOf((*core.EntityCreator)(nil)),
 		"EntityPTCreator":                             reflect.ValueOf((*core.EntityPTCreator)(nil)),
 		"LifecycleComponentAwake":                     reflect.ValueOf((*core.LifecycleComponentAwake)(nil)),
@@ -94,9 +95,7 @@ type _git_golaxy_org_core_LifecycleComponentAwake struct {
 	WAwake func()
 }
 
-func (W _git_golaxy_org_core_LifecycleComponentAwake) Awake() {
-	W.WAwake()
-}
+func (W _git_golaxy_org_core_LifecycleComponentAwake) Awake() { W.WAwake() }
 
 // _git_golaxy_org_core_LifecycleComponentDispose is an interface wrapper for LifecycleComponentDispose type
 type _git_golaxy_org_core_LifecycleComponentDispose struct {
@@ -104,9 +103,7 @@ type _git_golaxy_org_core_LifecycleComponentDispose struct {
 	WDispose func()
 }
 
-func (W _git_golaxy_org_core_LifecycleComponentDispose) Dispose() {
-	W.WDispose()
-}
+func (W _git_golaxy_org_core_LifecycleComponentDispose) Dispose() { W.WDispose() }
 
 // _git_golaxy_org_core_LifecycleComponentLateUpdate is an interface wrapper for LifecycleComponentLateUpdate type
 type _git_golaxy_org_core_LifecycleComponentLateUpdate struct {
@@ -114,9 +111,7 @@ type _git_golaxy_org_core_LifecycleComponentLateUpdate struct {
 	WLateUpdate func()
 }
 
-func (W _git_golaxy_org_core_LifecycleComponentLateUpdate) LateUpdate() {
-	W.WLateUpdate()
-}
+func (W _git_golaxy_org_core_LifecycleComponentLateUpdate) LateUpdate() { W.WLateUpdate() }
 
 // _git_golaxy_org_core_LifecycleComponentShut is an interface wrapper for LifecycleComponentShut type
 type _git_golaxy_org_core_LifecycleComponentShut struct {
@@ -124,9 +119,7 @@ type _git_golaxy_org_core_LifecycleComponentShut struct {
 	WShut  func()
 }
 
-func (W _git_golaxy_org_core_LifecycleComponentShut) Shut() {
-	W.WShut()
-}
+func (W _git_golaxy_org_core_LifecycleComponentShut) Shut() { W.WShut() }
 
 // _git_golaxy_org_core_LifecycleComponentStart is an interface wrapper for LifecycleComponentStart type
 type _git_golaxy_org_core_LifecycleComponentStart struct {
@@ -134,9 +127,7 @@ type _git_golaxy_org_core_LifecycleComponentStart struct {
 	WStart func()
 }
 
-func (W _git_golaxy_org_core_LifecycleComponentStart) Start() {
-	W.WStart()
-}
+func (W _git_golaxy_org_core_LifecycleComponentStart) Start() { W.WStart() }
 
 // _git_golaxy_org_core_LifecycleComponentUpdate is an interface wrapper for LifecycleComponentUpdate type
 type _git_golaxy_org_core_LifecycleComponentUpdate struct {
@@ -144,9 +135,7 @@ type _git_golaxy_org_core_LifecycleComponentUpdate struct {
 	WUpdate func()
 }
 
-func (W _git_golaxy_org_core_LifecycleComponentUpdate) Update() {
-	W.WUpdate()
-}
+func (W _git_golaxy_org_core_LifecycleComponentUpdate) Update() { W.WUpdate() }
 
 // _git_golaxy_org_core_LifecycleEntityAwake is an interface wrapper for LifecycleEntityAwake type
 type _git_golaxy_org_core_LifecycleEntityAwake struct {
@@ -154,9 +143,7 @@ type _git_golaxy_org_core_LifecycleEntityAwake struct {
 	WAwake func()
 }
 
-func (W _git_golaxy_org_core_LifecycleEntityAwake) Awake() {
-	W.WAwake()
-}
+func (W _git_golaxy_org_core_LifecycleEntityAwake) Awake() { W.WAwake() }
 
 // _git_golaxy_org_core_LifecycleEntityDispose is an interface wrapper for LifecycleEntityDispose type
 type _git_golaxy_org_core_LifecycleEntityDispose struct {
@@ -164,9 +151,7 @@ type _git_golaxy_org_core_LifecycleEntityDispose struct {
 	WDispose func()
 }
 
-func (W _git_golaxy_org_core_LifecycleEntityDispose) Dispose() {
-	W.WDispose()
-}
+func (W _git_golaxy_org_core_LifecycleEntityDispose) Dispose() { W.WDispose() }
 
 // _git_golaxy_org_core_LifecycleEntityLateUpdate is an interface wrapper for LifecycleEntityLateUpdate type
 type _git_golaxy_org_core_LifecycleEntityLateUpdate struct {
@@ -174,9 +159,7 @@ type _git_golaxy_org_core_LifecycleEntityLateUpdate struct {
 	WLateUpdate func()
 }
 
-func (W _git_golaxy_org_core_LifecycleEntityLateUpdate) LateUpdate() {
-	W.WLateUpdate()
-}
+func (W _git_golaxy_org_core_LifecycleEntityLateUpdate) LateUpdate() { W.WLateUpdate() }
 
 // _git_golaxy_org_core_LifecycleEntityShut is an interface wrapper for LifecycleEntityShut type
 type _git_golaxy_org_core_LifecycleEntityShut struct {
@@ -184,9 +167,7 @@ type _git_golaxy_org_core_LifecycleEntityShut struct {
 	WShut  func()
 }
 
-func (W _git_golaxy_org_core_LifecycleEntityShut) Shut() {
-	W.WShut()
-}
+func (W _git_golaxy_org_core_LifecycleEntityShut) Shut() { W.WShut() }
 
 // _git_golaxy_org_core_LifecycleEntityStart is an interface wrapper for LifecycleEntityStart type
 type _git_golaxy_org_core_LifecycleEntityStart struct {
@@ -194,9 +175,7 @@ type _git_golaxy_org_core_LifecycleEntityStart struct {
 	WStart func()
 }
 
-func (W _git_golaxy_org_core_LifecycleEntityStart) Start() {
-	W.WStart()
-}
+func (W _git_golaxy_org_core_LifecycleEntityStart) Start() { W.WStart() }
 
 // _git_golaxy_org_core_LifecycleEntityUpdate is an interface wrapper for LifecycleEntityUpdate type
 type _git_golaxy_org_core_LifecycleEntityUpdate struct {
@@ -204,9 +183,7 @@ type _git_golaxy_org_core_LifecycleEntityUpdate struct {
 	WUpdate func()
 }
 
-func (W _git_golaxy_org_core_LifecycleEntityUpdate) Update() {
-	W.WUpdate()
-}
+func (W _git_golaxy_org_core_LifecycleEntityUpdate) Update() { W.WUpdate() }
 
 // _git_golaxy_org_core_LifecyclePluginInit is an interface wrapper for LifecyclePluginInit type
 type _git_golaxy_org_core_LifecyclePluginInit struct {
@@ -244,10 +221,10 @@ type _git_golaxy_org_core_Runtime struct {
 	WGetConcurrentContext func() iface.Cache
 	WGetCurrentContext    func() iface.Cache
 	WGetInstanceFaceCache func() iface.Cache
-	WPushCall             func(fun generic.FuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any]
-	WPushCallDelegate     func(fun generic.DelegateFuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any]
-	WPushCallVoid         func(fun generic.ActionVar0[any], args ...any) async.AsyncRetT[any]
-	WPushCallVoidDelegate func(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRetT[any]
+	WPushCall             func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
+	WPushCallDelegate     func(fun generic.DelegateFuncVar0[any, async.Ret], args ...any) async.AsyncRet
+	WPushCallVoid         func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
+	WPushCallVoidDelegate func(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRet
 	WRun                  func() <-chan struct{}
 	WTerminate            func() <-chan struct{}
 	WTerminated           func() <-chan struct{}
@@ -256,33 +233,25 @@ type _git_golaxy_org_core_Runtime struct {
 func (W _git_golaxy_org_core_Runtime) GetConcurrentContext() iface.Cache {
 	return W.WGetConcurrentContext()
 }
-func (W _git_golaxy_org_core_Runtime) GetCurrentContext() iface.Cache {
-	return W.WGetCurrentContext()
-}
+func (W _git_golaxy_org_core_Runtime) GetCurrentContext() iface.Cache { return W.WGetCurrentContext() }
 func (W _git_golaxy_org_core_Runtime) GetInstanceFaceCache() iface.Cache {
 	return W.WGetInstanceFaceCache()
 }
-func (W _git_golaxy_org_core_Runtime) PushCall(fun generic.FuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_Runtime) PushCall(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
 	return W.WPushCall(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) PushCallDelegate(fun generic.DelegateFuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_Runtime) PushCallDelegate(fun generic.DelegateFuncVar0[any, async.Ret], args ...any) async.AsyncRet {
 	return W.WPushCallDelegate(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) PushCallVoid(fun generic.ActionVar0[any], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_Runtime) PushCallVoid(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
 	return W.WPushCallVoid(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) PushCallVoidDelegate(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_Runtime) PushCallVoidDelegate(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRet {
 	return W.WPushCallVoidDelegate(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) Run() <-chan struct{} {
-	return W.WRun()
-}
-func (W _git_golaxy_org_core_Runtime) Terminate() <-chan struct{} {
-	return W.WTerminate()
-}
-func (W _git_golaxy_org_core_Runtime) Terminated() <-chan struct{} {
-	return W.WTerminated()
-}
+func (W _git_golaxy_org_core_Runtime) Run() <-chan struct{}        { return W.WRun() }
+func (W _git_golaxy_org_core_Runtime) Terminate() <-chan struct{}  { return W.WTerminate() }
+func (W _git_golaxy_org_core_Runtime) Terminated() <-chan struct{} { return W.WTerminated() }
 
 // _git_golaxy_org_core_Service is an interface wrapper for Service type
 type _git_golaxy_org_core_Service struct {
@@ -294,18 +263,10 @@ type _git_golaxy_org_core_Service struct {
 	WTerminated           func() <-chan struct{}
 }
 
-func (W _git_golaxy_org_core_Service) GetContext() service.Context {
-	return W.WGetContext()
-}
+func (W _git_golaxy_org_core_Service) GetContext() service.Context { return W.WGetContext() }
 func (W _git_golaxy_org_core_Service) GetInstanceFaceCache() iface.Cache {
 	return W.WGetInstanceFaceCache()
 }
-func (W _git_golaxy_org_core_Service) Run() <-chan struct{} {
-	return W.WRun()
-}
-func (W _git_golaxy_org_core_Service) Terminate() <-chan struct{} {
-	return W.WTerminate()
-}
-func (W _git_golaxy_org_core_Service) Terminated() <-chan struct{} {
-	return W.WTerminated()
-}
+func (W _git_golaxy_org_core_Service) Run() <-chan struct{}        { return W.WRun() }
+func (W _git_golaxy_org_core_Service) Terminate() <-chan struct{}  { return W.WTerminate() }
+func (W _git_golaxy_org_core_Service) Terminated() <-chan struct{} { return W.WTerminated() }

@@ -28,7 +28,7 @@ import (
 	"git.golaxy.org/scaffold/plugins/scr/dynamic"
 	"git.golaxy.org/scaffold/plugins/scr/fwlib"
 	"github.com/fsnotify/fsnotify"
-	"github.com/traefik/yaegi/stdlib"
+	"github.com/pangdogs/yaegi/stdlib"
 	"sync/atomic"
 	"time"
 )

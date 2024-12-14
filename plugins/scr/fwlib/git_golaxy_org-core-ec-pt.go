@@ -57,9 +57,7 @@ func (W _git_golaxy_org_core_ec_pt_ComponentLib) Range(fun generic.Func1[ec.Comp
 func (W _git_golaxy_org_core_ec_pt_ComponentLib) ReversedRange(fun generic.Func1[ec.ComponentPT, bool]) {
 	W.WReversedRange(fun)
 }
-func (W _git_golaxy_org_core_ec_pt_ComponentLib) Undeclare(prototype string) {
-	W.WUndeclare(prototype)
-}
+func (W _git_golaxy_org_core_ec_pt_ComponentLib) Undeclare(prototype string) { W.WUndeclare(prototype) }
 
 // _git_golaxy_org_core_ec_pt_EntityLib is an interface wrapper for EntityLib type
 type _git_golaxy_org_core_ec_pt_EntityLib struct {
@@ -83,9 +81,7 @@ func (W _git_golaxy_org_core_ec_pt_EntityLib) Get(prototype string) (ec.EntityPT
 func (W _git_golaxy_org_core_ec_pt_EntityLib) GetComponentLib() pt.ComponentLib {
 	return W.WGetComponentLib()
 }
-func (W _git_golaxy_org_core_ec_pt_EntityLib) GetEntityLib() pt.EntityLib {
-	return W.WGetEntityLib()
-}
+func (W _git_golaxy_org_core_ec_pt_EntityLib) GetEntityLib() pt.EntityLib { return W.WGetEntityLib() }
 func (W _git_golaxy_org_core_ec_pt_EntityLib) Range(fun generic.Func1[ec.EntityPT, bool]) {
 	W.WRange(fun)
 }
@@ -95,9 +91,7 @@ func (W _git_golaxy_org_core_ec_pt_EntityLib) Redeclare(prototype any, comps ...
 func (W _git_golaxy_org_core_ec_pt_EntityLib) ReversedRange(fun generic.Func1[ec.EntityPT, bool]) {
 	W.WReversedRange(fun)
 }
-func (W _git_golaxy_org_core_ec_pt_EntityLib) Undeclare(prototype string) {
-	W.WUndeclare(prototype)
-}
+func (W _git_golaxy_org_core_ec_pt_EntityLib) Undeclare(prototype string) { W.WUndeclare(prototype) }
 
 // _git_golaxy_org_core_ec_pt_EntityPTProvider is an interface wrapper for EntityPTProvider type
 type _git_golaxy_org_core_ec_pt_EntityPTProvider struct {

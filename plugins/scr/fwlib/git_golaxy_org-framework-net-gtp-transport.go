@@ -33,16 +33,32 @@ func init() {
 		"NewUnsequencedSynchronizer": reflect.ValueOf(transport.NewUnsequencedSynchronizer),
 
 		// type definitions
-		"CtrlProtocol":            reflect.ValueOf((*transport.CtrlProtocol)(nil)),
-		"EventDispatcher":         reflect.ValueOf((*transport.EventDispatcher)(nil)),
-		"HandshakeProtocol":       reflect.ValueOf((*transport.HandshakeProtocol)(nil)),
-		"ISynchronizer":           reflect.ValueOf((*transport.ISynchronizer)(nil)),
-		"Retry":                   reflect.ValueOf((*transport.Retry)(nil)),
-		"RstError":                reflect.ValueOf((*transport.RstError)(nil)),
-		"SequencedSynchronizer":   reflect.ValueOf((*transport.SequencedSynchronizer)(nil)),
-		"TransProtocol":           reflect.ValueOf((*transport.TransProtocol)(nil)),
-		"Transceiver":             reflect.ValueOf((*transport.Transceiver)(nil)),
-		"UnsequencedSynchronizer": reflect.ValueOf((*transport.UnsequencedSynchronizer)(nil)),
+		"AuthAccept":                reflect.ValueOf((*transport.AuthAccept)(nil)),
+		"ChangeCipherSpecAccept":    reflect.ValueOf((*transport.ChangeCipherSpecAccept)(nil)),
+		"ChangeCipherSpecFin":       reflect.ValueOf((*transport.ChangeCipherSpecFin)(nil)),
+		"ContinueAccept":            reflect.ValueOf((*transport.ContinueAccept)(nil)),
+		"CtrlProtocol":              reflect.ValueOf((*transport.CtrlProtocol)(nil)),
+		"ECDHESecretKeyExchangeFin": reflect.ValueOf((*transport.ECDHESecretKeyExchangeFin)(nil)),
+		"ErrorHandler":              reflect.ValueOf((*transport.ErrorHandler)(nil)),
+		"EventDispatcher":           reflect.ValueOf((*transport.EventDispatcher)(nil)),
+		"EventHandler":              reflect.ValueOf((*transport.EventHandler)(nil)),
+		"FinishedAccept":            reflect.ValueOf((*transport.FinishedAccept)(nil)),
+		"HandshakeProtocol":         reflect.ValueOf((*transport.HandshakeProtocol)(nil)),
+		"HeartbeatHandler":          reflect.ValueOf((*transport.HeartbeatHandler)(nil)),
+		"HelloAccept":               reflect.ValueOf((*transport.HelloAccept)(nil)),
+		"HelloFin":                  reflect.ValueOf((*transport.HelloFin)(nil)),
+		"IEvent":                    reflect.ValueOf((*transport.IEvent)(nil)),
+		"ISynchronizer":             reflect.ValueOf((*transport.ISynchronizer)(nil)),
+		"PayloadHandler":            reflect.ValueOf((*transport.PayloadHandler)(nil)),
+		"Retry":                     reflect.ValueOf((*transport.Retry)(nil)),
+		"RstError":                  reflect.ValueOf((*transport.RstError)(nil)),
+		"RstHandler":                reflect.ValueOf((*transport.RstHandler)(nil)),
+		"SecretKeyExchangeAccept":   reflect.ValueOf((*transport.SecretKeyExchangeAccept)(nil)),
+		"SequencedSynchronizer":     reflect.ValueOf((*transport.SequencedSynchronizer)(nil)),
+		"SyncTimeHandler":           reflect.ValueOf((*transport.SyncTimeHandler)(nil)),
+		"TransProtocol":             reflect.ValueOf((*transport.TransProtocol)(nil)),
+		"Transceiver":               reflect.ValueOf((*transport.Transceiver)(nil)),
+		"UnsequencedSynchronizer":   reflect.ValueOf((*transport.UnsequencedSynchronizer)(nil)),
 
 		// interface wrapper definitions
 		"_ISynchronizer": reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_transport_ISynchronizer)(nil)),
@@ -65,21 +81,13 @@ type _git_golaxy_org_framework_net_gtp_transport_ISynchronizer struct {
 	WWriteTo         func(w io.Writer) (n int64, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Ack(ack uint32) {
-	W.WAck(ack)
-}
+func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Ack(ack uint32) { W.WAck(ack) }
 func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) AckSeq() uint32 {
 	return W.WAckSeq()
 }
-func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Cached() int {
-	return W.WCached()
-}
-func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Cap() int {
-	return W.WCap()
-}
-func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Clean() {
-	W.WClean()
-}
+func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Cached() int { return W.WCached() }
+func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Cap() int    { return W.WCap() }
+func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Clean()      { W.WClean() }
 func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) RecvSeq() uint32 {
 	return W.WRecvSeq()
 }

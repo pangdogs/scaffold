@@ -50,74 +50,56 @@ func init() {
 type _git_golaxy_org_framework_net_gap_IMsgCreator struct {
 	IValue     interface{}
 	WDeclare   func(msg gap.Msg)
-	WNew       func(msgId uint32) (gap.Msg, error)
-	WUndeclare func(msgId uint32)
+	WNew       func(msgId gap.MsgId) (gap.Msg, error)
+	WUndeclare func(msgId gap.MsgId)
 }
 
-func (W _git_golaxy_org_framework_net_gap_IMsgCreator) Declare(msg gap.Msg) {
-	W.WDeclare(msg)
-}
-func (W _git_golaxy_org_framework_net_gap_IMsgCreator) New(msgId uint32) (gap.Msg, error) {
+func (W _git_golaxy_org_framework_net_gap_IMsgCreator) Declare(msg gap.Msg) { W.WDeclare(msg) }
+func (W _git_golaxy_org_framework_net_gap_IMsgCreator) New(msgId gap.MsgId) (gap.Msg, error) {
 	return W.WNew(msgId)
 }
-func (W _git_golaxy_org_framework_net_gap_IMsgCreator) Undeclare(msgId uint32) {
+func (W _git_golaxy_org_framework_net_gap_IMsgCreator) Undeclare(msgId gap.MsgId) {
 	W.WUndeclare(msgId)
 }
 
 // _git_golaxy_org_framework_net_gap_Msg is an interface wrapper for Msg type
 type _git_golaxy_org_framework_net_gap_Msg struct {
 	IValue interface{}
-	WMsgId func() uint32
+	WMsgId func() gap.MsgId
 	WRead  func(p []byte) (n int, err error)
 	WSize  func() int
 	WWrite func(p []byte) (n int, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gap_Msg) MsgId() uint32 {
-	return W.WMsgId()
-}
-func (W _git_golaxy_org_framework_net_gap_Msg) Read(p []byte) (n int, err error) {
-	return W.WRead(p)
-}
-func (W _git_golaxy_org_framework_net_gap_Msg) Size() int {
-	return W.WSize()
-}
-func (W _git_golaxy_org_framework_net_gap_Msg) Write(p []byte) (n int, err error) {
-	return W.WWrite(p)
-}
+func (W _git_golaxy_org_framework_net_gap_Msg) MsgId() gap.MsgId                  { return W.WMsgId() }
+func (W _git_golaxy_org_framework_net_gap_Msg) Read(p []byte) (n int, err error)  { return W.WRead(p) }
+func (W _git_golaxy_org_framework_net_gap_Msg) Size() int                         { return W.WSize() }
+func (W _git_golaxy_org_framework_net_gap_Msg) Write(p []byte) (n int, err error) { return W.WWrite(p) }
 
 // _git_golaxy_org_framework_net_gap_MsgReader is an interface wrapper for MsgReader type
 type _git_golaxy_org_framework_net_gap_MsgReader struct {
 	IValue interface{}
-	WMsgId func() uint32
+	WMsgId func() gap.MsgId
 	WRead  func(p []byte) (n int, err error)
 	WSize  func() int
 }
 
-func (W _git_golaxy_org_framework_net_gap_MsgReader) MsgId() uint32 {
-	return W.WMsgId()
-}
+func (W _git_golaxy_org_framework_net_gap_MsgReader) MsgId() gap.MsgId { return W.WMsgId() }
 func (W _git_golaxy_org_framework_net_gap_MsgReader) Read(p []byte) (n int, err error) {
 	return W.WRead(p)
 }
-func (W _git_golaxy_org_framework_net_gap_MsgReader) Size() int {
-	return W.WSize()
-}
+func (W _git_golaxy_org_framework_net_gap_MsgReader) Size() int { return W.WSize() }
 
 // _git_golaxy_org_framework_net_gap_MsgWriter is an interface wrapper for MsgWriter type
 type _git_golaxy_org_framework_net_gap_MsgWriter struct {
 	IValue interface{}
-	WMsgId func() uint32
+	WMsgId func() gap.MsgId
 	WSize  func() int
 	WWrite func(p []byte) (n int, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gap_MsgWriter) MsgId() uint32 {
-	return W.WMsgId()
-}
-func (W _git_golaxy_org_framework_net_gap_MsgWriter) Size() int {
-	return W.WSize()
-}
+func (W _git_golaxy_org_framework_net_gap_MsgWriter) MsgId() gap.MsgId { return W.WMsgId() }
+func (W _git_golaxy_org_framework_net_gap_MsgWriter) Size() int        { return W.WSize() }
 func (W _git_golaxy_org_framework_net_gap_MsgWriter) Write(p []byte) (n int, err error) {
 	return W.WWrite(p)
 }

@@ -73,12 +73,8 @@ type _git_golaxy_org_framework_plugins_conf_IConfig struct {
 	WWhole                            func() conf.IVisitConf
 }
 
-func (W _git_golaxy_org_framework_plugins_conf_IConfig) Get(key string) any {
-	return W.WGet(key)
-}
-func (W _git_golaxy_org_framework_plugins_conf_IConfig) GetAllKeys() []string {
-	return W.WGetAllKeys()
-}
+func (W _git_golaxy_org_framework_plugins_conf_IConfig) Get(key string) any   { return W.WGet(key) }
+func (W _git_golaxy_org_framework_plugins_conf_IConfig) GetAllKeys() []string { return W.WGetAllKeys() }
 func (W _git_golaxy_org_framework_plugins_conf_IConfig) GetAllSettings() map[string]any {
 	return W.WGetAllSettings()
 }
@@ -100,9 +96,7 @@ func (W _git_golaxy_org_framework_plugins_conf_IConfig) GetFloat64(key string) f
 func (W _git_golaxy_org_framework_plugins_conf_IConfig) GetFloat64OrDefault(key string, def float64) float64 {
 	return W.WGetFloat64OrDefault(key, def)
 }
-func (W _git_golaxy_org_framework_plugins_conf_IConfig) GetInt(key string) int {
-	return W.WGetInt(key)
-}
+func (W _git_golaxy_org_framework_plugins_conf_IConfig) GetInt(key string) int { return W.WGetInt(key) }
 func (W _git_golaxy_org_framework_plugins_conf_IConfig) GetInt32(key string) int32 {
 	return W.WGetInt32(key)
 }
@@ -190,9 +184,7 @@ func (W _git_golaxy_org_framework_plugins_conf_IConfig) GetUintOrDefault(key str
 func (W _git_golaxy_org_framework_plugins_conf_IConfig) Sub(key string) conf.IVisitConf {
 	return W.WSub(key)
 }
-func (W _git_golaxy_org_framework_plugins_conf_IConfig) Whole() conf.IVisitConf {
-	return W.WWhole()
-}
+func (W _git_golaxy_org_framework_plugins_conf_IConfig) Whole() conf.IVisitConf { return W.WWhole() }
 
 // _git_golaxy_org_framework_plugins_conf_IVisitConf is an interface wrapper for IVisitConf type
 type _git_golaxy_org_framework_plugins_conf_IVisitConf struct {
@@ -238,9 +230,7 @@ type _git_golaxy_org_framework_plugins_conf_IVisitConf struct {
 	WSub                              func(key string) conf.IVisitConf
 }
 
-func (W _git_golaxy_org_framework_plugins_conf_IVisitConf) Get(key string) any {
-	return W.WGet(key)
-}
+func (W _git_golaxy_org_framework_plugins_conf_IVisitConf) Get(key string) any { return W.WGet(key) }
 func (W _git_golaxy_org_framework_plugins_conf_IVisitConf) GetAllKeys() []string {
 	return W.WGetAllKeys()
 }

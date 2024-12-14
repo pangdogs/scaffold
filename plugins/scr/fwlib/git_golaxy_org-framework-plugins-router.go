@@ -7,7 +7,6 @@ import (
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/core/utils/uid"
-	"git.golaxy.org/framework/net/gtp"
 	"git.golaxy.org/framework/net/gtp/transport"
 	"git.golaxy.org/framework/plugins/gate"
 	"git.golaxy.org/framework/plugins/router"
@@ -58,35 +57,25 @@ type _git_golaxy_org_framework_plugins_router_IGroup struct {
 	WRemove        func(ctx context.Context, entIds ...uid.Id) error
 	WSendData      func(data []byte)
 	WSendDataChan  func() chan<- binaryutil.RecycleBytes
-	WSendEvent     func(event transport.Event[gtp.MsgReader])
-	WSendEventChan func() chan<- transport.Event[gtp.MsgReader]
+	WSendEvent     func(event transport.IEvent)
+	WSendEventChan func() chan<- transport.IEvent
 	WValue         func(key any) any
 }
 
 func (W _git_golaxy_org_framework_plugins_router_IGroup) Add(ctx context.Context, entIds ...uid.Id) error {
 	return W.WAdd(ctx, entIds...)
 }
-func (W _git_golaxy_org_framework_plugins_router_IGroup) Count() int {
-	return W.WCount()
-}
+func (W _git_golaxy_org_framework_plugins_router_IGroup) Count() int { return W.WCount() }
 func (W _git_golaxy_org_framework_plugins_router_IGroup) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
-func (W _git_golaxy_org_framework_plugins_router_IGroup) Done() <-chan struct{} {
-	return W.WDone()
-}
+func (W _git_golaxy_org_framework_plugins_router_IGroup) Done() <-chan struct{} { return W.WDone() }
 func (W _git_golaxy_org_framework_plugins_router_IGroup) Each(fun generic.Action1[uid.Id]) {
 	W.WEach(fun)
 }
-func (W _git_golaxy_org_framework_plugins_router_IGroup) Err() error {
-	return W.WErr()
-}
-func (W _git_golaxy_org_framework_plugins_router_IGroup) GetAddr() string {
-	return W.WGetAddr()
-}
-func (W _git_golaxy_org_framework_plugins_router_IGroup) GetName() string {
-	return W.WGetName()
-}
+func (W _git_golaxy_org_framework_plugins_router_IGroup) Err() error      { return W.WErr() }
+func (W _git_golaxy_org_framework_plugins_router_IGroup) GetAddr() string { return W.WGetAddr() }
+func (W _git_golaxy_org_framework_plugins_router_IGroup) GetName() string { return W.WGetName() }
 func (W _git_golaxy_org_framework_plugins_router_IGroup) Range(fun generic.Func1[uid.Id, bool]) {
 	W.WRange(fun)
 }
@@ -96,21 +85,17 @@ func (W _git_golaxy_org_framework_plugins_router_IGroup) RefreshTTL(ctx context.
 func (W _git_golaxy_org_framework_plugins_router_IGroup) Remove(ctx context.Context, entIds ...uid.Id) error {
 	return W.WRemove(ctx, entIds...)
 }
-func (W _git_golaxy_org_framework_plugins_router_IGroup) SendData(data []byte) {
-	W.WSendData(data)
-}
+func (W _git_golaxy_org_framework_plugins_router_IGroup) SendData(data []byte) { W.WSendData(data) }
 func (W _git_golaxy_org_framework_plugins_router_IGroup) SendDataChan() chan<- binaryutil.RecycleBytes {
 	return W.WSendDataChan()
 }
-func (W _git_golaxy_org_framework_plugins_router_IGroup) SendEvent(event transport.Event[gtp.MsgReader]) {
+func (W _git_golaxy_org_framework_plugins_router_IGroup) SendEvent(event transport.IEvent) {
 	W.WSendEvent(event)
 }
-func (W _git_golaxy_org_framework_plugins_router_IGroup) SendEventChan() chan<- transport.Event[gtp.MsgReader] {
+func (W _git_golaxy_org_framework_plugins_router_IGroup) SendEventChan() chan<- transport.IEvent {
 	return W.WSendEventChan()
 }
-func (W _git_golaxy_org_framework_plugins_router_IGroup) Value(key any) any {
-	return W.WValue(key)
-}
+func (W _git_golaxy_org_framework_plugins_router_IGroup) Value(key any) any { return W.WValue(key) }
 
 // _git_golaxy_org_framework_plugins_router_IMapping is an interface wrapper for IMapping type
 type _git_golaxy_org_framework_plugins_router_IMapping struct {
@@ -127,12 +112,8 @@ type _git_golaxy_org_framework_plugins_router_IMapping struct {
 func (W _git_golaxy_org_framework_plugins_router_IMapping) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
-func (W _git_golaxy_org_framework_plugins_router_IMapping) Done() <-chan struct{} {
-	return W.WDone()
-}
-func (W _git_golaxy_org_framework_plugins_router_IMapping) Err() error {
-	return W.WErr()
-}
+func (W _git_golaxy_org_framework_plugins_router_IMapping) Done() <-chan struct{} { return W.WDone() }
+func (W _git_golaxy_org_framework_plugins_router_IMapping) Err() error            { return W.WErr() }
 func (W _git_golaxy_org_framework_plugins_router_IMapping) GetCliAddr() string {
 	return W.WGetCliAddr()
 }
@@ -142,9 +123,7 @@ func (W _git_golaxy_org_framework_plugins_router_IMapping) GetEntity() ec.Concur
 func (W _git_golaxy_org_framework_plugins_router_IMapping) GetSession() gate.ISession {
 	return W.WGetSession()
 }
-func (W _git_golaxy_org_framework_plugins_router_IMapping) Value(key any) any {
-	return W.WValue(key)
-}
+func (W _git_golaxy_org_framework_plugins_router_IMapping) Value(key any) any { return W.WValue(key) }
 
 // _git_golaxy_org_framework_plugins_router_IRouter is an interface wrapper for IRouter type
 type _git_golaxy_org_framework_plugins_router_IRouter struct {

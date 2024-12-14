@@ -120,18 +120,12 @@ type _git_golaxy_org_framework_net_gap_variant_Value struct {
 	WWrite    func(p []byte) (n int, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gap_variant_Value) Indirect() any {
-	return W.WIndirect()
-}
+func (W _git_golaxy_org_framework_net_gap_variant_Value) Indirect() any { return W.WIndirect() }
 func (W _git_golaxy_org_framework_net_gap_variant_Value) Read(p []byte) (n int, err error) {
 	return W.WRead(p)
 }
-func (W _git_golaxy_org_framework_net_gap_variant_Value) Size() int {
-	return W.WSize()
-}
-func (W _git_golaxy_org_framework_net_gap_variant_Value) TypeId() variant.TypeId {
-	return W.WTypeId()
-}
+func (W _git_golaxy_org_framework_net_gap_variant_Value) Size() int              { return W.WSize() }
+func (W _git_golaxy_org_framework_net_gap_variant_Value) TypeId() variant.TypeId { return W.WTypeId() }
 func (W _git_golaxy_org_framework_net_gap_variant_Value) Write(p []byte) (n int, err error) {
 	return W.WWrite(p)
 }
@@ -145,15 +139,11 @@ type _git_golaxy_org_framework_net_gap_variant_ValueReader struct {
 	WTypeId   func() variant.TypeId
 }
 
-func (W _git_golaxy_org_framework_net_gap_variant_ValueReader) Indirect() any {
-	return W.WIndirect()
-}
+func (W _git_golaxy_org_framework_net_gap_variant_ValueReader) Indirect() any { return W.WIndirect() }
 func (W _git_golaxy_org_framework_net_gap_variant_ValueReader) Read(p []byte) (n int, err error) {
 	return W.WRead(p)
 }
-func (W _git_golaxy_org_framework_net_gap_variant_ValueReader) Size() int {
-	return W.WSize()
-}
+func (W _git_golaxy_org_framework_net_gap_variant_ValueReader) Size() int { return W.WSize() }
 func (W _git_golaxy_org_framework_net_gap_variant_ValueReader) TypeId() variant.TypeId {
 	return W.WTypeId()
 }
@@ -166,9 +156,7 @@ type _git_golaxy_org_framework_net_gap_variant_ValueWriter struct {
 	WWrite  func(p []byte) (n int, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gap_variant_ValueWriter) Size() int {
-	return W.WSize()
-}
+func (W _git_golaxy_org_framework_net_gap_variant_ValueWriter) Size() int { return W.WSize() }
 func (W _git_golaxy_org_framework_net_gap_variant_ValueWriter) TypeId() variant.TypeId {
 	return W.WTypeId()
 }

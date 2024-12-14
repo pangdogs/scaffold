@@ -33,6 +33,4 @@ type _git_golaxy_org_scaffold_plugins_acl_IACL struct {
 func (W _git_golaxy_org_scaffold_plugins_acl_IACL) Allowed(tag string, item string) bool {
 	return W.WAllowed(tag, item)
 }
-func (W _git_golaxy_org_scaffold_plugins_acl_IACL) Enabled(tag string) bool {
-	return W.WEnabled(tag)
-}
+func (W _git_golaxy_org_scaffold_plugins_acl_IACL) Enabled(tag string) bool { return W.WEnabled(tag) }

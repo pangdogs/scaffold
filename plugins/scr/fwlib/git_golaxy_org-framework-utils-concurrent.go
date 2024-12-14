@@ -26,11 +26,12 @@ func init() {
 		"NewFutures":                 reflect.ValueOf(concurrent.NewFutures),
 
 		// type definitions
-		"Deduplicator": reflect.ValueOf((*concurrent.Deduplicator)(nil)),
-		"Future":       reflect.ValueOf((*concurrent.Future)(nil)),
-		"Futures":      reflect.ValueOf((*concurrent.Futures)(nil)),
-		"Resp":         reflect.ValueOf((*concurrent.Resp)(nil)),
-		"RespAsyncRet": reflect.ValueOf((*concurrent.RespAsyncRet)(nil)),
+		"Deduplicator":   reflect.ValueOf((*concurrent.Deduplicator)(nil)),
+		"Future":         reflect.ValueOf((*concurrent.Future)(nil)),
+		"Futures":        reflect.ValueOf((*concurrent.Futures)(nil)),
+		"RequestHandler": reflect.ValueOf((*concurrent.RequestHandler)(nil)),
+		"Resp":           reflect.ValueOf((*concurrent.Resp)(nil)),
+		"RespAsyncRet":   reflect.ValueOf((*concurrent.RespAsyncRet)(nil)),
 
 		// interface wrapper definitions
 		"_Resp": reflect.ValueOf((*_git_golaxy_org_framework_utils_concurrent_Resp)(nil)),
@@ -40,9 +41,9 @@ func init() {
 // _git_golaxy_org_framework_utils_concurrent_Resp is an interface wrapper for Resp type
 type _git_golaxy_org_framework_utils_concurrent_Resp struct {
 	IValue interface{}
-	WPush  func(ret async.RetT[any]) error
+	WPush  func(ret async.Ret) error
 }
 
-func (W _git_golaxy_org_framework_utils_concurrent_Resp) Push(ret async.RetT[any]) error {
+func (W _git_golaxy_org_framework_utils_concurrent_Resp) Push(ret async.Ret) error {
 	return W.WPush(ret)
 }

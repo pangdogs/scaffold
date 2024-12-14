@@ -81,9 +81,7 @@ type _git_golaxy_org_framework_plugins_discovery_IWatcher struct {
 func (W _git_golaxy_org_framework_plugins_discovery_IWatcher) Next() (*discovery.Event, error) {
 	return W.WNext()
 }
-func (W _git_golaxy_org_framework_plugins_discovery_IWatcher) Pattern() string {
-	return W.WPattern()
-}
+func (W _git_golaxy_org_framework_plugins_discovery_IWatcher) Pattern() string { return W.WPattern() }
 func (W _git_golaxy_org_framework_plugins_discovery_IWatcher) Terminate() <-chan struct{} {
 	return W.WTerminate()
 }

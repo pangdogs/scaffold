@@ -55,30 +55,20 @@ type _git_golaxy_org_framework_net_gtp_method_Cipher struct {
 	WUnpad        func() bool
 }
 
-func (W _git_golaxy_org_framework_net_gtp_method_Cipher) BlockSize() int {
-	return W.WBlockSize()
-}
+func (W _git_golaxy_org_framework_net_gtp_method_Cipher) BlockSize() int { return W.WBlockSize() }
 func (W _git_golaxy_org_framework_net_gtp_method_Cipher) InputSize(size int) int {
 	return W.WInputSize(size)
 }
-func (W _git_golaxy_org_framework_net_gtp_method_Cipher) NonceSize() int {
-	return W.WNonceSize()
-}
+func (W _git_golaxy_org_framework_net_gtp_method_Cipher) NonceSize() int { return W.WNonceSize() }
 func (W _git_golaxy_org_framework_net_gtp_method_Cipher) OutputSize(size int) int {
 	return W.WOutputSize(size)
 }
-func (W _git_golaxy_org_framework_net_gtp_method_Cipher) Overhead() int {
-	return W.WOverhead()
-}
-func (W _git_golaxy_org_framework_net_gtp_method_Cipher) Pad() bool {
-	return W.WPad()
-}
+func (W _git_golaxy_org_framework_net_gtp_method_Cipher) Overhead() int { return W.WOverhead() }
+func (W _git_golaxy_org_framework_net_gtp_method_Cipher) Pad() bool     { return W.WPad() }
 func (W _git_golaxy_org_framework_net_gtp_method_Cipher) Transforming(dst []byte, src []byte, nonce []byte) (int, error) {
 	return W.WTransforming(dst, src, nonce)
 }
-func (W _git_golaxy_org_framework_net_gtp_method_Cipher) Unpad() bool {
-	return W.WUnpad()
-}
+func (W _git_golaxy_org_framework_net_gtp_method_Cipher) Unpad() bool { return W.WUnpad() }
 
 // _git_golaxy_org_framework_net_gtp_method_CompressionStream is an interface wrapper for CompressionStream type
 type _git_golaxy_org_framework_net_gtp_method_CompressionStream struct {

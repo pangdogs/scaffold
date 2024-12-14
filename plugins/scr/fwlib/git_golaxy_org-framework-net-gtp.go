@@ -157,17 +157,15 @@ func init() {
 type _git_golaxy_org_framework_net_gtp_IMsgCreator struct {
 	IValue     interface{}
 	WDeclare   func(msg gtp.Msg)
-	WNew       func(msgId uint8) (gtp.Msg, error)
-	WUndeclare func(msgId uint8)
+	WNew       func(msgId gtp.MsgId) (gtp.Msg, error)
+	WUndeclare func(msgId gtp.MsgId)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_IMsgCreator) Declare(msg gtp.Msg) {
-	W.WDeclare(msg)
-}
-func (W _git_golaxy_org_framework_net_gtp_IMsgCreator) New(msgId uint8) (gtp.Msg, error) {
+func (W _git_golaxy_org_framework_net_gtp_IMsgCreator) Declare(msg gtp.Msg) { W.WDeclare(msg) }
+func (W _git_golaxy_org_framework_net_gtp_IMsgCreator) New(msgId gtp.MsgId) (gtp.Msg, error) {
 	return W.WNew(msgId)
 }
-func (W _git_golaxy_org_framework_net_gtp_IMsgCreator) Undeclare(msgId uint8) {
+func (W _git_golaxy_org_framework_net_gtp_IMsgCreator) Undeclare(msgId gtp.MsgId) {
 	W.WUndeclare(msgId)
 }
 
@@ -175,64 +173,44 @@ func (W _git_golaxy_org_framework_net_gtp_IMsgCreator) Undeclare(msgId uint8) {
 type _git_golaxy_org_framework_net_gtp_Msg struct {
 	IValue interface{}
 	WClone func() gtp.MsgReader
-	WMsgId func() uint8
+	WMsgId func() gtp.MsgId
 	WRead  func(p []byte) (n int, err error)
 	WSize  func() int
 	WWrite func(p []byte) (n int, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_Msg) Clone() gtp.MsgReader {
-	return W.WClone()
-}
-func (W _git_golaxy_org_framework_net_gtp_Msg) MsgId() uint8 {
-	return W.WMsgId()
-}
-func (W _git_golaxy_org_framework_net_gtp_Msg) Read(p []byte) (n int, err error) {
-	return W.WRead(p)
-}
-func (W _git_golaxy_org_framework_net_gtp_Msg) Size() int {
-	return W.WSize()
-}
-func (W _git_golaxy_org_framework_net_gtp_Msg) Write(p []byte) (n int, err error) {
-	return W.WWrite(p)
-}
+func (W _git_golaxy_org_framework_net_gtp_Msg) Clone() gtp.MsgReader              { return W.WClone() }
+func (W _git_golaxy_org_framework_net_gtp_Msg) MsgId() gtp.MsgId                  { return W.WMsgId() }
+func (W _git_golaxy_org_framework_net_gtp_Msg) Read(p []byte) (n int, err error)  { return W.WRead(p) }
+func (W _git_golaxy_org_framework_net_gtp_Msg) Size() int                         { return W.WSize() }
+func (W _git_golaxy_org_framework_net_gtp_Msg) Write(p []byte) (n int, err error) { return W.WWrite(p) }
 
 // _git_golaxy_org_framework_net_gtp_MsgReader is an interface wrapper for MsgReader type
 type _git_golaxy_org_framework_net_gtp_MsgReader struct {
 	IValue interface{}
 	WClone func() gtp.MsgReader
-	WMsgId func() uint8
+	WMsgId func() gtp.MsgId
 	WRead  func(p []byte) (n int, err error)
 	WSize  func() int
 }
 
-func (W _git_golaxy_org_framework_net_gtp_MsgReader) Clone() gtp.MsgReader {
-	return W.WClone()
-}
-func (W _git_golaxy_org_framework_net_gtp_MsgReader) MsgId() uint8 {
-	return W.WMsgId()
-}
+func (W _git_golaxy_org_framework_net_gtp_MsgReader) Clone() gtp.MsgReader { return W.WClone() }
+func (W _git_golaxy_org_framework_net_gtp_MsgReader) MsgId() gtp.MsgId     { return W.WMsgId() }
 func (W _git_golaxy_org_framework_net_gtp_MsgReader) Read(p []byte) (n int, err error) {
 	return W.WRead(p)
 }
-func (W _git_golaxy_org_framework_net_gtp_MsgReader) Size() int {
-	return W.WSize()
-}
+func (W _git_golaxy_org_framework_net_gtp_MsgReader) Size() int { return W.WSize() }
 
 // _git_golaxy_org_framework_net_gtp_MsgWriter is an interface wrapper for MsgWriter type
 type _git_golaxy_org_framework_net_gtp_MsgWriter struct {
 	IValue interface{}
-	WMsgId func() uint8
+	WMsgId func() gtp.MsgId
 	WSize  func() int
 	WWrite func(p []byte) (n int, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_MsgWriter) MsgId() uint8 {
-	return W.WMsgId()
-}
-func (W _git_golaxy_org_framework_net_gtp_MsgWriter) Size() int {
-	return W.WSize()
-}
+func (W _git_golaxy_org_framework_net_gtp_MsgWriter) MsgId() gtp.MsgId { return W.WMsgId() }
+func (W _git_golaxy_org_framework_net_gtp_MsgWriter) Size() int        { return W.WSize() }
 func (W _git_golaxy_org_framework_net_gtp_MsgWriter) Write(p []byte) (n int, err error) {
 	return W.WWrite(p)
 }

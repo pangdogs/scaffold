@@ -24,7 +24,7 @@ import (
 	"cmp"
 	"fmt"
 	"github.com/elliotchance/pie/v2"
-	"github.com/traefik/yaegi/interp"
+	"github.com/pangdogs/yaegi/interp"
 	"go/ast"
 	"golang.org/x/tools/go/packages"
 	"path"

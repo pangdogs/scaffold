@@ -39,7 +39,7 @@ type _git_golaxy_org_core_extension_PluginBundle struct {
 	IValue           interface{}
 	WGet             func(name string) (extension.PluginStatus, bool)
 	WGetPluginBundle func() extension.PluginBundle
-	WInstall         func(pluginFace iface.Face[any], name ...string)
+	WInstall         func(pluginFace iface.FaceAny, name ...string)
 	WRange           func(fun generic.Func1[extension.PluginStatus, bool])
 	WReversedRange   func(fun generic.Func1[extension.PluginStatus, bool])
 	WUninstall       func(name string)
@@ -51,7 +51,7 @@ func (W _git_golaxy_org_core_extension_PluginBundle) Get(name string) (extension
 func (W _git_golaxy_org_core_extension_PluginBundle) GetPluginBundle() extension.PluginBundle {
 	return W.WGetPluginBundle()
 }
-func (W _git_golaxy_org_core_extension_PluginBundle) Install(pluginFace iface.Face[any], name ...string) {
+func (W _git_golaxy_org_core_extension_PluginBundle) Install(pluginFace iface.FaceAny, name ...string) {
 	W.WInstall(pluginFace, name...)
 }
 func (W _git_golaxy_org_core_extension_PluginBundle) Range(fun generic.Func1[extension.PluginStatus, bool]) {
@@ -60,9 +60,7 @@ func (W _git_golaxy_org_core_extension_PluginBundle) Range(fun generic.Func1[ext
 func (W _git_golaxy_org_core_extension_PluginBundle) ReversedRange(fun generic.Func1[extension.PluginStatus, bool]) {
 	W.WReversedRange(fun)
 }
-func (W _git_golaxy_org_core_extension_PluginBundle) Uninstall(name string) {
-	W.WUninstall(name)
-}
+func (W _git_golaxy_org_core_extension_PluginBundle) Uninstall(name string) { W.WUninstall(name) }
 
 // _git_golaxy_org_core_extension_PluginProvider is an interface wrapper for PluginProvider type
 type _git_golaxy_org_core_extension_PluginProvider struct {
@@ -77,21 +75,15 @@ func (W _git_golaxy_org_core_extension_PluginProvider) GetPluginBundle() extensi
 // _git_golaxy_org_core_extension_PluginStatus is an interface wrapper for PluginStatus type
 type _git_golaxy_org_core_extension_PluginStatus struct {
 	IValue        interface{}
-	WInstanceFace func() iface.Face[any]
+	WInstanceFace func() iface.FaceAny
 	WName         func() string
 	WReflected    func() reflect.Value
 	WState        func() extension.PluginState
 }
 
-func (W _git_golaxy_org_core_extension_PluginStatus) InstanceFace() iface.Face[any] {
+func (W _git_golaxy_org_core_extension_PluginStatus) InstanceFace() iface.FaceAny {
 	return W.WInstanceFace()
 }
-func (W _git_golaxy_org_core_extension_PluginStatus) Name() string {
-	return W.WName()
-}
-func (W _git_golaxy_org_core_extension_PluginStatus) Reflected() reflect.Value {
-	return W.WReflected()
-}
-func (W _git_golaxy_org_core_extension_PluginStatus) State() extension.PluginState {
-	return W.WState()
-}
+func (W _git_golaxy_org_core_extension_PluginStatus) Name() string                 { return W.WName() }
+func (W _git_golaxy_org_core_extension_PluginStatus) Reflected() reflect.Value     { return W.WReflected() }
+func (W _git_golaxy_org_core_extension_PluginStatus) State() extension.PluginState { return W.WState() }

@@ -34,6 +34,7 @@ func init() {
 		"Encoder":            reflect.ValueOf((*codec.Encoder)(nil)),
 		"EncoderCreator":     reflect.ValueOf((*codec.EncoderCreator)(nil)),
 		"EncryptionModule":   reflect.ValueOf((*codec.EncryptionModule)(nil)),
+		"FetchNonce":         reflect.ValueOf((*codec.FetchNonce)(nil)),
 		"ICompressionModule": reflect.ValueOf((*codec.ICompressionModule)(nil)),
 		"IDecoder":           reflect.ValueOf((*codec.IDecoder)(nil)),
 		"IEncoder":           reflect.ValueOf((*codec.IEncoder)(nil)),
@@ -78,9 +79,7 @@ type _git_golaxy_org_framework_net_gtp_codec_IDecoder struct {
 func (W _git_golaxy_org_framework_net_gtp_codec_IDecoder) Decode(data []byte, validate ...codec.IValidate) (gtp.MsgPacket, int, error) {
 	return W.WDecode(data, validate...)
 }
-func (W _git_golaxy_org_framework_net_gtp_codec_IDecoder) GC() {
-	W.WGC()
-}
+func (W _git_golaxy_org_framework_net_gtp_codec_IDecoder) GC() { W.WGC() }
 
 // _git_golaxy_org_framework_net_gtp_codec_IEncoder is an interface wrapper for IEncoder type
 type _git_golaxy_org_framework_net_gtp_codec_IEncoder struct {
@@ -109,18 +108,18 @@ func (W _git_golaxy_org_framework_net_gtp_codec_IEncryptionModule) Transforming(
 // _git_golaxy_org_framework_net_gtp_codec_IMACModule is an interface wrapper for IMACModule type
 type _git_golaxy_org_framework_net_gtp_codec_IMACModule struct {
 	IValue     interface{}
-	WPatchMAC  func(msgId uint8, flags gtp.Flags, msgBuf []byte) (dst binaryutil.RecycleBytes, err error)
+	WPatchMAC  func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst binaryutil.RecycleBytes, err error)
 	WSizeofMAC func(msgLen int) int
-	WVerifyMAC func(msgId uint8, flags gtp.Flags, msgBuf []byte) (dst []byte, err error)
+	WVerifyMAC func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst []byte, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_codec_IMACModule) PatchMAC(msgId uint8, flags gtp.Flags, msgBuf []byte) (dst binaryutil.RecycleBytes, err error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_IMACModule) PatchMAC(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst binaryutil.RecycleBytes, err error) {
 	return W.WPatchMAC(msgId, flags, msgBuf)
 }
 func (W _git_golaxy_org_framework_net_gtp_codec_IMACModule) SizeofMAC(msgLen int) int {
 	return W.WSizeofMAC(msgLen)
 }
-func (W _git_golaxy_org_framework_net_gtp_codec_IMACModule) VerifyMAC(msgId uint8, flags gtp.Flags, msgBuf []byte) (dst []byte, err error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_IMACModule) VerifyMAC(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst []byte, err error) {
 	return W.WVerifyMAC(msgId, flags, msgBuf)
 }
 

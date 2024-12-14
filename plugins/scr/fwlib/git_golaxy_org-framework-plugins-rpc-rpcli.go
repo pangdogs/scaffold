@@ -42,9 +42,7 @@ type _git_golaxy_org_framework_plugins_rpc_rpcli_IProcedure struct {
 func (W _git_golaxy_org_framework_plugins_rpc_rpcli_IProcedure) GetCli() *rpcli.RPCli {
 	return W.WGetCli()
 }
-func (W _git_golaxy_org_framework_plugins_rpc_rpcli_IProcedure) GetName() string {
-	return W.WGetName()
-}
+func (W _git_golaxy_org_framework_plugins_rpc_rpcli_IProcedure) GetName() string { return W.WGetName() }
 func (W _git_golaxy_org_framework_plugins_rpc_rpcli_IProcedure) GetReflected() reflect.Value {
 	return W.WGetReflected()
 }

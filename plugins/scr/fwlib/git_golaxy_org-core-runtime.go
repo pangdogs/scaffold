@@ -101,6 +101,7 @@ func init() {
 		"GCCollector":                                    reflect.ValueOf((*runtime.GCCollector)(nil)),
 		"IEntityMgrEventTab":                             reflect.ValueOf((*runtime.IEntityMgrEventTab)(nil)),
 		"IEntityTreeEventTab":                            reflect.ValueOf((*runtime.IEntityTreeEventTab)(nil)),
+		"RunningHandler":                                 reflect.ValueOf((*runtime.RunningHandler)(nil)),
 		"RunningState":                                   reflect.ValueOf((*runtime.RunningState)(nil)),
 
 		// interface wrapper definitions
@@ -128,10 +129,10 @@ func init() {
 // _git_golaxy_org_core_runtime_ConcurrentContext is an interface wrapper for ConcurrentContext type
 type _git_golaxy_org_core_runtime_ConcurrentContext struct {
 	IValue                interface{}
-	WCall                 func(fun generic.FuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any]
-	WCallDelegate         func(fun generic.DelegateFuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any]
-	WCallVoid             func(fun generic.ActionVar0[any], args ...any) async.AsyncRetT[any]
-	WCallVoidDelegate     func(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRetT[any]
+	WCall                 func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
+	WCallDelegate         func(fun generic.DelegateFuncVar0[any, async.Ret], args ...any) async.AsyncRet
+	WCallVoid             func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
+	WCallVoidDelegate     func(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRet
 	WDeadline             func() (deadline time.Time, ok bool)
 	WDone                 func() <-chan struct{}
 	WErr                  func() error
@@ -148,39 +149,31 @@ type _git_golaxy_org_core_runtime_ConcurrentContext struct {
 	WValue                func(key any) any
 }
 
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) Call(fun generic.FuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) Call(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
 	return W.WCall(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallDelegate(fun generic.DelegateFuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallDelegate(fun generic.DelegateFuncVar0[any, async.Ret], args ...any) async.AsyncRet {
 	return W.WCallDelegate(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallVoid(fun generic.ActionVar0[any], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallVoid(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
 	return W.WCallVoid(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallVoidDelegate(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallVoidDelegate(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRet {
 	return W.WCallVoidDelegate(fun, args...)
 }
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) Done() <-chan struct{} {
-	return W.WDone()
-}
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) Err() error {
-	return W.WErr()
-}
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) Done() <-chan struct{} { return W.WDone() }
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) Err() error            { return W.WErr() }
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) GetAutoRecover() bool {
 	return W.WGetAutoRecover()
 }
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) GetConcurrentContext() iface.Cache {
 	return W.WGetConcurrentContext()
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) GetId() uid.Id {
-	return W.WGetId()
-}
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) GetName() string {
-	return W.WGetName()
-}
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) GetId() uid.Id   { return W.WGetId() }
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) GetName() string { return W.WGetName() }
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) GetParentContext() context.Context {
 	return W.WGetParentContext()
 }
@@ -202,9 +195,7 @@ func (W _git_golaxy_org_core_runtime_ConcurrentContext) Terminate() <-chan struc
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) Terminated() <-chan struct{} {
 	return W.WTerminated()
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) Value(key any) any {
-	return W.WValue(key)
-}
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) Value(key any) any { return W.WValue(key) }
 
 // _git_golaxy_org_core_runtime_ConcurrentContextProvider is an interface wrapper for ConcurrentContextProvider type
 type _git_golaxy_org_core_runtime_ConcurrentContextProvider struct {
@@ -220,10 +211,10 @@ func (W _git_golaxy_org_core_runtime_ConcurrentContextProvider) GetConcurrentCon
 type _git_golaxy_org_core_runtime_Context struct {
 	IValue                interface{}
 	WActivateEvent        func(event event.IEventCtrl, recursion event.EventRecursion)
-	WCall                 func(fun generic.FuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any]
-	WCallDelegate         func(fun generic.DelegateFuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any]
-	WCallVoid             func(fun generic.ActionVar0[any], args ...any) async.AsyncRetT[any]
-	WCallVoidDelegate     func(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRetT[any]
+	WCall                 func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
+	WCallDelegate         func(fun generic.DelegateFuncVar0[any, async.Ret], args ...any) async.AsyncRet
+	WCallVoid             func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
+	WCallVoidDelegate     func(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRet
 	WCollectGC            func(gc runtime.GC)
 	WDeadline             func() (deadline time.Time, ok bool)
 	WDone                 func() <-chan struct{}
@@ -252,33 +243,25 @@ type _git_golaxy_org_core_runtime_Context struct {
 func (W _git_golaxy_org_core_runtime_Context) ActivateEvent(event event.IEventCtrl, recursion event.EventRecursion) {
 	W.WActivateEvent(event, recursion)
 }
-func (W _git_golaxy_org_core_runtime_Context) Call(fun generic.FuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_runtime_Context) Call(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
 	return W.WCall(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_Context) CallDelegate(fun generic.DelegateFuncVar0[any, async.RetT[any]], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_runtime_Context) CallDelegate(fun generic.DelegateFuncVar0[any, async.Ret], args ...any) async.AsyncRet {
 	return W.WCallDelegate(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_Context) CallVoid(fun generic.ActionVar0[any], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_runtime_Context) CallVoid(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
 	return W.WCallVoid(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_Context) CallVoidDelegate(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_runtime_Context) CallVoidDelegate(fun generic.DelegateActionVar0[any], args ...any) async.AsyncRet {
 	return W.WCallVoidDelegate(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_Context) CollectGC(gc runtime.GC) {
-	W.WCollectGC(gc)
-}
+func (W _git_golaxy_org_core_runtime_Context) CollectGC(gc runtime.GC) { W.WCollectGC(gc) }
 func (W _git_golaxy_org_core_runtime_Context) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
-func (W _git_golaxy_org_core_runtime_Context) Done() <-chan struct{} {
-	return W.WDone()
-}
-func (W _git_golaxy_org_core_runtime_Context) Err() error {
-	return W.WErr()
-}
-func (W _git_golaxy_org_core_runtime_Context) GetAutoRecover() bool {
-	return W.WGetAutoRecover()
-}
+func (W _git_golaxy_org_core_runtime_Context) Done() <-chan struct{} { return W.WDone() }
+func (W _git_golaxy_org_core_runtime_Context) Err() error            { return W.WErr() }
+func (W _git_golaxy_org_core_runtime_Context) GetAutoRecover() bool  { return W.WGetAutoRecover() }
 func (W _git_golaxy_org_core_runtime_Context) GetConcurrentContext() iface.Cache {
 	return W.WGetConcurrentContext()
 }
@@ -291,30 +274,20 @@ func (W _git_golaxy_org_core_runtime_Context) GetEntityMgr() runtime.EntityMgr {
 func (W _git_golaxy_org_core_runtime_Context) GetEntityTree() runtime.EntityTree {
 	return W.WGetEntityTree()
 }
-func (W _git_golaxy_org_core_runtime_Context) GetFrame() runtime.Frame {
-	return W.WGetFrame()
-}
-func (W _git_golaxy_org_core_runtime_Context) GetId() uid.Id {
-	return W.WGetId()
-}
+func (W _git_golaxy_org_core_runtime_Context) GetFrame() runtime.Frame { return W.WGetFrame() }
+func (W _git_golaxy_org_core_runtime_Context) GetId() uid.Id           { return W.WGetId() }
 func (W _git_golaxy_org_core_runtime_Context) GetInstanceFaceCache() iface.Cache {
 	return W.WGetInstanceFaceCache()
 }
-func (W _git_golaxy_org_core_runtime_Context) GetName() string {
-	return W.WGetName()
-}
+func (W _git_golaxy_org_core_runtime_Context) GetName() string { return W.WGetName() }
 func (W _git_golaxy_org_core_runtime_Context) GetParentContext() context.Context {
 	return W.WGetParentContext()
 }
 func (W _git_golaxy_org_core_runtime_Context) GetPluginBundle() extension.PluginBundle {
 	return W.WGetPluginBundle()
 }
-func (W _git_golaxy_org_core_runtime_Context) GetReflected() reflect.Value {
-	return W.WGetReflected()
-}
-func (W _git_golaxy_org_core_runtime_Context) GetReportError() chan error {
-	return W.WGetReportError()
-}
+func (W _git_golaxy_org_core_runtime_Context) GetReflected() reflect.Value { return W.WGetReflected() }
+func (W _git_golaxy_org_core_runtime_Context) GetReportError() chan error  { return W.WGetReportError() }
 func (W _git_golaxy_org_core_runtime_Context) GetWaitGroup() *sync.WaitGroup {
 	return W.WGetWaitGroup()
 }
@@ -327,15 +300,9 @@ func (W _git_golaxy_org_core_runtime_Context) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_runtime_Context) Terminate() <-chan struct{} {
-	return W.WTerminate()
-}
-func (W _git_golaxy_org_core_runtime_Context) Terminated() <-chan struct{} {
-	return W.WTerminated()
-}
-func (W _git_golaxy_org_core_runtime_Context) Value(key any) any {
-	return W.WValue(key)
-}
+func (W _git_golaxy_org_core_runtime_Context) Terminate() <-chan struct{}  { return W.WTerminate() }
+func (W _git_golaxy_org_core_runtime_Context) Terminated() <-chan struct{} { return W.WTerminated() }
+func (W _git_golaxy_org_core_runtime_Context) Value(key any) any           { return W.WValue(key) }
 
 // _git_golaxy_org_core_runtime_CurrentContextProvider is an interface wrapper for CurrentContextProvider type
 type _git_golaxy_org_core_runtime_CurrentContextProvider struct {
@@ -378,9 +345,7 @@ func (W _git_golaxy_org_core_runtime_EntityMgr) AddEntity(entity ec.Entity) erro
 func (W _git_golaxy_org_core_runtime_EntityMgr) ContainsEntity(id uid.Id) bool {
 	return W.WContainsEntity(id)
 }
-func (W _git_golaxy_org_core_runtime_EntityMgr) CountEntities() int {
-	return W.WCountEntities()
-}
+func (W _git_golaxy_org_core_runtime_EntityMgr) CountEntities() int { return W.WCountEntities() }
 func (W _git_golaxy_org_core_runtime_EntityMgr) EventEntityMgrAddEntity() event.IEvent {
 	return W.WEventEntityMgrAddEntity()
 }
@@ -405,18 +370,14 @@ func (W _git_golaxy_org_core_runtime_EntityMgr) GetConcurrentContext() iface.Cac
 func (W _git_golaxy_org_core_runtime_EntityMgr) GetCurrentContext() iface.Cache {
 	return W.WGetCurrentContext()
 }
-func (W _git_golaxy_org_core_runtime_EntityMgr) GetEntities() []ec.Entity {
-	return W.WGetEntities()
-}
+func (W _git_golaxy_org_core_runtime_EntityMgr) GetEntities() []ec.Entity { return W.WGetEntities() }
 func (W _git_golaxy_org_core_runtime_EntityMgr) GetEntity(id uid.Id) (ec.Entity, bool) {
 	return W.WGetEntity(id)
 }
 func (W _git_golaxy_org_core_runtime_EntityMgr) RangeEntities(fun generic.Func1[ec.Entity, bool]) {
 	W.WRangeEntities(fun)
 }
-func (W _git_golaxy_org_core_runtime_EntityMgr) RemoveEntity(id uid.Id) {
-	W.WRemoveEntity(id)
-}
+func (W _git_golaxy_org_core_runtime_EntityMgr) RemoveEntity(id uid.Id) { W.WRemoveEntity(id) }
 func (W _git_golaxy_org_core_runtime_EntityMgr) ReversedRangeEntities(fun generic.Func1[ec.Entity, bool]) {
 	W.WReversedRangeEntities(fun)
 }
@@ -568,12 +529,8 @@ type _git_golaxy_org_core_runtime_Frame struct {
 	WGetUpdateBeginTime      func() time.Time
 }
 
-func (W _git_golaxy_org_core_runtime_Frame) GetCurFPS() float32 {
-	return W.WGetCurFPS()
-}
-func (W _git_golaxy_org_core_runtime_Frame) GetCurFrames() int64 {
-	return W.WGetCurFrames()
-}
+func (W _git_golaxy_org_core_runtime_Frame) GetCurFPS() float32  { return W.WGetCurFPS() }
+func (W _git_golaxy_org_core_runtime_Frame) GetCurFrames() int64 { return W.WGetCurFrames() }
 func (W _git_golaxy_org_core_runtime_Frame) GetLastLoopElapseTime() time.Duration {
 	return W.WGetLastLoopElapseTime()
 }
@@ -589,12 +546,8 @@ func (W _git_golaxy_org_core_runtime_Frame) GetRunningBeginTime() time.Time {
 func (W _git_golaxy_org_core_runtime_Frame) GetRunningElapseTime() time.Duration {
 	return W.WGetRunningElapseTime()
 }
-func (W _git_golaxy_org_core_runtime_Frame) GetTargetFPS() float32 {
-	return W.WGetTargetFPS()
-}
-func (W _git_golaxy_org_core_runtime_Frame) GetTotalFrames() int64 {
-	return W.WGetTotalFrames()
-}
+func (W _git_golaxy_org_core_runtime_Frame) GetTargetFPS() float32 { return W.WGetTargetFPS() }
+func (W _git_golaxy_org_core_runtime_Frame) GetTotalFrames() int64 { return W.WGetTotalFrames() }
 func (W _git_golaxy_org_core_runtime_Frame) GetUpdateBeginTime() time.Time {
 	return W.WGetUpdateBeginTime()
 }
@@ -606,12 +559,8 @@ type _git_golaxy_org_core_runtime_GC struct {
 	WNeedGC func() bool
 }
 
-func (W _git_golaxy_org_core_runtime_GC) GC() {
-	W.WGC()
-}
-func (W _git_golaxy_org_core_runtime_GC) NeedGC() bool {
-	return W.WNeedGC()
-}
+func (W _git_golaxy_org_core_runtime_GC) GC()          { W.WGC() }
+func (W _git_golaxy_org_core_runtime_GC) NeedGC() bool { return W.WNeedGC() }
 
 // _git_golaxy_org_core_runtime_GCCollector is an interface wrapper for GCCollector type
 type _git_golaxy_org_core_runtime_GCCollector struct {
@@ -619,9 +568,7 @@ type _git_golaxy_org_core_runtime_GCCollector struct {
 	WCollectGC func(gc runtime.GC)
 }
 
-func (W _git_golaxy_org_core_runtime_GCCollector) CollectGC(gc runtime.GC) {
-	W.WCollectGC(gc)
-}
+func (W _git_golaxy_org_core_runtime_GCCollector) CollectGC(gc runtime.GC) { W.WCollectGC(gc) }
 
 // _git_golaxy_org_core_runtime_IEntityMgrEventTab is an interface wrapper for IEntityMgrEventTab type
 type _git_golaxy_org_core_runtime_IEntityMgrEventTab struct {

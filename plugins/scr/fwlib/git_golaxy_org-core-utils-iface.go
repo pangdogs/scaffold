@@ -13,6 +13,7 @@ func init() {
 		"NilCache": reflect.ValueOf(&iface.NilCache).Elem(),
 
 		// type definitions
-		"Cache": reflect.ValueOf((*iface.Cache)(nil)),
+		"Cache":   reflect.ValueOf((*iface.Cache)(nil)),
+		"FaceAny": reflect.ValueOf((*iface.FaceAny)(nil)),
 	}
 }

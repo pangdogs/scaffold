@@ -5,9 +5,9 @@ package fwlib
 import (
 	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/async"
-	"git.golaxy.org/framework/net/gap/variant"
 	"git.golaxy.org/framework/plugins/rpc/callpath"
 	"git.golaxy.org/framework/plugins/rpc/rpcpcsr"
+	"git.golaxy.org/framework/plugins/rpcstack"
 	"reflect"
 )
 
@@ -38,10 +38,11 @@ func init() {
 		"NewServiceProcessor":             reflect.ValueOf(rpcpcsr.NewServiceProcessor),
 
 		// type definitions
-		"ICallee":       reflect.ValueOf((*rpcpcsr.ICallee)(nil)),
-		"IDeliverer":    reflect.ValueOf((*rpcpcsr.IDeliverer)(nil)),
-		"LifecycleInit": reflect.ValueOf((*rpcpcsr.LifecycleInit)(nil)),
-		"LifecycleShut": reflect.ValueOf((*rpcpcsr.LifecycleShut)(nil)),
+		"ICallee":             reflect.ValueOf((*rpcpcsr.ICallee)(nil)),
+		"IDeliverer":          reflect.ValueOf((*rpcpcsr.IDeliverer)(nil)),
+		"LifecycleInit":       reflect.ValueOf((*rpcpcsr.LifecycleInit)(nil)),
+		"LifecycleShut":       reflect.ValueOf((*rpcpcsr.LifecycleShut)(nil)),
+		"PermissionValidator": reflect.ValueOf((*rpcpcsr.PermissionValidator)(nil)),
 
 		// interface wrapper definitions
 		"_ICallee":       reflect.ValueOf((*_git_golaxy_org_framework_plugins_rpc_rpcpcsr_ICallee)(nil)),
@@ -64,18 +65,18 @@ func (W _git_golaxy_org_framework_plugins_rpc_rpcpcsr_ICallee) Callee(method str
 // _git_golaxy_org_framework_plugins_rpc_rpcpcsr_IDeliverer is an interface wrapper for IDeliverer type
 type _git_golaxy_org_framework_plugins_rpc_rpcpcsr_IDeliverer struct {
 	IValue   interface{}
-	WMatch   func(svcCtx service.Context, dst string, cc variant.CallChain, cp callpath.CallPath, oneway bool) bool
-	WNotify  func(svcCtx service.Context, dst string, cc variant.CallChain, cp callpath.CallPath, args []any) error
-	WRequest func(svcCtx service.Context, dst string, cc variant.CallChain, cp callpath.CallPath, args []any) async.AsyncRetT[any]
+	WMatch   func(svcCtx service.Context, dst string, cc rpcstack.CallChain, cp callpath.CallPath, oneway bool) bool
+	WNotify  func(svcCtx service.Context, dst string, cc rpcstack.CallChain, cp callpath.CallPath, args []any) error
+	WRequest func(svcCtx service.Context, dst string, cc rpcstack.CallChain, cp callpath.CallPath, args []any) async.AsyncRet
 }
 
-func (W _git_golaxy_org_framework_plugins_rpc_rpcpcsr_IDeliverer) Match(svcCtx service.Context, dst string, cc variant.CallChain, cp callpath.CallPath, oneway bool) bool {
+func (W _git_golaxy_org_framework_plugins_rpc_rpcpcsr_IDeliverer) Match(svcCtx service.Context, dst string, cc rpcstack.CallChain, cp callpath.CallPath, oneway bool) bool {
 	return W.WMatch(svcCtx, dst, cc, cp, oneway)
 }
-func (W _git_golaxy_org_framework_plugins_rpc_rpcpcsr_IDeliverer) Notify(svcCtx service.Context, dst string, cc variant.CallChain, cp callpath.CallPath, args []any) error {
+func (W _git_golaxy_org_framework_plugins_rpc_rpcpcsr_IDeliverer) Notify(svcCtx service.Context, dst string, cc rpcstack.CallChain, cp callpath.CallPath, args []any) error {
 	return W.WNotify(svcCtx, dst, cc, cp, args)
 }
-func (W _git_golaxy_org_framework_plugins_rpc_rpcpcsr_IDeliverer) Request(svcCtx service.Context, dst string, cc variant.CallChain, cp callpath.CallPath, args []any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_framework_plugins_rpc_rpcpcsr_IDeliverer) Request(svcCtx service.Context, dst string, cc rpcstack.CallChain, cp callpath.CallPath, args []any) async.AsyncRet {
 	return W.WRequest(svcCtx, dst, cc, cp, args)
 }
 

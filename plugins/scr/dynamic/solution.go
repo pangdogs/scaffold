@@ -21,7 +21,7 @@ package dynamic
 
 import (
 	"cmp"
-	"github.com/traefik/yaegi/interp"
+	"github.com/pangdogs/yaegi/interp"
 	"path"
 	"reflect"
 	"slices"

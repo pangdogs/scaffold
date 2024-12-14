@@ -4,7 +4,6 @@ package fwlib
 
 import (
 	"context"
-	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/framework/net/gap"
 	"git.golaxy.org/framework/plugins/dsvc"
 	"git.golaxy.org/framework/utils/concurrent"
@@ -26,6 +25,7 @@ func init() {
 		"IDistService":       reflect.ValueOf((*dsvc.IDistService)(nil)),
 		"IWatcher":           reflect.ValueOf((*dsvc.IWatcher)(nil)),
 		"NodeDetails":        reflect.ValueOf((*dsvc.NodeDetails)(nil)),
+		"RecvMsgHandler":     reflect.ValueOf((*dsvc.RecvMsgHandler)(nil)),
 
 		// interface wrapper definitions
 		"_IDistService": reflect.ValueOf((*_git_golaxy_org_framework_plugins_dsvc_IDistService)(nil)),
@@ -40,7 +40,7 @@ type _git_golaxy_org_framework_plugins_dsvc_IDistService struct {
 	WGetFutures     func() *concurrent.Futures
 	WGetNodeDetails func() *dsvc.NodeDetails
 	WSendMsg        func(dst string, msg gap.Msg) error
-	WWatchMsg       func(ctx context.Context, handler generic.DelegateFunc2[string, gap.MsgPacket, error]) dsvc.IWatcher
+	WWatchMsg       func(ctx context.Context, handler dsvc.RecvMsgHandler) dsvc.IWatcher
 }
 
 func (W _git_golaxy_org_framework_plugins_dsvc_IDistService) ForwardMsg(svc string, src string, dst string, seq int64, msg gap.Msg) error {
@@ -55,7 +55,7 @@ func (W _git_golaxy_org_framework_plugins_dsvc_IDistService) GetNodeDetails() *d
 func (W _git_golaxy_org_framework_plugins_dsvc_IDistService) SendMsg(dst string, msg gap.Msg) error {
 	return W.WSendMsg(dst, msg)
 }
-func (W _git_golaxy_org_framework_plugins_dsvc_IDistService) WatchMsg(ctx context.Context, handler generic.DelegateFunc2[string, gap.MsgPacket, error]) dsvc.IWatcher {
+func (W _git_golaxy_org_framework_plugins_dsvc_IDistService) WatchMsg(ctx context.Context, handler dsvc.RecvMsgHandler) dsvc.IWatcher {
 	return W.WWatchMsg(ctx, handler)
 }
 
@@ -73,18 +73,12 @@ type _git_golaxy_org_framework_plugins_dsvc_IWatcher struct {
 func (W _git_golaxy_org_framework_plugins_dsvc_IWatcher) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
-func (W _git_golaxy_org_framework_plugins_dsvc_IWatcher) Done() <-chan struct{} {
-	return W.WDone()
-}
-func (W _git_golaxy_org_framework_plugins_dsvc_IWatcher) Err() error {
-	return W.WErr()
-}
+func (W _git_golaxy_org_framework_plugins_dsvc_IWatcher) Done() <-chan struct{} { return W.WDone() }
+func (W _git_golaxy_org_framework_plugins_dsvc_IWatcher) Err() error            { return W.WErr() }
 func (W _git_golaxy_org_framework_plugins_dsvc_IWatcher) Terminate() <-chan struct{} {
 	return W.WTerminate()
 }
 func (W _git_golaxy_org_framework_plugins_dsvc_IWatcher) Terminated() <-chan struct{} {
 	return W.WTerminated()
 }
-func (W _git_golaxy_org_framework_plugins_dsvc_IWatcher) Value(key any) any {
-	return W.WValue(key)
-}
+func (W _git_golaxy_org_framework_plugins_dsvc_IWatcher) Value(key any) any { return W.WValue(key) }
