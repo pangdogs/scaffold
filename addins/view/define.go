@@ -17,12 +17,12 @@
  * Copyright (c) 2024 pangdogs.
  */
 
-package scr
+package view
 
 import "git.golaxy.org/core/define"
 
 var (
-	self      = define.ServicePlugin(newScript)
+	self      = define.RuntimeAddIn(newPropView)
 	Name      = self.Name
 	Using     = self.Using
 	Install   = self.Install

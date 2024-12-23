@@ -28,12 +28,12 @@ import (
 	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/core/utils/uid"
 	"git.golaxy.org/framework"
+	"git.golaxy.org/framework/addins/gate"
+	"git.golaxy.org/framework/addins/log"
+	"git.golaxy.org/framework/addins/rpc"
+	"git.golaxy.org/framework/addins/rpc/rpcli"
+	"git.golaxy.org/framework/addins/rpc/rpcutil"
 	"git.golaxy.org/framework/net/gap/variant"
-	"git.golaxy.org/framework/plugins/gate"
-	"git.golaxy.org/framework/plugins/log"
-	"git.golaxy.org/framework/plugins/rpc"
-	"git.golaxy.org/framework/plugins/rpc/rpcli"
-	"git.golaxy.org/framework/plugins/rpc/rpcutil"
 	"reflect"
 )
 
@@ -68,13 +68,13 @@ type _PropView struct {
 }
 
 func (m *_PropView) Init(_ service.Context, rtCtx runtime.Context) {
-	log.Debugf(rtCtx, "init plugin %q", self.Name)
+	log.Debugf(rtCtx, "init addin %q", self.Name)
 
 	m.IRuntimeInstance = framework.GetRuntimeInstance(rtCtx)
 }
 
 func (m *_PropView) Shut(_ service.Context, rtCtx runtime.Context) {
-	log.Debugf(rtCtx, "shut plugin %q", self.Name)
+	log.Debugf(rtCtx, "shut addin %q", self.Name)
 }
 
 func (m *_PropView) load(ps *PropSync, service string) ([]byte, int64, error) {
@@ -161,7 +161,7 @@ func (m *_PropView) syncRet(ctx runtime.Context, ret async.Ret, args ...any) {
 }
 
 func (m *_PropView) DoLoad(entityId uid.Id, name string) ([]byte, int64, error) {
-	entity, ok := m.GetEntityMgr().GetEntity(entityId)
+	entity, ok := m.GetEntityManager().GetEntity(entityId)
 	if !ok {
 		log.Errorf(m, "do load entity %q prop %q failed, entity not found", entityId, name)
 		return nil, 0, ErrEntityNotFound
@@ -190,7 +190,7 @@ func (m *_PropView) DoLoad(entityId uid.Id, name string) ([]byte, int64, error) 
 }
 
 func (m *_PropView) DoSave(entityId uid.Id, name string, data []byte, revision int64) error {
-	entity, ok := m.GetEntityMgr().GetEntity(entityId)
+	entity, ok := m.GetEntityManager().GetEntity(entityId)
 	if !ok {
 		log.Errorf(m, "do save entity %q prop %q revision %d failed, entity not found", entityId, name, revision)
 		return ErrEntityNotFound
@@ -219,7 +219,7 @@ func (m *_PropView) DoSave(entityId uid.Id, name string, data []byte, revision i
 }
 
 func (m *_PropView) DoSync(entityId uid.Id, name string, revision int64, op string, argsRV []reflect.Value) error {
-	entity, ok := m.GetEntityMgr().GetEntity(entityId)
+	entity, ok := m.GetEntityManager().GetEntity(entityId)
 	if !ok {
 		log.Errorf(m, "do sync entity %q prop %q revision %d op %q failed, entity not found", entityId, name, revision, op)
 		return ErrEntityNotFound

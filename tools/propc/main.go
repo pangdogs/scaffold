@@ -228,13 +228,13 @@ func run(*cobra.Command, []string) {
 
 	if !slices.ContainsFunc(imports, func(i string) bool {
 		switch i {
-		case `"git.golaxy.org/scaffold/plugins/view"`, `view "git.golaxy.org/scaffold/plugins/view"`:
+		case `"git.golaxy.org/scaffold/addins/view"`, `view "git.golaxy.org/scaffold/addins/view"`:
 			return true
 		default:
 			return false
 		}
 	}) {
-		imports = append(imports, `view "git.golaxy.org/scaffold/plugins/view"`)
+		imports = append(imports, `view "git.golaxy.org/scaffold/addins/view"`)
 	}
 
 	opImports := map[string]struct{}{

@@ -16,6 +16,6 @@
 ## 插件目录
 | Directory | Description |
 | --------- | ----------- |
-| [/plugins/acl](https://github.com/pangdogs/scaffold/tree/main/plugins/acl) | 访问控制表（`Access Control List`）插件，一般用于Login服务。|
-| [/plugins/scr](https://github.com/pangdogs/scaffold/tree/main/plugins/scr) | Golang脚本化（`Golang Script`）插件，支持解释执行Golang代码，用于支持逻辑层代码热修复。|
-| [/plugins/view](https://github.com/pangdogs/scaffold/tree/main/plugins/view) | 属性视图（`Property View`）插件，用于支持同步实体属性。|
+| [/addins/acl](https://github.com/pangdogs/scaffold/tree/main/addins/acl) | 访问控制表（`Access Control List`）插件，一般用于Login服务。|
+| [/addins/scr](https://github.com/pangdogs/scaffold/tree/main/addins/scr) | Golang脚本化（`Golang Script`）插件，支持解释执行Golang代码，用于支持逻辑层代码热修复。|
+| [/addins/view](https://github.com/pangdogs/scaffold/tree/main/addins/view) | 属性视图（`Property View`）插件，用于支持同步实体属性。|

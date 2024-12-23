@@ -24,7 +24,7 @@ import (
 	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/reinterpret"
 	"git.golaxy.org/framework"
-	"git.golaxy.org/framework/plugins/log"
+	"git.golaxy.org/framework/addins/log"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"time"
@@ -50,7 +50,7 @@ type _ACL struct {
 }
 
 func (acl *_ACL) Init(svcCtx service.Context, _ runtime.Context) {
-	log.Infof(svcCtx, "init plugin %q", self.Name)
+	log.Infof(svcCtx, "init addin %q", self.Name)
 
 	acl.IServiceInstance = reinterpret.Cast[framework.IServiceInstance](svcCtx)
 
@@ -110,7 +110,7 @@ func (acl *_ACL) Init(svcCtx service.Context, _ runtime.Context) {
 }
 
 func (acl *_ACL) Shut(svcCtx service.Context, _ runtime.Context) {
-	log.Infof(svcCtx, "shut plugin %q", self.Name)
+	log.Infof(svcCtx, "shut addin %q", self.Name)
 }
 
 // Enabled 是否开启

@@ -22,7 +22,7 @@ package acl
 import "git.golaxy.org/core/define"
 
 var (
-	self      = define.ServicePlugin(newACL)
+	self      = define.ServiceAddIn(newACL)
 	Name      = self.Name
 	Using     = self.Using
 	Install   = self.Install
