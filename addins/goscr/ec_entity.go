@@ -141,7 +141,7 @@ func (c *EntityEnableUpdateAndLateUpdate) LateUpdate() {
 
 // EntityWith 创建脚本化实体原型属性，用于注册实体原型时自定义相关属性
 func EntityWith(prototype, script string, scope *ec.Scope, componentAwakeOnFirstTouch, componentUniqueID *bool, extra ...map[string]any) pt.EntityAttribute {
-	return EntityWithT[Entity](prototype, script, scope, componentAwakeOnFirstTouch, componentUniqueID, extra...)
+	return EntityWithT[EntityEnableUpdateAndLateUpdate](prototype, script, scope, componentAwakeOnFirstTouch, componentUniqueID, extra...)
 }
 
 // EntityWithT 创建脚本化实体原型属性，用于注册实体原型时自定义相关属性

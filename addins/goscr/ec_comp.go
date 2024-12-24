@@ -140,7 +140,7 @@ func (c *ComponentEnableUpdateAndLateUpdate) LateUpdate() {
 
 // ComponentWith 创建脚本化组件原型属性，用于注册实体原型时自定义相关属性
 func ComponentWith(name, script string, nonRemovable bool, extra ...map[string]any) pt.ComponentAttribute {
-	return ComponentWithT[Component](name, script, nonRemovable, extra...)
+	return ComponentWithT[ComponentEnableUpdateAndLateUpdate](name, script, nonRemovable, extra...)
 }
 
 // ComponentWithT 创建脚本化组件原型属性，用于注册实体原型时自定义相关属性
