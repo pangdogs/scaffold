@@ -84,11 +84,11 @@ func (c *Component) bindMethod(method string) any {
 	}
 
 	thisMethod := Using(c.GetService()).Solution().BindMethod(c.GetReflected().Interface(), scriptPkg.(string), scriptIdent.(string), method)
-	if thisMethod == nil {
+	if !thisMethod.IsValid() {
 		return nil
 	}
 
-	return thisMethod
+	return thisMethod.Interface()
 }
 
 // ComponentEnableUpdate 脚本化组件，支持Update
