@@ -24,6 +24,7 @@ import (
 	"git.golaxy.org/core"
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/runtime"
+	"git.golaxy.org/core/utils/types"
 	"reflect"
 )
 
@@ -63,8 +64,8 @@ func ReferencePropT[T IPropSync](entity ec.Entity, name string) T {
 type PropCreator = PropCreatorT[IPropSync]
 
 // DeclareProp 定义属性
-func DeclareProp(entity ec.Entity, name string, propRT reflect.Type) PropCreator {
-	return PropCreator{ps: declareProp(entity, name, propRT)}
+func DeclareProp(entity ec.Entity, name string, prop any) PropCreator {
+	return PropCreator{ps: declareProp(entity, name, prop)}
 }
 
 // ReferenceProp 引用属性
@@ -72,22 +73,40 @@ func ReferenceProp(entity ec.Entity, name string) IPropSync {
 	return referenceProp(entity, name)
 }
 
-func declareProp(entity ec.Entity, name string, propRT reflect.Type) IPropSync {
+func declareProp(entity ec.Entity, name string, prop any) IPropSync {
 	if entity == nil {
 		panic(fmt.Errorf("%s: entity is nil", core.ErrArgs))
+	}
+
+	if prop == nil {
+		panic(fmt.Errorf("%s: prop is nil", core.ErrArgs))
+	}
+
+	propTab, ok := entity.(IPropTab)
+	if !ok {
+		panic(fmt.Errorf("entity %q not implement view.IPropTab", entity))
+	}
+
+	propRT, ok := prop.(reflect.Type)
+	if !ok {
+		propRT = reflect.TypeOf(prop)
 	}
 
 	for propRT.Kind() == reflect.Pointer {
 		propRT = propRT.Elem()
 	}
 
-	prop := reflect.New(propRT).Interface().(IPropSync)
-	prop.Reset()
-	prop.init(Using(runtime.Current(entity)), entity, name, reflect.ValueOf(prop.Managed()))
+	propInst, ok := reflect.New(propRT).Interface().(IPropSync)
+	if !ok {
+		panic(fmt.Errorf("prop %q not implement view.IPropSync", types.FullNameRT(propRT)))
+	}
 
-	entity.(IPropTab).AddProp(name, prop)
+	propInst.Reset()
+	propInst.init(Using(runtime.Current(entity)), entity, name, reflect.ValueOf(propInst.Managed()))
 
-	return prop
+	propTab.AddProp(name, propInst)
+
+	return propInst
 }
 
 func referenceProp(entity ec.Entity, name string) IPropSync {
