@@ -11,6 +11,7 @@ import (
 func init() {
 	Symbols["git.golaxy.org/scaffold/addins/view/view"] = map[string]reflect.Value{
 		// function, constant and variable definitions
+		"DeclareProp":                     reflect.ValueOf(view.DeclareProp),
 		"ErrDiscontinuousRevision":        reflect.ValueOf(&view.ErrDiscontinuousRevision).Elem(),
 		"ErrEntityNoProp":                 reflect.ValueOf(&view.ErrEntityNoProp).Elem(),
 		"ErrEntityNoPropTab":              reflect.ValueOf(&view.ErrEntityNoPropTab).Elem(),
@@ -21,18 +22,20 @@ func init() {
 		"ErrOutdatedRevision":             reflect.ValueOf(&view.ErrOutdatedRevision).Elem(),
 		"Install":                         reflect.ValueOf(&view.Install).Elem(),
 		"Name":                            reflect.ValueOf(&view.Name).Elem(),
+		"ReferenceProp":                   reflect.ValueOf(view.ReferenceProp),
 		"Uninstall":                       reflect.ValueOf(&view.Uninstall).Elem(),
 		"UnsafeProp":                      reflect.ValueOf(view.UnsafeProp),
 		"UnsafePropSync":                  reflect.ValueOf(view.UnsafePropSync),
 		"Using":                           reflect.ValueOf(&view.Using).Elem(),
 
 		// type definitions
-		"IProp":     reflect.ValueOf((*view.IProp)(nil)),
-		"IPropSync": reflect.ValueOf((*view.IPropSync)(nil)),
-		"IPropTab":  reflect.ValueOf((*view.IPropTab)(nil)),
-		"IPropView": reflect.ValueOf((*view.IPropView)(nil)),
-		"PropSync":  reflect.ValueOf((*view.PropSync)(nil)),
-		"PropTab":   reflect.ValueOf((*view.PropTab)(nil)),
+		"IProp":       reflect.ValueOf((*view.IProp)(nil)),
+		"IPropSync":   reflect.ValueOf((*view.IPropSync)(nil)),
+		"IPropTab":    reflect.ValueOf((*view.IPropTab)(nil)),
+		"IPropView":   reflect.ValueOf((*view.IPropView)(nil)),
+		"PropCreator": reflect.ValueOf((*view.PropCreator)(nil)),
+		"PropSync":    reflect.ValueOf((*view.PropSync)(nil)),
+		"PropTab":     reflect.ValueOf((*view.PropTab)(nil)),
 
 		// interface wrapper definitions
 		"_IProp":     reflect.ValueOf((*_git_golaxy_org_scaffold_addins_view_IProp)(nil)),
