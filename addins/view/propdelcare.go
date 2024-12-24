@@ -77,6 +77,10 @@ func declareProp(entity ec.Entity, name string, propRT reflect.Type) IPropSync {
 		panic(fmt.Errorf("%s: entity is nil", core.ErrArgs))
 	}
 
+	for propRT.Kind() == reflect.Pointer {
+		propRT = propRT.Elem()
+	}
+
 	prop := reflect.New(propRT).Interface().(IPropSync)
 	prop.Reset()
 	prop.init(Using(runtime.Current(entity)), entity, name, reflect.ValueOf(prop.Managed()))
