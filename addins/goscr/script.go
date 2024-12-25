@@ -116,7 +116,7 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 		return nil, fmt.Errorf("loaded callback error occurred, %s", err)
 	}
 
-	s.solution.Range(func(_ string, scripts dynamic.Scripts) bool {
+	solution.Range(func(_ string, scripts dynamic.Scripts) bool {
 		scripts.Range(func(script *dynamic.Script) bool {
 			for _, method := range script.Methods {
 				callpath.Cache(script.Ident, method.Name)
