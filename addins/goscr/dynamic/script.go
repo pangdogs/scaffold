@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"cmp"
 	"fmt"
+	"git.golaxy.org/core/utils/generic"
 	"github.com/elliotchance/pie/v2"
 	"github.com/pangdogs/yaegi/interp"
 	"go/ast"
@@ -82,6 +83,15 @@ func (scripts Scripts) Ident(ident string) *Script {
 	return scripts[ident]
 }
 
+// Range 遍历
+func (scripts Scripts) Range(fun generic.Func1[*Script, bool]) {
+	for _, script := range scripts {
+		if !fun.Exec(script) {
+			return
+		}
+	}
+}
+
 // NewScriptLib 创建脚本库
 func NewScriptLib() ScriptLib {
 	return ScriptLib{}
@@ -93,6 +103,15 @@ type ScriptLib map[string]Scripts
 // Package 包
 func (lib ScriptLib) Package(pkgPath string) Scripts {
 	return lib[pkgPath]
+}
+
+// Range 遍历
+func (lib ScriptLib) Range(fun generic.Func2[string, Scripts, bool]) {
+	for pkgPath, scripts := range lib {
+		if !fun.Exec(pkgPath, scripts) {
+			return
+		}
+	}
 }
 
 // PushIdent 添加类型标识

@@ -25,6 +25,7 @@ import (
 	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/option"
 	"git.golaxy.org/framework/addins/log"
+	"git.golaxy.org/framework/addins/rpc/callpath"
 	"git.golaxy.org/scaffold/addins/goscr/dynamic"
 	"git.golaxy.org/scaffold/addins/goscr/fwlib"
 	"github.com/elliotchance/pie/v2"
@@ -114,6 +115,16 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 	if err := s.options.LoadedCB.Invoke(func(err error) bool { return err != nil }, solution); err != nil {
 		return nil, fmt.Errorf("loaded callback error occurred, %s", err)
 	}
+
+	s.solution.Range(func(_ string, scripts dynamic.Scripts) bool {
+		scripts.Range(func(script *dynamic.Script) bool {
+			for _, method := range script.Methods {
+				callpath.Cache(script.Ident, method.Name)
+			}
+			return true
+		})
+		return true
+	})
 
 	return solution, nil
 }

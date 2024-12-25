@@ -21,6 +21,7 @@ package dynamic
 
 import (
 	"cmp"
+	"git.golaxy.org/core/utils/generic"
 	"github.com/pangdogs/yaegi/interp"
 	"path"
 	"reflect"
@@ -72,6 +73,11 @@ func (s *Solution) Eval(code string) (reflect.Value, error) {
 // Package 包
 func (s *Solution) Package(pkgPath string) Scripts {
 	return s.lib.Package(pkgPath)
+}
+
+// Range 遍历
+func (s *Solution) Range(fun generic.Func2[string, Scripts, bool]) {
+	s.lib.Range(fun)
 }
 
 // Load 加载项目
