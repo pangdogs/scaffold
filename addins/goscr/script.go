@@ -106,8 +106,6 @@ func (s *_Script) OnServiceRunningStatusChanged(svcCtx service.Context, status s
 			return
 		}
 		s.cacheCP(solution, args[0].(ec.EntityPT))
-	default:
-		return
 	}
 }
 

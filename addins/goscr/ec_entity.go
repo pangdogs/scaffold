@@ -37,37 +37,37 @@ type Entity struct {
 }
 
 // Callee 被调函数
-func (c *Entity) Callee(method string) reflect.Value {
-	return reflect.ValueOf(c.bindMethod(method))
+func (e *Entity) Callee(method string) reflect.Value {
+	return reflect.ValueOf(e.bindMethod(method))
 }
 
 // Awake 生命周期Awake
-func (c *Entity) Awake() {
-	method, _ := c.bindMethod("Awake").(func())
+func (e *Entity) Awake() {
+	method, _ := e.bindMethod("Awake").(func())
 	if method != nil {
 		method()
 	}
 }
 
 // Start 生命周期Start
-func (c *Entity) Start() {
-	method, _ := c.bindMethod("Start").(func())
+func (e *Entity) Start() {
+	method, _ := e.bindMethod("Start").(func())
 	if method != nil {
 		method()
 	}
 }
 
 // Shut 生命周期Shut
-func (c *Entity) Shut() {
-	method, _ := c.bindMethod("Shut").(func())
+func (e *Entity) Shut() {
+	method, _ := e.bindMethod("Shut").(func())
 	if method != nil {
 		method()
 	}
 }
 
 // Dispose 生命周期Dispose
-func (c *Entity) Dispose() {
-	method, _ := c.bindMethod("Dispose").(func())
+func (e *Entity) Dispose() {
+	method, _ := e.bindMethod("Dispose").(func())
 	if method != nil {
 		method()
 	}
@@ -79,25 +79,25 @@ type EntityEnableUpdate struct {
 }
 
 // Update 生命周期Update
-func (c *EntityEnableUpdate) Update() {
-	method, _ := c.bindMethod("Update").(func())
+func (e *EntityEnableUpdate) Update() {
+	method, _ := e.bindMethod("Update").(func())
 	if method != nil {
 		method()
 	}
 }
 
-func (c *Entity) bindMethod(method string) any {
-	scriptPkg, ok := c.GetPT().Extra().Get("script_pkg")
+func (e *Entity) bindMethod(method string) any {
+	scriptPkg, ok := e.GetPT().Extra().Get("script_pkg")
 	if !ok {
 		return nil
 	}
 
-	scriptIdent, ok := c.GetPT().Extra().Get("script_ident")
+	scriptIdent, ok := e.GetPT().Extra().Get("script_ident")
 	if !ok {
 		return nil
 	}
 
-	thisMethod := Using(c.GetService()).Solution().BindMethod(c.GetReflected().Interface(), scriptPkg.(string), scriptIdent.(string), method)
+	thisMethod := Using(e.GetService()).Solution().BindMethod(e.GetReflected().Interface(), scriptPkg.(string), scriptIdent.(string), method)
 	if !thisMethod.IsValid() {
 		return nil
 	}
@@ -111,8 +111,8 @@ type EntityEnableLateUpdate struct {
 }
 
 // LateUpdate 生命周期LateUpdate
-func (c *EntityEnableLateUpdate) LateUpdate() {
-	method, _ := c.bindMethod("LateUpdate").(func())
+func (e *EntityEnableLateUpdate) LateUpdate() {
+	method, _ := e.bindMethod("LateUpdate").(func())
 	if method != nil {
 		method()
 	}
@@ -124,16 +124,16 @@ type EntityEnableUpdateAndLateUpdate struct {
 }
 
 // Update 生命周期Update
-func (c *EntityEnableUpdateAndLateUpdate) Update() {
-	method, _ := c.bindMethod("Update").(func())
+func (e *EntityEnableUpdateAndLateUpdate) Update() {
+	method, _ := e.bindMethod("Update").(func())
 	if method != nil {
 		method()
 	}
 }
 
 // LateUpdate 生命周期LateUpdate
-func (c *EntityEnableUpdateAndLateUpdate) LateUpdate() {
-	method, _ := c.bindMethod("LateUpdate").(func())
+func (e *EntityEnableUpdateAndLateUpdate) LateUpdate() {
+	method, _ := e.bindMethod("LateUpdate").(func())
 	if method != nil {
 		method()
 	}
