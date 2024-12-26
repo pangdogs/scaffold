@@ -45,89 +45,111 @@ func init() {
 		"NewApp":                 reflect.ValueOf(framework.NewApp),
 
 		// type definitions
-		"App":                              reflect.ValueOf((*framework.App)(nil)),
-		"AwaitDirector":                    reflect.ValueOf((*framework.AwaitDirector)(nil)),
-		"ComponentBehavior":                reflect.ValueOf((*framework.ComponentBehavior)(nil)),
-		"ConcurrentEntityCreator":          reflect.ValueOf((*framework.ConcurrentEntityCreator)(nil)),
-		"EntityBehavior":                   reflect.ValueOf((*framework.EntityBehavior)(nil)),
-		"EntityPTCreator":                  reflect.ValueOf((*framework.EntityPTCreator)(nil)),
-		"IRuntimeInstance":                 reflect.ValueOf((*framework.IRuntimeInstance)(nil)),
-		"IRuntimeInstantiation":            reflect.ValueOf((*framework.IRuntimeInstantiation)(nil)),
-		"IServiceInstance":                 reflect.ValueOf((*framework.IServiceInstance)(nil)),
-		"IServiceInstantiation":            reflect.ValueOf((*framework.IServiceInstantiation)(nil)),
-		"InstallRuntimeDistEntityRegistry": reflect.ValueOf((*framework.InstallRuntimeDistEntityRegistry)(nil)),
-		"InstallRuntimeLogger":             reflect.ValueOf((*framework.InstallRuntimeLogger)(nil)),
-		"InstallRuntimeRPCStack":           reflect.ValueOf((*framework.InstallRuntimeRPCStack)(nil)),
-		"InstallServiceBroker":             reflect.ValueOf((*framework.InstallServiceBroker)(nil)),
-		"InstallServiceConfig":             reflect.ValueOf((*framework.InstallServiceConfig)(nil)),
-		"InstallServiceDistEntityQuerier":  reflect.ValueOf((*framework.InstallServiceDistEntityQuerier)(nil)),
-		"InstallServiceDistService":        reflect.ValueOf((*framework.InstallServiceDistService)(nil)),
-		"InstallServiceDistSync":           reflect.ValueOf((*framework.InstallServiceDistSync)(nil)),
-		"InstallServiceLogger":             reflect.ValueOf((*framework.InstallServiceLogger)(nil)),
-		"InstallServiceRPC":                reflect.ValueOf((*framework.InstallServiceRPC)(nil)),
-		"InstallServiceRegistry":           reflect.ValueOf((*framework.InstallServiceRegistry)(nil)),
-		"LifecycleRuntimeBirth":            reflect.ValueOf((*framework.LifecycleRuntimeBirth)(nil)),
-		"LifecycleRuntimeBuilt":            reflect.ValueOf((*framework.LifecycleRuntimeBuilt)(nil)),
-		"LifecycleRuntimeFrameLoopBegin":   reflect.ValueOf((*framework.LifecycleRuntimeFrameLoopBegin)(nil)),
-		"LifecycleRuntimeFrameLoopEnd":     reflect.ValueOf((*framework.LifecycleRuntimeFrameLoopEnd)(nil)),
-		"LifecycleRuntimeFrameUpdateBegin": reflect.ValueOf((*framework.LifecycleRuntimeFrameUpdateBegin)(nil)),
-		"LifecycleRuntimeFrameUpdateEnd":   reflect.ValueOf((*framework.LifecycleRuntimeFrameUpdateEnd)(nil)),
-		"LifecycleRuntimeRunCallBegin":     reflect.ValueOf((*framework.LifecycleRuntimeRunCallBegin)(nil)),
-		"LifecycleRuntimeRunCallEnd":       reflect.ValueOf((*framework.LifecycleRuntimeRunCallEnd)(nil)),
-		"LifecycleRuntimeRunGCBegin":       reflect.ValueOf((*framework.LifecycleRuntimeRunGCBegin)(nil)),
-		"LifecycleRuntimeRunGCEnd":         reflect.ValueOf((*framework.LifecycleRuntimeRunGCEnd)(nil)),
-		"LifecycleRuntimeStarted":          reflect.ValueOf((*framework.LifecycleRuntimeStarted)(nil)),
-		"LifecycleRuntimeStarting":         reflect.ValueOf((*framework.LifecycleRuntimeStarting)(nil)),
-		"LifecycleRuntimeTerminated":       reflect.ValueOf((*framework.LifecycleRuntimeTerminated)(nil)),
-		"LifecycleRuntimeTerminating":      reflect.ValueOf((*framework.LifecycleRuntimeTerminating)(nil)),
-		"LifecycleServiceBirth":            reflect.ValueOf((*framework.LifecycleServiceBirth)(nil)),
-		"LifecycleServiceBuilt":            reflect.ValueOf((*framework.LifecycleServiceBuilt)(nil)),
-		"LifecycleServiceStarted":          reflect.ValueOf((*framework.LifecycleServiceStarted)(nil)),
-		"LifecycleServiceStarting":         reflect.ValueOf((*framework.LifecycleServiceStarting)(nil)),
-		"LifecycleServiceTerminated":       reflect.ValueOf((*framework.LifecycleServiceTerminated)(nil)),
-		"LifecycleServiceTerminating":      reflect.ValueOf((*framework.LifecycleServiceTerminating)(nil)),
-		"RuntimeCreator":                   reflect.ValueOf((*framework.RuntimeCreator)(nil)),
-		"RuntimeGeneric":                   reflect.ValueOf((*framework.RuntimeGeneric)(nil)),
-		"RuntimeInstance":                  reflect.ValueOf((*framework.RuntimeInstance)(nil)),
-		"ServiceGeneric":                   reflect.ValueOf((*framework.ServiceGeneric)(nil)),
-		"ServiceInstance":                  reflect.ValueOf((*framework.ServiceInstance)(nil)),
+		"App":                                reflect.ValueOf((*framework.App)(nil)),
+		"AwaitDirector":                      reflect.ValueOf((*framework.AwaitDirector)(nil)),
+		"ComponentBehavior":                  reflect.ValueOf((*framework.ComponentBehavior)(nil)),
+		"ConcurrentEntityCreator":            reflect.ValueOf((*framework.ConcurrentEntityCreator)(nil)),
+		"EntityBehavior":                     reflect.ValueOf((*framework.EntityBehavior)(nil)),
+		"EntityPTCreator":                    reflect.ValueOf((*framework.EntityPTCreator)(nil)),
+		"IRuntimeInstance":                   reflect.ValueOf((*framework.IRuntimeInstance)(nil)),
+		"IRuntimeInstantiation":              reflect.ValueOf((*framework.IRuntimeInstantiation)(nil)),
+		"IServiceInstance":                   reflect.ValueOf((*framework.IServiceInstance)(nil)),
+		"IServiceInstantiation":              reflect.ValueOf((*framework.IServiceInstantiation)(nil)),
+		"InstallRuntimeDistEntityRegistry":   reflect.ValueOf((*framework.InstallRuntimeDistEntityRegistry)(nil)),
+		"InstallRuntimeLogger":               reflect.ValueOf((*framework.InstallRuntimeLogger)(nil)),
+		"InstallRuntimeRPCStack":             reflect.ValueOf((*framework.InstallRuntimeRPCStack)(nil)),
+		"InstallServiceBroker":               reflect.ValueOf((*framework.InstallServiceBroker)(nil)),
+		"InstallServiceConfig":               reflect.ValueOf((*framework.InstallServiceConfig)(nil)),
+		"InstallServiceDistEntityQuerier":    reflect.ValueOf((*framework.InstallServiceDistEntityQuerier)(nil)),
+		"InstallServiceDistService":          reflect.ValueOf((*framework.InstallServiceDistService)(nil)),
+		"InstallServiceDistSync":             reflect.ValueOf((*framework.InstallServiceDistSync)(nil)),
+		"InstallServiceLogger":               reflect.ValueOf((*framework.InstallServiceLogger)(nil)),
+		"InstallServiceRPC":                  reflect.ValueOf((*framework.InstallServiceRPC)(nil)),
+		"InstallServiceRegistry":             reflect.ValueOf((*framework.InstallServiceRegistry)(nil)),
+		"LifecycleRuntimeAddInActivated":     reflect.ValueOf((*framework.LifecycleRuntimeAddInActivated)(nil)),
+		"LifecycleRuntimeAddInActivating":    reflect.ValueOf((*framework.LifecycleRuntimeAddInActivating)(nil)),
+		"LifecycleRuntimeAddInDeactivated":   reflect.ValueOf((*framework.LifecycleRuntimeAddInDeactivated)(nil)),
+		"LifecycleRuntimeAddInDeactivating":  reflect.ValueOf((*framework.LifecycleRuntimeAddInDeactivating)(nil)),
+		"LifecycleRuntimeBirth":              reflect.ValueOf((*framework.LifecycleRuntimeBirth)(nil)),
+		"LifecycleRuntimeBuilt":              reflect.ValueOf((*framework.LifecycleRuntimeBuilt)(nil)),
+		"LifecycleRuntimeFrameLoopBegin":     reflect.ValueOf((*framework.LifecycleRuntimeFrameLoopBegin)(nil)),
+		"LifecycleRuntimeFrameLoopEnd":       reflect.ValueOf((*framework.LifecycleRuntimeFrameLoopEnd)(nil)),
+		"LifecycleRuntimeFrameUpdateBegin":   reflect.ValueOf((*framework.LifecycleRuntimeFrameUpdateBegin)(nil)),
+		"LifecycleRuntimeFrameUpdateEnd":     reflect.ValueOf((*framework.LifecycleRuntimeFrameUpdateEnd)(nil)),
+		"LifecycleRuntimeRunCallBegin":       reflect.ValueOf((*framework.LifecycleRuntimeRunCallBegin)(nil)),
+		"LifecycleRuntimeRunCallEnd":         reflect.ValueOf((*framework.LifecycleRuntimeRunCallEnd)(nil)),
+		"LifecycleRuntimeRunGCBegin":         reflect.ValueOf((*framework.LifecycleRuntimeRunGCBegin)(nil)),
+		"LifecycleRuntimeRunGCEnd":           reflect.ValueOf((*framework.LifecycleRuntimeRunGCEnd)(nil)),
+		"LifecycleRuntimeStarted":            reflect.ValueOf((*framework.LifecycleRuntimeStarted)(nil)),
+		"LifecycleRuntimeStarting":           reflect.ValueOf((*framework.LifecycleRuntimeStarting)(nil)),
+		"LifecycleRuntimeTerminated":         reflect.ValueOf((*framework.LifecycleRuntimeTerminated)(nil)),
+		"LifecycleRuntimeTerminating":        reflect.ValueOf((*framework.LifecycleRuntimeTerminating)(nil)),
+		"LifecycleServiceAddInActivated":     reflect.ValueOf((*framework.LifecycleServiceAddInActivated)(nil)),
+		"LifecycleServiceAddInActivating":    reflect.ValueOf((*framework.LifecycleServiceAddInActivating)(nil)),
+		"LifecycleServiceAddInDeactivated":   reflect.ValueOf((*framework.LifecycleServiceAddInDeactivated)(nil)),
+		"LifecycleServiceAddInDeactivating":  reflect.ValueOf((*framework.LifecycleServiceAddInDeactivating)(nil)),
+		"LifecycleServiceBirth":              reflect.ValueOf((*framework.LifecycleServiceBirth)(nil)),
+		"LifecycleServiceBuilt":              reflect.ValueOf((*framework.LifecycleServiceBuilt)(nil)),
+		"LifecycleServiceEntityPTDeclared":   reflect.ValueOf((*framework.LifecycleServiceEntityPTDeclared)(nil)),
+		"LifecycleServiceEntityPTRedeclared": reflect.ValueOf((*framework.LifecycleServiceEntityPTRedeclared)(nil)),
+		"LifecycleServiceEntityPTUndeclared": reflect.ValueOf((*framework.LifecycleServiceEntityPTUndeclared)(nil)),
+		"LifecycleServiceStarted":            reflect.ValueOf((*framework.LifecycleServiceStarted)(nil)),
+		"LifecycleServiceStarting":           reflect.ValueOf((*framework.LifecycleServiceStarting)(nil)),
+		"LifecycleServiceTerminated":         reflect.ValueOf((*framework.LifecycleServiceTerminated)(nil)),
+		"LifecycleServiceTerminating":        reflect.ValueOf((*framework.LifecycleServiceTerminating)(nil)),
+		"RuntimeCreator":                     reflect.ValueOf((*framework.RuntimeCreator)(nil)),
+		"RuntimeGeneric":                     reflect.ValueOf((*framework.RuntimeGeneric)(nil)),
+		"RuntimeInstance":                    reflect.ValueOf((*framework.RuntimeInstance)(nil)),
+		"ServiceGeneric":                     reflect.ValueOf((*framework.ServiceGeneric)(nil)),
+		"ServiceInstance":                    reflect.ValueOf((*framework.ServiceInstance)(nil)),
 
 		// interface wrapper definitions
-		"_IRuntimeInstance":                 reflect.ValueOf((*_git_golaxy_org_framework_IRuntimeInstance)(nil)),
-		"_IRuntimeInstantiation":            reflect.ValueOf((*_git_golaxy_org_framework_IRuntimeInstantiation)(nil)),
-		"_IServiceInstance":                 reflect.ValueOf((*_git_golaxy_org_framework_IServiceInstance)(nil)),
-		"_IServiceInstantiation":            reflect.ValueOf((*_git_golaxy_org_framework_IServiceInstantiation)(nil)),
-		"_InstallRuntimeDistEntityRegistry": reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeDistEntityRegistry)(nil)),
-		"_InstallRuntimeLogger":             reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeLogger)(nil)),
-		"_InstallRuntimeRPCStack":           reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeRPCStack)(nil)),
-		"_InstallServiceBroker":             reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceBroker)(nil)),
-		"_InstallServiceConfig":             reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceConfig)(nil)),
-		"_InstallServiceDistEntityQuerier":  reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistEntityQuerier)(nil)),
-		"_InstallServiceDistService":        reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistService)(nil)),
-		"_InstallServiceDistSync":           reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistSync)(nil)),
-		"_InstallServiceLogger":             reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceLogger)(nil)),
-		"_InstallServiceRPC":                reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceRPC)(nil)),
-		"_InstallServiceRegistry":           reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceRegistry)(nil)),
-		"_LifecycleRuntimeBirth":            reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeBirth)(nil)),
-		"_LifecycleRuntimeBuilt":            reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeBuilt)(nil)),
-		"_LifecycleRuntimeFrameLoopBegin":   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameLoopBegin)(nil)),
-		"_LifecycleRuntimeFrameLoopEnd":     reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameLoopEnd)(nil)),
-		"_LifecycleRuntimeFrameUpdateBegin": reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameUpdateBegin)(nil)),
-		"_LifecycleRuntimeFrameUpdateEnd":   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameUpdateEnd)(nil)),
-		"_LifecycleRuntimeRunCallBegin":     reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunCallBegin)(nil)),
-		"_LifecycleRuntimeRunCallEnd":       reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunCallEnd)(nil)),
-		"_LifecycleRuntimeRunGCBegin":       reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunGCBegin)(nil)),
-		"_LifecycleRuntimeRunGCEnd":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunGCEnd)(nil)),
-		"_LifecycleRuntimeStarted":          reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeStarted)(nil)),
-		"_LifecycleRuntimeStarting":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeStarting)(nil)),
-		"_LifecycleRuntimeTerminated":       reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeTerminated)(nil)),
-		"_LifecycleRuntimeTerminating":      reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeTerminating)(nil)),
-		"_LifecycleServiceBirth":            reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceBirth)(nil)),
-		"_LifecycleServiceBuilt":            reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceBuilt)(nil)),
-		"_LifecycleServiceStarted":          reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceStarted)(nil)),
-		"_LifecycleServiceStarting":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceStarting)(nil)),
-		"_LifecycleServiceTerminated":       reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminated)(nil)),
-		"_LifecycleServiceTerminating":      reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminating)(nil)),
+		"_IRuntimeInstance":                   reflect.ValueOf((*_git_golaxy_org_framework_IRuntimeInstance)(nil)),
+		"_IRuntimeInstantiation":              reflect.ValueOf((*_git_golaxy_org_framework_IRuntimeInstantiation)(nil)),
+		"_IServiceInstance":                   reflect.ValueOf((*_git_golaxy_org_framework_IServiceInstance)(nil)),
+		"_IServiceInstantiation":              reflect.ValueOf((*_git_golaxy_org_framework_IServiceInstantiation)(nil)),
+		"_InstallRuntimeDistEntityRegistry":   reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeDistEntityRegistry)(nil)),
+		"_InstallRuntimeLogger":               reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeLogger)(nil)),
+		"_InstallRuntimeRPCStack":             reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeRPCStack)(nil)),
+		"_InstallServiceBroker":               reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceBroker)(nil)),
+		"_InstallServiceConfig":               reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceConfig)(nil)),
+		"_InstallServiceDistEntityQuerier":    reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistEntityQuerier)(nil)),
+		"_InstallServiceDistService":          reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistService)(nil)),
+		"_InstallServiceDistSync":             reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistSync)(nil)),
+		"_InstallServiceLogger":               reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceLogger)(nil)),
+		"_InstallServiceRPC":                  reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceRPC)(nil)),
+		"_InstallServiceRegistry":             reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceRegistry)(nil)),
+		"_LifecycleRuntimeAddInActivated":     reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInActivated)(nil)),
+		"_LifecycleRuntimeAddInActivating":    reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInActivating)(nil)),
+		"_LifecycleRuntimeAddInDeactivated":   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInDeactivated)(nil)),
+		"_LifecycleRuntimeAddInDeactivating":  reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInDeactivating)(nil)),
+		"_LifecycleRuntimeBirth":              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeBirth)(nil)),
+		"_LifecycleRuntimeBuilt":              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeBuilt)(nil)),
+		"_LifecycleRuntimeFrameLoopBegin":     reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameLoopBegin)(nil)),
+		"_LifecycleRuntimeFrameLoopEnd":       reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameLoopEnd)(nil)),
+		"_LifecycleRuntimeFrameUpdateBegin":   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameUpdateBegin)(nil)),
+		"_LifecycleRuntimeFrameUpdateEnd":     reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameUpdateEnd)(nil)),
+		"_LifecycleRuntimeRunCallBegin":       reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunCallBegin)(nil)),
+		"_LifecycleRuntimeRunCallEnd":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunCallEnd)(nil)),
+		"_LifecycleRuntimeRunGCBegin":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunGCBegin)(nil)),
+		"_LifecycleRuntimeRunGCEnd":           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunGCEnd)(nil)),
+		"_LifecycleRuntimeStarted":            reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeStarted)(nil)),
+		"_LifecycleRuntimeStarting":           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeStarting)(nil)),
+		"_LifecycleRuntimeTerminated":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeTerminated)(nil)),
+		"_LifecycleRuntimeTerminating":        reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeTerminating)(nil)),
+		"_LifecycleServiceAddInActivated":     reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceAddInActivated)(nil)),
+		"_LifecycleServiceAddInActivating":    reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceAddInActivating)(nil)),
+		"_LifecycleServiceAddInDeactivated":   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceAddInDeactivated)(nil)),
+		"_LifecycleServiceAddInDeactivating":  reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceAddInDeactivating)(nil)),
+		"_LifecycleServiceBirth":              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceBirth)(nil)),
+		"_LifecycleServiceBuilt":              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceBuilt)(nil)),
+		"_LifecycleServiceEntityPTDeclared":   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityPTDeclared)(nil)),
+		"_LifecycleServiceEntityPTRedeclared": reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityPTRedeclared)(nil)),
+		"_LifecycleServiceEntityPTUndeclared": reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityPTUndeclared)(nil)),
+		"_LifecycleServiceStarted":            reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceStarted)(nil)),
+		"_LifecycleServiceStarting":           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceStarting)(nil)),
+		"_LifecycleServiceTerminated":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminated)(nil)),
+		"_LifecycleServiceTerminating":        reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminating)(nil)),
 	}
 }
 
@@ -509,6 +531,46 @@ func (W _git_golaxy_org_framework_InstallServiceRegistry) InstallRegistry(inst f
 	W.WInstallRegistry(inst)
 }
 
+// _git_golaxy_org_framework_LifecycleRuntimeAddInActivated is an interface wrapper for LifecycleRuntimeAddInActivated type
+type _git_golaxy_org_framework_LifecycleRuntimeAddInActivated struct {
+	IValue          interface{}
+	WAddInActivated func(inst framework.IRuntimeInstance, addIn extension.AddInStatus)
+}
+
+func (W _git_golaxy_org_framework_LifecycleRuntimeAddInActivated) AddInActivated(inst framework.IRuntimeInstance, addIn extension.AddInStatus) {
+	W.WAddInActivated(inst, addIn)
+}
+
+// _git_golaxy_org_framework_LifecycleRuntimeAddInActivating is an interface wrapper for LifecycleRuntimeAddInActivating type
+type _git_golaxy_org_framework_LifecycleRuntimeAddInActivating struct {
+	IValue           interface{}
+	WAddInActivating func(inst framework.IRuntimeInstance, addIn extension.AddInStatus)
+}
+
+func (W _git_golaxy_org_framework_LifecycleRuntimeAddInActivating) AddInActivating(inst framework.IRuntimeInstance, addIn extension.AddInStatus) {
+	W.WAddInActivating(inst, addIn)
+}
+
+// _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivated is an interface wrapper for LifecycleRuntimeAddInDeactivated type
+type _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivated struct {
+	IValue            interface{}
+	WAddInDeactivated func(inst framework.IRuntimeInstance, addIn extension.AddInStatus)
+}
+
+func (W _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivated) AddInDeactivated(inst framework.IRuntimeInstance, addIn extension.AddInStatus) {
+	W.WAddInDeactivated(inst, addIn)
+}
+
+// _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivating is an interface wrapper for LifecycleRuntimeAddInDeactivating type
+type _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivating struct {
+	IValue             interface{}
+	WAddInDeactivating func(inst framework.IRuntimeInstance, addIn extension.AddInStatus)
+}
+
+func (W _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivating) AddInDeactivating(inst framework.IRuntimeInstance, addIn extension.AddInStatus) {
+	W.WAddInDeactivating(inst, addIn)
+}
+
 // _git_golaxy_org_framework_LifecycleRuntimeBirth is an interface wrapper for LifecycleRuntimeBirth type
 type _git_golaxy_org_framework_LifecycleRuntimeBirth struct {
 	IValue interface{}
@@ -649,6 +711,46 @@ func (W _git_golaxy_org_framework_LifecycleRuntimeTerminating) Terminating(inst 
 	W.WTerminating(inst)
 }
 
+// _git_golaxy_org_framework_LifecycleServiceAddInActivated is an interface wrapper for LifecycleServiceAddInActivated type
+type _git_golaxy_org_framework_LifecycleServiceAddInActivated struct {
+	IValue          interface{}
+	WAddInActivated func(inst framework.IServiceInstance, addIn extension.AddInStatus)
+}
+
+func (W _git_golaxy_org_framework_LifecycleServiceAddInActivated) AddInActivated(inst framework.IServiceInstance, addIn extension.AddInStatus) {
+	W.WAddInActivated(inst, addIn)
+}
+
+// _git_golaxy_org_framework_LifecycleServiceAddInActivating is an interface wrapper for LifecycleServiceAddInActivating type
+type _git_golaxy_org_framework_LifecycleServiceAddInActivating struct {
+	IValue           interface{}
+	WAddInActivating func(inst framework.IServiceInstance, addIn extension.AddInStatus)
+}
+
+func (W _git_golaxy_org_framework_LifecycleServiceAddInActivating) AddInActivating(inst framework.IServiceInstance, addIn extension.AddInStatus) {
+	W.WAddInActivating(inst, addIn)
+}
+
+// _git_golaxy_org_framework_LifecycleServiceAddInDeactivated is an interface wrapper for LifecycleServiceAddInDeactivated type
+type _git_golaxy_org_framework_LifecycleServiceAddInDeactivated struct {
+	IValue            interface{}
+	WAddInDeactivated func(inst framework.IServiceInstance, addIn extension.AddInStatus)
+}
+
+func (W _git_golaxy_org_framework_LifecycleServiceAddInDeactivated) AddInDeactivated(inst framework.IServiceInstance, addIn extension.AddInStatus) {
+	W.WAddInDeactivated(inst, addIn)
+}
+
+// _git_golaxy_org_framework_LifecycleServiceAddInDeactivating is an interface wrapper for LifecycleServiceAddInDeactivating type
+type _git_golaxy_org_framework_LifecycleServiceAddInDeactivating struct {
+	IValue             interface{}
+	WAddInDeactivating func(inst framework.IServiceInstance, addIn extension.AddInStatus)
+}
+
+func (W _git_golaxy_org_framework_LifecycleServiceAddInDeactivating) AddInDeactivating(inst framework.IServiceInstance, addIn extension.AddInStatus) {
+	W.WAddInDeactivating(inst, addIn)
+}
+
 // _git_golaxy_org_framework_LifecycleServiceBirth is an interface wrapper for LifecycleServiceBirth type
 type _git_golaxy_org_framework_LifecycleServiceBirth struct {
 	IValue interface{}
@@ -667,6 +769,36 @@ type _git_golaxy_org_framework_LifecycleServiceBuilt struct {
 
 func (W _git_golaxy_org_framework_LifecycleServiceBuilt) Built(inst framework.IServiceInstance) {
 	W.WBuilt(inst)
+}
+
+// _git_golaxy_org_framework_LifecycleServiceEntityPTDeclared is an interface wrapper for LifecycleServiceEntityPTDeclared type
+type _git_golaxy_org_framework_LifecycleServiceEntityPTDeclared struct {
+	IValue            interface{}
+	WEntityPTDeclared func(inst framework.IServiceInstance, entityPT ec.EntityPT)
+}
+
+func (W _git_golaxy_org_framework_LifecycleServiceEntityPTDeclared) EntityPTDeclared(inst framework.IServiceInstance, entityPT ec.EntityPT) {
+	W.WEntityPTDeclared(inst, entityPT)
+}
+
+// _git_golaxy_org_framework_LifecycleServiceEntityPTRedeclared is an interface wrapper for LifecycleServiceEntityPTRedeclared type
+type _git_golaxy_org_framework_LifecycleServiceEntityPTRedeclared struct {
+	IValue              interface{}
+	WEntityPTRedeclared func(inst framework.IServiceInstance, entityPT ec.EntityPT)
+}
+
+func (W _git_golaxy_org_framework_LifecycleServiceEntityPTRedeclared) EntityPTRedeclared(inst framework.IServiceInstance, entityPT ec.EntityPT) {
+	W.WEntityPTRedeclared(inst, entityPT)
+}
+
+// _git_golaxy_org_framework_LifecycleServiceEntityPTUndeclared is an interface wrapper for LifecycleServiceEntityPTUndeclared type
+type _git_golaxy_org_framework_LifecycleServiceEntityPTUndeclared struct {
+	IValue              interface{}
+	WEntityPTUndeclared func(inst framework.IServiceInstance, entityPT ec.EntityPT)
+}
+
+func (W _git_golaxy_org_framework_LifecycleServiceEntityPTUndeclared) EntityPTUndeclared(inst framework.IServiceInstance, entityPT ec.EntityPT) {
+	W.WEntityPTUndeclared(inst, entityPT)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceStarted is an interface wrapper for LifecycleServiceStarted type

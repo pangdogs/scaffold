@@ -47,45 +47,47 @@ func init() {
 		"EntityCreator":      reflect.ValueOf((*core.EntityCreator)(nil)),
 		"EntityPTCreator":    reflect.ValueOf((*core.EntityPTCreator)(nil)),
 		"LifecycleAddInInit": reflect.ValueOf((*core.LifecycleAddInInit)(nil)),
-		"LifecycleAddInOnRuntimeRunningStateChanged": reflect.ValueOf((*core.LifecycleAddInOnRuntimeRunningStateChanged)(nil)),
-		"LifecycleAddInShut":                         reflect.ValueOf((*core.LifecycleAddInShut)(nil)),
-		"LifecycleComponentAwake":                    reflect.ValueOf((*core.LifecycleComponentAwake)(nil)),
-		"LifecycleComponentDispose":                  reflect.ValueOf((*core.LifecycleComponentDispose)(nil)),
-		"LifecycleComponentLateUpdate":               reflect.ValueOf((*core.LifecycleComponentLateUpdate)(nil)),
-		"LifecycleComponentShut":                     reflect.ValueOf((*core.LifecycleComponentShut)(nil)),
-		"LifecycleComponentStart":                    reflect.ValueOf((*core.LifecycleComponentStart)(nil)),
-		"LifecycleComponentUpdate":                   reflect.ValueOf((*core.LifecycleComponentUpdate)(nil)),
-		"LifecycleEntityAwake":                       reflect.ValueOf((*core.LifecycleEntityAwake)(nil)),
-		"LifecycleEntityDispose":                     reflect.ValueOf((*core.LifecycleEntityDispose)(nil)),
-		"LifecycleEntityLateUpdate":                  reflect.ValueOf((*core.LifecycleEntityLateUpdate)(nil)),
-		"LifecycleEntityShut":                        reflect.ValueOf((*core.LifecycleEntityShut)(nil)),
-		"LifecycleEntityStart":                       reflect.ValueOf((*core.LifecycleEntityStart)(nil)),
-		"LifecycleEntityUpdate":                      reflect.ValueOf((*core.LifecycleEntityUpdate)(nil)),
-		"Runtime":                                    reflect.ValueOf((*core.Runtime)(nil)),
-		"RuntimeBehavior":                            reflect.ValueOf((*core.RuntimeBehavior)(nil)),
-		"RuntimeOptions":                             reflect.ValueOf((*core.RuntimeOptions)(nil)),
-		"Service":                                    reflect.ValueOf((*core.Service)(nil)),
-		"ServiceBehavior":                            reflect.ValueOf((*core.ServiceBehavior)(nil)),
-		"ServiceOptions":                             reflect.ValueOf((*core.ServiceOptions)(nil)),
+		"LifecycleAddInOnRuntimeRunningStatusChanged": reflect.ValueOf((*core.LifecycleAddInOnRuntimeRunningStatusChanged)(nil)),
+		"LifecycleAddInOnServiceRunningStatusChanged": reflect.ValueOf((*core.LifecycleAddInOnServiceRunningStatusChanged)(nil)),
+		"LifecycleAddInShut":                          reflect.ValueOf((*core.LifecycleAddInShut)(nil)),
+		"LifecycleComponentAwake":                     reflect.ValueOf((*core.LifecycleComponentAwake)(nil)),
+		"LifecycleComponentDispose":                   reflect.ValueOf((*core.LifecycleComponentDispose)(nil)),
+		"LifecycleComponentLateUpdate":                reflect.ValueOf((*core.LifecycleComponentLateUpdate)(nil)),
+		"LifecycleComponentShut":                      reflect.ValueOf((*core.LifecycleComponentShut)(nil)),
+		"LifecycleComponentStart":                     reflect.ValueOf((*core.LifecycleComponentStart)(nil)),
+		"LifecycleComponentUpdate":                    reflect.ValueOf((*core.LifecycleComponentUpdate)(nil)),
+		"LifecycleEntityAwake":                        reflect.ValueOf((*core.LifecycleEntityAwake)(nil)),
+		"LifecycleEntityDispose":                      reflect.ValueOf((*core.LifecycleEntityDispose)(nil)),
+		"LifecycleEntityLateUpdate":                   reflect.ValueOf((*core.LifecycleEntityLateUpdate)(nil)),
+		"LifecycleEntityShut":                         reflect.ValueOf((*core.LifecycleEntityShut)(nil)),
+		"LifecycleEntityStart":                        reflect.ValueOf((*core.LifecycleEntityStart)(nil)),
+		"LifecycleEntityUpdate":                       reflect.ValueOf((*core.LifecycleEntityUpdate)(nil)),
+		"Runtime":                                     reflect.ValueOf((*core.Runtime)(nil)),
+		"RuntimeBehavior":                             reflect.ValueOf((*core.RuntimeBehavior)(nil)),
+		"RuntimeOptions":                              reflect.ValueOf((*core.RuntimeOptions)(nil)),
+		"Service":                                     reflect.ValueOf((*core.Service)(nil)),
+		"ServiceBehavior":                             reflect.ValueOf((*core.ServiceBehavior)(nil)),
+		"ServiceOptions":                              reflect.ValueOf((*core.ServiceOptions)(nil)),
 
 		// interface wrapper definitions
-		"_LifecycleAddInInit":                         reflect.ValueOf((*_git_golaxy_org_core_LifecycleAddInInit)(nil)),
-		"_LifecycleAddInOnRuntimeRunningStateChanged": reflect.ValueOf((*_git_golaxy_org_core_LifecycleAddInOnRuntimeRunningStateChanged)(nil)),
-		"_LifecycleAddInShut":                         reflect.ValueOf((*_git_golaxy_org_core_LifecycleAddInShut)(nil)),
-		"_LifecycleComponentAwake":                    reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentAwake)(nil)),
-		"_LifecycleComponentDispose":                  reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentDispose)(nil)),
-		"_LifecycleComponentLateUpdate":               reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentLateUpdate)(nil)),
-		"_LifecycleComponentShut":                     reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentShut)(nil)),
-		"_LifecycleComponentStart":                    reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentStart)(nil)),
-		"_LifecycleComponentUpdate":                   reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentUpdate)(nil)),
-		"_LifecycleEntityAwake":                       reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityAwake)(nil)),
-		"_LifecycleEntityDispose":                     reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityDispose)(nil)),
-		"_LifecycleEntityLateUpdate":                  reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityLateUpdate)(nil)),
-		"_LifecycleEntityShut":                        reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityShut)(nil)),
-		"_LifecycleEntityStart":                       reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityStart)(nil)),
-		"_LifecycleEntityUpdate":                      reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityUpdate)(nil)),
-		"_Runtime":                                    reflect.ValueOf((*_git_golaxy_org_core_Runtime)(nil)),
-		"_Service":                                    reflect.ValueOf((*_git_golaxy_org_core_Service)(nil)),
+		"_LifecycleAddInInit":                          reflect.ValueOf((*_git_golaxy_org_core_LifecycleAddInInit)(nil)),
+		"_LifecycleAddInOnRuntimeRunningStatusChanged": reflect.ValueOf((*_git_golaxy_org_core_LifecycleAddInOnRuntimeRunningStatusChanged)(nil)),
+		"_LifecycleAddInOnServiceRunningStatusChanged": reflect.ValueOf((*_git_golaxy_org_core_LifecycleAddInOnServiceRunningStatusChanged)(nil)),
+		"_LifecycleAddInShut":                          reflect.ValueOf((*_git_golaxy_org_core_LifecycleAddInShut)(nil)),
+		"_LifecycleComponentAwake":                     reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentAwake)(nil)),
+		"_LifecycleComponentDispose":                   reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentDispose)(nil)),
+		"_LifecycleComponentLateUpdate":                reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentLateUpdate)(nil)),
+		"_LifecycleComponentShut":                      reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentShut)(nil)),
+		"_LifecycleComponentStart":                     reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentStart)(nil)),
+		"_LifecycleComponentUpdate":                    reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentUpdate)(nil)),
+		"_LifecycleEntityAwake":                        reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityAwake)(nil)),
+		"_LifecycleEntityDispose":                      reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityDispose)(nil)),
+		"_LifecycleEntityLateUpdate":                   reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityLateUpdate)(nil)),
+		"_LifecycleEntityShut":                         reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityShut)(nil)),
+		"_LifecycleEntityStart":                        reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityStart)(nil)),
+		"_LifecycleEntityUpdate":                       reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityUpdate)(nil)),
+		"_Runtime":                                     reflect.ValueOf((*_git_golaxy_org_core_Runtime)(nil)),
+		"_Service":                                     reflect.ValueOf((*_git_golaxy_org_core_Service)(nil)),
 	}
 }
 
@@ -99,14 +101,24 @@ func (W _git_golaxy_org_core_LifecycleAddInInit) Init(svcCtx service.Context, rt
 	W.WInit(svcCtx, rtCtx)
 }
 
-// _git_golaxy_org_core_LifecycleAddInOnRuntimeRunningStateChanged is an interface wrapper for LifecycleAddInOnRuntimeRunningStateChanged type
-type _git_golaxy_org_core_LifecycleAddInOnRuntimeRunningStateChanged struct {
-	IValue                        interface{}
-	WOnRuntimeRunningStateChanged func(rtCtx runtime.Context, state runtime.RunningState, args ...any)
+// _git_golaxy_org_core_LifecycleAddInOnRuntimeRunningStatusChanged is an interface wrapper for LifecycleAddInOnRuntimeRunningStatusChanged type
+type _git_golaxy_org_core_LifecycleAddInOnRuntimeRunningStatusChanged struct {
+	IValue                         interface{}
+	WOnRuntimeRunningStatusChanged func(rtCtx runtime.Context, status runtime.RunningStatus, args ...any)
 }
 
-func (W _git_golaxy_org_core_LifecycleAddInOnRuntimeRunningStateChanged) OnRuntimeRunningStateChanged(rtCtx runtime.Context, state runtime.RunningState, args ...any) {
-	W.WOnRuntimeRunningStateChanged(rtCtx, state, args...)
+func (W _git_golaxy_org_core_LifecycleAddInOnRuntimeRunningStatusChanged) OnRuntimeRunningStatusChanged(rtCtx runtime.Context, status runtime.RunningStatus, args ...any) {
+	W.WOnRuntimeRunningStatusChanged(rtCtx, status, args...)
+}
+
+// _git_golaxy_org_core_LifecycleAddInOnServiceRunningStatusChanged is an interface wrapper for LifecycleAddInOnServiceRunningStatusChanged type
+type _git_golaxy_org_core_LifecycleAddInOnServiceRunningStatusChanged struct {
+	IValue                         interface{}
+	WOnServiceRunningStatusChanged func(svcCtx service.Context, status service.RunningStatus, args ...any)
+}
+
+func (W _git_golaxy_org_core_LifecycleAddInOnServiceRunningStatusChanged) OnServiceRunningStatusChanged(svcCtx service.Context, status service.RunningStatus, args ...any) {
+	W.WOnServiceRunningStatusChanged(svcCtx, status, args...)
 }
 
 // _git_golaxy_org_core_LifecycleAddInShut is an interface wrapper for LifecycleAddInShut type

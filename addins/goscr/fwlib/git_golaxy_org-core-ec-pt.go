@@ -14,12 +14,12 @@ func init() {
 		// function, constant and variable definitions
 		"ComponentWith":       reflect.ValueOf(pt.ComponentWith),
 		"DefaultComponentLib": reflect.ValueOf(pt.DefaultComponentLib),
-		"DefaultEntityLib":    reflect.ValueOf(pt.DefaultEntityLib),
 		"EntityWith":          reflect.ValueOf(pt.EntityWith),
 		"ErrPt":               reflect.ValueOf(&pt.ErrPt).Elem(),
 		"For":                 reflect.ValueOf(pt.For),
 		"NewComponentLib":     reflect.ValueOf(pt.NewComponentLib),
 		"NewEntityLib":        reflect.ValueOf(pt.NewEntityLib),
+		"UnsafeEntityLib":     reflect.ValueOf(pt.UnsafeEntityLib),
 
 		// type definitions
 		"ComponentAttribute": reflect.ValueOf((*pt.ComponentAttribute)(nil)),
