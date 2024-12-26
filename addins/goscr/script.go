@@ -21,6 +21,7 @@ package goscr
 
 import (
 	"fmt"
+	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/runtime"
 	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/option"
@@ -97,6 +98,19 @@ func (s *_Script) Solution() *dynamic.Solution {
 	return s.solution
 }
 
+func (s *_Script) OnServiceRunningStatusChanged(svcCtx service.Context, status service.RunningStatus, args ...any) {
+	switch status {
+	case service.RunningStatus_EntityPTDeclared, service.RunningStatus_EntityPTRedeclared:
+		solution := s.solution
+		if solution == nil {
+			return
+		}
+		s.cacheCP(solution, args[0].(ec.EntityPT))
+	default:
+		return
+	}
+}
+
 func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 	solution := dynamic.NewSolution(s.options.PkgRoot)
 	solution.Use(stdlib.Symbols)
@@ -116,13 +130,8 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 		return nil, fmt.Errorf("loaded callback error occurred, %s", err)
 	}
 
-	solution.Range(func(_ string, scripts dynamic.Scripts) bool {
-		scripts.Range(func(script *dynamic.Script) bool {
-			for _, method := range script.Methods {
-				callpath.Cache(script.Ident, method.Name)
-			}
-			return true
-		})
+	s.svcCtx.GetEntityLib().Range(func(entityPT ec.EntityPT) bool {
+		s.cacheCP(solution, entityPT)
 		return true
 	})
 
@@ -208,4 +217,36 @@ func (s *_Script) autoHotFix() {
 		pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
 			return fmt.Sprintf("%q -> %q", project.PkgRoot, project.LocalPath)
 		}))
+}
+
+func (s *_Script) cacheCP(solution *dynamic.Solution, entityPT ec.EntityPT) {
+	scriptPkg, ok := entityPT.Extra().Get("script_pkg")
+	if ok {
+		scriptIdent, ok := entityPT.Extra().Get("script_ident")
+		if ok {
+			script := solution.Package(scriptPkg.(string)).Ident(scriptIdent.(string))
+			if script != nil {
+				for _, method := range script.Methods {
+					callpath.Cache("", method.Name)
+				}
+			}
+		}
+	}
+
+	for i := range entityPT.CountComponents() {
+		comp := entityPT.Component(i)
+
+		scriptPkg, ok := comp.Extra.Get("script_pkg")
+		if ok {
+			scriptIdent, ok := comp.Extra.Get("script_ident")
+			if ok {
+				script := solution.Package(scriptPkg.(string)).Ident(scriptIdent.(string))
+				if script != nil {
+					for _, method := range script.Methods {
+						callpath.Cache(comp.Name, method.Name)
+					}
+				}
+			}
+		}
+	}
 }
