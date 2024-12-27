@@ -105,7 +105,7 @@ func (s *_Script) OnServiceRunningStatusChanged(svcCtx service.Context, status s
 		if solution == nil {
 			return
 		}
-		s.cacheCP(solution, args[0].(ec.EntityPT))
+		s.cacheCallPath(solution, args[0].(ec.EntityPT))
 	}
 }
 
@@ -129,7 +129,7 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 	}
 
 	s.svcCtx.GetEntityLib().Range(func(entityPT ec.EntityPT) bool {
-		s.cacheCP(solution, entityPT)
+		s.cacheCallPath(solution, entityPT)
 		return true
 	})
 
@@ -217,7 +217,7 @@ func (s *_Script) autoHotFix() {
 		}))
 }
 
-func (s *_Script) cacheCP(solution *dynamic.Solution, entityPT ec.EntityPT) {
+func (s *_Script) cacheCallPath(solution *dynamic.Solution, entityPT ec.EntityPT) {
 	scriptPkg, ok := entityPT.Extra().Get("script_pkg")
 	if ok {
 		scriptIdent, ok := entityPT.Extra().Get("script_ident")
