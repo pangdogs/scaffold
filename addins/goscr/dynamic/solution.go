@@ -121,20 +121,32 @@ func (s *Solution) Method(pkgPath, method string) reflect.Value {
 }
 
 // BindMethod 绑定成员方法
-func (s *Solution) BindMethod(this any, pkgPath, ident string, method string) reflect.Value {
+func (s *Solution) BindMethod(this reflect.Value, pkgPath, ident string, method string) any {
 	script := s.lib.Package(pkgPath).Ident(ident)
 	if script == nil {
-		return reflect.Value{}
+		return nil
 	}
 
 	if script.MethodBinder == nil {
-		return reflect.Value{}
+		return nil
 	}
 
-	ret := script.MethodBinder(this, method)
+	switch script.BindMode {
+	case Func:
+		this = this.MethodByName("This")
+		if !this.IsValid() {
+			return nil
+		}
+	case Struct:
+		break
+	default:
+		return nil
+	}
+
+	ret := script.MethodBinder(this.Interface(), method)
 	if ret == nil {
-		return reflect.Value{}
+		return nil
 	}
 
-	return reflect.ValueOf(ret)
+	return ret
 }

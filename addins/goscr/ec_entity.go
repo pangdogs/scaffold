@@ -97,12 +97,12 @@ func (e *Entity) bindMethod(method string) any {
 		return nil
 	}
 
-	thisMethod := Using(e.GetService()).Solution().BindMethod(e.GetReflected().Interface(), scriptPkg.(string), scriptIdent.(string), method)
-	if !thisMethod.IsValid() {
+	thisMethod := Using(e.GetService()).Solution().BindMethod(e.GetReflected(), scriptPkg.(string), scriptIdent.(string), method)
+	if thisMethod == nil {
 		return nil
 	}
 
-	return thisMethod.Interface()
+	return thisMethod
 }
 
 // EntityEnableLateUpdate 脚本化实体，支持LateUpdate

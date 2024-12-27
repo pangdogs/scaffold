@@ -36,6 +36,15 @@ import (
 	"text/template"
 )
 
+// BindMode 绑定模式
+type BindMode int32
+
+const (
+	None   BindMode = iota // 无绑定
+	Func                   // 函数
+	Struct                 // 结构体
+)
+
 // This This类型
 type This struct {
 	Name    string // 类型名称
@@ -62,9 +71,10 @@ type Script struct {
 	PkgName      string       // 包名
 	PkgPath      string       // 包路径
 	Ident        string       // 类型标识，为空表示脚本均为全局方法
-	This         *This        // This类型，类型标识不为空时有效，表示扩展的基类型，为nil表示没有基类型
+	BindMode     BindMode     // 绑定模式
+	This         *This        // This类型
 	Methods      []*Method    // 方法列表
-	MethodBinder MethodBinder // 成员方法绑定器，类型标识不为空并且This类型不为nil时有效
+	MethodBinder MethodBinder // 成员方法绑定器
 }
 
 // UniquePkgName 获取唯一包名
@@ -115,7 +125,7 @@ func (lib ScriptLib) Range(fun generic.Func2[string, Scripts, bool]) {
 }
 
 // PushIdent 添加类型标识
-func (lib ScriptLib) PushIdent(pkgPath, ident string, this *This) bool {
+func (lib ScriptLib) PushIdent(pkgPath, ident string, bindMode BindMode, this *This) bool {
 	scripts, ok := lib[pkgPath]
 	if !ok {
 		scripts = Scripts{}
@@ -127,10 +137,11 @@ func (lib ScriptLib) PushIdent(pkgPath, ident string, this *This) bool {
 	}
 
 	scripts[ident] = &Script{
-		PkgName: path.Base(pkgPath),
-		PkgPath: pkgPath,
-		Ident:   ident,
-		This:    this,
+		PkgName:  path.Base(pkgPath),
+		PkgPath:  pkgPath,
+		Ident:    ident,
+		BindMode: bindMode,
+		This:     this,
 	}
 
 	return true
@@ -184,7 +195,7 @@ func (lib ScriptLib) Load(localPath string) error {
 	}
 
 	for _, pkg := range pkgs {
-		lib.PushIdent(pkg.PkgPath, "", nil)
+		lib.PushIdent(pkg.PkgPath, "", None, nil)
 
 		for _, file := range pkg.Syntax {
 			ast.Inspect(file, func(n ast.Node) bool {
@@ -199,28 +210,57 @@ func (lib ScriptLib) Load(localPath string) error {
 						continue
 					}
 
-					structType, ok := ts.Type.(*ast.StructType)
+					var thisField *ast.Field
+					var bindMode BindMode
+
+					switch ty := ts.Type.(type) {
+					case *ast.StructType:
+						if ty.Fields == nil {
+							continue
+						}
+
+						thisField = pie.First(ty.Fields.List)
+						if thisField == nil {
+							continue
+						}
+
+						bindMode = Struct
+
+					case *ast.FuncType:
+						if ty.TypeParams != nil && len(ty.TypeParams.List) > 0 {
+							continue
+						}
+
+						if ty.Params != nil && len(ty.Params.List) > 0 {
+							continue
+						}
+
+						if ty.Results == nil {
+							continue
+						}
+
+						thisField = pie.First(ty.Results.List)
+						if thisField == nil {
+							continue
+						}
+
+						bindMode = Func
+
+					default:
+						continue
+					}
+
+					thisFieldType, ok := thisField.Type.(*ast.StarExpr)
 					if !ok {
 						continue
 					}
 
-					firstField := pie.First(structType.Fields.List)
-					if firstField == nil {
-						lib.PushIdent(pkg.PkgPath, ts.Name.Name, nil)
+					thisFieldSelector, ok := thisFieldType.X.(*ast.SelectorExpr)
+					if !ok || thisFieldSelector.Sel == nil {
 						continue
 					}
 
-					firstFieldType, ok := firstField.Type.(*ast.StarExpr)
-					if !ok {
-						continue
-					}
-
-					firstFieldSelector, ok := firstFieldType.X.(*ast.SelectorExpr)
-					if !ok || firstFieldSelector.Sel == nil {
-						continue
-					}
-
-					firstFieldPkgIdent, ok := firstFieldSelector.X.(*ast.Ident)
+					thisFieldPkgIdent, ok := thisFieldSelector.X.(*ast.Ident)
 					if !ok {
 						continue
 					}
@@ -230,18 +270,18 @@ func (lib ScriptLib) Load(localPath string) error {
 							return false
 						}
 						if spec.Name != nil {
-							return spec.Name.Name == firstFieldPkgIdent.Name
+							return spec.Name.Name == thisFieldPkgIdent.Name
 						}
-						return path.Base(strings.Trim(spec.Path.Value, `"`)) == firstFieldPkgIdent.Name
+						return path.Base(strings.Trim(spec.Path.Value, `"`)) == thisFieldPkgIdent.Name
 					})
 					if idx < 0 {
 						continue
 					}
 					imp := file.Imports[idx]
 
-					lib.PushIdent(pkg.PkgPath, ts.Name.Name, &This{
-						Name:    firstFieldSelector.Sel.Name,
-						PkgName: firstFieldPkgIdent.Name,
+					lib.PushIdent(pkg.PkgPath, ts.Name.Name, bindMode, &This{
+						Name:    thisFieldSelector.Sel.Name,
+						PkgName: thisFieldPkgIdent.Name,
 						PkgPath: strings.Trim(imp.Path.Value, `"`),
 					})
 				}
@@ -289,26 +329,55 @@ func (lib ScriptLib) Compile(i *interp.Interpreter) error {
 			return err
 		}
 
+		var no int
+
 		for _, s := range scripts {
-			if s.Ident != "" && s.This != nil {
-				code := `
+			if s.BindMode != None {
+				var code string
+
+				switch s.BindMode {
+				case Func:
+					code = fmt.Sprintf(`
 package {{.UniquePkgName}}_export
 
 import (
-	{{.UniquePkgName}} "{{.PkgPath}}"
-	{{.This.UniquePkgName}} "{{.This.PkgPath}}"
+	{{.UniquePkgName}}_%[1]d "{{.PkgPath}}"
+	{{.This.UniquePkgName}}_%[1]d "{{.This.PkgPath}}"
 )
 
 func Bind_{{.Ident}}(this any, method string) any {
 	switch method {
 	{{range .Methods}}
 	case "{{.Name}}":
-		return {{$.UniquePkgName}}.{{$.Ident}}{this.(*{{$.This.UniquePkgName}}.{{$.This.Name}})}.{{.Name}}
+		return {{$.UniquePkgName}}_%[1]d.{{$.Ident}}(this.(func() *{{$.This.UniquePkgName}}_%[1]d.{{$.This.Name}})).{{.Name}}
 	{{end}}
 	}
 	return nil
 }
-`
+`, no)
+				case Struct:
+					code = fmt.Sprintf(`
+package {{.UniquePkgName}}_export
+
+import (
+	{{.UniquePkgName}}_%[1]d "{{.PkgPath}}"
+	{{.This.UniquePkgName}}_%[1]d "{{.This.PkgPath}}"
+)
+
+func Bind_{{.Ident}}(this any, method string) any {
+	switch method {
+	{{range .Methods}}
+	case "{{.Name}}":
+		return {{$.UniquePkgName}}_%[1]d.{{$.Ident}}{this.(*{{$.This.UniquePkgName}}_%[1]d.{{$.This.Name}})}.{{.Name}}
+	{{end}}
+	}
+	return nil
+}
+`, no)
+				default:
+					continue
+				}
+
 				tmpl, err := template.New("").Parse(code)
 				if err != nil {
 					return err
@@ -334,6 +403,8 @@ func Bind_{{.Ident}}(this any, method string) any {
 				}
 
 				s.MethodBinder = binder
+
+				no++
 			}
 
 			if _, err := i.Eval(fmt.Sprintf(`import %s "%s"`, s.UniquePkgName(), s.PkgPath)); err != nil {
