@@ -21,7 +21,9 @@ package goscr
 
 import (
 	"fmt"
+	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/ec/pt"
+	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/core/utils/types"
 	"git.golaxy.org/framework"
 	"github.com/elliotchance/pie/v2"
@@ -42,9 +44,25 @@ func (c *Component) Callee(method string) reflect.Value {
 
 // Awake 生命周期Awake
 func (c *Component) Awake() {
+	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnCreate); ok {
+		generic.CastAction0(cb.OnCreate).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
+	}
+
+	if c.GetState() != ec.ComponentState_Awake {
+		return
+	}
+
 	method, _ := c.bindMethod("Awake").(func())
 	if method != nil {
 		method()
+	}
+
+	if c.GetState() != ec.ComponentState_Awake {
+		return
+	}
+
+	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnEnable); ok {
+		generic.CastAction0(cb.OnEnable).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
 	}
 }
 
@@ -54,13 +72,37 @@ func (c *Component) Start() {
 	if method != nil {
 		method()
 	}
+
+	if c.GetState() != ec.ComponentState_Start {
+		return
+	}
+
+	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnStarted); ok {
+		generic.CastAction0(cb.OnStarted).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
+	}
 }
 
 // Shut 生命周期Shut
 func (c *Component) Shut() {
+	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnStop); ok {
+		generic.CastAction0(cb.OnStop).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
+	}
+
+	if c.GetState() != ec.ComponentState_Shut {
+		return
+	}
+
 	method, _ := c.bindMethod("Shut").(func())
 	if method != nil {
 		method()
+	}
+
+	if c.GetState() != ec.ComponentState_Shut {
+		return
+	}
+
+	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnDisable); ok {
+		generic.CastAction0(cb.OnDisable).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
 	}
 }
 
@@ -69,6 +111,10 @@ func (c *Component) Dispose() {
 	method, _ := c.bindMethod("Dispose").(func())
 	if method != nil {
 		method()
+	}
+
+	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnDisposed); ok {
+		generic.CastAction0(cb.OnDisposed).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
 	}
 }
 

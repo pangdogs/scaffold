@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/ec/pt"
+	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/core/utils/types"
 	"git.golaxy.org/framework"
 	"github.com/elliotchance/pie/v2"
@@ -43,9 +44,25 @@ func (e *Entity) Callee(method string) reflect.Value {
 
 // Awake 生命周期Awake
 func (e *Entity) Awake() {
+	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnCreate); ok {
+		generic.CastAction0(cb.OnCreate).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
+	}
+
+	if e.GetState() != ec.EntityState_Awake {
+		return
+	}
+
 	method, _ := e.bindMethod("Awake").(func())
 	if method != nil {
 		method()
+	}
+
+	if e.GetState() != ec.EntityState_Awake {
+		return
+	}
+
+	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnEnable); ok {
+		generic.CastAction0(cb.OnEnable).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
 	}
 }
 
@@ -55,13 +72,37 @@ func (e *Entity) Start() {
 	if method != nil {
 		method()
 	}
+
+	if e.GetState() != ec.EntityState_Start {
+		return
+	}
+
+	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnStarted); ok {
+		generic.CastAction0(cb.OnStarted).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
+	}
 }
 
 // Shut 生命周期Shut
 func (e *Entity) Shut() {
+	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnStop); ok {
+		generic.CastAction0(cb.OnStop).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
+	}
+
+	if e.GetState() != ec.EntityState_Shut {
+		return
+	}
+
 	method, _ := e.bindMethod("Shut").(func())
 	if method != nil {
 		method()
+	}
+
+	if e.GetState() != ec.EntityState_Shut {
+		return
+	}
+
+	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnDisable); ok {
+		generic.CastAction0(cb.OnDisable).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
 	}
 }
 
@@ -70,6 +111,10 @@ func (e *Entity) Dispose() {
 	method, _ := e.bindMethod("Dispose").(func())
 	if method != nil {
 		method()
+	}
+
+	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnDisposed); ok {
+		generic.CastAction0(cb.OnDisposed).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
 	}
 }
 
