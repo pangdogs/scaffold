@@ -23,11 +23,9 @@ import (
 	"fmt"
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/ec/pt"
+	"git.golaxy.org/core/utils/exception"
 	"git.golaxy.org/core/utils/generic"
-	"git.golaxy.org/core/utils/types"
 	"git.golaxy.org/framework"
-	"github.com/elliotchance/pie/v2"
-	"maps"
 	"reflect"
 	"strings"
 )
@@ -168,13 +166,21 @@ func (e *EntityEnableUpdateAndLateUpdate) LateUpdate() {
 	}
 }
 
-// EntityWith 创建脚本化实体原型属性，用于注册实体原型时自定义相关属性
-func EntityWith(prototype, script string, scope *ec.Scope, componentAwakeOnFirstTouch, componentUniqueID *bool, extra ...map[string]any) pt.EntityAttribute {
-	return EntityWithT[EntityEnableUpdateAndLateUpdate](prototype, script, scope, componentAwakeOnFirstTouch, componentUniqueID, extra...)
+// EntityScript 创建脚本化实体原型属性，用于注册实体原型时自定义相关属性
+func EntityScript(prototype, script string) pt.EntityAttribute {
+	return EntityScriptT[EntityEnableUpdateAndLateUpdate](prototype, script)
 }
 
-// EntityWithT 创建脚本化实体原型属性，用于注册实体原型时自定义相关属性
-func EntityWithT[T any](prototype, script string, scope *ec.Scope, componentAwakeOnFirstTouch, componentUniqueID *bool, extra ...map[string]any) pt.EntityAttribute {
+// EntityScriptT 创建脚本化实体原型属性，用于注册实体原型时自定义相关属性
+func EntityScriptT[T any](prototype, script string) pt.EntityAttribute {
+	if prototype == "" {
+		exception.Panicf("%w: prototype is empty", exception.ErrArgs)
+	}
+
+	if script == "" {
+		exception.Panicf("%w: script is empty", exception.ErrArgs)
+	}
+
 	idx := strings.LastIndexByte(script, '.')
 	if idx < 0 {
 		panic(fmt.Errorf("incorrect script %q format", script))
@@ -183,12 +189,5 @@ func EntityWithT[T any](prototype, script string, scope *ec.Scope, componentAwak
 	scriptPkg := script[:idx]
 	scriptIdent := script[idx+1:]
 
-	_extra := maps.Clone(pie.First(extra))
-	if _extra == nil {
-		_extra = map[string]any{}
-	}
-	_extra["script_pkg"] = scriptPkg
-	_extra["script_ident"] = scriptIdent
-
-	return pt.EntityWith(prototype, types.ZeroT[T](), scope, componentAwakeOnFirstTouch, componentUniqueID, _extra)
+	return pt.Entity(prototype).SetExtra(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
 }

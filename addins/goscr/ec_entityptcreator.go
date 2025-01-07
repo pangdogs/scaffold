@@ -83,6 +83,10 @@ func (c EntityPTCreator) Extra(extra map[string]any) EntityPTCreator {
 
 // Script 脚本
 func (c EntityPTCreator) Script(script string) EntityPTCreator {
+	if script == "" {
+		exception.Panicf("%w: script is empty", exception.ErrArgs)
+	}
+
 	idx := strings.LastIndexByte(script, '.')
 	if idx < 0 {
 		panic(fmt.Errorf("incorrect script %q format", script))
@@ -103,7 +107,7 @@ func (c EntityPTCreator) AddComponent(comp any, name ...string) EntityPTCreator 
 	case pt.ComponentAttribute, *pt.ComponentAttribute:
 		c.comps = append(c.comps, v)
 	default:
-		c.comps = append(c.comps, pt.ComponentWith(comp, pie.First(name), true))
+		c.comps = append(c.comps, pt.Component(comp).SetName(pie.First(name)))
 	}
 	return c
 }
