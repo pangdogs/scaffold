@@ -28,7 +28,7 @@ func (e *EntityThis[T]) This() *T {
 	return e.GetReflected().Interface().(*T)
 }
 
-// EntityEnableUpdateThis 脚本化实体，支持Update，支持获取This指针，用于函数模式绑定脚本函数
+// EntityEnableUpdateThis 脚本化实体，支持帧更新（Update），支持获取This指针，用于函数模式绑定脚本函数
 type EntityEnableUpdateThis[T any] struct {
 	EntityEnableUpdate
 }
@@ -37,7 +37,7 @@ func (e *EntityEnableUpdateThis[T]) This() *T {
 	return e.GetReflected().Interface().(*T)
 }
 
-// EntityEnableLateUpdateThis 脚本化实体，支持LateUpdate，支持获取This指针，用于函数模式绑定脚本函数
+// EntityEnableLateUpdateThis 脚本化实体，支持帧迟滞更新（Late Update），支持获取This指针，用于函数模式绑定脚本函数
 type EntityEnableLateUpdateThis[T any] struct {
 	EntityEnableLateUpdate
 }
@@ -46,7 +46,7 @@ func (e *EntityEnableLateUpdateThis[T]) This() *T {
 	return e.GetReflected().Interface().(*T)
 }
 
-// EntityEnableUpdateAndLateUpdateThis 脚本化实体，支持Update、LateUpdate，支持获取This指针，用于函数模式绑定脚本函数
+// EntityEnableUpdateAndLateUpdateThis 脚本化实体，支持帧更新（Update）、帧迟滞更新（Late Update），支持获取This指针，用于函数模式绑定脚本函数
 type EntityEnableUpdateAndLateUpdateThis[T any] struct {
 	EntityEnableUpdateAndLateUpdate
 }

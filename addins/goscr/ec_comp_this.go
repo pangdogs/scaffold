@@ -28,7 +28,7 @@ func (c *ComponentThis[T]) This() *T {
 	return c.GetReflected().Interface().(*T)
 }
 
-// ComponentEnableUpdateThis 脚本化组件，支持Update，支持获取This指针，用于函数模式绑定脚本函数
+// ComponentEnableUpdateThis 脚本化组件，支持帧更新（Update），支持获取This指针，用于函数模式绑定脚本函数
 type ComponentEnableUpdateThis[T any] struct {
 	ComponentEnableUpdate
 }
@@ -37,7 +37,7 @@ func (c *ComponentEnableUpdateThis[T]) This() *T {
 	return c.GetReflected().Interface().(*T)
 }
 
-// ComponentEnableLateUpdateThis 脚本化组件，支持LateUpdate，支持获取This指针，用于函数模式绑定脚本函数
+// ComponentEnableLateUpdateThis 脚本化组件，支持帧迟滞更新（Late Update），支持获取This指针，用于函数模式绑定脚本函数
 type ComponentEnableLateUpdateThis[T any] struct {
 	ComponentEnableLateUpdate
 }
@@ -46,7 +46,7 @@ func (c *ComponentEnableLateUpdateThis[T]) This() *T {
 	return c.GetReflected().Interface().(*T)
 }
 
-// ComponentEnableUpdateAndLateUpdateThis 脚本化组件，支持Update、LateUpdate，支持获取This指针，用于函数模式绑定脚本函数
+// ComponentEnableUpdateAndLateUpdateThis 脚本化组件，支持帧更新（Update）、帧迟滞更新（Late Update），支持获取This指针，用于函数模式绑定脚本函数
 type ComponentEnableUpdateAndLateUpdateThis[T any] struct {
 	ComponentEnableUpdateAndLateUpdate
 }

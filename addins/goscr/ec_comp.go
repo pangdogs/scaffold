@@ -42,7 +42,7 @@ func (c *Component) Callee(method string) reflect.Value {
 	return reflect.ValueOf(c.bindMethod(method))
 }
 
-// Awake 生命周期Awake
+// Awake 生命周期唤醒（Awake）
 func (c *Component) Awake() {
 	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnCreate); ok {
 		generic.CastAction0(cb.OnCreate).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
@@ -58,7 +58,15 @@ func (c *Component) Awake() {
 	}
 }
 
-// Start 生命周期Start
+// OnEnable 生命周期启用（OnEnable）
+func (c *Component) OnEnable() {
+	method, _ := c.bindMethod("OnEnable").(func())
+	if method != nil {
+		method()
+	}
+}
+
+// Start 生命周期开始（Start）
 func (c *Component) Start() {
 	method, _ := c.bindMethod("Start").(func())
 	if method != nil {
@@ -74,7 +82,7 @@ func (c *Component) Start() {
 	}
 }
 
-// Shut 生命周期Shut
+// Shut 生命周期结束（Shut）
 func (c *Component) Shut() {
 	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnStop); ok {
 		generic.CastAction0(cb.OnStop).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
@@ -90,11 +98,23 @@ func (c *Component) Shut() {
 	}
 }
 
-// Dispose 生命周期Dispose
+// OnDisable 生命周期关闭（OnDisable）
+func (c *Component) OnDisable() {
+	method, _ := c.bindMethod("OnDisable").(func())
+	if method != nil {
+		method()
+	}
+}
+
+// Dispose 生命周期死亡（Death）
 func (c *Component) Dispose() {
 	method, _ := c.bindMethod("Dispose").(func())
 	if method != nil {
 		method()
+	}
+
+	if c.GetState() != ec.ComponentState_Death {
+		return
 	}
 
 	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnDisposed); ok {
@@ -121,12 +141,12 @@ func (c *Component) bindMethod(method string) any {
 	return thisMethod
 }
 
-// ComponentEnableUpdate 脚本化组件，支持Update
+// ComponentEnableUpdate 脚本化组件，支持帧更新（Update）
 type ComponentEnableUpdate struct {
 	Component
 }
 
-// Update 生命周期Update
+// Update 帧更新（Update）
 func (c *ComponentEnableUpdate) Update() {
 	method, _ := c.bindMethod("Update").(func())
 	if method != nil {
@@ -134,12 +154,12 @@ func (c *ComponentEnableUpdate) Update() {
 	}
 }
 
-// ComponentEnableLateUpdate 脚本化组件，支持LateUpdate
+// ComponentEnableLateUpdate 脚本化组件，支持帧迟滞更新（Late Update）
 type ComponentEnableLateUpdate struct {
 	Component
 }
 
-// LateUpdate 生命周期LateUpdate
+// LateUpdate 帧迟滞更新（Late Update）
 func (c *ComponentEnableLateUpdate) LateUpdate() {
 	method, _ := c.bindMethod("LateUpdate").(func())
 	if method != nil {
@@ -147,12 +167,12 @@ func (c *ComponentEnableLateUpdate) LateUpdate() {
 	}
 }
 
-// ComponentEnableUpdateAndLateUpdate 脚本化组件，支持Update、LateUpdate
+// ComponentEnableUpdateAndLateUpdate 脚本化组件，支持帧更新（Update）、帧迟滞更新（Late Update）
 type ComponentEnableUpdateAndLateUpdate struct {
 	Component
 }
 
-// Update 生命周期Update
+// Update 帧更新（Update）
 func (c *ComponentEnableUpdateAndLateUpdate) Update() {
 	method, _ := c.bindMethod("Update").(func())
 	if method != nil {
@@ -160,7 +180,7 @@ func (c *ComponentEnableUpdateAndLateUpdate) Update() {
 	}
 }
 
-// LateUpdate 生命周期LateUpdate
+// LateUpdate 帧迟滞更新（Late Update）
 func (c *ComponentEnableUpdateAndLateUpdate) LateUpdate() {
 	method, _ := c.bindMethod("LateUpdate").(func())
 	if method != nil {

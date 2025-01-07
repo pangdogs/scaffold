@@ -42,7 +42,7 @@ func (e *Entity) Callee(method string) reflect.Value {
 	return reflect.ValueOf(e.bindMethod(method))
 }
 
-// Awake 生命周期Awake
+// Awake 生命周期唤醒（Awake）
 func (e *Entity) Awake() {
 	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnCreate); ok {
 		generic.CastAction0(cb.OnCreate).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
@@ -58,7 +58,7 @@ func (e *Entity) Awake() {
 	}
 }
 
-// Start 生命周期Start
+// Start 生命周期开始（Start）
 func (e *Entity) Start() {
 	method, _ := e.bindMethod("Start").(func())
 	if method != nil {
@@ -74,7 +74,7 @@ func (e *Entity) Start() {
 	}
 }
 
-// Shut 生命周期Shut
+// Shut 生命周期结束（Shut）
 func (e *Entity) Shut() {
 	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnStop); ok {
 		generic.CastAction0(cb.OnStop).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
@@ -90,7 +90,7 @@ func (e *Entity) Shut() {
 	}
 }
 
-// Dispose 生命周期Dispose
+// Dispose 生命周期死亡（Death）
 func (e *Entity) Dispose() {
 	method, _ := e.bindMethod("Dispose").(func())
 	if method != nil {
@@ -102,12 +102,12 @@ func (e *Entity) Dispose() {
 	}
 }
 
-// EntityEnableUpdate 脚本化实体，支持Update
+// EntityEnableUpdate 脚本化实体，支持帧更新（Update）
 type EntityEnableUpdate struct {
 	Entity
 }
 
-// Update 生命周期Update
+// Update 支持帧更新（Update）
 func (e *EntityEnableUpdate) Update() {
 	method, _ := e.bindMethod("Update").(func())
 	if method != nil {
@@ -134,12 +134,12 @@ func (e *Entity) bindMethod(method string) any {
 	return thisMethod
 }
 
-// EntityEnableLateUpdate 脚本化实体，支持LateUpdate
+// EntityEnableLateUpdate 脚本化实体，支持帧迟滞更新（Late Update）
 type EntityEnableLateUpdate struct {
 	Entity
 }
 
-// LateUpdate 生命周期LateUpdate
+// LateUpdate 帧迟滞更新（Late Update）
 func (e *EntityEnableLateUpdate) LateUpdate() {
 	method, _ := e.bindMethod("LateUpdate").(func())
 	if method != nil {
@@ -147,12 +147,12 @@ func (e *EntityEnableLateUpdate) LateUpdate() {
 	}
 }
 
-// EntityEnableUpdateAndLateUpdate 脚本化实体，支持Update、LateUpdate
+// EntityEnableUpdateAndLateUpdate 脚本化实体，支持帧更新（Update）、帧迟滞更新（Late Update）
 type EntityEnableUpdateAndLateUpdate struct {
 	Entity
 }
 
-// Update 生命周期Update
+// Update 帧更新（Update）
 func (e *EntityEnableUpdateAndLateUpdate) Update() {
 	method, _ := e.bindMethod("Update").(func())
 	if method != nil {
@@ -160,7 +160,7 @@ func (e *EntityEnableUpdateAndLateUpdate) Update() {
 	}
 }
 
-// LateUpdate 生命周期LateUpdate
+// LateUpdate 帧迟滞更新（Late Update）
 func (e *EntityEnableUpdateAndLateUpdate) LateUpdate() {
 	method, _ := e.bindMethod("LateUpdate").(func())
 	if method != nil {
