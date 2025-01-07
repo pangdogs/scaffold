@@ -22,16 +22,16 @@ func init() {
 
 		// type definitions
 		"Component":                          reflect.ValueOf((*goscr.Component)(nil)),
+		"ComponentBehavior":                  reflect.ValueOf((*goscr.ComponentBehavior)(nil)),
 		"ComponentEnableLateUpdate":          reflect.ValueOf((*goscr.ComponentEnableLateUpdate)(nil)),
 		"ComponentEnableUpdate":              reflect.ValueOf((*goscr.ComponentEnableUpdate)(nil)),
 		"ComponentEnableUpdateAndLateUpdate": reflect.ValueOf((*goscr.ComponentEnableUpdateAndLateUpdate)(nil)),
-		"ComponentScriptBehavior":            reflect.ValueOf((*goscr.ComponentScriptBehavior)(nil)),
 		"Entity":                             reflect.ValueOf((*goscr.Entity)(nil)),
+		"EntityBehavior":                     reflect.ValueOf((*goscr.EntityBehavior)(nil)),
 		"EntityEnableLateUpdate":             reflect.ValueOf((*goscr.EntityEnableLateUpdate)(nil)),
 		"EntityEnableUpdate":                 reflect.ValueOf((*goscr.EntityEnableUpdate)(nil)),
 		"EntityEnableUpdateAndLateUpdate":    reflect.ValueOf((*goscr.EntityEnableUpdateAndLateUpdate)(nil)),
 		"EntityPTCreator":                    reflect.ValueOf((*goscr.EntityPTCreator)(nil)),
-		"EntityScriptBehavior":               reflect.ValueOf((*goscr.EntityScriptBehavior)(nil)),
 		"IScript":                            reflect.ValueOf((*goscr.IScript)(nil)),
 		"LifecycleComponentOnCreate":         reflect.ValueOf((*goscr.LifecycleComponentOnCreate)(nil)),
 		"LifecycleComponentOnDisposed":       reflect.ValueOf((*goscr.LifecycleComponentOnDisposed)(nil)),
