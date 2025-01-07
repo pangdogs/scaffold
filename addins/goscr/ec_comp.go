@@ -56,14 +56,6 @@ func (c *Component) Awake() {
 	if method != nil {
 		method()
 	}
-
-	if c.GetState() != ec.ComponentState_Awake {
-		return
-	}
-
-	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnEnable); ok {
-		generic.CastAction0(cb.OnEnable).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
-	}
 }
 
 // Start 生命周期Start
@@ -95,14 +87,6 @@ func (c *Component) Shut() {
 	method, _ := c.bindMethod("Shut").(func())
 	if method != nil {
 		method()
-	}
-
-	if c.GetState() != ec.ComponentState_Shut {
-		return
-	}
-
-	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnDisable); ok {
-		generic.CastAction0(cb.OnDisable).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
 	}
 }
 

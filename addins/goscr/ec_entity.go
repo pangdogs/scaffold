@@ -56,14 +56,6 @@ func (e *Entity) Awake() {
 	if method != nil {
 		method()
 	}
-
-	if e.GetState() != ec.EntityState_Awake {
-		return
-	}
-
-	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnEnable); ok {
-		generic.CastAction0(cb.OnEnable).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
-	}
 }
 
 // Start 生命周期Start
@@ -95,14 +87,6 @@ func (e *Entity) Shut() {
 	method, _ := e.bindMethod("Shut").(func())
 	if method != nil {
 		method()
-	}
-
-	if e.GetState() != ec.EntityState_Shut {
-		return
-	}
-
-	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnDisable); ok {
-		generic.CastAction0(cb.OnDisable).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
 	}
 }
 

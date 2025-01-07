@@ -24,11 +24,6 @@ type LifecycleEntityOnCreate interface {
 	OnCreate()
 }
 
-// LifecycleEntityOnEnable 实体的生命周期进入启用（OnEnable）时的回调，实体实现此接口即可使用，脚本中无法使用
-type LifecycleEntityOnEnable interface {
-	OnEnable()
-}
-
 // LifecycleEntityOnStarted 实体的生命周期进入开始后（OnStarted）时的回调，实体实现此接口即可使用，脚本中无法使用
 type LifecycleEntityOnStarted interface {
 	OnStarted()
@@ -37,11 +32,6 @@ type LifecycleEntityOnStarted interface {
 // LifecycleEntityOnStop 实体的生命周期进入结束前（OnStop）时的回调，实体实现此接口即可使用，脚本中无法使用
 type LifecycleEntityOnStop interface {
 	OnStop()
-}
-
-// LifecycleEntityOnDisable 实体的生命周期进入关闭（OnDisable）时的回调，实体实现此接口即可使用，脚本中无法使用
-type LifecycleEntityOnDisable interface {
-	OnDisable()
 }
 
 // LifecycleEntityOnDisposed 实体的生命周期进入释放后（OnDisposed）时的回调，实体实现此接口即可使用，脚本中无法使用

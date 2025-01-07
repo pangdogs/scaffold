@@ -24,11 +24,6 @@ type LifecycleComponentOnCreate interface {
 	OnCreate()
 }
 
-// LifecycleComponentOnEnable 组件的生命周期进入启用（OnEnable）时的回调，组件实现此接口即可使用，脚本中无法使用
-type LifecycleComponentOnEnable interface {
-	OnEnable()
-}
-
 // LifecycleComponentOnStarted 组件的生命周期进入开始后（OnStarted）时的回调，组件实现此接口即可使用，脚本中无法使用
 type LifecycleComponentOnStarted interface {
 	OnStarted()
@@ -37,11 +32,6 @@ type LifecycleComponentOnStarted interface {
 // LifecycleComponentOnStop 组件的生命周期进入结束前（OnStop）时的回调，组件实现此接口即可使用，脚本中无法使用
 type LifecycleComponentOnStop interface {
 	OnStop()
-}
-
-// LifecycleComponentOnDisable 组件的生命周期进入关闭（OnDisable）时的回调，组件实现此接口即可使用，脚本中无法使用
-type LifecycleComponentOnDisable interface {
-	OnDisable()
 }
 
 // LifecycleComponentOnDisposed 组件的生命周期进入释放后（OnDisposed）时的回调，组件实现此接口即可使用，脚本中无法使用
