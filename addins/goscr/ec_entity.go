@@ -166,14 +166,14 @@ func (e *EntityEnableUpdateAndLateUpdate) LateUpdate() {
 	}
 }
 
-// EntityScriptBehavior 实体脚本化行为
-type EntityScriptBehavior struct {
-	EntityEnableUpdateAndLateUpdateThis[EntityScriptBehavior]
+// EntityBehavior 实体脚本化行为
+type EntityBehavior struct {
+	EntityEnableUpdateAndLateUpdateThis[EntityBehavior]
 }
 
 // EntityScript 创建脚本化实体原型属性，用于注册实体原型时自定义相关属性
 func EntityScript(prototype, script string) pt.EntityAttribute {
-	return EntityScriptT[EntityScriptBehavior](prototype, script)
+	return EntityScriptT[EntityBehavior](prototype, script)
 }
 
 // EntityScriptT 创建脚本化实体原型属性，用于注册实体原型时自定义相关属性

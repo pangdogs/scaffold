@@ -187,14 +187,14 @@ func (c *ComponentEnableUpdateAndLateUpdate) LateUpdate() {
 	}
 }
 
-// ComponentScriptBehavior 组件脚本化行为
-type ComponentScriptBehavior struct {
-	ComponentEnableUpdateAndLateUpdateThis[ComponentScriptBehavior]
+// ComponentBehavior 组件脚本化行为
+type ComponentBehavior struct {
+	ComponentEnableUpdateAndLateUpdateThis[ComponentBehavior]
 }
 
 // ComponentScript 创建脚本化组件原型属性，用于注册实体原型时自定义相关属性
 func ComponentScript(script string) pt.ComponentAttribute {
-	return ComponentScriptT[ComponentScriptBehavior](script)
+	return ComponentScriptT[ComponentBehavior](script)
 }
 
 // ComponentScriptT 创建脚本化组件原型属性，用于注册实体原型时自定义相关属性
