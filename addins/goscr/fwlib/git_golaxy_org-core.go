@@ -53,6 +53,8 @@ func init() {
 		"LifecycleComponentAwake":                     reflect.ValueOf((*core.LifecycleComponentAwake)(nil)),
 		"LifecycleComponentDispose":                   reflect.ValueOf((*core.LifecycleComponentDispose)(nil)),
 		"LifecycleComponentLateUpdate":                reflect.ValueOf((*core.LifecycleComponentLateUpdate)(nil)),
+		"LifecycleComponentOnDisable":                 reflect.ValueOf((*core.LifecycleComponentOnDisable)(nil)),
+		"LifecycleComponentOnEnable":                  reflect.ValueOf((*core.LifecycleComponentOnEnable)(nil)),
 		"LifecycleComponentShut":                      reflect.ValueOf((*core.LifecycleComponentShut)(nil)),
 		"LifecycleComponentStart":                     reflect.ValueOf((*core.LifecycleComponentStart)(nil)),
 		"LifecycleComponentUpdate":                    reflect.ValueOf((*core.LifecycleComponentUpdate)(nil)),
@@ -77,6 +79,8 @@ func init() {
 		"_LifecycleComponentAwake":                     reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentAwake)(nil)),
 		"_LifecycleComponentDispose":                   reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentDispose)(nil)),
 		"_LifecycleComponentLateUpdate":                reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentLateUpdate)(nil)),
+		"_LifecycleComponentOnDisable":                 reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentOnDisable)(nil)),
+		"_LifecycleComponentOnEnable":                  reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentOnEnable)(nil)),
 		"_LifecycleComponentShut":                      reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentShut)(nil)),
 		"_LifecycleComponentStart":                     reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentStart)(nil)),
 		"_LifecycleComponentUpdate":                    reflect.ValueOf((*_git_golaxy_org_core_LifecycleComponentUpdate)(nil)),
@@ -154,6 +158,22 @@ type _git_golaxy_org_core_LifecycleComponentLateUpdate struct {
 }
 
 func (W _git_golaxy_org_core_LifecycleComponentLateUpdate) LateUpdate() { W.WLateUpdate() }
+
+// _git_golaxy_org_core_LifecycleComponentOnDisable is an interface wrapper for LifecycleComponentOnDisable type
+type _git_golaxy_org_core_LifecycleComponentOnDisable struct {
+	IValue     interface{}
+	WOnDisable func()
+}
+
+func (W _git_golaxy_org_core_LifecycleComponentOnDisable) OnDisable() { W.WOnDisable() }
+
+// _git_golaxy_org_core_LifecycleComponentOnEnable is an interface wrapper for LifecycleComponentOnEnable type
+type _git_golaxy_org_core_LifecycleComponentOnEnable struct {
+	IValue    interface{}
+	WOnEnable func()
+}
+
+func (W _git_golaxy_org_core_LifecycleComponentOnEnable) OnEnable() { W.WOnEnable() }
 
 // _git_golaxy_org_core_LifecycleComponentShut is an interface wrapper for LifecycleComponentShut type
 type _git_golaxy_org_core_LifecycleComponentShut struct {

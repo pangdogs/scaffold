@@ -233,7 +233,10 @@ type _git_golaxy_org_core_runtime_Context struct {
 	WGetReflected         func() reflect.Value
 	WGetReportError       func() chan error
 	WGetWaitGroup         func() *sync.WaitGroup
-	WManagedHooks         func(hooks ...event.Hook)
+	WManagedAddHooks      func(hooks ...event.Hook)
+	WManagedAddTagHooks   func(tag string, hooks ...event.Hook)
+	WManagedCleanTagHooks func(tag string)
+	WManagedGetTagHooks   func(tag string) []event.Hook
 	WString               func() string
 	WTerminate            func() <-chan struct{}
 	WTerminated           func() <-chan struct{}
@@ -291,8 +294,17 @@ func (W _git_golaxy_org_core_runtime_Context) GetReportError() chan error  { ret
 func (W _git_golaxy_org_core_runtime_Context) GetWaitGroup() *sync.WaitGroup {
 	return W.WGetWaitGroup()
 }
-func (W _git_golaxy_org_core_runtime_Context) ManagedHooks(hooks ...event.Hook) {
-	W.WManagedHooks(hooks...)
+func (W _git_golaxy_org_core_runtime_Context) ManagedAddHooks(hooks ...event.Hook) {
+	W.WManagedAddHooks(hooks...)
+}
+func (W _git_golaxy_org_core_runtime_Context) ManagedAddTagHooks(tag string, hooks ...event.Hook) {
+	W.WManagedAddTagHooks(tag, hooks...)
+}
+func (W _git_golaxy_org_core_runtime_Context) ManagedCleanTagHooks(tag string) {
+	W.WManagedCleanTagHooks(tag)
+}
+func (W _git_golaxy_org_core_runtime_Context) ManagedGetTagHooks(tag string) []event.Hook {
+	return W.WManagedGetTagHooks(tag)
 }
 func (W _git_golaxy_org_core_runtime_Context) String() string {
 	if W.WString == nil {
@@ -397,8 +409,7 @@ type _git_golaxy_org_core_runtime_EntityTree struct {
 	WGetConcurrentContext      func() iface.Cache
 	WGetCurrentContext         func() iface.Cache
 	WGetParent                 func(entityId uid.Id) (ec.Entity, bool)
-	WIsTop                     func(entityId uid.Id) bool
-	WPruningNode               func(entityId uid.Id)
+	WPruningNode               func(entityId uid.Id) error
 	WRangeChildren             func(entityId uid.Id, fun generic.Func1[ec.Entity, bool])
 	WReversedRangeChildren     func(entityId uid.Id, fun generic.Func1[ec.Entity, bool])
 }
@@ -433,11 +444,8 @@ func (W _git_golaxy_org_core_runtime_EntityTree) GetCurrentContext() iface.Cache
 func (W _git_golaxy_org_core_runtime_EntityTree) GetParent(entityId uid.Id) (ec.Entity, bool) {
 	return W.WGetParent(entityId)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) IsTop(entityId uid.Id) bool {
-	return W.WIsTop(entityId)
-}
-func (W _git_golaxy_org_core_runtime_EntityTree) PruningNode(entityId uid.Id) {
-	W.WPruningNode(entityId)
+func (W _git_golaxy_org_core_runtime_EntityTree) PruningNode(entityId uid.Id) error {
+	return W.WPruningNode(entityId)
 }
 func (W _git_golaxy_org_core_runtime_EntityTree) RangeChildren(entityId uid.Id, fun generic.Func1[ec.Entity, bool]) {
 	W.WRangeChildren(entityId, fun)

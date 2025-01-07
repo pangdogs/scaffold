@@ -18,6 +18,7 @@ func init() {
 	Symbols["git.golaxy.org/core/ec/ec"] = map[string]reflect.Value{
 		// function, constant and variable definitions
 		"BindEventComponentDestroySelf":                  reflect.ValueOf(ec.BindEventComponentDestroySelf),
+		"BindEventComponentEnableChanged":                reflect.ValueOf(ec.BindEventComponentEnableChanged),
 		"BindEventComponentManagerAddComponents":         reflect.ValueOf(ec.BindEventComponentManagerAddComponents),
 		"BindEventComponentManagerFirstTouchComponent":   reflect.ValueOf(ec.BindEventComponentManagerFirstTouchComponent),
 		"BindEventComponentManagerRemoveComponent":       reflect.ValueOf(ec.BindEventComponentManagerRemoveComponent),
@@ -31,19 +32,25 @@ func init() {
 		"ComponentState_Awake":                           reflect.ValueOf(ec.ComponentState_Awake),
 		"ComponentState_Birth":                           reflect.ValueOf(ec.ComponentState_Birth),
 		"ComponentState_Death":                           reflect.ValueOf(ec.ComponentState_Death),
+		"ComponentState_Destroyed":                       reflect.ValueOf(ec.ComponentState_Destroyed),
 		"ComponentState_Detach":                          reflect.ValueOf(ec.ComponentState_Detach),
+		"ComponentState_Disable":                         reflect.ValueOf(ec.ComponentState_Disable),
+		"ComponentState_Enable":                          reflect.ValueOf(ec.ComponentState_Enable),
+		"ComponentState_Idle":                            reflect.ValueOf(ec.ComponentState_Idle),
 		"ComponentState_Shut":                            reflect.ValueOf(ec.ComponentState_Shut),
 		"ComponentState_Start":                           reflect.ValueOf(ec.ComponentState_Start),
 		"EntityState_Alive":                              reflect.ValueOf(ec.EntityState_Alive),
 		"EntityState_Awake":                              reflect.ValueOf(ec.EntityState_Awake),
 		"EntityState_Birth":                              reflect.ValueOf(ec.EntityState_Birth),
 		"EntityState_Death":                              reflect.ValueOf(ec.EntityState_Death),
+		"EntityState_Destroyed":                          reflect.ValueOf(ec.EntityState_Destroyed),
 		"EntityState_Enter":                              reflect.ValueOf(ec.EntityState_Enter),
 		"EntityState_Leave":                              reflect.ValueOf(ec.EntityState_Leave),
 		"EntityState_Shut":                               reflect.ValueOf(ec.EntityState_Shut),
 		"EntityState_Start":                              reflect.ValueOf(ec.EntityState_Start),
 		"ErrEC":                                          reflect.ValueOf(&ec.ErrEC).Elem(),
 		"EventComponentDestroySelfId":                    reflect.ValueOf(&ec.EventComponentDestroySelfId).Elem(),
+		"EventComponentEnableChangedId":                  reflect.ValueOf(&ec.EventComponentEnableChangedId).Elem(),
 		"EventComponentManagerAddComponentsId":           reflect.ValueOf(&ec.EventComponentManagerAddComponentsId).Elem(),
 		"EventComponentManagerFirstTouchComponentId":     reflect.ValueOf(&ec.EventComponentManagerFirstTouchComponentId).Elem(),
 		"EventComponentManagerRemoveComponentId":         reflect.ValueOf(&ec.EventComponentManagerRemoveComponentId).Elem(),
@@ -53,6 +60,7 @@ func init() {
 		"EventTreeNodeLeaveParentId":                     reflect.ValueOf(&ec.EventTreeNodeLeaveParentId).Elem(),
 		"EventTreeNodeRemoveChildId":                     reflect.ValueOf(&ec.EventTreeNodeRemoveChildId).Elem(),
 		"HandleEventComponentDestroySelf":                reflect.ValueOf(ec.HandleEventComponentDestroySelf),
+		"HandleEventComponentEnableChanged":              reflect.ValueOf(ec.HandleEventComponentEnableChanged),
 		"HandleEventComponentManagerAddComponents":       reflect.ValueOf(ec.HandleEventComponentManagerAddComponents),
 		"HandleEventComponentManagerFirstTouchComponent": reflect.ValueOf(ec.HandleEventComponentManagerFirstTouchComponent),
 		"HandleEventComponentManagerRemoveComponent":     reflect.ValueOf(ec.HandleEventComponentManagerRemoveComponent),
@@ -75,20 +83,22 @@ func init() {
 		"With":                                           reflect.ValueOf(&ec.With).Elem(),
 
 		// type definitions
-		"BuiltinComponent":                   reflect.ValueOf((*ec.BuiltinComponent)(nil)),
-		"Component":                          reflect.ValueOf((*ec.Component)(nil)),
-		"ComponentBehavior":                  reflect.ValueOf((*ec.ComponentBehavior)(nil)),
-		"ComponentPT":                        reflect.ValueOf((*ec.ComponentPT)(nil)),
-		"ComponentState":                     reflect.ValueOf((*ec.ComponentState)(nil)),
-		"ConcurrentEntity":                   reflect.ValueOf((*ec.ConcurrentEntity)(nil)),
-		"Entity":                             reflect.ValueOf((*ec.Entity)(nil)),
-		"EntityBehavior":                     reflect.ValueOf((*ec.EntityBehavior)(nil)),
-		"EntityOptions":                      reflect.ValueOf((*ec.EntityOptions)(nil)),
-		"EntityPT":                           reflect.ValueOf((*ec.EntityPT)(nil)),
-		"EntityState":                        reflect.ValueOf((*ec.EntityState)(nil)),
-		"EventComponentDestroySelf":          reflect.ValueOf((*ec.EventComponentDestroySelf)(nil)),
-		"EventComponentDestroySelfHandler":   reflect.ValueOf((*ec.EventComponentDestroySelfHandler)(nil)),
-		"EventComponentManagerAddComponents": reflect.ValueOf((*ec.EventComponentManagerAddComponents)(nil)),
+		"BuiltinComponent":                                reflect.ValueOf((*ec.BuiltinComponent)(nil)),
+		"Component":                                       reflect.ValueOf((*ec.Component)(nil)),
+		"ComponentBehavior":                               reflect.ValueOf((*ec.ComponentBehavior)(nil)),
+		"ComponentPT":                                     reflect.ValueOf((*ec.ComponentPT)(nil)),
+		"ComponentState":                                  reflect.ValueOf((*ec.ComponentState)(nil)),
+		"ConcurrentEntity":                                reflect.ValueOf((*ec.ConcurrentEntity)(nil)),
+		"Entity":                                          reflect.ValueOf((*ec.Entity)(nil)),
+		"EntityBehavior":                                  reflect.ValueOf((*ec.EntityBehavior)(nil)),
+		"EntityOptions":                                   reflect.ValueOf((*ec.EntityOptions)(nil)),
+		"EntityPT":                                        reflect.ValueOf((*ec.EntityPT)(nil)),
+		"EntityState":                                     reflect.ValueOf((*ec.EntityState)(nil)),
+		"EventComponentDestroySelf":                       reflect.ValueOf((*ec.EventComponentDestroySelf)(nil)),
+		"EventComponentDestroySelfHandler":                reflect.ValueOf((*ec.EventComponentDestroySelfHandler)(nil)),
+		"EventComponentEnableChanged":                     reflect.ValueOf((*ec.EventComponentEnableChanged)(nil)),
+		"EventComponentEnableChangedHandler":              reflect.ValueOf((*ec.EventComponentEnableChangedHandler)(nil)),
+		"EventComponentManagerAddComponents":              reflect.ValueOf((*ec.EventComponentManagerAddComponents)(nil)),
 		"EventComponentManagerAddComponentsHandler":       reflect.ValueOf((*ec.EventComponentManagerAddComponentsHandler)(nil)),
 		"EventComponentManagerFirstTouchComponent":        reflect.ValueOf((*ec.EventComponentManagerFirstTouchComponent)(nil)),
 		"EventComponentManagerFirstTouchComponentHandler": reflect.ValueOf((*ec.EventComponentManagerFirstTouchComponentHandler)(nil)),
@@ -112,13 +122,14 @@ func init() {
 		"TreeNodeState":                                   reflect.ValueOf((*ec.TreeNodeState)(nil)),
 
 		// interface wrapper definitions
-		"_Component":                          reflect.ValueOf((*_git_golaxy_org_core_ec_Component)(nil)),
-		"_ComponentPT":                        reflect.ValueOf((*_git_golaxy_org_core_ec_ComponentPT)(nil)),
-		"_ConcurrentEntity":                   reflect.ValueOf((*_git_golaxy_org_core_ec_ConcurrentEntity)(nil)),
-		"_Entity":                             reflect.ValueOf((*_git_golaxy_org_core_ec_Entity)(nil)),
-		"_EntityPT":                           reflect.ValueOf((*_git_golaxy_org_core_ec_EntityPT)(nil)),
-		"_EventComponentDestroySelf":          reflect.ValueOf((*_git_golaxy_org_core_ec_EventComponentDestroySelf)(nil)),
-		"_EventComponentManagerAddComponents": reflect.ValueOf((*_git_golaxy_org_core_ec_EventComponentManagerAddComponents)(nil)),
+		"_Component":                                reflect.ValueOf((*_git_golaxy_org_core_ec_Component)(nil)),
+		"_ComponentPT":                              reflect.ValueOf((*_git_golaxy_org_core_ec_ComponentPT)(nil)),
+		"_ConcurrentEntity":                         reflect.ValueOf((*_git_golaxy_org_core_ec_ConcurrentEntity)(nil)),
+		"_Entity":                                   reflect.ValueOf((*_git_golaxy_org_core_ec_Entity)(nil)),
+		"_EntityPT":                                 reflect.ValueOf((*_git_golaxy_org_core_ec_EntityPT)(nil)),
+		"_EventComponentDestroySelf":                reflect.ValueOf((*_git_golaxy_org_core_ec_EventComponentDestroySelf)(nil)),
+		"_EventComponentEnableChanged":              reflect.ValueOf((*_git_golaxy_org_core_ec_EventComponentEnableChanged)(nil)),
+		"_EventComponentManagerAddComponents":       reflect.ValueOf((*_git_golaxy_org_core_ec_EventComponentManagerAddComponents)(nil)),
 		"_EventComponentManagerFirstTouchComponent": reflect.ValueOf((*_git_golaxy_org_core_ec_EventComponentManagerFirstTouchComponent)(nil)),
 		"_EventComponentManagerRemoveComponent":     reflect.ValueOf((*_git_golaxy_org_core_ec_EventComponentManagerRemoveComponent)(nil)),
 		"_EventEntityDestroySelf":                   reflect.ValueOf((*_git_golaxy_org_core_ec_EventEntityDestroySelf)(nil)),
@@ -135,24 +146,31 @@ func init() {
 
 // _git_golaxy_org_core_ec_Component is an interface wrapper for Component type
 type _git_golaxy_org_core_ec_Component struct {
-	IValue                     interface{}
-	WDeadline                  func() (deadline time.Time, ok bool)
-	WDestroySelf               func()
-	WDone                      func() <-chan struct{}
-	WErr                       func() error
-	WEventComponentDestroySelf func() event.IEvent
-	WGetBuiltin                func() ec.BuiltinComponent
-	WGetConcurrentContext      func() iface.Cache
-	WGetCurrentContext         func() iface.Cache
-	WGetEntity                 func() ec.Entity
-	WGetId                     func() uid.Id
-	WGetName                   func() string
-	WGetNonRemovable           func() bool
-	WGetReflected              func() reflect.Value
-	WGetState                  func() ec.ComponentState
-	WString                    func() string
-	WTerminated                func() <-chan struct{}
-	WValue                     func(key any) any
+	IValue                       interface{}
+	WDeadline                    func() (deadline time.Time, ok bool)
+	WDestroySelf                 func()
+	WDone                        func() <-chan struct{}
+	WErr                         func() error
+	WEventComponentDestroySelf   func() event.IEvent
+	WEventComponentEnableChanged func() event.IEvent
+	WGetBuiltin                  func() ec.BuiltinComponent
+	WGetConcurrentContext        func() iface.Cache
+	WGetCurrentContext           func() iface.Cache
+	WGetEnable                   func() bool
+	WGetEntity                   func() ec.Entity
+	WGetId                       func() uid.Id
+	WGetName                     func() string
+	WGetReflected                func() reflect.Value
+	WGetRemovable                func() bool
+	WGetState                    func() ec.ComponentState
+	WManagedAddHooks             func(hooks ...event.Hook)
+	WManagedAddTagHooks          func(tag string, hooks ...event.Hook)
+	WManagedCleanTagHooks        func(tag string)
+	WManagedGetTagHooks          func(tag string) []event.Hook
+	WSetEnable                   func(b bool)
+	WString                      func() string
+	WTerminated                  func() <-chan struct{}
+	WValue                       func(key any) any
 }
 
 func (W _git_golaxy_org_core_ec_Component) Deadline() (deadline time.Time, ok bool) {
@@ -164,6 +182,9 @@ func (W _git_golaxy_org_core_ec_Component) Err() error            { return W.WEr
 func (W _git_golaxy_org_core_ec_Component) EventComponentDestroySelf() event.IEvent {
 	return W.WEventComponentDestroySelf()
 }
+func (W _git_golaxy_org_core_ec_Component) EventComponentEnableChanged() event.IEvent {
+	return W.WEventComponentEnableChanged()
+}
 func (W _git_golaxy_org_core_ec_Component) GetBuiltin() ec.BuiltinComponent { return W.WGetBuiltin() }
 func (W _git_golaxy_org_core_ec_Component) GetConcurrentContext() iface.Cache {
 	return W.WGetConcurrentContext()
@@ -171,12 +192,26 @@ func (W _git_golaxy_org_core_ec_Component) GetConcurrentContext() iface.Cache {
 func (W _git_golaxy_org_core_ec_Component) GetCurrentContext() iface.Cache {
 	return W.WGetCurrentContext()
 }
+func (W _git_golaxy_org_core_ec_Component) GetEnable() bool             { return W.WGetEnable() }
 func (W _git_golaxy_org_core_ec_Component) GetEntity() ec.Entity        { return W.WGetEntity() }
 func (W _git_golaxy_org_core_ec_Component) GetId() uid.Id               { return W.WGetId() }
 func (W _git_golaxy_org_core_ec_Component) GetName() string             { return W.WGetName() }
-func (W _git_golaxy_org_core_ec_Component) GetNonRemovable() bool       { return W.WGetNonRemovable() }
 func (W _git_golaxy_org_core_ec_Component) GetReflected() reflect.Value { return W.WGetReflected() }
+func (W _git_golaxy_org_core_ec_Component) GetRemovable() bool          { return W.WGetRemovable() }
 func (W _git_golaxy_org_core_ec_Component) GetState() ec.ComponentState { return W.WGetState() }
+func (W _git_golaxy_org_core_ec_Component) ManagedAddHooks(hooks ...event.Hook) {
+	W.WManagedAddHooks(hooks...)
+}
+func (W _git_golaxy_org_core_ec_Component) ManagedAddTagHooks(tag string, hooks ...event.Hook) {
+	W.WManagedAddTagHooks(tag, hooks...)
+}
+func (W _git_golaxy_org_core_ec_Component) ManagedCleanTagHooks(tag string) {
+	W.WManagedCleanTagHooks(tag)
+}
+func (W _git_golaxy_org_core_ec_Component) ManagedGetTagHooks(tag string) []event.Hook {
+	return W.WManagedGetTagHooks(tag)
+}
+func (W _git_golaxy_org_core_ec_Component) SetEnable(b bool) { W.WSetEnable(b) }
 func (W _git_golaxy_org_core_ec_Component) String() string {
 	if W.WString == nil {
 		return ""
@@ -269,6 +304,10 @@ type _git_golaxy_org_core_ec_Entity struct {
 	WGetState                                 func() ec.EntityState
 	WGetTreeNodeParent                        func() (ec.Entity, bool)
 	WGetTreeNodeState                         func() ec.TreeNodeState
+	WManagedAddHooks                          func(hooks ...event.Hook)
+	WManagedAddTagHooks                       func(tag string, hooks ...event.Hook)
+	WManagedCleanTagHooks                     func(tag string)
+	WManagedGetTagHooks                       func(tag string) []event.Hook
 	WRangeComponents                          func(fun generic.Func1[ec.Component, bool])
 	WRemoveComponent                          func(name string)
 	WRemoveComponentById                      func(id uid.Id)
@@ -355,6 +394,18 @@ func (W _git_golaxy_org_core_ec_Entity) GetTreeNodeParent() (ec.Entity, bool) {
 func (W _git_golaxy_org_core_ec_Entity) GetTreeNodeState() ec.TreeNodeState {
 	return W.WGetTreeNodeState()
 }
+func (W _git_golaxy_org_core_ec_Entity) ManagedAddHooks(hooks ...event.Hook) {
+	W.WManagedAddHooks(hooks...)
+}
+func (W _git_golaxy_org_core_ec_Entity) ManagedAddTagHooks(tag string, hooks ...event.Hook) {
+	W.WManagedAddTagHooks(tag, hooks...)
+}
+func (W _git_golaxy_org_core_ec_Entity) ManagedCleanTagHooks(tag string) {
+	W.WManagedCleanTagHooks(tag)
+}
+func (W _git_golaxy_org_core_ec_Entity) ManagedGetTagHooks(tag string) []event.Hook {
+	return W.WManagedGetTagHooks(tag)
+}
 func (W _git_golaxy_org_core_ec_Entity) RangeComponents(fun generic.Func1[ec.Component, bool]) {
 	W.WRangeComponents(fun)
 }
@@ -412,6 +463,16 @@ type _git_golaxy_org_core_ec_EventComponentDestroySelf struct {
 
 func (W _git_golaxy_org_core_ec_EventComponentDestroySelf) OnComponentDestroySelf(comp ec.Component) {
 	W.WOnComponentDestroySelf(comp)
+}
+
+// _git_golaxy_org_core_ec_EventComponentEnableChanged is an interface wrapper for EventComponentEnableChanged type
+type _git_golaxy_org_core_ec_EventComponentEnableChanged struct {
+	IValue                    interface{}
+	WOnComponentEnableChanged func(comp ec.Component, enable bool)
+}
+
+func (W _git_golaxy_org_core_ec_EventComponentEnableChanged) OnComponentEnableChanged(comp ec.Component, enable bool) {
+	W.WOnComponentEnableChanged(comp, enable)
 }
 
 // _git_golaxy_org_core_ec_EventComponentManagerAddComponents is an interface wrapper for EventComponentManagerAddComponents type
@@ -496,12 +557,16 @@ func (W _git_golaxy_org_core_ec_EventTreeNodeRemoveChild) OnTreeNodeRemoveChild(
 
 // _git_golaxy_org_core_ec_IComponentEventTab is an interface wrapper for IComponentEventTab type
 type _git_golaxy_org_core_ec_IComponentEventTab struct {
-	IValue                     interface{}
-	WEventComponentDestroySelf func() event.IEvent
+	IValue                       interface{}
+	WEventComponentDestroySelf   func() event.IEvent
+	WEventComponentEnableChanged func() event.IEvent
 }
 
 func (W _git_golaxy_org_core_ec_IComponentEventTab) EventComponentDestroySelf() event.IEvent {
 	return W.WEventComponentDestroySelf()
+}
+func (W _git_golaxy_org_core_ec_IComponentEventTab) EventComponentEnableChanged() event.IEvent {
+	return W.WEventComponentEnableChanged()
 }
 
 // _git_golaxy_org_core_ec_IEntityComponentManagerEventTab is an interface wrapper for IEntityComponentManagerEventTab type

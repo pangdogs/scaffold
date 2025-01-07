@@ -183,7 +183,10 @@ type _git_golaxy_org_framework_IRuntimeInstance struct {
 	WGetReportError        func() chan error
 	WGetService            func() framework.IServiceInstance
 	WGetWaitGroup          func() *sync.WaitGroup
-	WManagedHooks          func(hooks ...event.Hook)
+	WManagedAddHooks       func(hooks ...event.Hook)
+	WManagedAddTagHooks    func(tag string, hooks ...event.Hook)
+	WManagedCleanTagHooks  func(tag string)
+	WManagedGetTagHooks    func(tag string) []event.Hook
 	WString                func() string
 	WTerminate             func() <-chan struct{}
 	WTerminated            func() <-chan struct{}
@@ -257,8 +260,17 @@ func (W _git_golaxy_org_framework_IRuntimeInstance) GetService() framework.IServ
 func (W _git_golaxy_org_framework_IRuntimeInstance) GetWaitGroup() *sync.WaitGroup {
 	return W.WGetWaitGroup()
 }
-func (W _git_golaxy_org_framework_IRuntimeInstance) ManagedHooks(hooks ...event.Hook) {
-	W.WManagedHooks(hooks...)
+func (W _git_golaxy_org_framework_IRuntimeInstance) ManagedAddHooks(hooks ...event.Hook) {
+	W.WManagedAddHooks(hooks...)
+}
+func (W _git_golaxy_org_framework_IRuntimeInstance) ManagedAddTagHooks(tag string, hooks ...event.Hook) {
+	W.WManagedAddTagHooks(tag, hooks...)
+}
+func (W _git_golaxy_org_framework_IRuntimeInstance) ManagedCleanTagHooks(tag string) {
+	W.WManagedCleanTagHooks(tag)
+}
+func (W _git_golaxy_org_framework_IRuntimeInstance) ManagedGetTagHooks(tag string) []event.Hook {
+	return W.WManagedGetTagHooks(tag)
 }
 func (W _git_golaxy_org_framework_IRuntimeInstance) String() string {
 	if W.WString == nil {

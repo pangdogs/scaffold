@@ -25,5 +25,11 @@ func init() {
 		"WriteFullNameRT": reflect.ValueOf(types.WriteFullNameRT),
 		"Zero":            reflect.ValueOf(types.Zero),
 		"ZeroRT":          reflect.ValueOf(types.ZeroRT),
+
+		// type definitions
+		"Bits16": reflect.ValueOf((*types.Bits16)(nil)),
+		"Bits32": reflect.ValueOf((*types.Bits32)(nil)),
+		"Bits64": reflect.ValueOf((*types.Bits64)(nil)),
+		"Bits8":  reflect.ValueOf((*types.Bits8)(nil)),
 	}
 }
