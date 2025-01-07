@@ -96,5 +96,7 @@ var Symbols = map[string]map[string]reflect.Value{}
 
 // export git.golaxy.org/scaffold
 //go:generate yaegi extract git.golaxy.org/scaffold/addins/acl
+//go:generate yaegi extract git.golaxy.org/scaffold/addins/goscr
+//go:generate yaegi extract git.golaxy.org/scaffold/addins/goscr/dynamic
 //go:generate yaegi extract git.golaxy.org/scaffold/addins/view
 //go:generate yaegi extract git.golaxy.org/scaffold/tools/excelc/excelutils

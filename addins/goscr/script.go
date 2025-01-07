@@ -28,7 +28,6 @@ import (
 	"git.golaxy.org/framework/addins/log"
 	"git.golaxy.org/framework/addins/rpc/callpath"
 	"git.golaxy.org/scaffold/addins/goscr/dynamic"
-	"git.golaxy.org/scaffold/addins/goscr/fwlib"
 	"github.com/elliotchance/pie/v2"
 	"github.com/fsnotify/fsnotify"
 	"github.com/pangdogs/yaegi/stdlib"
@@ -112,7 +111,6 @@ func (s *_Script) OnServiceRunningStatusChanged(svcCtx service.Context, status s
 func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 	solution := dynamic.NewSolution(s.options.PkgRoot)
 	solution.Use(stdlib.Symbols)
-	solution.Use(fwlib.Symbols)
 
 	if err := s.options.LoadingCB.Invoke(func(err error) bool { return err != nil }, solution); err != nil {
 		return nil, fmt.Errorf("loading callback error occurred, %s", err)
