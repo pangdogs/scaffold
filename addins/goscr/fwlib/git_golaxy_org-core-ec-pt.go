@@ -12,9 +12,9 @@ import (
 func init() {
 	Symbols["git.golaxy.org/core/ec/pt/pt"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"ComponentWith":       reflect.ValueOf(pt.ComponentWith),
+		"Component":           reflect.ValueOf(pt.Component),
 		"DefaultComponentLib": reflect.ValueOf(pt.DefaultComponentLib),
-		"EntityWith":          reflect.ValueOf(pt.EntityWith),
+		"Entity":              reflect.ValueOf(pt.Entity),
 		"ErrPt":               reflect.ValueOf(&pt.ErrPt).Elem(),
 		"For":                 reflect.ValueOf(pt.For),
 		"NewComponentLib":     reflect.ValueOf(pt.NewComponentLib),
