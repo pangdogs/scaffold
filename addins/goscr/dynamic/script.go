@@ -349,7 +349,7 @@ func Bind_{{.Ident}}(this any, method string) any {
 	switch method {
 	{{range .Methods}}
 	case "{{.Name}}":
-		return {{$.UniquePkgName}}_{{.No}}.{{$.Ident}}(this.(func() *{{$.This.UniquePkgName}}_{{.No}}.{{$.This.Name}})).{{.Name}}
+		return {{$.UniquePkgName}}_{{$.No}}.{{$.Ident}}(this.(func() *{{$.This.UniquePkgName}}_{{$.No}}.{{$.This.Name}})).{{.Name}}
 	{{end}}
 	}
 	return nil
@@ -368,7 +368,7 @@ func Bind_{{.Ident}}(this any, method string) any {
 	switch method {
 	{{range .Methods}}
 	case "{{.Name}}":
-		return {{$.UniquePkgName}}_{{.No}}.{{$.Ident}}{this.(*{{$.This.UniquePkgName}}_{{.No}}.{{$.This.Name}})}.{{.Name}}
+		return {{$.UniquePkgName}}_{{$.No}}.{{$.Ident}}{this.(*{{$.This.UniquePkgName}}_{{$.No}}.{{$.This.Name}})}.{{.Name}}
 	{{end}}
 	}
 	return nil
