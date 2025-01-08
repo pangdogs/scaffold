@@ -24,7 +24,11 @@ type ComponentThis[T any] struct {
 	Component
 }
 
-func (c *ComponentThis[T]) This() *T {
+func (c *ComponentThis[T]) This() func() *T {
+	return c.thisFunc
+}
+
+func (c *ComponentThis[T]) thisFunc() *T {
 	return c.GetReflected().Interface().(*T)
 }
 
@@ -33,7 +37,11 @@ type ComponentEnableUpdateThis[T any] struct {
 	ComponentEnableUpdate
 }
 
-func (c *ComponentEnableUpdateThis[T]) This() *T {
+func (c *ComponentEnableUpdateThis[T]) This() func() *T {
+	return c.thisFunc
+}
+
+func (c *ComponentEnableUpdateThis[T]) thisFunc() *T {
 	return c.GetReflected().Interface().(*T)
 }
 
@@ -42,7 +50,11 @@ type ComponentEnableLateUpdateThis[T any] struct {
 	ComponentEnableLateUpdate
 }
 
-func (c *ComponentEnableLateUpdateThis[T]) This() *T {
+func (c *ComponentEnableLateUpdateThis[T]) This() func() *T {
+	return c.thisFunc
+}
+
+func (c *ComponentEnableLateUpdateThis[T]) thisFunc() *T {
 	return c.GetReflected().Interface().(*T)
 }
 
@@ -51,6 +63,10 @@ type ComponentEnableUpdateAndLateUpdateThis[T any] struct {
 	ComponentEnableUpdateAndLateUpdate
 }
 
-func (c *ComponentEnableUpdateAndLateUpdateThis[T]) This() *T {
+func (c *ComponentEnableUpdateAndLateUpdateThis[T]) This() func() *T {
+	return c.thisFunc
+}
+
+func (c *ComponentEnableUpdateAndLateUpdateThis[T]) thisFunc() *T {
 	return c.GetReflected().Interface().(*T)
 }

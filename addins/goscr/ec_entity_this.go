@@ -24,7 +24,11 @@ type EntityThis[T any] struct {
 	Entity
 }
 
-func (e *EntityThis[T]) This() *T {
+func (c *EntityThis[T]) This() func() *T {
+	return c.thisFunc
+}
+
+func (e *EntityThis[T]) thisFunc() *T {
 	return e.GetReflected().Interface().(*T)
 }
 
@@ -33,7 +37,11 @@ type EntityEnableUpdateThis[T any] struct {
 	EntityEnableUpdate
 }
 
-func (e *EntityEnableUpdateThis[T]) This() *T {
+func (c *EntityEnableUpdateThis[T]) This() func() *T {
+	return c.thisFunc
+}
+
+func (e *EntityEnableUpdateThis[T]) thisFunc() *T {
 	return e.GetReflected().Interface().(*T)
 }
 
@@ -42,7 +50,11 @@ type EntityEnableLateUpdateThis[T any] struct {
 	EntityEnableLateUpdate
 }
 
-func (e *EntityEnableLateUpdateThis[T]) This() *T {
+func (c *EntityEnableLateUpdateThis[T]) This() func() *T {
+	return c.thisFunc
+}
+
+func (e *EntityEnableLateUpdateThis[T]) thisFunc() *T {
 	return e.GetReflected().Interface().(*T)
 }
 
@@ -51,6 +63,10 @@ type EntityEnableUpdateAndLateUpdateThis[T any] struct {
 	EntityEnableUpdateAndLateUpdate
 }
 
-func (e *EntityEnableUpdateAndLateUpdateThis[T]) This() *T {
+func (c *EntityEnableUpdateAndLateUpdateThis[T]) This() func() *T {
+	return c.thisFunc
+}
+
+func (e *EntityEnableUpdateAndLateUpdateThis[T]) thisFunc() *T {
 	return e.GetReflected().Interface().(*T)
 }
