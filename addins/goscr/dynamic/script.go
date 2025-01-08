@@ -337,43 +337,43 @@ func (lib ScriptLib) Compile(i *interp.Interpreter) error {
 
 				switch s.BindMode {
 				case Func:
-					code = fmt.Sprintf(`
+					code = `
 package {{.UniquePkgName}}_export
 
 import (
-	{{.UniquePkgName}}_%[1]d "{{.PkgPath}}"
-	{{.This.UniquePkgName}}_%[1]d "{{.This.PkgPath}}"
+	{{.UniquePkgName}}_{{.No}} "{{.PkgPath}}"
+	{{.This.UniquePkgName}}_{{.No}} "{{.This.PkgPath}}"
 )
 
 func Bind_{{.Ident}}(this any, method string) any {
 	switch method {
 	{{range .Methods}}
 	case "{{.Name}}":
-		return {{$.UniquePkgName}}_%[1]d.{{$.Ident}}(this.(func() *{{$.This.UniquePkgName}}_%[1]d.{{$.This.Name}})).{{.Name}}
+		return {{$.UniquePkgName}}_{{.No}}.{{$.Ident}}(this.(func() *{{$.This.UniquePkgName}}_{{.No}}.{{$.This.Name}})).{{.Name}}
 	{{end}}
 	}
 	return nil
 }
-`, no)
+`
 				case Struct:
-					code = fmt.Sprintf(`
+					code = `
 package {{.UniquePkgName}}_export
 
 import (
-	{{.UniquePkgName}}_%[1]d "{{.PkgPath}}"
-	{{.This.UniquePkgName}}_%[1]d "{{.This.PkgPath}}"
+	{{.UniquePkgName}}_{{.No}} "{{.PkgPath}}"
+	{{.This.UniquePkgName}}_{{.No}} "{{.This.PkgPath}}"
 )
 
 func Bind_{{.Ident}}(this any, method string) any {
 	switch method {
 	{{range .Methods}}
 	case "{{.Name}}":
-		return {{$.UniquePkgName}}_%[1]d.{{$.Ident}}{this.(*{{$.This.UniquePkgName}}_%[1]d.{{$.This.Name}})}.{{.Name}}
+		return {{$.UniquePkgName}}_{{.No}}.{{$.Ident}}{this.(*{{$.This.UniquePkgName}}_{{.No}}.{{$.This.Name}})}.{{.Name}}
 	{{end}}
 	}
 	return nil
 }
-`, no)
+`
 				default:
 					continue
 				}
@@ -383,8 +383,18 @@ func Bind_{{.Ident}}(this any, method string) any {
 					return err
 				}
 
+				type _Args struct {
+					*Script
+					No int
+				}
+
+				args := _Args{
+					Script: s,
+					No:     no,
+				}
+
 				buff.Reset()
-				if err := tmpl.Execute(buff, s); err != nil {
+				if err := tmpl.Execute(buff, args); err != nil {
 					return err
 				}
 
