@@ -133,10 +133,15 @@ func (s *Solution) BindMethod(this reflect.Value, pkgPath, ident string, method 
 
 	switch script.BindMode {
 	case Func:
-		this = this.MethodByName("This")
-		if !this.IsValid() {
+		getThis := this.MethodByName("This")
+		if !getThis.IsValid() {
 			return nil
 		}
+		ret := getThis.Call(nil)
+		if len(ret) < 1 {
+			return nil
+		}
+		this = ret[0]
 	case Struct:
 		break
 	default:
