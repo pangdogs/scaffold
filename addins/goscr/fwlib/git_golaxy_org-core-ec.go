@@ -428,6 +428,7 @@ type _git_golaxy_org_core_ec_EntityPT struct {
 	IValue                      interface{}
 	WComponent                  func(idx int) ec.BuiltinComponent
 	WComponentAwakeOnFirstTouch func() *bool
+	WComponentNameIndexing      func() *bool
 	WComponentUniqueID          func() *bool
 	WComponents                 func() []ec.BuiltinComponent
 	WConstruct                  func(settings ...option.Setting[ec.EntityOptions]) ec.Entity
@@ -443,6 +444,9 @@ func (W _git_golaxy_org_core_ec_EntityPT) Component(idx int) ec.BuiltinComponent
 }
 func (W _git_golaxy_org_core_ec_EntityPT) ComponentAwakeOnFirstTouch() *bool {
 	return W.WComponentAwakeOnFirstTouch()
+}
+func (W _git_golaxy_org_core_ec_EntityPT) ComponentNameIndexing() *bool {
+	return W.WComponentNameIndexing()
 }
 func (W _git_golaxy_org_core_ec_EntityPT) ComponentUniqueID() *bool          { return W.WComponentUniqueID() }
 func (W _git_golaxy_org_core_ec_EntityPT) Components() []ec.BuiltinComponent { return W.WComponents() }
