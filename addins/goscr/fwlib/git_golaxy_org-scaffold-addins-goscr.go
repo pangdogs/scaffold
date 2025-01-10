@@ -11,14 +11,16 @@ import (
 func init() {
 	Symbols["git.golaxy.org/scaffold/addins/goscr/goscr"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"ComponentScript": reflect.ValueOf(goscr.ComponentScript),
-		"CreateEntityPT":  reflect.ValueOf(goscr.CreateEntityPT),
-		"EntityScript":    reflect.ValueOf(goscr.EntityScript),
-		"Install":         reflect.ValueOf(&goscr.Install).Elem(),
-		"Name":            reflect.ValueOf(&goscr.Name).Elem(),
-		"Uninstall":       reflect.ValueOf(&goscr.Uninstall).Elem(),
-		"Using":           reflect.ValueOf(&goscr.Using).Elem(),
-		"With":            reflect.ValueOf(&goscr.With).Elem(),
+		"ComponentScript":    reflect.ValueOf(goscr.ComponentScript),
+		"CreateEntityPT":     reflect.ValueOf(goscr.CreateEntityPT),
+		"EntityScript":       reflect.ValueOf(goscr.EntityScript),
+		"GetComponentScript": reflect.ValueOf(goscr.GetComponentScript),
+		"GetEntityScript":    reflect.ValueOf(goscr.GetEntityScript),
+		"Install":            reflect.ValueOf(&goscr.Install).Elem(),
+		"Name":               reflect.ValueOf(&goscr.Name).Elem(),
+		"Uninstall":          reflect.ValueOf(&goscr.Uninstall).Elem(),
+		"Using":              reflect.ValueOf(&goscr.Using).Elem(),
+		"With":               reflect.ValueOf(&goscr.With).Elem(),
 
 		// type definitions
 		"Component":                          reflect.ValueOf((*goscr.Component)(nil)),
