@@ -196,3 +196,22 @@ func EntityScriptT[T any](prototype, script string) pt.EntityAttribute {
 
 	return pt.Entity(prototype).SetExtra(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
 }
+
+// GetEntityScript 获取实体脚本
+func GetEntityScript(entity ec.Entity) func() *EntityBehavior {
+	return GetEntityScriptT[*EntityBehavior](entity)
+}
+
+// GetEntityScriptT 获取实体脚本
+func GetEntityScriptT[T interface{ This() func() T }](entity ec.Entity) func() T {
+	if entity == nil {
+		panic(fmt.Errorf("%s: entity is nil", exception.ErrArgs))
+	}
+
+	behavior, ok := entity.(T)
+	if !ok {
+		return nil
+	}
+
+	return behavior.This()
+}

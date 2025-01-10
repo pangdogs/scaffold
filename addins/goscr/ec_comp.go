@@ -213,3 +213,27 @@ func ComponentScriptT[T any](script string) pt.ComponentAttribute {
 
 	return pt.Component(types.ZeroT[T]()).SetName(scriptIdent).SetExtra(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
 }
+
+// GetComponentScript 获取组件脚本
+func GetComponentScript(entity ec.Entity, name string) func() *ComponentBehavior {
+	return GetComponentScriptT[*ComponentBehavior](entity, name)
+}
+
+// GetComponentScriptT 获取组件脚本
+func GetComponentScriptT[T interface{ This() func() T }](entity ec.Entity, name string) func() T {
+	if entity == nil {
+		panic(fmt.Errorf("%s: entity is nil", exception.ErrArgs))
+	}
+
+	comp := entity.GetComponent(name)
+	if comp == nil {
+		return nil
+	}
+
+	behavior, ok := comp.(T)
+	if !ok {
+		return nil
+	}
+
+	return behavior.This()
+}
