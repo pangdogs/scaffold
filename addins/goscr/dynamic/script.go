@@ -54,7 +54,7 @@ type This struct {
 
 // UniquePkgName 获取唯一包名
 func (this *This) UniquePkgName() string {
-	return strings.ReplaceAll(strings.ReplaceAll(this.PkgPath, "/", "_"), ".", "_")
+	return strings.NewReplacer("/", "_", ".", "_").Replace(this.PkgPath)
 }
 
 // Method 方法
@@ -79,7 +79,7 @@ type Script struct {
 
 // UniquePkgName 获取唯一包名
 func (s *Script) UniquePkgName() string {
-	return strings.ReplaceAll(strings.ReplaceAll(s.PkgPath, "/", "_"), ".", "_")
+	return strings.NewReplacer("/", "_", ".", "_").Replace(s.PkgPath)
 }
 
 // Scripts 脚本集合
