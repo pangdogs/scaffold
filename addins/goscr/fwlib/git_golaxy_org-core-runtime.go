@@ -128,38 +128,38 @@ func init() {
 
 // _git_golaxy_org_core_runtime_ConcurrentContext is an interface wrapper for ConcurrentContext type
 type _git_golaxy_org_core_runtime_ConcurrentContext struct {
-	IValue                interface{}
-	WCall                 func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
-	WCallDelegate         func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
-	WCallDelegateVoid     func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
-	WCallVoid             func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
-	WDeadline             func() (deadline time.Time, ok bool)
-	WDone                 func() <-chan struct{}
-	WErr                  func() error
-	WGetAutoRecover       func() bool
-	WGetConcurrentContext func() iface.Cache
-	WGetId                func() uid.Id
-	WGetName              func() string
-	WGetParentContext     func() context.Context
-	WGetReportError       func() chan error
-	WGetWaitGroup         func() *sync.WaitGroup
-	WString               func() string
-	WTerminate            func() <-chan struct{}
-	WTerminated           func() <-chan struct{}
-	WValue                func(key any) any
+	IValue                 interface{}
+	WCallAsync             func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
+	WCallDelegateAsync     func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
+	WCallDelegateVoidAsync func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
+	WCallVoidAsync         func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
+	WDeadline              func() (deadline time.Time, ok bool)
+	WDone                  func() <-chan struct{}
+	WErr                   func() error
+	WGetAutoRecover        func() bool
+	WGetConcurrentContext  func() iface.Cache
+	WGetId                 func() uid.Id
+	WGetName               func() string
+	WGetParentContext      func() context.Context
+	WGetReportError        func() chan error
+	WGetWaitGroup          func() *sync.WaitGroup
+	WString                func() string
+	WTerminate             func() <-chan struct{}
+	WTerminated            func() <-chan struct{}
+	WValue                 func(key any) any
 }
 
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) Call(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
-	return W.WCall(fun, args...)
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallAsync(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
+	return W.WCallAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallDelegate(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet {
-	return W.WCallDelegate(fun, args...)
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallDelegateAsync(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet {
+	return W.WCallDelegateAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallDelegateVoid(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet {
-	return W.WCallDelegateVoid(fun, args...)
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallDelegateVoidAsync(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet {
+	return W.WCallDelegateVoidAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallVoid(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
-	return W.WCallVoid(fun, args...)
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) CallVoidAsync(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
+	return W.WCallVoidAsync(fun, args...)
 }
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
@@ -209,54 +209,54 @@ func (W _git_golaxy_org_core_runtime_ConcurrentContextProvider) GetConcurrentCon
 
 // _git_golaxy_org_core_runtime_Context is an interface wrapper for Context type
 type _git_golaxy_org_core_runtime_Context struct {
-	IValue                interface{}
-	WActivateEvent        func(event event.IEventCtrl, recursion event.EventRecursion)
-	WCall                 func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
-	WCallDelegate         func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
-	WCallDelegateVoid     func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
-	WCallVoid             func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
-	WCollectGC            func(gc runtime.GC)
-	WDeadline             func() (deadline time.Time, ok bool)
-	WDone                 func() <-chan struct{}
-	WErr                  func() error
-	WGetAddInManager      func() extension.AddInManager
-	WGetAutoRecover       func() bool
-	WGetConcurrentContext func() iface.Cache
-	WGetCurrentContext    func() iface.Cache
-	WGetEntityManager     func() runtime.EntityManager
-	WGetEntityTree        func() runtime.EntityTree
-	WGetFrame             func() runtime.Frame
-	WGetId                func() uid.Id
-	WGetInstanceFaceCache func() iface.Cache
-	WGetName              func() string
-	WGetParentContext     func() context.Context
-	WGetReflected         func() reflect.Value
-	WGetReportError       func() chan error
-	WGetWaitGroup         func() *sync.WaitGroup
-	WManagedAddHooks      func(hooks ...event.Hook)
-	WManagedAddTagHooks   func(tag string, hooks ...event.Hook)
-	WManagedCleanTagHooks func(tag string)
-	WManagedGetTagHooks   func(tag string) []event.Hook
-	WString               func() string
-	WTerminate            func() <-chan struct{}
-	WTerminated           func() <-chan struct{}
-	WValue                func(key any) any
+	IValue                 interface{}
+	WActivateEvent         func(event event.IEventCtrl, recursion event.EventRecursion)
+	WCallAsync             func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
+	WCallDelegateAsync     func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
+	WCallDelegateVoidAsync func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
+	WCallVoidAsync         func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
+	WCollectGC             func(gc runtime.GC)
+	WDeadline              func() (deadline time.Time, ok bool)
+	WDone                  func() <-chan struct{}
+	WErr                   func() error
+	WGetAddInManager       func() extension.AddInManager
+	WGetAutoRecover        func() bool
+	WGetConcurrentContext  func() iface.Cache
+	WGetCurrentContext     func() iface.Cache
+	WGetEntityManager      func() runtime.EntityManager
+	WGetEntityTree         func() runtime.EntityTree
+	WGetFrame              func() runtime.Frame
+	WGetId                 func() uid.Id
+	WGetInstanceFaceCache  func() iface.Cache
+	WGetName               func() string
+	WGetParentContext      func() context.Context
+	WGetReflected          func() reflect.Value
+	WGetReportError        func() chan error
+	WGetWaitGroup          func() *sync.WaitGroup
+	WManagedAddHooks       func(hooks ...event.Hook)
+	WManagedAddTagHooks    func(tag string, hooks ...event.Hook)
+	WManagedCleanTagHooks  func(tag string)
+	WManagedGetTagHooks    func(tag string) []event.Hook
+	WString                func() string
+	WTerminate             func() <-chan struct{}
+	WTerminated            func() <-chan struct{}
+	WValue                 func(key any) any
 }
 
 func (W _git_golaxy_org_core_runtime_Context) ActivateEvent(event event.IEventCtrl, recursion event.EventRecursion) {
 	W.WActivateEvent(event, recursion)
 }
-func (W _git_golaxy_org_core_runtime_Context) Call(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
-	return W.WCall(fun, args...)
+func (W _git_golaxy_org_core_runtime_Context) CallAsync(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
+	return W.WCallAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_Context) CallDelegate(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet {
-	return W.WCallDelegate(fun, args...)
+func (W _git_golaxy_org_core_runtime_Context) CallDelegateAsync(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet {
+	return W.WCallDelegateAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_Context) CallDelegateVoid(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet {
-	return W.WCallDelegateVoid(fun, args...)
+func (W _git_golaxy_org_core_runtime_Context) CallDelegateVoidAsync(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet {
+	return W.WCallDelegateVoidAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_runtime_Context) CallVoid(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
-	return W.WCallVoid(fun, args...)
+func (W _git_golaxy_org_core_runtime_Context) CallVoidAsync(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
+	return W.WCallVoidAsync(fun, args...)
 }
 func (W _git_golaxy_org_core_runtime_Context) CollectGC(gc runtime.GC) { W.WCollectGC(gc) }
 func (W _git_golaxy_org_core_runtime_Context) Deadline() (deadline time.Time, ok bool) {

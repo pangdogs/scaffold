@@ -15,9 +15,9 @@ import (
 func init() {
 	Symbols["git.golaxy.org/core/core"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"Async":                 reflect.ValueOf(core.Async),
-		"AsyncVoid":             reflect.ValueOf(core.AsyncVoid),
 		"Await":                 reflect.ValueOf(core.Await),
+		"CallAsync":             reflect.ValueOf(core.CallAsync),
+		"CallVoidAsync":         reflect.ValueOf(core.CallVoidAsync),
 		"CreateEntity":          reflect.ValueOf(core.CreateEntity),
 		"CreateEntityPT":        reflect.ValueOf(core.CreateEntityPT),
 		"ErrAllFailures":        reflect.ValueOf(&core.ErrAllFailures).Elem(),
@@ -28,13 +28,14 @@ func init() {
 		"ErrProcessQueueFull":   reflect.ValueOf(&core.ErrProcessQueueFull).Elem(),
 		"ErrRuntime":            reflect.ValueOf(&core.ErrRuntime).Elem(),
 		"ErrService":            reflect.ValueOf(&core.ErrService).Elem(),
-		"Go":                    reflect.ValueOf(core.Go),
-		"GoVoid":                reflect.ValueOf(core.GoVoid),
+		"GoAsync":               reflect.ValueOf(core.GoAsync),
+		"GoVoidAsync":           reflect.ValueOf(core.GoVoidAsync),
 		"NewRuntime":            reflect.ValueOf(core.NewRuntime),
 		"NewService":            reflect.ValueOf(core.NewService),
-		"TimeAfter":             reflect.ValueOf(core.TimeAfter),
-		"TimeAt":                reflect.ValueOf(core.TimeAt),
-		"TimeTick":              reflect.ValueOf(core.TimeTick),
+		"ReadChanAsync":         reflect.ValueOf(core.ReadChanAsync),
+		"TimeAfterAsync":        reflect.ValueOf(core.TimeAfterAsync),
+		"TimeAtAsync":           reflect.ValueOf(core.TimeAtAsync),
+		"TimeTickAsync":         reflect.ValueOf(core.TimeTickAsync),
 		"UnsafeNewRuntime":      reflect.ValueOf(core.UnsafeNewRuntime),
 		"UnsafeNewService":      reflect.ValueOf(core.UnsafeNewService),
 		"UnsafeRuntime":         reflect.ValueOf(core.UnsafeRuntime),
@@ -249,17 +250,17 @@ func (W _git_golaxy_org_core_LifecycleEntityUpdate) Update() { W.WUpdate() }
 
 // _git_golaxy_org_core_Runtime is an interface wrapper for Runtime type
 type _git_golaxy_org_core_Runtime struct {
-	IValue                interface{}
-	WGetConcurrentContext func() iface.Cache
-	WGetCurrentContext    func() iface.Cache
-	WGetInstanceFaceCache func() iface.Cache
-	WPushCall             func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
-	WPushCallDelegate     func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
-	WPushCallDelegateVoid func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
-	WPushCallVoid         func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
-	WRun                  func() <-chan struct{}
-	WTerminate            func() <-chan struct{}
-	WTerminated           func() <-chan struct{}
+	IValue                     interface{}
+	WGetConcurrentContext      func() iface.Cache
+	WGetCurrentContext         func() iface.Cache
+	WGetInstanceFaceCache      func() iface.Cache
+	WPushCallAsync             func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
+	WPushCallDelegateAsync     func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
+	WPushCallDelegateVoidAsync func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
+	WPushCallVoidAsync         func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
+	WRun                       func() <-chan struct{}
+	WTerminate                 func() <-chan struct{}
+	WTerminated                func() <-chan struct{}
 }
 
 func (W _git_golaxy_org_core_Runtime) GetConcurrentContext() iface.Cache {
@@ -269,17 +270,17 @@ func (W _git_golaxy_org_core_Runtime) GetCurrentContext() iface.Cache { return W
 func (W _git_golaxy_org_core_Runtime) GetInstanceFaceCache() iface.Cache {
 	return W.WGetInstanceFaceCache()
 }
-func (W _git_golaxy_org_core_Runtime) PushCall(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
-	return W.WPushCall(fun, args...)
+func (W _git_golaxy_org_core_Runtime) PushCallAsync(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
+	return W.WPushCallAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) PushCallDelegate(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet {
-	return W.WPushCallDelegate(fun, args...)
+func (W _git_golaxy_org_core_Runtime) PushCallDelegateAsync(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet {
+	return W.WPushCallDelegateAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) PushCallDelegateVoid(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet {
-	return W.WPushCallDelegateVoid(fun, args...)
+func (W _git_golaxy_org_core_Runtime) PushCallDelegateVoidAsync(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet {
+	return W.WPushCallDelegateVoidAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) PushCallVoid(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
-	return W.WPushCallVoid(fun, args...)
+func (W _git_golaxy_org_core_Runtime) PushCallVoidAsync(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
+	return W.WPushCallVoidAsync(fun, args...)
 }
 func (W _git_golaxy_org_core_Runtime) Run() <-chan struct{}        { return W.WRun() }
 func (W _git_golaxy_org_core_Runtime) Terminate() <-chan struct{}  { return W.WTerminate() }

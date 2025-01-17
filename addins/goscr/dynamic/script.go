@@ -96,7 +96,7 @@ func (scripts Scripts) Ident(ident string) *Script {
 // Range 遍历
 func (scripts Scripts) Range(fun generic.Func1[*Script, bool]) {
 	for _, script := range scripts {
-		if !fun.Exec(script) {
+		if !fun.UnsafeCall(script) {
 			return
 		}
 	}
@@ -118,7 +118,7 @@ func (lib ScriptLib) Package(pkgPath string) Scripts {
 // Range 遍历
 func (lib ScriptLib) Range(fun generic.Func2[string, Scripts, bool]) {
 	for pkgPath, scripts := range lib {
-		if !fun.Exec(pkgPath, scripts) {
+		if !fun.UnsafeCall(pkgPath, scripts) {
 			return
 		}
 	}

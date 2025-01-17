@@ -12,8 +12,8 @@ func init() {
 	Symbols["git.golaxy.org/core/utils/async/async"] = map[string]reflect.Value{
 		// function, constant and variable definitions
 		"ErrAsyncRetClosed": reflect.ValueOf(&async.ErrAsyncRetClosed).Elem(),
-		"MakeAsyncRet":      reflect.ValueOf(&async.MakeAsyncRet).Elem(),
-		"MakeRet":           reflect.ValueOf(&async.MakeRet).Elem(),
+		"MakeAsyncRet":      reflect.ValueOf(async.MakeAsyncRet),
+		"MakeRet":           reflect.ValueOf(async.MakeRet),
 		"VoidRet":           reflect.ValueOf(&async.VoidRet).Elem(),
 
 		// type definitions
@@ -30,44 +30,44 @@ func init() {
 
 // _git_golaxy_org_core_utils_async_Callee is an interface wrapper for Callee type
 type _git_golaxy_org_core_utils_async_Callee struct {
-	IValue                interface{}
-	WPushCall             func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
-	WPushCallDelegate     func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
-	WPushCallDelegateVoid func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
-	WPushCallVoid         func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
+	IValue                     interface{}
+	WPushCallAsync             func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
+	WPushCallDelegateAsync     func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
+	WPushCallDelegateVoidAsync func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
+	WPushCallVoidAsync         func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
 }
 
-func (W _git_golaxy_org_core_utils_async_Callee) PushCall(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
-	return W.WPushCall(fun, args...)
+func (W _git_golaxy_org_core_utils_async_Callee) PushCallAsync(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
+	return W.WPushCallAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_utils_async_Callee) PushCallDelegate(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet {
-	return W.WPushCallDelegate(fun, args...)
+func (W _git_golaxy_org_core_utils_async_Callee) PushCallDelegateAsync(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet {
+	return W.WPushCallDelegateAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_utils_async_Callee) PushCallDelegateVoid(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet {
-	return W.WPushCallDelegateVoid(fun, args...)
+func (W _git_golaxy_org_core_utils_async_Callee) PushCallDelegateVoidAsync(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet {
+	return W.WPushCallDelegateVoidAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_utils_async_Callee) PushCallVoid(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
-	return W.WPushCallVoid(fun, args...)
+func (W _git_golaxy_org_core_utils_async_Callee) PushCallVoidAsync(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
+	return W.WPushCallVoidAsync(fun, args...)
 }
 
 // _git_golaxy_org_core_utils_async_Caller is an interface wrapper for Caller type
 type _git_golaxy_org_core_utils_async_Caller struct {
-	IValue            interface{}
-	WCall             func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
-	WCallDelegate     func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
-	WCallDelegateVoid func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
-	WCallVoid         func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
+	IValue                 interface{}
+	WCallAsync             func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
+	WCallDelegateAsync     func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
+	WCallDelegateVoidAsync func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
+	WCallVoidAsync         func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
 }
 
-func (W _git_golaxy_org_core_utils_async_Caller) Call(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
-	return W.WCall(fun, args...)
+func (W _git_golaxy_org_core_utils_async_Caller) CallAsync(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
+	return W.WCallAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_utils_async_Caller) CallDelegate(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet {
-	return W.WCallDelegate(fun, args...)
+func (W _git_golaxy_org_core_utils_async_Caller) CallDelegateAsync(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet {
+	return W.WCallDelegateAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_utils_async_Caller) CallDelegateVoid(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet {
-	return W.WCallDelegateVoid(fun, args...)
+func (W _git_golaxy_org_core_utils_async_Caller) CallDelegateVoidAsync(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet {
+	return W.WCallDelegateVoidAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_utils_async_Caller) CallVoid(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
-	return W.WCallVoid(fun, args...)
+func (W _git_golaxy_org_core_utils_async_Caller) CallVoidAsync(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
+	return W.WCallVoidAsync(fun, args...)
 }

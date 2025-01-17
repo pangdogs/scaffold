@@ -54,7 +54,7 @@ func (pt *PropTab) GetProp(name string) IPropSync {
 // RangeProps 遍历属性
 func (pt *PropTab) RangeProps(fun generic.Func2[string, IPropSync, bool]) {
 	for _, kv := range *pt {
-		if !fun.Exec(kv.K, kv.V) {
+		if !fun.UnsafeCall(kv.K, kv.V) {
 			return
 		}
 	}
@@ -63,7 +63,7 @@ func (pt *PropTab) RangeProps(fun generic.Func2[string, IPropSync, bool]) {
 // EachProps 遍历属性
 func (pt *PropTab) EachProps(fun generic.Action2[string, IPropSync]) {
 	for _, kv := range *pt {
-		fun.Exec(kv.K, kv.V)
+		fun.UnsafeCall(kv.K, kv.V)
 	}
 }
 
