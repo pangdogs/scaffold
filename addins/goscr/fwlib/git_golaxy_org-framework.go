@@ -34,18 +34,16 @@ import (
 func init() {
 	Symbols["git.golaxy.org/framework/framework"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"CreateEntityAsync":       reflect.ValueOf(framework.CreateEntityAsync),
-		"CreateEntityPT":          reflect.ValueOf(&framework.CreateEntityPT).Elem(),
-		"CreateRuntime":           reflect.ValueOf(framework.CreateRuntime),
-		"ErrComponentNotAlive":    reflect.ValueOf(&framework.ErrComponentNotAlive).Elem(),
-		"ErrEntityNotAlive":       reflect.ValueOf(&framework.ErrEntityNotAlive).Elem(),
-		"ErrFramework":            reflect.ValueOf(&framework.ErrFramework).Elem(),
-		"GetRuntimeInstance":      reflect.ValueOf(framework.GetRuntimeInstance),
-		"GetServiceInstance":      reflect.ValueOf(framework.GetServiceInstance),
-		"NewApp":                  reflect.ValueOf(framework.NewApp),
-		"NewRuntimeInstantiation": reflect.ValueOf(framework.NewRuntimeInstantiation),
-		"NewServiceInstantiation": reflect.ValueOf(framework.NewServiceInstantiation),
-		"ReadChanAsync":           reflect.ValueOf(framework.ReadChanAsync),
+		"CreateEntityAsync":    reflect.ValueOf(framework.CreateEntityAsync),
+		"CreateEntityPT":       reflect.ValueOf(&framework.CreateEntityPT).Elem(),
+		"CreateRuntime":        reflect.ValueOf(framework.CreateRuntime),
+		"ErrComponentNotAlive": reflect.ValueOf(&framework.ErrComponentNotAlive).Elem(),
+		"ErrEntityNotAlive":    reflect.ValueOf(&framework.ErrEntityNotAlive).Elem(),
+		"ErrFramework":         reflect.ValueOf(&framework.ErrFramework).Elem(),
+		"GetRuntimeInstance":   reflect.ValueOf(framework.GetRuntimeInstance),
+		"GetServiceInstance":   reflect.ValueOf(framework.GetServiceInstance),
+		"NewApp":               reflect.ValueOf(framework.NewApp),
+		"ReadChanAsync":        reflect.ValueOf(framework.ReadChanAsync),
 
 		// type definitions
 		"App":                                reflect.ValueOf((*framework.App)(nil)),
@@ -103,10 +101,8 @@ func init() {
 		"RuntimeCreator":                     reflect.ValueOf((*framework.RuntimeCreator)(nil)),
 		"RuntimeGeneric":                     reflect.ValueOf((*framework.RuntimeGeneric)(nil)),
 		"RuntimeInstance":                    reflect.ValueOf((*framework.RuntimeInstance)(nil)),
-		"RuntimeInstantiation":               reflect.ValueOf((*framework.RuntimeInstantiation)(nil)),
 		"ServiceGeneric":                     reflect.ValueOf((*framework.ServiceGeneric)(nil)),
 		"ServiceInstance":                    reflect.ValueOf((*framework.ServiceInstance)(nil)),
-		"ServiceInstantiation":               reflect.ValueOf((*framework.ServiceInstantiation)(nil)),
 
 		// interface wrapper definitions
 		"_IRuntimeInstance":                   reflect.ValueOf((*_git_golaxy_org_framework_IRuntimeInstance)(nil)),
