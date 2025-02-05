@@ -87,8 +87,8 @@ func (c EntityPTCreator) SetExtra(extra map[string]any) EntityPTCreator {
 	return c
 }
 
-// Script 脚本
-func (c EntityPTCreator) Script(script string) EntityPTCreator {
+// SetScript 设置脚本
+func (c EntityPTCreator) SetScript(script string) EntityPTCreator {
 	if script == "" {
 		exception.Panicf("%w: script is empty", exception.ErrArgs)
 	}
