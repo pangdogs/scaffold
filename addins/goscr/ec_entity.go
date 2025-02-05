@@ -194,7 +194,7 @@ func EntityScriptT[T any](prototype, script string) pt.EntityAttribute {
 	scriptPkg := script[:idx]
 	scriptIdent := script[idx+1:]
 
-	return pt.Entity(prototype).SetExtra(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
+	return pt.BuildEntityAttribute(prototype).SetExtra(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
 }
 
 // GetEntityScript 获取实体脚本

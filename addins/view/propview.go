@@ -113,7 +113,7 @@ func (m *_PropView) sync(ps *PropSync, revision int64, op string, args ...any) {
 		} else {
 			// 同步至其他服务
 			core.Await(m, rpcutil.ProxyRuntime(m, ps.entity.GetId()).RPC(dst, Name, "DoSync", ps.entity.GetId(), ps.name, revision, op, args)).
-				Any(m.syncRet, dst, ps.entity, ps.name, revision, op)
+				AnyVoid(m.syncRet, dst, ps.entity, ps.name, revision, op)
 		}
 	}
 }

@@ -10,9 +10,10 @@ import (
 func init() {
 	Symbols["git.golaxy.org/core/utils/meta/meta"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"Make": reflect.ValueOf(meta.Make),
+		"BuildMeta": reflect.ValueOf(meta.BuildMeta),
 
 		// type definitions
-		"Meta": reflect.ValueOf((*meta.Meta)(nil)),
+		"Meta":        reflect.ValueOf((*meta.Meta)(nil)),
+		"MetaCreator": reflect.ValueOf((*meta.MetaCreator)(nil)),
 	}
 }

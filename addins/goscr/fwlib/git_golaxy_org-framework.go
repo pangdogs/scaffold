@@ -34,16 +34,14 @@ import (
 func init() {
 	Symbols["git.golaxy.org/framework/framework"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"CreateEntityAsync":    reflect.ValueOf(framework.CreateEntityAsync),
-		"CreateEntityPT":       reflect.ValueOf(&framework.CreateEntityPT).Elem(),
-		"CreateRuntime":        reflect.ValueOf(framework.CreateRuntime),
-		"ErrComponentNotAlive": reflect.ValueOf(&framework.ErrComponentNotAlive).Elem(),
-		"ErrEntityNotAlive":    reflect.ValueOf(&framework.ErrEntityNotAlive).Elem(),
-		"ErrFramework":         reflect.ValueOf(&framework.ErrFramework).Elem(),
-		"GetRuntimeInstance":   reflect.ValueOf(framework.GetRuntimeInstance),
-		"GetServiceInstance":   reflect.ValueOf(framework.GetServiceInstance),
-		"NewApp":               reflect.ValueOf(framework.NewApp),
-		"ReadChanAsync":        reflect.ValueOf(framework.ReadChanAsync),
+		"BuildEntityAsync":              reflect.ValueOf(framework.BuildEntityAsync),
+		"BuildEntityPT":                 reflect.ValueOf(&framework.BuildEntityPT).Elem(),
+		"BuildRuntime":                  reflect.ValueOf(framework.BuildRuntime),
+		"ErrEntityOrComponentNotLiving": reflect.ValueOf(&framework.ErrEntityOrComponentNotLiving).Elem(),
+		"ErrFramework":                  reflect.ValueOf(&framework.ErrFramework).Elem(),
+		"GetRuntimeInstance":            reflect.ValueOf(framework.GetRuntimeInstance),
+		"GetServiceInstance":            reflect.ValueOf(framework.GetServiceInstance),
+		"NewApp":                        reflect.ValueOf(framework.NewApp),
 
 		// type definitions
 		"App":                                reflect.ValueOf((*framework.App)(nil)),
@@ -158,12 +156,12 @@ func init() {
 type _git_golaxy_org_framework_IRuntimeInstance struct {
 	IValue                 interface{}
 	WActivateEvent         func(event event.IEventCtrl, recursion event.EventRecursion)
+	WBuildEntity           func(prototype string) core.EntityCreator
 	WCallAsync             func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
 	WCallDelegateAsync     func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
 	WCallDelegateVoidAsync func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
 	WCallVoidAsync         func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
 	WCollectGC             func(gc runtime.GC)
-	WCreateEntity          func(prototype string) core.EntityCreator
 	WDeadline              func() (deadline time.Time, ok bool)
 	WDone                  func() <-chan struct{}
 	WErr                   func() error
@@ -197,6 +195,9 @@ type _git_golaxy_org_framework_IRuntimeInstance struct {
 func (W _git_golaxy_org_framework_IRuntimeInstance) ActivateEvent(event event.IEventCtrl, recursion event.EventRecursion) {
 	W.WActivateEvent(event, recursion)
 }
+func (W _git_golaxy_org_framework_IRuntimeInstance) BuildEntity(prototype string) core.EntityCreator {
+	return W.WBuildEntity(prototype)
+}
 func (W _git_golaxy_org_framework_IRuntimeInstance) CallAsync(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
 	return W.WCallAsync(fun, args...)
 }
@@ -210,9 +211,6 @@ func (W _git_golaxy_org_framework_IRuntimeInstance) CallVoidAsync(fun generic.Ac
 	return W.WCallVoidAsync(fun, args...)
 }
 func (W _git_golaxy_org_framework_IRuntimeInstance) CollectGC(gc runtime.GC) { W.WCollectGC(gc) }
-func (W _git_golaxy_org_framework_IRuntimeInstance) CreateEntity(prototype string) core.EntityCreator {
-	return W.WCreateEntity(prototype)
-}
 func (W _git_golaxy_org_framework_IRuntimeInstance) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
@@ -300,13 +298,13 @@ func (W _git_golaxy_org_framework_IRuntimeInstantiation) Instantiation() framewo
 // _git_golaxy_org_framework_IServiceInstance is an interface wrapper for IServiceInstance type
 type _git_golaxy_org_framework_IServiceInstance struct {
 	IValue                 interface{}
+	WBuildEntityAsync      func(prototype string) framework.EntityCreatorAsync
+	WBuildEntityPT         func(prototype string) core.EntityPTCreator
+	WBuildRuntime          func() framework.RuntimeCreator
 	WCallAsync             func(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.RetT[any]], args ...any) async.AsyncRetT[any]
 	WCallDelegateAsync     func(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.RetT[any]], args ...any) async.AsyncRetT[any]
 	WCallDelegateVoidAsync func(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.AsyncRetT[any]
 	WCallVoidAsync         func(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.AsyncRetT[any]
-	WCreateEntityAsync     func(prototype string) framework.EntityCreatorAsync
-	WCreateEntityPT        func(prototype string) core.EntityPTCreator
-	WCreateRuntime         func() framework.RuntimeCreator
 	WDeadline              func() (deadline time.Time, ok bool)
 	WDone                  func() <-chan struct{}
 	WErr                   func() error
@@ -337,6 +335,15 @@ type _git_golaxy_org_framework_IServiceInstance struct {
 	WValue                 func(key any) any
 }
 
+func (W _git_golaxy_org_framework_IServiceInstance) BuildEntityAsync(prototype string) framework.EntityCreatorAsync {
+	return W.WBuildEntityAsync(prototype)
+}
+func (W _git_golaxy_org_framework_IServiceInstance) BuildEntityPT(prototype string) core.EntityPTCreator {
+	return W.WBuildEntityPT(prototype)
+}
+func (W _git_golaxy_org_framework_IServiceInstance) BuildRuntime() framework.RuntimeCreator {
+	return W.WBuildRuntime()
+}
 func (W _git_golaxy_org_framework_IServiceInstance) CallAsync(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.RetT[any]], args ...any) async.AsyncRetT[any] {
 	return W.WCallAsync(entityId, fun, args...)
 }
@@ -348,15 +355,6 @@ func (W _git_golaxy_org_framework_IServiceInstance) CallDelegateVoidAsync(entity
 }
 func (W _git_golaxy_org_framework_IServiceInstance) CallVoidAsync(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.AsyncRetT[any] {
 	return W.WCallVoidAsync(entityId, fun, args...)
-}
-func (W _git_golaxy_org_framework_IServiceInstance) CreateEntityAsync(prototype string) framework.EntityCreatorAsync {
-	return W.WCreateEntityAsync(prototype)
-}
-func (W _git_golaxy_org_framework_IServiceInstance) CreateEntityPT(prototype string) core.EntityPTCreator {
-	return W.WCreateEntityPT(prototype)
-}
-func (W _git_golaxy_org_framework_IServiceInstance) CreateRuntime() framework.RuntimeCreator {
-	return W.WCreateRuntime()
 }
 func (W _git_golaxy_org_framework_IServiceInstance) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()

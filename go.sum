@@ -12,10 +12,10 @@ cloud.google.com/go/longrunning v0.6.4 h1:3tyw9rO3E2XVXzSApn1gyEEnH2K9SynNQjMlBi
 cloud.google.com/go/longrunning v0.6.4/go.mod h1:ttZpLCe6e7EXvn9OxpBRx7kZEB0efv8yBO6YnVMfhJs=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
-git.golaxy.org/core v0.3.91 h1:dFZ+Rbbo4ki6zVbPawuRTFqJLZ33EqY+dLGhZNV6efQ=
-git.golaxy.org/core v0.3.91/go.mod h1:vMDvEu2UKm9NPhYMUNpfLOFrCDNBfjkwQO7lJPS2JDc=
-git.golaxy.org/framework v0.3.11 h1:/qhPSatYg99+NRsnI0drb+MiF30N+LCQhM98UKhZqf0=
-git.golaxy.org/framework v0.3.11/go.mod h1:H7C6HPHFm6C8bG164pna/fKJCvoLfwKew1PbivewGz0=
+git.golaxy.org/core v0.3.94 h1:pCmmdkDcLtGgPLtfXQ1VZ8KuYfOLqD+T+51UvU1mIjQ=
+git.golaxy.org/core v0.3.94/go.mod h1:vMDvEu2UKm9NPhYMUNpfLOFrCDNBfjkwQO7lJPS2JDc=
+git.golaxy.org/framework v0.3.12 h1:MV+D90YKLV74ZhwaPAnVBfLgXll22H3pOrCbSm05J2E=
+git.golaxy.org/framework v0.3.12/go.mod h1:tc0aWOvcQR1V7YQ2Q//4Qd5g4Dubrz4boLzOsQ4kpkM=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.7.0/go.mod h1:bjGvMhVMb+EEm3VRNQawDMUyMMjo+S5ewNjflkep/0Q=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.7.1/go.mod h1:bjGvMhVMb+EEm3VRNQawDMUyMMjo+S5ewNjflkep/0Q=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.1/go.mod h1:RKUqNu35KJYcVG/fqTRqmuXJZYNhYkBrnC/hX7yGbTA=

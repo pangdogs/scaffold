@@ -211,7 +211,7 @@ func ComponentScriptT[T any](script string) pt.ComponentAttribute {
 	scriptPkg := script[:idx]
 	scriptIdent := script[idx+1:]
 
-	return pt.Component(types.ZeroT[T]()).SetName(scriptIdent).SetExtra(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
+	return pt.BuildComponentAttribute(types.ZeroT[T]()).SetName(scriptIdent).SetExtra(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
 }
 
 // GetComponentScript 获取组件脚本

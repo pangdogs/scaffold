@@ -12,14 +12,14 @@ import (
 func init() {
 	Symbols["git.golaxy.org/core/ec/pt/pt"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"Component":           reflect.ValueOf(pt.Component),
-		"DefaultComponentLib": reflect.ValueOf(pt.DefaultComponentLib),
-		"Entity":              reflect.ValueOf(pt.Entity),
-		"ErrPt":               reflect.ValueOf(&pt.ErrPt).Elem(),
-		"For":                 reflect.ValueOf(pt.For),
-		"NewComponentLib":     reflect.ValueOf(pt.NewComponentLib),
-		"NewEntityLib":        reflect.ValueOf(pt.NewEntityLib),
-		"UnsafeEntityLib":     reflect.ValueOf(pt.UnsafeEntityLib),
+		"BuildComponentAttribute": reflect.ValueOf(pt.BuildComponentAttribute),
+		"BuildEntityAttribute":    reflect.ValueOf(pt.BuildEntityAttribute),
+		"DefaultComponentLib":     reflect.ValueOf(pt.DefaultComponentLib),
+		"ErrPt":                   reflect.ValueOf(&pt.ErrPt).Elem(),
+		"For":                     reflect.ValueOf(pt.For),
+		"NewComponentLib":         reflect.ValueOf(pt.NewComponentLib),
+		"NewEntityLib":            reflect.ValueOf(pt.NewEntityLib),
+		"UnsafeEntityLib":         reflect.ValueOf(pt.UnsafeEntityLib),
 
 		// type definitions
 		"ComponentAttribute": reflect.ValueOf((*pt.ComponentAttribute)(nil)),

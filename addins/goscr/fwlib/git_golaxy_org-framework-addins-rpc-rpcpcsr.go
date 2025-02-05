@@ -26,6 +26,7 @@ func init() {
 		"ErrGroupChanIsFull":              reflect.ValueOf(&rpcpcsr.ErrGroupChanIsFull).Elem(),
 		"ErrGroupNotFound":                reflect.ValueOf(&rpcpcsr.ErrGroupNotFound).Elem(),
 		"ErrIncorrectDestAddress":         reflect.ValueOf(&rpcpcsr.ErrIncorrectDestAddress).Elem(),
+		"ErrMethodAsyncResultIsNil":       reflect.ValueOf(&rpcpcsr.ErrMethodAsyncResultIsNil).Elem(),
 		"ErrMethodNotFound":               reflect.ValueOf(&rpcpcsr.ErrMethodNotFound).Elem(),
 		"ErrMethodParameterCountMismatch": reflect.ValueOf(&rpcpcsr.ErrMethodParameterCountMismatch).Elem(),
 		"ErrMethodParameterTypeMismatch":  reflect.ValueOf(&rpcpcsr.ErrMethodParameterTypeMismatch).Elem(),

@@ -11,10 +11,13 @@ import (
 func init() {
 	Symbols["git.golaxy.org/core/utils/async/async"] = map[string]reflect.Value{
 		// function, constant and variable definitions
+		"End":               reflect.ValueOf(async.End),
 		"ErrAsyncRetClosed": reflect.ValueOf(&async.ErrAsyncRetClosed).Elem(),
 		"MakeAsyncRet":      reflect.ValueOf(async.MakeAsyncRet),
 		"MakeRet":           reflect.ValueOf(async.MakeRet),
+		"Return":            reflect.ValueOf(async.Return),
 		"VoidRet":           reflect.ValueOf(&async.VoidRet).Elem(),
+		"Yield":             reflect.ValueOf(async.Yield),
 
 		// type definitions
 		"AsyncRet": reflect.ValueOf((*async.AsyncRet)(nil)),
