@@ -45,49 +45,49 @@ func newACL(...any) IACL {
 }
 
 type _ACL struct {
-	framework.IServiceInstance
+	svc    framework.IServiceInstance
 	config *viper.Viper
 }
 
 func (acl *_ACL) Init(svcCtx service.Context, _ runtime.Context) {
 	log.Infof(svcCtx, "init addin %q", self.Name)
 
-	acl.IServiceInstance = reinterpret.Cast[framework.IServiceInstance](svcCtx)
+	acl.svc = reinterpret.Cast[framework.IServiceInstance](svcCtx)
 
-	localFilePath := acl.GetConf().GetStringOrDefault("acl.local_path", "")
-	remoteFilePath := acl.GetConf().GetStringOrDefault("acl.remote_path", "")
+	localFilePath := acl.svc.GetConf().GetStringOrDefault("acl.local_path", "")
+	remoteFilePath := acl.svc.GetConf().GetStringOrDefault("acl.remote_path", "")
 	if localFilePath == "" && remoteFilePath == "" {
-		log.Infof(acl, "no acl file")
+		log.Infof(acl.svc, "no acl file")
 		return
 	}
 
-	acl.config.SetConfigType(acl.GetConf().GetStringOrDefault("acl.format", "json"))
+	acl.config.SetConfigType(acl.svc.GetConf().GetStringOrDefault("acl.format", "json"))
 
 	if localFilePath != "" {
 		acl.config.SetConfigFile(localFilePath)
 		if err := acl.config.ReadInConfig(); err != nil {
-			log.Panicf(acl, "read acl local config %q failed, %s", localFilePath, err)
+			log.Panicf(acl.svc, "read acl local config %q failed, %s", localFilePath, err)
 		}
-		log.Infof(acl, "load acl local config %q config ok", localFilePath)
+		log.Infof(acl.svc, "load acl local config %q config ok", localFilePath)
 	}
 
-	remoteProvider := acl.GetConf().GetStringOrDefault("acl.remote_provider", "")
-	remoteEndpoint := acl.GetConf().GetStringOrDefault("acl.remote_endpoint", "")
+	remoteProvider := acl.svc.GetConf().GetStringOrDefault("acl.remote_provider", "")
+	remoteEndpoint := acl.svc.GetConf().GetStringOrDefault("acl.remote_endpoint", "")
 
 	if remoteFilePath != "" {
 		if err := acl.config.AddRemoteProvider(remoteProvider, remoteEndpoint, remoteFilePath); err != nil {
-			log.Panicf(acl, "read acl remote config [%q, %q, %q] failed, %s", remoteProvider, remoteEndpoint, remoteFilePath, err)
+			log.Panicf(acl.svc, "read acl remote config [%q, %q, %q] failed, %s", remoteProvider, remoteEndpoint, remoteFilePath, err)
 		}
 		if err := acl.config.ReadRemoteConfig(); err != nil {
-			log.Panicf(acl, "read acl remote config [%q, %q, %q] failed, %s", remoteProvider, remoteEndpoint, remoteFilePath, err)
+			log.Panicf(acl.svc, "read acl remote config [%q, %q, %q] failed, %s", remoteProvider, remoteEndpoint, remoteFilePath, err)
 		}
 
-		log.Infof(acl, "load acl remote config [%q, %q, %q] ok", remoteProvider, remoteEndpoint, remoteFilePath)
+		log.Infof(acl.svc, "load acl remote config [%q, %q, %q] ok", remoteProvider, remoteEndpoint, remoteFilePath)
 	}
 
 	if localFilePath != "" {
 		acl.config.OnConfigChange(func(e fsnotify.Event) {
-			log.Infof(acl, "reload acl local config %q ok", localFilePath)
+			log.Infof(acl.svc, "reload acl local config %q ok", localFilePath)
 		})
 		acl.config.WatchConfig()
 	}
@@ -99,11 +99,11 @@ func (acl *_ACL) Init(svcCtx service.Context, _ runtime.Context) {
 
 				err := acl.config.WatchRemoteConfig()
 				if err != nil {
-					log.Errorf(acl, "watch acl remote config [%q, %q, %q] changes failed, %s", remoteProvider, remoteEndpoint, remoteFilePath, err)
+					log.Errorf(acl.svc, "watch acl remote config [%q, %q, %q] changes failed, %s", remoteProvider, remoteEndpoint, remoteFilePath, err)
 					continue
 				}
 
-				log.Infof(acl, "reload acl remote config [%q, %q, %q] ok", remoteProvider, remoteEndpoint, remoteFilePath)
+				log.Infof(acl.svc, "reload acl remote config [%q, %q, %q] ok", remoteProvider, remoteEndpoint, remoteFilePath)
 			}
 		}()
 	}
