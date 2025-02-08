@@ -5,6 +5,7 @@ package fwlib
 import (
 	"context"
 	"git.golaxy.org/core/ec/ectx"
+	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/core/utils/iface"
 	"reflect"
 	"sync"
@@ -49,8 +50,8 @@ type _git_golaxy_org_core_ec_ectx_Context struct {
 	WGetParentContext func() context.Context
 	WGetReportError   func() chan error
 	WGetWaitGroup     func() *sync.WaitGroup
-	WTerminate        func() <-chan struct{}
-	WTerminated       func() <-chan struct{}
+	WTerminate        func() async.AsyncRet
+	WTerminated       func() async.AsyncRet
 	WValue            func(key any) any
 }
 
@@ -67,9 +68,9 @@ func (W _git_golaxy_org_core_ec_ectx_Context) GetReportError() chan error { retu
 func (W _git_golaxy_org_core_ec_ectx_Context) GetWaitGroup() *sync.WaitGroup {
 	return W.WGetWaitGroup()
 }
-func (W _git_golaxy_org_core_ec_ectx_Context) Terminate() <-chan struct{}  { return W.WTerminate() }
-func (W _git_golaxy_org_core_ec_ectx_Context) Terminated() <-chan struct{} { return W.WTerminated() }
-func (W _git_golaxy_org_core_ec_ectx_Context) Value(key any) any           { return W.WValue(key) }
+func (W _git_golaxy_org_core_ec_ectx_Context) Terminate() async.AsyncRet  { return W.WTerminate() }
+func (W _git_golaxy_org_core_ec_ectx_Context) Terminated() async.AsyncRet { return W.WTerminated() }
+func (W _git_golaxy_org_core_ec_ectx_Context) Value(key any) any          { return W.WValue(key) }
 
 // _git_golaxy_org_core_ec_ectx_CurrentContextProvider is an interface wrapper for CurrentContextProvider type
 type _git_golaxy_org_core_ec_ectx_CurrentContextProvider struct {

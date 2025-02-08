@@ -12,7 +12,7 @@ import (
 func init() {
 	Symbols["git.golaxy.org/framework/addins/rpc/rpcli/rpcli"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"CreateRPCli":                     reflect.ValueOf(rpcli.CreateRPCli),
+		"BuildRPCli":                      reflect.ValueOf(rpcli.BuildRPCli),
 		"ErrMethodNotFound":               reflect.ValueOf(&rpcli.ErrMethodNotFound).Elem(),
 		"ErrMethodParameterCountMismatch": reflect.ValueOf(&rpcli.ErrMethodParameterCountMismatch).Elem(),
 		"ErrMethodParameterTypeMismatch":  reflect.ValueOf(&rpcli.ErrMethodParameterTypeMismatch).Elem(),

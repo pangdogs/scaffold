@@ -4,6 +4,7 @@ package fwlib
 
 import (
 	"context"
+	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/core/utils/uid"
 	"git.golaxy.org/framework/addins/discovery"
 	"reflect"
@@ -74,17 +75,17 @@ type _git_golaxy_org_framework_addins_discovery_IWatcher struct {
 	IValue      interface{}
 	WNext       func() (*discovery.Event, error)
 	WPattern    func() string
-	WTerminate  func() <-chan struct{}
-	WTerminated func() <-chan struct{}
+	WTerminate  func() async.AsyncRet
+	WTerminated func() async.AsyncRet
 }
 
 func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Next() (*discovery.Event, error) {
 	return W.WNext()
 }
 func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Pattern() string { return W.WPattern() }
-func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminate() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminate() async.AsyncRet {
 	return W.WTerminate()
 }
-func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminated() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminated() async.AsyncRet {
 	return W.WTerminated()
 }

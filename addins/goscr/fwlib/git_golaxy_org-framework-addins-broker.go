@@ -4,6 +4,7 @@ package fwlib
 
 import (
 	"context"
+	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/core/utils/option"
 	"git.golaxy.org/framework/addins/broker"
 	"reflect"
@@ -122,8 +123,8 @@ type _git_golaxy_org_framework_addins_broker_IChanSubscriber struct {
 	WEventChan    func() (<-chan broker.IEvent, error)
 	WPattern      func() string
 	WQueue        func() string
-	WUnsubscribe  func() <-chan struct{}
-	WUnsubscribed func() <-chan struct{}
+	WUnsubscribe  func() async.AsyncRet
+	WUnsubscribed func() async.AsyncRet
 	WValue        func(key any) any
 }
 
@@ -141,10 +142,10 @@ func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Pattern() strin
 	return W.WPattern()
 }
 func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Queue() string { return W.WQueue() }
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Unsubscribe() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Unsubscribe() async.AsyncRet {
 	return W.WUnsubscribe()
 }
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Unsubscribed() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Unsubscribed() async.AsyncRet {
 	return W.WUnsubscribed()
 }
 func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Value(key any) any {
@@ -191,8 +192,8 @@ type _git_golaxy_org_framework_addins_broker_ISubscriber struct {
 	WErr          func() error
 	WPattern      func() string
 	WQueue        func() string
-	WUnsubscribe  func() <-chan struct{}
-	WUnsubscribed func() <-chan struct{}
+	WUnsubscribe  func() async.AsyncRet
+	WUnsubscribed func() async.AsyncRet
 	WValue        func(key any) any
 }
 
@@ -203,10 +204,10 @@ func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Done() <-chan struc
 func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Err() error            { return W.WErr() }
 func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Pattern() string       { return W.WPattern() }
 func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Queue() string         { return W.WQueue() }
-func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Unsubscribe() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Unsubscribe() async.AsyncRet {
 	return W.WUnsubscribe()
 }
-func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Unsubscribed() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Unsubscribed() async.AsyncRet {
 	return W.WUnsubscribed()
 }
 func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Value(key any) any { return W.WValue(key) }
@@ -230,8 +231,8 @@ type _git_golaxy_org_framework_addins_broker_ISyncSubscriber struct {
 	WNext         func() (broker.IEvent, error)
 	WPattern      func() string
 	WQueue        func() string
-	WUnsubscribe  func() <-chan struct{}
-	WUnsubscribed func() <-chan struct{}
+	WUnsubscribe  func() async.AsyncRet
+	WUnsubscribed func() async.AsyncRet
 	WValue        func(key any) any
 }
 
@@ -249,10 +250,10 @@ func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Pattern() strin
 	return W.WPattern()
 }
 func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Queue() string { return W.WQueue() }
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Unsubscribe() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Unsubscribe() async.AsyncRet {
 	return W.WUnsubscribe()
 }
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Unsubscribed() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Unsubscribed() async.AsyncRet {
 	return W.WUnsubscribed()
 }
 func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Value(key any) any {

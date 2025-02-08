@@ -5,6 +5,7 @@ package fwlib
 import (
 	"context"
 	"git.golaxy.org/core/service"
+	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/core/utils/uid"
 	"git.golaxy.org/framework/addins/gate"
@@ -77,8 +78,8 @@ func (W _git_golaxy_org_framework_addins_gate_IGate) Watch(ctx context.Context, 
 // _git_golaxy_org_framework_addins_gate_ISession is an interface wrapper for ISession type
 type _git_golaxy_org_framework_addins_gate_ISession struct {
 	IValue         interface{}
-	WClose         func(err error) <-chan struct{}
-	WClosed        func() <-chan struct{}
+	WClose         func(err error) async.AsyncRet
+	WClosed        func() async.AsyncRet
 	WDeadline      func() (deadline time.Time, ok bool)
 	WDone          func() <-chan struct{}
 	WErr           func() error
@@ -102,10 +103,10 @@ type _git_golaxy_org_framework_addins_gate_ISession struct {
 	WWatchEvent    func(ctx context.Context, handler gate.SessionRecvEventHandler) gate.IWatcher
 }
 
-func (W _git_golaxy_org_framework_addins_gate_ISession) Close(err error) <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_gate_ISession) Close(err error) async.AsyncRet {
 	return W.WClose(err)
 }
-func (W _git_golaxy_org_framework_addins_gate_ISession) Closed() <-chan struct{} { return W.WClosed() }
+func (W _git_golaxy_org_framework_addins_gate_ISession) Closed() async.AsyncRet { return W.WClosed() }
 func (W _git_golaxy_org_framework_addins_gate_ISession) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
@@ -167,8 +168,8 @@ type _git_golaxy_org_framework_addins_gate_IWatcher struct {
 	WDeadline   func() (deadline time.Time, ok bool)
 	WDone       func() <-chan struct{}
 	WErr        func() error
-	WTerminate  func() <-chan struct{}
-	WTerminated func() <-chan struct{}
+	WTerminate  func() async.AsyncRet
+	WTerminated func() async.AsyncRet
 	WValue      func(key any) any
 }
 
@@ -177,10 +178,10 @@ func (W _git_golaxy_org_framework_addins_gate_IWatcher) Deadline() (deadline tim
 }
 func (W _git_golaxy_org_framework_addins_gate_IWatcher) Done() <-chan struct{} { return W.WDone() }
 func (W _git_golaxy_org_framework_addins_gate_IWatcher) Err() error            { return W.WErr() }
-func (W _git_golaxy_org_framework_addins_gate_IWatcher) Terminate() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_gate_IWatcher) Terminate() async.AsyncRet {
 	return W.WTerminate()
 }
-func (W _git_golaxy_org_framework_addins_gate_IWatcher) Terminated() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_gate_IWatcher) Terminated() async.AsyncRet {
 	return W.WTerminated()
 }
 func (W _git_golaxy_org_framework_addins_gate_IWatcher) Value(key any) any { return W.WValue(key) }

@@ -36,6 +36,7 @@ func init() {
 		"MsgRPCRequest": reflect.ValueOf((*gap.MsgRPCRequest)(nil)),
 		"MsgReader":     reflect.ValueOf((*gap.MsgReader)(nil)),
 		"MsgWriter":     reflect.ValueOf((*gap.MsgWriter)(nil)),
+		"Origin":        reflect.ValueOf((*gap.Origin)(nil)),
 		"SerializedMsg": reflect.ValueOf((*gap.SerializedMsg)(nil)),
 
 		// interface wrapper definitions

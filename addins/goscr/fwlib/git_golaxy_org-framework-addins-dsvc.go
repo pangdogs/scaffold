@@ -4,6 +4,7 @@ package fwlib
 
 import (
 	"context"
+	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/framework/addins/dsvc"
 	"git.golaxy.org/framework/net/gap"
 	"git.golaxy.org/framework/utils/concurrent"
@@ -36,16 +37,12 @@ func init() {
 // _git_golaxy_org_framework_addins_dsvc_IDistService is an interface wrapper for IDistService type
 type _git_golaxy_org_framework_addins_dsvc_IDistService struct {
 	IValue          interface{}
-	WForwardMsg     func(svc string, src string, dst string, seq int64, msg gap.Msg) error
 	WGetFutures     func() *concurrent.Futures
 	WGetNodeDetails func() *dsvc.NodeDetails
 	WSendMsg        func(dst string, msg gap.Msg) error
 	WWatchMsg       func(ctx context.Context, handler dsvc.RecvMsgHandler) dsvc.IWatcher
 }
 
-func (W _git_golaxy_org_framework_addins_dsvc_IDistService) ForwardMsg(svc string, src string, dst string, seq int64, msg gap.Msg) error {
-	return W.WForwardMsg(svc, src, dst, seq, msg)
-}
 func (W _git_golaxy_org_framework_addins_dsvc_IDistService) GetFutures() *concurrent.Futures {
 	return W.WGetFutures()
 }
@@ -65,8 +62,8 @@ type _git_golaxy_org_framework_addins_dsvc_IWatcher struct {
 	WDeadline   func() (deadline time.Time, ok bool)
 	WDone       func() <-chan struct{}
 	WErr        func() error
-	WTerminate  func() <-chan struct{}
-	WTerminated func() <-chan struct{}
+	WTerminate  func() async.AsyncRet
+	WTerminated func() async.AsyncRet
 	WValue      func(key any) any
 }
 
@@ -75,10 +72,10 @@ func (W _git_golaxy_org_framework_addins_dsvc_IWatcher) Deadline() (deadline tim
 }
 func (W _git_golaxy_org_framework_addins_dsvc_IWatcher) Done() <-chan struct{} { return W.WDone() }
 func (W _git_golaxy_org_framework_addins_dsvc_IWatcher) Err() error            { return W.WErr() }
-func (W _git_golaxy_org_framework_addins_dsvc_IWatcher) Terminate() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_dsvc_IWatcher) Terminate() async.AsyncRet {
 	return W.WTerminate()
 }
-func (W _git_golaxy_org_framework_addins_dsvc_IWatcher) Terminated() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_dsvc_IWatcher) Terminated() async.AsyncRet {
 	return W.WTerminated()
 }
 func (W _git_golaxy_org_framework_addins_dsvc_IWatcher) Value(key any) any { return W.WValue(key) }

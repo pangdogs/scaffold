@@ -187,8 +187,8 @@ type _git_golaxy_org_framework_IRuntimeInstance struct {
 	WManagedCleanTagHooks  func(tag string)
 	WManagedGetTagHooks    func(tag string) []event.Hook
 	WString                func() string
-	WTerminate             func() <-chan struct{}
-	WTerminated            func() <-chan struct{}
+	WTerminate             func() async.AsyncRetT[any]
+	WTerminated            func() async.AsyncRetT[any]
 	WValue                 func(key any) any
 }
 
@@ -277,10 +277,10 @@ func (W _git_golaxy_org_framework_IRuntimeInstance) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_framework_IRuntimeInstance) Terminate() <-chan struct{} {
+func (W _git_golaxy_org_framework_IRuntimeInstance) Terminate() async.AsyncRetT[any] {
 	return W.WTerminate()
 }
-func (W _git_golaxy_org_framework_IRuntimeInstance) Terminated() <-chan struct{} {
+func (W _git_golaxy_org_framework_IRuntimeInstance) Terminated() async.AsyncRetT[any] {
 	return W.WTerminated()
 }
 func (W _git_golaxy_org_framework_IRuntimeInstance) Value(key any) any { return W.WValue(key) }
@@ -330,8 +330,8 @@ type _git_golaxy_org_framework_IServiceInstance struct {
 	WGetStartupNo          func() int
 	WGetWaitGroup          func() *sync.WaitGroup
 	WString                func() string
-	WTerminate             func() <-chan struct{}
-	WTerminated            func() <-chan struct{}
+	WTerminate             func() async.AsyncRetT[any]
+	WTerminated            func() async.AsyncRetT[any]
 	WValue                 func(key any) any
 }
 
@@ -414,10 +414,10 @@ func (W _git_golaxy_org_framework_IServiceInstance) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_framework_IServiceInstance) Terminate() <-chan struct{} {
+func (W _git_golaxy_org_framework_IServiceInstance) Terminate() async.AsyncRetT[any] {
 	return W.WTerminate()
 }
-func (W _git_golaxy_org_framework_IServiceInstance) Terminated() <-chan struct{} {
+func (W _git_golaxy_org_framework_IServiceInstance) Terminated() async.AsyncRetT[any] {
 	return W.WTerminated()
 }
 func (W _git_golaxy_org_framework_IServiceInstance) Value(key any) any { return W.WValue(key) }

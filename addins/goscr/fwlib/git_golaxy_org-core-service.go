@@ -100,8 +100,8 @@ type _git_golaxy_org_core_service_Context struct {
 	WGetReportError        func() chan error
 	WGetWaitGroup          func() *sync.WaitGroup
 	WString                func() string
-	WTerminate             func() <-chan struct{}
-	WTerminated            func() <-chan struct{}
+	WTerminate             func() async.AsyncRetT[any]
+	WTerminated            func() async.AsyncRetT[any]
 	WValue                 func(key any) any
 }
 
@@ -149,9 +149,11 @@ func (W _git_golaxy_org_core_service_Context) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_service_Context) Terminate() <-chan struct{}  { return W.WTerminate() }
-func (W _git_golaxy_org_core_service_Context) Terminated() <-chan struct{} { return W.WTerminated() }
-func (W _git_golaxy_org_core_service_Context) Value(key any) any           { return W.WValue(key) }
+func (W _git_golaxy_org_core_service_Context) Terminate() async.AsyncRetT[any] { return W.WTerminate() }
+func (W _git_golaxy_org_core_service_Context) Terminated() async.AsyncRetT[any] {
+	return W.WTerminated()
+}
+func (W _git_golaxy_org_core_service_Context) Value(key any) any { return W.WValue(key) }
 
 // _git_golaxy_org_core_service_EntityManager is an interface wrapper for EntityManager type
 type _git_golaxy_org_core_service_EntityManager struct {

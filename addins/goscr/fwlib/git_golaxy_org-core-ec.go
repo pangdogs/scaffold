@@ -5,6 +5,7 @@ package fwlib
 import (
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/event"
+	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/core/utils/iface"
 	"git.golaxy.org/core/utils/meta"
@@ -169,7 +170,7 @@ type _git_golaxy_org_core_ec_Component struct {
 	WManagedGetTagHooks          func(tag string) []event.Hook
 	WSetEnable                   func(b bool)
 	WString                      func() string
-	WTerminated                  func() <-chan struct{}
+	WTerminated                  func() async.AsyncRet
 	WValue                       func(key any) any
 }
 
@@ -218,8 +219,8 @@ func (W _git_golaxy_org_core_ec_Component) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_ec_Component) Terminated() <-chan struct{} { return W.WTerminated() }
-func (W _git_golaxy_org_core_ec_Component) Value(key any) any           { return W.WValue(key) }
+func (W _git_golaxy_org_core_ec_Component) Terminated() async.AsyncRet { return W.WTerminated() }
+func (W _git_golaxy_org_core_ec_Component) Value(key any) any          { return W.WValue(key) }
 
 // _git_golaxy_org_core_ec_ComponentPT is an interface wrapper for ComponentPT type
 type _git_golaxy_org_core_ec_ComponentPT struct {
@@ -243,7 +244,7 @@ type _git_golaxy_org_core_ec_ConcurrentEntity struct {
 	WGetId                func() uid.Id
 	WGetPT                func() ec.EntityPT
 	WString               func() string
-	WTerminated           func() <-chan struct{}
+	WTerminated           func() async.AsyncRet
 	WValue                func(key any) any
 }
 
@@ -263,10 +264,8 @@ func (W _git_golaxy_org_core_ec_ConcurrentEntity) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_ec_ConcurrentEntity) Terminated() <-chan struct{} {
-	return W.WTerminated()
-}
-func (W _git_golaxy_org_core_ec_ConcurrentEntity) Value(key any) any { return W.WValue(key) }
+func (W _git_golaxy_org_core_ec_ConcurrentEntity) Terminated() async.AsyncRet { return W.WTerminated() }
+func (W _git_golaxy_org_core_ec_ConcurrentEntity) Value(key any) any          { return W.WValue(key) }
 
 // _git_golaxy_org_core_ec_Entity is an interface wrapper for Entity type
 type _git_golaxy_org_core_ec_Entity struct {
@@ -313,7 +312,7 @@ type _git_golaxy_org_core_ec_Entity struct {
 	WRemoveComponentById                      func(id uid.Id)
 	WReversedRangeComponents                  func(fun generic.Func1[ec.Component, bool])
 	WString                                   func() string
-	WTerminated                               func() <-chan struct{}
+	WTerminated                               func() async.AsyncRet
 	WValue                                    func(key any) any
 }
 
@@ -420,8 +419,8 @@ func (W _git_golaxy_org_core_ec_Entity) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_ec_Entity) Terminated() <-chan struct{} { return W.WTerminated() }
-func (W _git_golaxy_org_core_ec_Entity) Value(key any) any           { return W.WValue(key) }
+func (W _git_golaxy_org_core_ec_Entity) Terminated() async.AsyncRet { return W.WTerminated() }
+func (W _git_golaxy_org_core_ec_Entity) Value(key any) any          { return W.WValue(key) }
 
 // _git_golaxy_org_core_ec_EntityPT is an interface wrapper for EntityPT type
 type _git_golaxy_org_core_ec_EntityPT struct {

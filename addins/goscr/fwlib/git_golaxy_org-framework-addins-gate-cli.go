@@ -3,6 +3,7 @@
 package fwlib
 
 import (
+	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/framework/addins/gate/cli"
 	"reflect"
 	"time"
@@ -39,8 +40,8 @@ type _git_golaxy_org_framework_addins_gate_cli_IWatcher struct {
 	WDeadline   func() (deadline time.Time, ok bool)
 	WDone       func() <-chan struct{}
 	WErr        func() error
-	WTerminate  func() <-chan struct{}
-	WTerminated func() <-chan struct{}
+	WTerminate  func() async.AsyncRet
+	WTerminated func() async.AsyncRet
 	WValue      func(key any) any
 }
 
@@ -49,10 +50,10 @@ func (W _git_golaxy_org_framework_addins_gate_cli_IWatcher) Deadline() (deadline
 }
 func (W _git_golaxy_org_framework_addins_gate_cli_IWatcher) Done() <-chan struct{} { return W.WDone() }
 func (W _git_golaxy_org_framework_addins_gate_cli_IWatcher) Err() error            { return W.WErr() }
-func (W _git_golaxy_org_framework_addins_gate_cli_IWatcher) Terminate() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_gate_cli_IWatcher) Terminate() async.AsyncRet {
 	return W.WTerminate()
 }
-func (W _git_golaxy_org_framework_addins_gate_cli_IWatcher) Terminated() <-chan struct{} {
+func (W _git_golaxy_org_framework_addins_gate_cli_IWatcher) Terminated() async.AsyncRet {
 	return W.WTerminated()
 }
 func (W _git_golaxy_org_framework_addins_gate_cli_IWatcher) Value(key any) any { return W.WValue(key) }

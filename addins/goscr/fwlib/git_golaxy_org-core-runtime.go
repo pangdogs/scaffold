@@ -144,8 +144,8 @@ type _git_golaxy_org_core_runtime_ConcurrentContext struct {
 	WGetReportError        func() chan error
 	WGetWaitGroup          func() *sync.WaitGroup
 	WString                func() string
-	WTerminate             func() <-chan struct{}
-	WTerminated            func() <-chan struct{}
+	WTerminate             func() async.AsyncRetT[any]
+	WTerminated            func() async.AsyncRetT[any]
 	WValue                 func(key any) any
 }
 
@@ -189,10 +189,10 @@ func (W _git_golaxy_org_core_runtime_ConcurrentContext) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) Terminate() <-chan struct{} {
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) Terminate() async.AsyncRetT[any] {
 	return W.WTerminate()
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) Terminated() <-chan struct{} {
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) Terminated() async.AsyncRetT[any] {
 	return W.WTerminated()
 }
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) Value(key any) any { return W.WValue(key) }
@@ -238,8 +238,8 @@ type _git_golaxy_org_core_runtime_Context struct {
 	WManagedCleanTagHooks  func(tag string)
 	WManagedGetTagHooks    func(tag string) []event.Hook
 	WString                func() string
-	WTerminate             func() <-chan struct{}
-	WTerminated            func() <-chan struct{}
+	WTerminate             func() async.AsyncRetT[any]
+	WTerminated            func() async.AsyncRetT[any]
 	WValue                 func(key any) any
 }
 
@@ -312,9 +312,11 @@ func (W _git_golaxy_org_core_runtime_Context) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_runtime_Context) Terminate() <-chan struct{}  { return W.WTerminate() }
-func (W _git_golaxy_org_core_runtime_Context) Terminated() <-chan struct{} { return W.WTerminated() }
-func (W _git_golaxy_org_core_runtime_Context) Value(key any) any           { return W.WValue(key) }
+func (W _git_golaxy_org_core_runtime_Context) Terminate() async.AsyncRetT[any] { return W.WTerminate() }
+func (W _git_golaxy_org_core_runtime_Context) Terminated() async.AsyncRetT[any] {
+	return W.WTerminated()
+}
+func (W _git_golaxy_org_core_runtime_Context) Value(key any) any { return W.WValue(key) }
 
 // _git_golaxy_org_core_runtime_CurrentContextProvider is an interface wrapper for CurrentContextProvider type
 type _git_golaxy_org_core_runtime_CurrentContextProvider struct {

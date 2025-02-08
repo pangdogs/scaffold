@@ -74,7 +74,7 @@ func (p *PropT[T]) Marshal() ([]byte, int64, error) {
 
 	bs := make([]byte, v.Size())
 
-	if _, err := binaryutil.ReadToBuff(bs, v); err != nil {
+	if _, err := binaryutil.CopyToBuff(bs, v); err != nil {
 		return nil, 0, err
 	}
 

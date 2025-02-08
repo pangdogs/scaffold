@@ -258,9 +258,9 @@ type _git_golaxy_org_core_Runtime struct {
 	WPushCallDelegateAsync     func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
 	WPushCallDelegateVoidAsync func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
 	WPushCallVoidAsync         func(fun generic.ActionVar0[any], args ...any) async.AsyncRet
-	WRun                       func() <-chan struct{}
-	WTerminate                 func() <-chan struct{}
-	WTerminated                func() <-chan struct{}
+	WRun                       func() async.AsyncRet
+	WTerminate                 func() async.AsyncRet
+	WTerminated                func() async.AsyncRet
 }
 
 func (W _git_golaxy_org_core_Runtime) GetConcurrentContext() iface.Cache {
@@ -282,24 +282,24 @@ func (W _git_golaxy_org_core_Runtime) PushCallDelegateVoidAsync(fun generic.Dele
 func (W _git_golaxy_org_core_Runtime) PushCallVoidAsync(fun generic.ActionVar0[any], args ...any) async.AsyncRet {
 	return W.WPushCallVoidAsync(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) Run() <-chan struct{}        { return W.WRun() }
-func (W _git_golaxy_org_core_Runtime) Terminate() <-chan struct{}  { return W.WTerminate() }
-func (W _git_golaxy_org_core_Runtime) Terminated() <-chan struct{} { return W.WTerminated() }
+func (W _git_golaxy_org_core_Runtime) Run() async.AsyncRet        { return W.WRun() }
+func (W _git_golaxy_org_core_Runtime) Terminate() async.AsyncRet  { return W.WTerminate() }
+func (W _git_golaxy_org_core_Runtime) Terminated() async.AsyncRet { return W.WTerminated() }
 
 // _git_golaxy_org_core_Service is an interface wrapper for Service type
 type _git_golaxy_org_core_Service struct {
 	IValue                interface{}
 	WGetContext           func() service.Context
 	WGetInstanceFaceCache func() iface.Cache
-	WRun                  func() <-chan struct{}
-	WTerminate            func() <-chan struct{}
-	WTerminated           func() <-chan struct{}
+	WRun                  func() async.AsyncRet
+	WTerminate            func() async.AsyncRet
+	WTerminated           func() async.AsyncRet
 }
 
 func (W _git_golaxy_org_core_Service) GetContext() service.Context { return W.WGetContext() }
 func (W _git_golaxy_org_core_Service) GetInstanceFaceCache() iface.Cache {
 	return W.WGetInstanceFaceCache()
 }
-func (W _git_golaxy_org_core_Service) Run() <-chan struct{}        { return W.WRun() }
-func (W _git_golaxy_org_core_Service) Terminate() <-chan struct{}  { return W.WTerminate() }
-func (W _git_golaxy_org_core_Service) Terminated() <-chan struct{} { return W.WTerminated() }
+func (W _git_golaxy_org_core_Service) Run() async.AsyncRet        { return W.WRun() }
+func (W _git_golaxy_org_core_Service) Terminate() async.AsyncRet  { return W.WTerminate() }
+func (W _git_golaxy_org_core_Service) Terminated() async.AsyncRet { return W.WTerminated() }
