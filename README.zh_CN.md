@@ -19,3 +19,12 @@
 | [/addins/acl](https://github.com/pangdogs/scaffold/tree/main/addins/acl)     | 访问控制表（`Access Control List`），一般用于Login服务。              |
 | [/addins/goscr](https://github.com/pangdogs/scaffold/tree/main/addins/goscr) | Golang脚本化（`Golang Script`），支持解释执行Golang代码，用于支持逻辑层代码热修复。 |
 | [/addins/view](https://github.com/pangdogs/scaffold/tree/main/addins/view)   | 属性视图（`Property View`），用于支持同步实体属性。                      |
+
+## 安装
+```
+go get -u git.golaxy.org/scaffold
+```
+
+## 相关项目
+- [Golaxy分布式服务开发框架内核](https://github.com/pangdogs/core)
+- [Golaxy分布式服务开发框架](https://github.com/pangdogs/framework)

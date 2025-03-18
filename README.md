@@ -19,3 +19,12 @@ Based on the [**Golaxy Distributed Service Development Framework**](https://gith
 | [/addins/acl](https://github.com/pangdogs/scaffold/tree/main/addins/acl)     | Access Control List (`ACL`), generally used for the Login service.                                                                     |
 | [/addins/goscr](https://github.com/pangdogs/scaffold/tree/main/addins/goscr) | Golang Scripting (`Golang Script`), supports the interpretation and execution of Golang code, used for supporting logic code hotfixes. |
 | [/addins/view](https://github.com/pangdogs/scaffold/tree/main/addins/view)   | Property View, used to support the synchronization of entity properties.                                                                   |
+
+## Installation
+```
+go get -u git.golaxy.org/scaffold
+```
+
+## Associated Repositories
+- [Golaxy Distributed Service Development Framework Core](https://github.com/pangdogs/core)
+- [Golaxy Distributed Service Development Framework](https://github.com/pangdogs/framework)
