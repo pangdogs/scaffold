@@ -101,8 +101,8 @@ func init() {
 		"GCCollector":                                        reflect.ValueOf((*runtime.GCCollector)(nil)),
 		"IEntityManagerEventTab":                             reflect.ValueOf((*runtime.IEntityManagerEventTab)(nil)),
 		"IEntityTreeEventTab":                                reflect.ValueOf((*runtime.IEntityTreeEventTab)(nil)),
-		"RunningHandler":                                     reflect.ValueOf((*runtime.RunningHandler)(nil)),
 		"RunningStatus":                                      reflect.ValueOf((*runtime.RunningStatus)(nil)),
+		"RunningStatusChangedCB":                             reflect.ValueOf((*runtime.RunningStatusChangedCB)(nil)),
 
 		// interface wrapper definitions
 		"_ConcurrentContext":                           reflect.ValueOf((*_git_golaxy_org_core_runtime_ConcurrentContext)(nil)),

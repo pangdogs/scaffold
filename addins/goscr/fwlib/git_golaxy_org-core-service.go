@@ -41,13 +41,13 @@ func init() {
 		"With":                             reflect.ValueOf(&service.With).Elem(),
 
 		// type definitions
-		"Caller":          reflect.ValueOf((*service.Caller)(nil)),
-		"Context":         reflect.ValueOf((*service.Context)(nil)),
-		"ContextBehavior": reflect.ValueOf((*service.ContextBehavior)(nil)),
-		"ContextOptions":  reflect.ValueOf((*service.ContextOptions)(nil)),
-		"EntityManager":   reflect.ValueOf((*service.EntityManager)(nil)),
-		"RunningHandler":  reflect.ValueOf((*service.RunningHandler)(nil)),
-		"RunningStatus":   reflect.ValueOf((*service.RunningStatus)(nil)),
+		"Caller":                 reflect.ValueOf((*service.Caller)(nil)),
+		"Context":                reflect.ValueOf((*service.Context)(nil)),
+		"ContextBehavior":        reflect.ValueOf((*service.ContextBehavior)(nil)),
+		"ContextOptions":         reflect.ValueOf((*service.ContextOptions)(nil)),
+		"EntityManager":          reflect.ValueOf((*service.EntityManager)(nil)),
+		"RunningStatus":          reflect.ValueOf((*service.RunningStatus)(nil)),
+		"RunningStatusChangedCB": reflect.ValueOf((*service.RunningStatusChangedCB)(nil)),
 
 		// interface wrapper definitions
 		"_Caller":        reflect.ValueOf((*_git_golaxy_org_core_service_Caller)(nil)),
