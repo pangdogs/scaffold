@@ -27,9 +27,9 @@ import (
 
 type (
 	// LoadingCB 开始加载回调
-	LoadingCB = generic.DelegateVoid1[*dynamic.Solution]
+	LoadingCB = generic.Action1[*dynamic.Solution]
 	// LoadedCB 加载完成回调
-	LoadedCB = generic.DelegateVoid1[*dynamic.Solution]
+	LoadedCB = generic.Action1[*dynamic.Solution]
 )
 
 // ScriptOptions 所有选项

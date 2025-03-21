@@ -112,7 +112,7 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 	solution := dynamic.NewSolution(s.options.PkgRoot)
 	solution.Use(stdlib.Symbols)
 
-	if err := s.options.LoadingCB.SafeCall(func(err error) bool { return err != nil }, solution); err != nil {
+	if err := s.options.LoadingCB.SafeCall(solution); err != nil {
 		return nil, fmt.Errorf("loading callback error occurred, %s", err)
 	}
 
@@ -122,7 +122,7 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 		}
 	}
 
-	if err := s.options.LoadedCB.SafeCall(func(err error) bool { return err != nil }, solution); err != nil {
+	if err := s.options.LoadedCB.SafeCall(solution); err != nil {
 		return nil, fmt.Errorf("loaded callback error occurred, %s", err)
 	}
 
