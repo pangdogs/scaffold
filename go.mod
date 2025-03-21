@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	git.golaxy.org/core v0.4.0
-	git.golaxy.org/framework v0.3.21
+	git.golaxy.org/framework v0.3.22
 	github.com/elliotchance/pie/v2 v2.9.1
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/glebarez/sqlite v1.11.0
