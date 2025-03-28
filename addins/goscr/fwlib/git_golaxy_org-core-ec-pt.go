@@ -17,6 +17,8 @@ func init() {
 		"DefaultComponentLib":     reflect.ValueOf(pt.DefaultComponentLib),
 		"ErrPt":                   reflect.ValueOf(&pt.ErrPt).Elem(),
 		"For":                     reflect.ValueOf(pt.For),
+		"Inject":                  reflect.ValueOf(pt.Inject),
+		"InjectRV":                reflect.ValueOf(pt.InjectRV),
 		"NewComponentLib":         reflect.ValueOf(pt.NewComponentLib),
 		"NewEntityLib":            reflect.ValueOf(pt.NewEntityLib),
 		"UnsafeEntityLib":         reflect.ValueOf(pt.UnsafeEntityLib),

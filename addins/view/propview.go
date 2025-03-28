@@ -64,13 +64,13 @@ func newPropView(...any) IPropView {
 }
 
 type _PropView struct {
-	rt framework.IRuntimeInstance
+	rt framework.IRuntime
 }
 
 func (m *_PropView) Init(_ service.Context, rtCtx runtime.Context) {
 	log.Debugf(rtCtx, "init addin %q", self.Name)
 
-	m.rt = framework.GetRuntimeInstance(rtCtx)
+	m.rt = framework.GetRuntime(rtCtx)
 }
 
 func (m *_PropView) Shut(_ service.Context, rtCtx runtime.Context) {

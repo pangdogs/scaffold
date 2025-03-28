@@ -45,14 +45,14 @@ func newACL(...any) IACL {
 }
 
 type _ACL struct {
-	svc    framework.IServiceInstance
+	svc    framework.IService
 	config *viper.Viper
 }
 
 func (acl *_ACL) Init(svcCtx service.Context, _ runtime.Context) {
 	log.Infof(svcCtx, "init addin %q", self.Name)
 
-	acl.svc = reinterpret.Cast[framework.IServiceInstance](svcCtx)
+	acl.svc = reinterpret.Cast[framework.IService](svcCtx)
 
 	localFilePath := acl.svc.GetConf().GetStringOrDefault("acl.local_path", "")
 	remoteFilePath := acl.svc.GetConf().GetStringOrDefault("acl.remote_path", "")
