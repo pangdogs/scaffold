@@ -24,7 +24,6 @@ import (
 	"git.golaxy.org/core"
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/runtime"
-	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/core/utils/uid"
 	"git.golaxy.org/framework"
@@ -67,13 +66,13 @@ type _PropView struct {
 	rt framework.IRuntime
 }
 
-func (m *_PropView) Init(_ service.Context, rtCtx runtime.Context) {
+func (m *_PropView) Init(rtCtx runtime.Context) {
 	log.Debugf(rtCtx, "init addin %q", self.Name)
 
 	m.rt = framework.GetRuntime(rtCtx)
 }
 
-func (m *_PropView) Shut(_ service.Context, rtCtx runtime.Context) {
+func (m *_PropView) Shut(rtCtx runtime.Context) {
 	log.Debugf(rtCtx, "shut addin %q", self.Name)
 }
 

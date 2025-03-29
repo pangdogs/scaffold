@@ -22,7 +22,6 @@ package goscr
 import (
 	"fmt"
 	"git.golaxy.org/core/ec"
-	"git.golaxy.org/core/runtime"
 	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/option"
 	"git.golaxy.org/framework/addins/log"
@@ -57,7 +56,7 @@ type _Script struct {
 }
 
 // Init 初始化插件
-func (s *_Script) Init(svcCtx service.Context, _ runtime.Context) {
+func (s *_Script) Init(svcCtx service.Context) {
 	s.svcCtx = svcCtx
 
 	solution, err := s.loadSolution()
@@ -77,7 +76,7 @@ func (s *_Script) Init(svcCtx service.Context, _ runtime.Context) {
 }
 
 // Shut 关闭插件
-func (s *_Script) Shut(svcCtx service.Context, _ runtime.Context) {
+func (s *_Script) Shut(svcCtx service.Context) {
 	log.Infof(svcCtx, "shut addin %q", self.Name)
 }
 

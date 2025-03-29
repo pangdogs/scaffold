@@ -20,7 +20,6 @@
 package acl
 
 import (
-	"git.golaxy.org/core/runtime"
 	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/reinterpret"
 	"git.golaxy.org/framework"
@@ -49,7 +48,7 @@ type _ACL struct {
 	config *viper.Viper
 }
 
-func (acl *_ACL) Init(svcCtx service.Context, _ runtime.Context) {
+func (acl *_ACL) Init(svcCtx service.Context) {
 	log.Infof(svcCtx, "init addin %q", self.Name)
 
 	acl.svc = reinterpret.Cast[framework.IService](svcCtx)
@@ -109,7 +108,7 @@ func (acl *_ACL) Init(svcCtx service.Context, _ runtime.Context) {
 	}
 }
 
-func (acl *_ACL) Shut(svcCtx service.Context, _ runtime.Context) {
+func (acl *_ACL) Shut(svcCtx service.Context) {
 	log.Infof(svcCtx, "shut addin %q", self.Name)
 }
 
