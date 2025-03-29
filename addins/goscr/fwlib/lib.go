@@ -36,7 +36,7 @@ var Symbols = map[string]map[string]reflect.Value{}
 //go:generate yaegi extract git.golaxy.org/core/define
 //go:generate yaegi extract git.golaxy.org/core/ec
 //go:generate yaegi extract git.golaxy.org/core/ec/pt
-//go:generate yaegi extract git.golaxy.org/core/ec/ectx
+//go:generate yaegi extract git.golaxy.org/core/ec/ictx
 //go:generate yaegi extract git.golaxy.org/core/event
 //go:generate yaegi extract git.golaxy.org/core/extension
 //go:generate yaegi extract git.golaxy.org/core/runtime

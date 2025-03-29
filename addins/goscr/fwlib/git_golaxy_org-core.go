@@ -65,6 +65,10 @@ func init() {
 		"LifecycleEntityShut":                         reflect.ValueOf((*core.LifecycleEntityShut)(nil)),
 		"LifecycleEntityStart":                        reflect.ValueOf((*core.LifecycleEntityStart)(nil)),
 		"LifecycleEntityUpdate":                       reflect.ValueOf((*core.LifecycleEntityUpdate)(nil)),
+		"LifecycleRuntimeAddInInit":                   reflect.ValueOf((*core.LifecycleRuntimeAddInInit)(nil)),
+		"LifecycleRuntimeAddInShut":                   reflect.ValueOf((*core.LifecycleRuntimeAddInShut)(nil)),
+		"LifecycleServiceAddInInit":                   reflect.ValueOf((*core.LifecycleServiceAddInInit)(nil)),
+		"LifecycleServiceAddInShut":                   reflect.ValueOf((*core.LifecycleServiceAddInShut)(nil)),
 		"Runtime":                                     reflect.ValueOf((*core.Runtime)(nil)),
 		"RuntimeBehavior":                             reflect.ValueOf((*core.RuntimeBehavior)(nil)),
 		"RuntimeOptions":                              reflect.ValueOf((*core.RuntimeOptions)(nil)),
@@ -91,6 +95,10 @@ func init() {
 		"_LifecycleEntityShut":                         reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityShut)(nil)),
 		"_LifecycleEntityStart":                        reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityStart)(nil)),
 		"_LifecycleEntityUpdate":                       reflect.ValueOf((*_git_golaxy_org_core_LifecycleEntityUpdate)(nil)),
+		"_LifecycleRuntimeAddInInit":                   reflect.ValueOf((*_git_golaxy_org_core_LifecycleRuntimeAddInInit)(nil)),
+		"_LifecycleRuntimeAddInShut":                   reflect.ValueOf((*_git_golaxy_org_core_LifecycleRuntimeAddInShut)(nil)),
+		"_LifecycleServiceAddInInit":                   reflect.ValueOf((*_git_golaxy_org_core_LifecycleServiceAddInInit)(nil)),
+		"_LifecycleServiceAddInShut":                   reflect.ValueOf((*_git_golaxy_org_core_LifecycleServiceAddInShut)(nil)),
 		"_Runtime":                                     reflect.ValueOf((*_git_golaxy_org_core_Runtime)(nil)),
 		"_Service":                                     reflect.ValueOf((*_git_golaxy_org_core_Service)(nil)),
 	}
@@ -247,6 +255,38 @@ type _git_golaxy_org_core_LifecycleEntityUpdate struct {
 }
 
 func (W _git_golaxy_org_core_LifecycleEntityUpdate) Update() { W.WUpdate() }
+
+// _git_golaxy_org_core_LifecycleRuntimeAddInInit is an interface wrapper for LifecycleRuntimeAddInInit type
+type _git_golaxy_org_core_LifecycleRuntimeAddInInit struct {
+	IValue interface{}
+	WInit  func(rtCtx runtime.Context)
+}
+
+func (W _git_golaxy_org_core_LifecycleRuntimeAddInInit) Init(rtCtx runtime.Context) { W.WInit(rtCtx) }
+
+// _git_golaxy_org_core_LifecycleRuntimeAddInShut is an interface wrapper for LifecycleRuntimeAddInShut type
+type _git_golaxy_org_core_LifecycleRuntimeAddInShut struct {
+	IValue interface{}
+	WShut  func(rtCtx runtime.Context)
+}
+
+func (W _git_golaxy_org_core_LifecycleRuntimeAddInShut) Shut(rtCtx runtime.Context) { W.WShut(rtCtx) }
+
+// _git_golaxy_org_core_LifecycleServiceAddInInit is an interface wrapper for LifecycleServiceAddInInit type
+type _git_golaxy_org_core_LifecycleServiceAddInInit struct {
+	IValue interface{}
+	WInit  func(svcCtx service.Context)
+}
+
+func (W _git_golaxy_org_core_LifecycleServiceAddInInit) Init(svcCtx service.Context) { W.WInit(svcCtx) }
+
+// _git_golaxy_org_core_LifecycleServiceAddInShut is an interface wrapper for LifecycleServiceAddInShut type
+type _git_golaxy_org_core_LifecycleServiceAddInShut struct {
+	IValue interface{}
+	WShut  func(svcCtx service.Context)
+}
+
+func (W _git_golaxy_org_core_LifecycleServiceAddInShut) Shut(svcCtx service.Context) { W.WShut(svcCtx) }
 
 // _git_golaxy_org_core_Runtime is an interface wrapper for Runtime type
 type _git_golaxy_org_core_Runtime struct {
