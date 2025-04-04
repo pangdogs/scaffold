@@ -188,8 +188,8 @@ type _git_golaxy_org_framework_IRuntime struct {
 	WManagedCleanTagHooks  func(tag string)
 	WManagedGetTagHooks    func(tag string) []event.Hook
 	WString                func() string
-	WTerminate             func() async.AsyncRetT[any]
-	WTerminated            func() async.AsyncRetT[any]
+	WTerminate             func() async.AsyncRet
+	WTerminated            func() async.AsyncRet
 	WValue                 func(key any) any
 }
 
@@ -269,9 +269,9 @@ func (W _git_golaxy_org_framework_IRuntime) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_framework_IRuntime) Terminate() async.AsyncRetT[any]  { return W.WTerminate() }
-func (W _git_golaxy_org_framework_IRuntime) Terminated() async.AsyncRetT[any] { return W.WTerminated() }
-func (W _git_golaxy_org_framework_IRuntime) Value(key any) any                { return W.WValue(key) }
+func (W _git_golaxy_org_framework_IRuntime) Terminate() async.AsyncRet  { return W.WTerminate() }
+func (W _git_golaxy_org_framework_IRuntime) Terminated() async.AsyncRet { return W.WTerminated() }
+func (W _git_golaxy_org_framework_IRuntime) Value(key any) any          { return W.WValue(key) }
 
 // _git_golaxy_org_framework_IRuntimeInstantiation is an interface wrapper for IRuntimeInstantiation type
 type _git_golaxy_org_framework_IRuntimeInstantiation struct {
@@ -289,10 +289,10 @@ type _git_golaxy_org_framework_IService struct {
 	WBuildEntityAsync      func(prototype string) framework.EntityCreatorAsync
 	WBuildEntityPT         func(prototype string) core.EntityPTCreator
 	WBuildRuntime          func() framework.RuntimeCreator
-	WCallAsync             func(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.RetT[any]], args ...any) async.AsyncRetT[any]
-	WCallDelegateAsync     func(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.RetT[any]], args ...any) async.AsyncRetT[any]
-	WCallDelegateVoidAsync func(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.AsyncRetT[any]
-	WCallVoidAsync         func(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.AsyncRetT[any]
+	WCallAsync             func(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Ret], args ...any) async.AsyncRet
+	WCallDelegateAsync     func(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Ret], args ...any) async.AsyncRet
+	WCallDelegateVoidAsync func(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.AsyncRet
+	WCallVoidAsync         func(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.AsyncRet
 	WDeadline              func() (deadline time.Time, ok bool)
 	WDone                  func() <-chan struct{}
 	WErr                   func() error
@@ -318,8 +318,8 @@ type _git_golaxy_org_framework_IService struct {
 	WGetStartupNo          func() int
 	WGetWaitGroup          func() *sync.WaitGroup
 	WString                func() string
-	WTerminate             func() async.AsyncRetT[any]
-	WTerminated            func() async.AsyncRetT[any]
+	WTerminate             func() async.AsyncRet
+	WTerminated            func() async.AsyncRet
 	WValue                 func(key any) any
 }
 
@@ -332,16 +332,16 @@ func (W _git_golaxy_org_framework_IService) BuildEntityPT(prototype string) core
 func (W _git_golaxy_org_framework_IService) BuildRuntime() framework.RuntimeCreator {
 	return W.WBuildRuntime()
 }
-func (W _git_golaxy_org_framework_IService) CallAsync(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.RetT[any]], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_framework_IService) CallAsync(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Ret], args ...any) async.AsyncRet {
 	return W.WCallAsync(entityId, fun, args...)
 }
-func (W _git_golaxy_org_framework_IService) CallDelegateAsync(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.RetT[any]], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_framework_IService) CallDelegateAsync(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Ret], args ...any) async.AsyncRet {
 	return W.WCallDelegateAsync(entityId, fun, args...)
 }
-func (W _git_golaxy_org_framework_IService) CallDelegateVoidAsync(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_framework_IService) CallDelegateVoidAsync(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.AsyncRet {
 	return W.WCallDelegateVoidAsync(entityId, fun, args...)
 }
-func (W _git_golaxy_org_framework_IService) CallVoidAsync(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.AsyncRetT[any] {
+func (W _git_golaxy_org_framework_IService) CallVoidAsync(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.AsyncRet {
 	return W.WCallVoidAsync(entityId, fun, args...)
 }
 func (W _git_golaxy_org_framework_IService) Deadline() (deadline time.Time, ok bool) {
@@ -390,9 +390,9 @@ func (W _git_golaxy_org_framework_IService) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_framework_IService) Terminate() async.AsyncRetT[any]  { return W.WTerminate() }
-func (W _git_golaxy_org_framework_IService) Terminated() async.AsyncRetT[any] { return W.WTerminated() }
-func (W _git_golaxy_org_framework_IService) Value(key any) any                { return W.WValue(key) }
+func (W _git_golaxy_org_framework_IService) Terminate() async.AsyncRet  { return W.WTerminate() }
+func (W _git_golaxy_org_framework_IService) Terminated() async.AsyncRet { return W.WTerminated() }
+func (W _git_golaxy_org_framework_IService) Value(key any) any          { return W.WValue(key) }
 
 // _git_golaxy_org_framework_IServiceInstantiation is an interface wrapper for IServiceInstantiation type
 type _git_golaxy_org_framework_IServiceInstantiation struct {

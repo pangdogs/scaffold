@@ -49,11 +49,17 @@ func init() {
 		"HandleEventEntityTreeRemoveNode":                   reflect.ValueOf(runtime.HandleEventEntityTreeRemoveNode),
 		"NewContext":                                        reflect.ValueOf(runtime.NewContext),
 		"NewFrame":                                          reflect.ValueOf(runtime.NewFrame),
+		"RunningStatus_ActivatingAddIn":                     reflect.ValueOf(runtime.RunningStatus_ActivatingAddIn),
+		"RunningStatus_ActivatingEntity":                    reflect.ValueOf(runtime.RunningStatus_ActivatingEntity),
 		"RunningStatus_AddInActivated":                      reflect.ValueOf(runtime.RunningStatus_AddInActivated),
-		"RunningStatus_AddInActivating":                     reflect.ValueOf(runtime.RunningStatus_AddInActivating),
 		"RunningStatus_AddInDeactivated":                    reflect.ValueOf(runtime.RunningStatus_AddInDeactivated),
-		"RunningStatus_AddInDeactivating":                   reflect.ValueOf(runtime.RunningStatus_AddInDeactivating),
 		"RunningStatus_Birth":                               reflect.ValueOf(runtime.RunningStatus_Birth),
+		"RunningStatus_DeactivatingAddIn":                   reflect.ValueOf(runtime.RunningStatus_DeactivatingAddIn),
+		"RunningStatus_DeactivatingEntity":                  reflect.ValueOf(runtime.RunningStatus_DeactivatingEntity),
+		"RunningStatus_EntityActivated":                     reflect.ValueOf(runtime.RunningStatus_EntityActivated),
+		"RunningStatus_EntityAddComponents":                 reflect.ValueOf(runtime.RunningStatus_EntityAddComponents),
+		"RunningStatus_EntityDeactivated":                   reflect.ValueOf(runtime.RunningStatus_EntityDeactivated),
+		"RunningStatus_EntityInitComponents":                reflect.ValueOf(runtime.RunningStatus_EntityInitComponents),
 		"RunningStatus_FrameLoopBegin":                      reflect.ValueOf(runtime.RunningStatus_FrameLoopBegin),
 		"RunningStatus_FrameLoopEnd":                        reflect.ValueOf(runtime.RunningStatus_FrameLoopEnd),
 		"RunningStatus_FrameUpdateBegin":                    reflect.ValueOf(runtime.RunningStatus_FrameUpdateBegin),
@@ -144,8 +150,8 @@ type _git_golaxy_org_core_runtime_ConcurrentContext struct {
 	WGetReportError        func() chan error
 	WGetWaitGroup          func() *sync.WaitGroup
 	WString                func() string
-	WTerminate             func() async.AsyncRetT[any]
-	WTerminated            func() async.AsyncRetT[any]
+	WTerminate             func() async.AsyncRet
+	WTerminated            func() async.AsyncRet
 	WValue                 func(key any) any
 }
 
@@ -189,10 +195,10 @@ func (W _git_golaxy_org_core_runtime_ConcurrentContext) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) Terminate() async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) Terminate() async.AsyncRet {
 	return W.WTerminate()
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) Terminated() async.AsyncRetT[any] {
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) Terminated() async.AsyncRet {
 	return W.WTerminated()
 }
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) Value(key any) any { return W.WValue(key) }
@@ -238,8 +244,8 @@ type _git_golaxy_org_core_runtime_Context struct {
 	WManagedCleanTagHooks  func(tag string)
 	WManagedGetTagHooks    func(tag string) []event.Hook
 	WString                func() string
-	WTerminate             func() async.AsyncRetT[any]
-	WTerminated            func() async.AsyncRetT[any]
+	WTerminate             func() async.AsyncRet
+	WTerminated            func() async.AsyncRet
 	WValue                 func(key any) any
 }
 
@@ -312,11 +318,9 @@ func (W _git_golaxy_org_core_runtime_Context) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_runtime_Context) Terminate() async.AsyncRetT[any] { return W.WTerminate() }
-func (W _git_golaxy_org_core_runtime_Context) Terminated() async.AsyncRetT[any] {
-	return W.WTerminated()
-}
-func (W _git_golaxy_org_core_runtime_Context) Value(key any) any { return W.WValue(key) }
+func (W _git_golaxy_org_core_runtime_Context) Terminate() async.AsyncRet  { return W.WTerminate() }
+func (W _git_golaxy_org_core_runtime_Context) Terminated() async.AsyncRet { return W.WTerminated() }
+func (W _git_golaxy_org_core_runtime_Context) Value(key any) any          { return W.WValue(key) }
 
 // _git_golaxy_org_core_runtime_CurrentContextProvider is an interface wrapper for CurrentContextProvider type
 type _git_golaxy_org_core_runtime_CurrentContextProvider struct {

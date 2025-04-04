@@ -24,11 +24,11 @@ func init() {
 		"ErrContext":                       reflect.ValueOf(&service.ErrContext).Elem(),
 		"ErrEntityManager":                 reflect.ValueOf(&service.ErrEntityManager).Elem(),
 		"NewContext":                       reflect.ValueOf(service.NewContext),
+		"RunningStatus_ActivatingAddIn":    reflect.ValueOf(service.RunningStatus_ActivatingAddIn),
 		"RunningStatus_AddInActivated":     reflect.ValueOf(service.RunningStatus_AddInActivated),
-		"RunningStatus_AddInActivating":    reflect.ValueOf(service.RunningStatus_AddInActivating),
 		"RunningStatus_AddInDeactivated":   reflect.ValueOf(service.RunningStatus_AddInDeactivated),
-		"RunningStatus_AddInDeactivating":  reflect.ValueOf(service.RunningStatus_AddInDeactivating),
 		"RunningStatus_Birth":              reflect.ValueOf(service.RunningStatus_Birth),
+		"RunningStatus_DeactivatingAddIn":  reflect.ValueOf(service.RunningStatus_DeactivatingAddIn),
 		"RunningStatus_EntityPTDeclared":   reflect.ValueOf(service.RunningStatus_EntityPTDeclared),
 		"RunningStatus_EntityPTRedeclared": reflect.ValueOf(service.RunningStatus_EntityPTRedeclared),
 		"RunningStatus_EntityPTUndeclared": reflect.ValueOf(service.RunningStatus_EntityPTUndeclared),
@@ -100,8 +100,8 @@ type _git_golaxy_org_core_service_Context struct {
 	WGetReportError        func() chan error
 	WGetWaitGroup          func() *sync.WaitGroup
 	WString                func() string
-	WTerminate             func() async.AsyncRetT[any]
-	WTerminated            func() async.AsyncRetT[any]
+	WTerminate             func() async.AsyncRet
+	WTerminated            func() async.AsyncRet
 	WValue                 func(key any) any
 }
 
@@ -149,11 +149,9 @@ func (W _git_golaxy_org_core_service_Context) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_service_Context) Terminate() async.AsyncRetT[any] { return W.WTerminate() }
-func (W _git_golaxy_org_core_service_Context) Terminated() async.AsyncRetT[any] {
-	return W.WTerminated()
-}
-func (W _git_golaxy_org_core_service_Context) Value(key any) any { return W.WValue(key) }
+func (W _git_golaxy_org_core_service_Context) Terminate() async.AsyncRet  { return W.WTerminate() }
+func (W _git_golaxy_org_core_service_Context) Terminated() async.AsyncRet { return W.WTerminated() }
+func (W _git_golaxy_org_core_service_Context) Value(key any) any          { return W.WValue(key) }
 
 // _git_golaxy_org_core_service_EntityManager is an interface wrapper for EntityManager type
 type _git_golaxy_org_core_service_EntityManager struct {
