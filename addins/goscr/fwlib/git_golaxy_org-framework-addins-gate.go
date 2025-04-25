@@ -19,18 +19,20 @@ import (
 func init() {
 	Symbols["git.golaxy.org/framework/addins/gate/gate"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"CliDetails":             reflect.ValueOf(&gate.CliDetails).Elem(),
-		"Install":                reflect.ValueOf(&gate.Install).Elem(),
-		"Name":                   reflect.ValueOf(&gate.Name).Elem(),
-		"SessionState_Active":    reflect.ValueOf(gate.SessionState_Active),
-		"SessionState_Birth":     reflect.ValueOf(gate.SessionState_Birth),
-		"SessionState_Confirmed": reflect.ValueOf(gate.SessionState_Confirmed),
-		"SessionState_Death":     reflect.ValueOf(gate.SessionState_Death),
-		"SessionState_Handshake": reflect.ValueOf(gate.SessionState_Handshake),
-		"SessionState_Inactive":  reflect.ValueOf(gate.SessionState_Inactive),
-		"Uninstall":              reflect.ValueOf(&gate.Uninstall).Elem(),
-		"Using":                  reflect.ValueOf(&gate.Using).Elem(),
-		"With":                   reflect.ValueOf(&gate.With).Elem(),
+		"CliDetails":                         reflect.ValueOf(&gate.CliDetails).Elem(),
+		"DefaultWebSocketLocalAddrResolver":  reflect.ValueOf(gate.DefaultWebSocketLocalAddrResolver),
+		"DefaultWebSocketRemoteAddrResolver": reflect.ValueOf(gate.DefaultWebSocketRemoteAddrResolver),
+		"Install":                            reflect.ValueOf(&gate.Install).Elem(),
+		"Name":                               reflect.ValueOf(&gate.Name).Elem(),
+		"SessionState_Active":                reflect.ValueOf(gate.SessionState_Active),
+		"SessionState_Birth":                 reflect.ValueOf(gate.SessionState_Birth),
+		"SessionState_Confirmed":             reflect.ValueOf(gate.SessionState_Confirmed),
+		"SessionState_Death":                 reflect.ValueOf(gate.SessionState_Death),
+		"SessionState_Handshake":             reflect.ValueOf(gate.SessionState_Handshake),
+		"SessionState_Inactive":              reflect.ValueOf(gate.SessionState_Inactive),
+		"Uninstall":                          reflect.ValueOf(&gate.Uninstall).Elem(),
+		"Using":                              reflect.ValueOf(&gate.Using).Elem(),
+		"With":                               reflect.ValueOf(&gate.With).Elem(),
 
 		// type definitions
 		"Authenticator":              reflect.ValueOf((*gate.Authenticator)(nil)),
@@ -43,6 +45,7 @@ func init() {
 		"SessionSettings":            reflect.ValueOf((*gate.SessionSettings)(nil)),
 		"SessionState":               reflect.ValueOf((*gate.SessionState)(nil)),
 		"SessionStateChangedHandler": reflect.ValueOf((*gate.SessionStateChangedHandler)(nil)),
+		"WebSocketAddrResolver":      reflect.ValueOf((*gate.WebSocketAddrResolver)(nil)),
 
 		// interface wrapper definitions
 		"_IGate":    reflect.ValueOf((*_git_golaxy_org_framework_addins_gate_IGate)(nil)),
