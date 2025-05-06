@@ -20,10 +20,10 @@
 package view
 
 import (
-	"fmt"
 	"git.golaxy.org/core"
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/runtime"
+	"git.golaxy.org/core/utils/exception"
 	"git.golaxy.org/core/utils/types"
 	"reflect"
 )
@@ -75,16 +75,16 @@ func ReferenceProp(entity ec.Entity, name string) IPropSync {
 
 func declareProp(entity ec.Entity, name string, prop any) IPropSync {
 	if entity == nil {
-		panic(fmt.Errorf("%s: entity is nil", core.ErrArgs))
+		exception.Panicf("view: %s: entity is nil", core.ErrArgs)
 	}
 
 	if prop == nil {
-		panic(fmt.Errorf("%s: prop is nil", core.ErrArgs))
+		exception.Panicf("view: %s: prop is nil", core.ErrArgs)
 	}
 
 	propTab, ok := entity.(IPropTab)
 	if !ok {
-		panic(fmt.Errorf("entity %q not implement view.IPropTab", entity))
+		exception.Panicf("view: entity %q not implement view.IPropTab", entity)
 	}
 
 	propRT, ok := prop.(reflect.Type)
@@ -98,7 +98,7 @@ func declareProp(entity ec.Entity, name string, prop any) IPropSync {
 
 	propInst, ok := reflect.New(propRT).Interface().(IPropSync)
 	if !ok {
-		panic(fmt.Errorf("prop %q not implement view.IPropSync", types.FullNameRT(propRT)))
+		exception.Panicf("view: prop %q not implement view.IPropSync", types.FullNameRT(propRT))
 	}
 
 	propInst.Reset()
@@ -111,12 +111,12 @@ func declareProp(entity ec.Entity, name string, prop any) IPropSync {
 
 func referenceProp(entity ec.Entity, name string) IPropSync {
 	if entity == nil {
-		panic(fmt.Errorf("%s: entity is nil", core.ErrArgs))
+		exception.Panicf("view: %s: entity is nil", core.ErrArgs)
 	}
 
 	prop := entity.(IPropTab).GetProp(name)
 	if prop == nil {
-		panic(fmt.Errorf("prop %s not found", name))
+		exception.Panicf("view: prop %s not found", name)
 	}
 
 	return prop

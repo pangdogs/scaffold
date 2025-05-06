@@ -20,7 +20,6 @@
 package goscr
 
 import (
-	"fmt"
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/ec/pt"
 	"git.golaxy.org/core/utils/exception"
@@ -200,12 +199,12 @@ func ComponentScript(script string) *pt.ComponentAttribute {
 // ComponentScriptT 创建脚本化组件原型属性，用于注册实体原型时自定义相关属性
 func ComponentScriptT[T any](script string) *pt.ComponentAttribute {
 	if script == "" {
-		exception.Panicf("%w: script is empty", exception.ErrArgs)
+		exception.Panicf("goscr: %w: script is empty", exception.ErrArgs)
 	}
 
 	idx := strings.LastIndexByte(script, '.')
 	if idx < 0 {
-		panic(fmt.Errorf("incorrect script %q format", script))
+		exception.Panicf("goscr: incorrect script %q format", script)
 	}
 
 	scriptPkg := script[:idx]
@@ -222,7 +221,7 @@ func GetComponentScript(entity ec.Entity, name string) func() *ComponentBehavior
 // GetComponentScriptT 获取组件脚本
 func GetComponentScriptT[T interface{ This() func() T }](entity ec.Entity, name string) func() T {
 	if entity == nil {
-		panic(fmt.Errorf("%s: entity is nil", exception.ErrArgs))
+		exception.Panicf("goscr: %s: entity is nil", exception.ErrArgs)
 	}
 
 	comp := entity.GetComponent(name)

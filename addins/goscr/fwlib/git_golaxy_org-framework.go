@@ -275,12 +275,12 @@ func (W _git_golaxy_org_framework_IRuntime) Value(key any) any          { return
 
 // _git_golaxy_org_framework_IRuntimeInstantiation is an interface wrapper for IRuntimeInstantiation type
 type _git_golaxy_org_framework_IRuntimeInstantiation struct {
-	IValue         interface{}
-	WInstantiation func() framework.IRuntime
+	IValue       interface{}
+	WInstantiate func() framework.IRuntime
 }
 
-func (W _git_golaxy_org_framework_IRuntimeInstantiation) Instantiation() framework.IRuntime {
-	return W.WInstantiation()
+func (W _git_golaxy_org_framework_IRuntimeInstantiation) Instantiate() framework.IRuntime {
+	return W.WInstantiate()
 }
 
 // _git_golaxy_org_framework_IService is an interface wrapper for IService type
@@ -396,430 +396,422 @@ func (W _git_golaxy_org_framework_IService) Value(key any) any          { return
 
 // _git_golaxy_org_framework_IServiceInstantiation is an interface wrapper for IServiceInstantiation type
 type _git_golaxy_org_framework_IServiceInstantiation struct {
-	IValue         interface{}
-	WInstantiation func() framework.IService
+	IValue       interface{}
+	WInstantiate func() framework.IService
 }
 
-func (W _git_golaxy_org_framework_IServiceInstantiation) Instantiation() framework.IService {
-	return W.WInstantiation()
+func (W _git_golaxy_org_framework_IServiceInstantiation) Instantiate() framework.IService {
+	return W.WInstantiate()
 }
 
 // _git_golaxy_org_framework_InstallRuntimeDistEntityRegistry is an interface wrapper for InstallRuntimeDistEntityRegistry type
 type _git_golaxy_org_framework_InstallRuntimeDistEntityRegistry struct {
 	IValue                     interface{}
-	WInstallDistEntityRegistry func(inst framework.IRuntime)
+	WInstallDistEntityRegistry func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_InstallRuntimeDistEntityRegistry) InstallDistEntityRegistry(inst framework.IRuntime) {
-	W.WInstallDistEntityRegistry(inst)
+func (W _git_golaxy_org_framework_InstallRuntimeDistEntityRegistry) InstallDistEntityRegistry(rt framework.IRuntime) {
+	W.WInstallDistEntityRegistry(rt)
 }
 
 // _git_golaxy_org_framework_InstallRuntimeLogger is an interface wrapper for InstallRuntimeLogger type
 type _git_golaxy_org_framework_InstallRuntimeLogger struct {
 	IValue         interface{}
-	WInstallLogger func(inst framework.IRuntime)
+	WInstallLogger func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_InstallRuntimeLogger) InstallLogger(inst framework.IRuntime) {
-	W.WInstallLogger(inst)
+func (W _git_golaxy_org_framework_InstallRuntimeLogger) InstallLogger(rt framework.IRuntime) {
+	W.WInstallLogger(rt)
 }
 
 // _git_golaxy_org_framework_InstallRuntimeRPCStack is an interface wrapper for InstallRuntimeRPCStack type
 type _git_golaxy_org_framework_InstallRuntimeRPCStack struct {
 	IValue           interface{}
-	WInstallRPCStack func(inst framework.IRuntime)
+	WInstallRPCStack func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_InstallRuntimeRPCStack) InstallRPCStack(inst framework.IRuntime) {
-	W.WInstallRPCStack(inst)
+func (W _git_golaxy_org_framework_InstallRuntimeRPCStack) InstallRPCStack(rt framework.IRuntime) {
+	W.WInstallRPCStack(rt)
 }
 
 // _git_golaxy_org_framework_InstallServiceBroker is an interface wrapper for InstallServiceBroker type
 type _git_golaxy_org_framework_InstallServiceBroker struct {
 	IValue         interface{}
-	WInstallBroker func(inst framework.IService)
+	WInstallBroker func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_InstallServiceBroker) InstallBroker(inst framework.IService) {
-	W.WInstallBroker(inst)
+func (W _git_golaxy_org_framework_InstallServiceBroker) InstallBroker(svc framework.IService) {
+	W.WInstallBroker(svc)
 }
 
 // _git_golaxy_org_framework_InstallServiceConfig is an interface wrapper for InstallServiceConfig type
 type _git_golaxy_org_framework_InstallServiceConfig struct {
 	IValue         interface{}
-	WInstallConfig func(inst framework.IService)
+	WInstallConfig func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_InstallServiceConfig) InstallConfig(inst framework.IService) {
-	W.WInstallConfig(inst)
+func (W _git_golaxy_org_framework_InstallServiceConfig) InstallConfig(svc framework.IService) {
+	W.WInstallConfig(svc)
 }
 
 // _git_golaxy_org_framework_InstallServiceDistEntityQuerier is an interface wrapper for InstallServiceDistEntityQuerier type
 type _git_golaxy_org_framework_InstallServiceDistEntityQuerier struct {
 	IValue                    interface{}
-	WInstallDistEntityQuerier func(inst framework.IService)
+	WInstallDistEntityQuerier func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_InstallServiceDistEntityQuerier) InstallDistEntityQuerier(inst framework.IService) {
-	W.WInstallDistEntityQuerier(inst)
+func (W _git_golaxy_org_framework_InstallServiceDistEntityQuerier) InstallDistEntityQuerier(svc framework.IService) {
+	W.WInstallDistEntityQuerier(svc)
 }
 
 // _git_golaxy_org_framework_InstallServiceDistService is an interface wrapper for InstallServiceDistService type
 type _git_golaxy_org_framework_InstallServiceDistService struct {
 	IValue              interface{}
-	WInstallDistService func(inst framework.IService)
+	WInstallDistService func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_InstallServiceDistService) InstallDistService(inst framework.IService) {
-	W.WInstallDistService(inst)
+func (W _git_golaxy_org_framework_InstallServiceDistService) InstallDistService(svc framework.IService) {
+	W.WInstallDistService(svc)
 }
 
 // _git_golaxy_org_framework_InstallServiceDistSync is an interface wrapper for InstallServiceDistSync type
 type _git_golaxy_org_framework_InstallServiceDistSync struct {
 	IValue           interface{}
-	WInstallDistSync func(inst framework.IService)
+	WInstallDistSync func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_InstallServiceDistSync) InstallDistSync(inst framework.IService) {
-	W.WInstallDistSync(inst)
+func (W _git_golaxy_org_framework_InstallServiceDistSync) InstallDistSync(svc framework.IService) {
+	W.WInstallDistSync(svc)
 }
 
 // _git_golaxy_org_framework_InstallServiceLogger is an interface wrapper for InstallServiceLogger type
 type _git_golaxy_org_framework_InstallServiceLogger struct {
 	IValue         interface{}
-	WInstallLogger func(inst framework.IService)
+	WInstallLogger func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_InstallServiceLogger) InstallLogger(inst framework.IService) {
-	W.WInstallLogger(inst)
+func (W _git_golaxy_org_framework_InstallServiceLogger) InstallLogger(svc framework.IService) {
+	W.WInstallLogger(svc)
 }
 
 // _git_golaxy_org_framework_InstallServiceRPC is an interface wrapper for InstallServiceRPC type
 type _git_golaxy_org_framework_InstallServiceRPC struct {
 	IValue      interface{}
-	WInstallRPC func(inst framework.IService)
+	WInstallRPC func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_InstallServiceRPC) InstallRPC(inst framework.IService) {
-	W.WInstallRPC(inst)
+func (W _git_golaxy_org_framework_InstallServiceRPC) InstallRPC(svc framework.IService) {
+	W.WInstallRPC(svc)
 }
 
 // _git_golaxy_org_framework_InstallServiceRegistry is an interface wrapper for InstallServiceRegistry type
 type _git_golaxy_org_framework_InstallServiceRegistry struct {
 	IValue           interface{}
-	WInstallRegistry func(inst framework.IService)
+	WInstallRegistry func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_InstallServiceRegistry) InstallRegistry(inst framework.IService) {
-	W.WInstallRegistry(inst)
+func (W _git_golaxy_org_framework_InstallServiceRegistry) InstallRegistry(svc framework.IService) {
+	W.WInstallRegistry(svc)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeAddInActivated is an interface wrapper for LifecycleRuntimeAddInActivated type
 type _git_golaxy_org_framework_LifecycleRuntimeAddInActivated struct {
 	IValue          interface{}
-	WAddInActivated func(inst framework.IRuntime, addIn extension.AddInStatus)
+	WAddInActivated func(rt framework.IRuntime, addIn extension.AddInStatus)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeAddInActivated) AddInActivated(inst framework.IRuntime, addIn extension.AddInStatus) {
-	W.WAddInActivated(inst, addIn)
+func (W _git_golaxy_org_framework_LifecycleRuntimeAddInActivated) AddInActivated(rt framework.IRuntime, addIn extension.AddInStatus) {
+	W.WAddInActivated(rt, addIn)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeAddInActivating is an interface wrapper for LifecycleRuntimeAddInActivating type
 type _git_golaxy_org_framework_LifecycleRuntimeAddInActivating struct {
 	IValue           interface{}
-	WAddInActivating func(inst framework.IRuntime, addIn extension.AddInStatus)
+	WAddInActivating func(rt framework.IRuntime, addIn extension.AddInStatus)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeAddInActivating) AddInActivating(inst framework.IRuntime, addIn extension.AddInStatus) {
-	W.WAddInActivating(inst, addIn)
+func (W _git_golaxy_org_framework_LifecycleRuntimeAddInActivating) AddInActivating(rt framework.IRuntime, addIn extension.AddInStatus) {
+	W.WAddInActivating(rt, addIn)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivated is an interface wrapper for LifecycleRuntimeAddInDeactivated type
 type _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivated struct {
 	IValue            interface{}
-	WAddInDeactivated func(inst framework.IRuntime, addIn extension.AddInStatus)
+	WAddInDeactivated func(rt framework.IRuntime, addIn extension.AddInStatus)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivated) AddInDeactivated(inst framework.IRuntime, addIn extension.AddInStatus) {
-	W.WAddInDeactivated(inst, addIn)
+func (W _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivated) AddInDeactivated(rt framework.IRuntime, addIn extension.AddInStatus) {
+	W.WAddInDeactivated(rt, addIn)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivating is an interface wrapper for LifecycleRuntimeAddInDeactivating type
 type _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivating struct {
 	IValue             interface{}
-	WAddInDeactivating func(inst framework.IRuntime, addIn extension.AddInStatus)
+	WAddInDeactivating func(rt framework.IRuntime, addIn extension.AddInStatus)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivating) AddInDeactivating(inst framework.IRuntime, addIn extension.AddInStatus) {
-	W.WAddInDeactivating(inst, addIn)
+func (W _git_golaxy_org_framework_LifecycleRuntimeAddInDeactivating) AddInDeactivating(rt framework.IRuntime, addIn extension.AddInStatus) {
+	W.WAddInDeactivating(rt, addIn)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeBirth is an interface wrapper for LifecycleRuntimeBirth type
 type _git_golaxy_org_framework_LifecycleRuntimeBirth struct {
 	IValue interface{}
-	WBirth func(inst framework.IRuntime)
+	WBirth func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeBirth) Birth(inst framework.IRuntime) {
-	W.WBirth(inst)
-}
+func (W _git_golaxy_org_framework_LifecycleRuntimeBirth) Birth(rt framework.IRuntime) { W.WBirth(rt) }
 
 // _git_golaxy_org_framework_LifecycleRuntimeBuilt is an interface wrapper for LifecycleRuntimeBuilt type
 type _git_golaxy_org_framework_LifecycleRuntimeBuilt struct {
 	IValue interface{}
-	WBuilt func(inst framework.IRuntime)
+	WBuilt func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeBuilt) Built(inst framework.IRuntime) {
-	W.WBuilt(inst)
-}
+func (W _git_golaxy_org_framework_LifecycleRuntimeBuilt) Built(rt framework.IRuntime) { W.WBuilt(rt) }
 
 // _git_golaxy_org_framework_LifecycleRuntimeFrameLoopBegin is an interface wrapper for LifecycleRuntimeFrameLoopBegin type
 type _git_golaxy_org_framework_LifecycleRuntimeFrameLoopBegin struct {
 	IValue          interface{}
-	WFrameLoopBegin func(inst framework.IRuntime)
+	WFrameLoopBegin func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeFrameLoopBegin) FrameLoopBegin(inst framework.IRuntime) {
-	W.WFrameLoopBegin(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeFrameLoopBegin) FrameLoopBegin(rt framework.IRuntime) {
+	W.WFrameLoopBegin(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeFrameLoopEnd is an interface wrapper for LifecycleRuntimeFrameLoopEnd type
 type _git_golaxy_org_framework_LifecycleRuntimeFrameLoopEnd struct {
 	IValue        interface{}
-	WFrameLoopEnd func(inst framework.IRuntime)
+	WFrameLoopEnd func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeFrameLoopEnd) FrameLoopEnd(inst framework.IRuntime) {
-	W.WFrameLoopEnd(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeFrameLoopEnd) FrameLoopEnd(rt framework.IRuntime) {
+	W.WFrameLoopEnd(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeFrameUpdateBegin is an interface wrapper for LifecycleRuntimeFrameUpdateBegin type
 type _git_golaxy_org_framework_LifecycleRuntimeFrameUpdateBegin struct {
 	IValue            interface{}
-	WFrameUpdateBegin func(inst framework.IRuntime)
+	WFrameUpdateBegin func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeFrameUpdateBegin) FrameUpdateBegin(inst framework.IRuntime) {
-	W.WFrameUpdateBegin(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeFrameUpdateBegin) FrameUpdateBegin(rt framework.IRuntime) {
+	W.WFrameUpdateBegin(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeFrameUpdateEnd is an interface wrapper for LifecycleRuntimeFrameUpdateEnd type
 type _git_golaxy_org_framework_LifecycleRuntimeFrameUpdateEnd struct {
 	IValue          interface{}
-	WFrameUpdateEnd func(inst framework.IRuntime)
+	WFrameUpdateEnd func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeFrameUpdateEnd) FrameUpdateEnd(inst framework.IRuntime) {
-	W.WFrameUpdateEnd(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeFrameUpdateEnd) FrameUpdateEnd(rt framework.IRuntime) {
+	W.WFrameUpdateEnd(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeRunCallBegin is an interface wrapper for LifecycleRuntimeRunCallBegin type
 type _git_golaxy_org_framework_LifecycleRuntimeRunCallBegin struct {
 	IValue        interface{}
-	WRunCallBegin func(inst framework.IRuntime)
+	WRunCallBegin func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeRunCallBegin) RunCallBegin(inst framework.IRuntime) {
-	W.WRunCallBegin(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeRunCallBegin) RunCallBegin(rt framework.IRuntime) {
+	W.WRunCallBegin(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeRunCallEnd is an interface wrapper for LifecycleRuntimeRunCallEnd type
 type _git_golaxy_org_framework_LifecycleRuntimeRunCallEnd struct {
 	IValue      interface{}
-	WRunCallEnd func(inst framework.IRuntime)
+	WRunCallEnd func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeRunCallEnd) RunCallEnd(inst framework.IRuntime) {
-	W.WRunCallEnd(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeRunCallEnd) RunCallEnd(rt framework.IRuntime) {
+	W.WRunCallEnd(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeRunGCBegin is an interface wrapper for LifecycleRuntimeRunGCBegin type
 type _git_golaxy_org_framework_LifecycleRuntimeRunGCBegin struct {
 	IValue      interface{}
-	WRunGCBegin func(inst framework.IRuntime)
+	WRunGCBegin func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeRunGCBegin) RunGCBegin(inst framework.IRuntime) {
-	W.WRunGCBegin(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeRunGCBegin) RunGCBegin(rt framework.IRuntime) {
+	W.WRunGCBegin(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeRunGCEnd is an interface wrapper for LifecycleRuntimeRunGCEnd type
 type _git_golaxy_org_framework_LifecycleRuntimeRunGCEnd struct {
 	IValue    interface{}
-	WRunGCEnd func(inst framework.IRuntime)
+	WRunGCEnd func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeRunGCEnd) RunGCEnd(inst framework.IRuntime) {
-	W.WRunGCEnd(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeRunGCEnd) RunGCEnd(rt framework.IRuntime) {
+	W.WRunGCEnd(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeStarted is an interface wrapper for LifecycleRuntimeStarted type
 type _git_golaxy_org_framework_LifecycleRuntimeStarted struct {
 	IValue   interface{}
-	WStarted func(inst framework.IRuntime)
+	WStarted func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeStarted) Started(inst framework.IRuntime) {
-	W.WStarted(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeStarted) Started(rt framework.IRuntime) {
+	W.WStarted(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeStarting is an interface wrapper for LifecycleRuntimeStarting type
 type _git_golaxy_org_framework_LifecycleRuntimeStarting struct {
 	IValue    interface{}
-	WStarting func(inst framework.IRuntime)
+	WStarting func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeStarting) Starting(inst framework.IRuntime) {
-	W.WStarting(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeStarting) Starting(rt framework.IRuntime) {
+	W.WStarting(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeTerminated is an interface wrapper for LifecycleRuntimeTerminated type
 type _git_golaxy_org_framework_LifecycleRuntimeTerminated struct {
 	IValue      interface{}
-	WTerminated func(inst framework.IRuntime)
+	WTerminated func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeTerminated) Terminated(inst framework.IRuntime) {
-	W.WTerminated(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeTerminated) Terminated(rt framework.IRuntime) {
+	W.WTerminated(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeTerminating is an interface wrapper for LifecycleRuntimeTerminating type
 type _git_golaxy_org_framework_LifecycleRuntimeTerminating struct {
 	IValue       interface{}
-	WTerminating func(inst framework.IRuntime)
+	WTerminating func(rt framework.IRuntime)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeTerminating) Terminating(inst framework.IRuntime) {
-	W.WTerminating(inst)
+func (W _git_golaxy_org_framework_LifecycleRuntimeTerminating) Terminating(rt framework.IRuntime) {
+	W.WTerminating(rt)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceAddInActivated is an interface wrapper for LifecycleServiceAddInActivated type
 type _git_golaxy_org_framework_LifecycleServiceAddInActivated struct {
 	IValue          interface{}
-	WAddInActivated func(inst framework.IService, addIn extension.AddInStatus)
+	WAddInActivated func(svc framework.IService, addIn extension.AddInStatus)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceAddInActivated) AddInActivated(inst framework.IService, addIn extension.AddInStatus) {
-	W.WAddInActivated(inst, addIn)
+func (W _git_golaxy_org_framework_LifecycleServiceAddInActivated) AddInActivated(svc framework.IService, addIn extension.AddInStatus) {
+	W.WAddInActivated(svc, addIn)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceAddInActivating is an interface wrapper for LifecycleServiceAddInActivating type
 type _git_golaxy_org_framework_LifecycleServiceAddInActivating struct {
 	IValue           interface{}
-	WAddInActivating func(inst framework.IService, addIn extension.AddInStatus)
+	WAddInActivating func(svc framework.IService, addIn extension.AddInStatus)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceAddInActivating) AddInActivating(inst framework.IService, addIn extension.AddInStatus) {
-	W.WAddInActivating(inst, addIn)
+func (W _git_golaxy_org_framework_LifecycleServiceAddInActivating) AddInActivating(svc framework.IService, addIn extension.AddInStatus) {
+	W.WAddInActivating(svc, addIn)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceAddInDeactivated is an interface wrapper for LifecycleServiceAddInDeactivated type
 type _git_golaxy_org_framework_LifecycleServiceAddInDeactivated struct {
 	IValue            interface{}
-	WAddInDeactivated func(inst framework.IService, addIn extension.AddInStatus)
+	WAddInDeactivated func(svc framework.IService, addIn extension.AddInStatus)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceAddInDeactivated) AddInDeactivated(inst framework.IService, addIn extension.AddInStatus) {
-	W.WAddInDeactivated(inst, addIn)
+func (W _git_golaxy_org_framework_LifecycleServiceAddInDeactivated) AddInDeactivated(svc framework.IService, addIn extension.AddInStatus) {
+	W.WAddInDeactivated(svc, addIn)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceAddInDeactivating is an interface wrapper for LifecycleServiceAddInDeactivating type
 type _git_golaxy_org_framework_LifecycleServiceAddInDeactivating struct {
 	IValue             interface{}
-	WAddInDeactivating func(inst framework.IService, addIn extension.AddInStatus)
+	WAddInDeactivating func(svc framework.IService, addIn extension.AddInStatus)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceAddInDeactivating) AddInDeactivating(inst framework.IService, addIn extension.AddInStatus) {
-	W.WAddInDeactivating(inst, addIn)
+func (W _git_golaxy_org_framework_LifecycleServiceAddInDeactivating) AddInDeactivating(svc framework.IService, addIn extension.AddInStatus) {
+	W.WAddInDeactivating(svc, addIn)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceBirth is an interface wrapper for LifecycleServiceBirth type
 type _git_golaxy_org_framework_LifecycleServiceBirth struct {
 	IValue interface{}
-	WBirth func(inst framework.IService)
+	WBirth func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceBirth) Birth(inst framework.IService) {
-	W.WBirth(inst)
-}
+func (W _git_golaxy_org_framework_LifecycleServiceBirth) Birth(svc framework.IService) { W.WBirth(svc) }
 
 // _git_golaxy_org_framework_LifecycleServiceBuilt is an interface wrapper for LifecycleServiceBuilt type
 type _git_golaxy_org_framework_LifecycleServiceBuilt struct {
 	IValue interface{}
-	WBuilt func(inst framework.IService)
+	WBuilt func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceBuilt) Built(inst framework.IService) {
-	W.WBuilt(inst)
-}
+func (W _git_golaxy_org_framework_LifecycleServiceBuilt) Built(svc framework.IService) { W.WBuilt(svc) }
 
 // _git_golaxy_org_framework_LifecycleServiceEntityPTDeclared is an interface wrapper for LifecycleServiceEntityPTDeclared type
 type _git_golaxy_org_framework_LifecycleServiceEntityPTDeclared struct {
 	IValue            interface{}
-	WEntityPTDeclared func(inst framework.IService, entityPT ec.EntityPT)
+	WEntityPTDeclared func(svc framework.IService, entityPT ec.EntityPT)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceEntityPTDeclared) EntityPTDeclared(inst framework.IService, entityPT ec.EntityPT) {
-	W.WEntityPTDeclared(inst, entityPT)
+func (W _git_golaxy_org_framework_LifecycleServiceEntityPTDeclared) EntityPTDeclared(svc framework.IService, entityPT ec.EntityPT) {
+	W.WEntityPTDeclared(svc, entityPT)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceEntityPTRedeclared is an interface wrapper for LifecycleServiceEntityPTRedeclared type
 type _git_golaxy_org_framework_LifecycleServiceEntityPTRedeclared struct {
 	IValue              interface{}
-	WEntityPTRedeclared func(inst framework.IService, entityPT ec.EntityPT)
+	WEntityPTRedeclared func(svc framework.IService, entityPT ec.EntityPT)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceEntityPTRedeclared) EntityPTRedeclared(inst framework.IService, entityPT ec.EntityPT) {
-	W.WEntityPTRedeclared(inst, entityPT)
+func (W _git_golaxy_org_framework_LifecycleServiceEntityPTRedeclared) EntityPTRedeclared(svc framework.IService, entityPT ec.EntityPT) {
+	W.WEntityPTRedeclared(svc, entityPT)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceEntityPTUndeclared is an interface wrapper for LifecycleServiceEntityPTUndeclared type
 type _git_golaxy_org_framework_LifecycleServiceEntityPTUndeclared struct {
 	IValue              interface{}
-	WEntityPTUndeclared func(inst framework.IService, entityPT ec.EntityPT)
+	WEntityPTUndeclared func(svc framework.IService, entityPT ec.EntityPT)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceEntityPTUndeclared) EntityPTUndeclared(inst framework.IService, entityPT ec.EntityPT) {
-	W.WEntityPTUndeclared(inst, entityPT)
+func (W _git_golaxy_org_framework_LifecycleServiceEntityPTUndeclared) EntityPTUndeclared(svc framework.IService, entityPT ec.EntityPT) {
+	W.WEntityPTUndeclared(svc, entityPT)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceStarted is an interface wrapper for LifecycleServiceStarted type
 type _git_golaxy_org_framework_LifecycleServiceStarted struct {
 	IValue   interface{}
-	WStarted func(inst framework.IService)
+	WStarted func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceStarted) Started(inst framework.IService) {
-	W.WStarted(inst)
+func (W _git_golaxy_org_framework_LifecycleServiceStarted) Started(svc framework.IService) {
+	W.WStarted(svc)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceStarting is an interface wrapper for LifecycleServiceStarting type
 type _git_golaxy_org_framework_LifecycleServiceStarting struct {
 	IValue    interface{}
-	WStarting func(inst framework.IService)
+	WStarting func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceStarting) Starting(inst framework.IService) {
-	W.WStarting(inst)
+func (W _git_golaxy_org_framework_LifecycleServiceStarting) Starting(svc framework.IService) {
+	W.WStarting(svc)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceTerminated is an interface wrapper for LifecycleServiceTerminated type
 type _git_golaxy_org_framework_LifecycleServiceTerminated struct {
 	IValue      interface{}
-	WTerminated func(inst framework.IService)
+	WTerminated func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceTerminated) Terminated(inst framework.IService) {
-	W.WTerminated(inst)
+func (W _git_golaxy_org_framework_LifecycleServiceTerminated) Terminated(svc framework.IService) {
+	W.WTerminated(svc)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceTerminating is an interface wrapper for LifecycleServiceTerminating type
 type _git_golaxy_org_framework_LifecycleServiceTerminating struct {
 	IValue       interface{}
-	WTerminating func(inst framework.IService)
+	WTerminating func(svc framework.IService)
 }
 
-func (W _git_golaxy_org_framework_LifecycleServiceTerminating) Terminating(inst framework.IService) {
-	W.WTerminating(inst)
+func (W _git_golaxy_org_framework_LifecycleServiceTerminating) Terminating(svc framework.IService) {
+	W.WTerminating(svc)
 }

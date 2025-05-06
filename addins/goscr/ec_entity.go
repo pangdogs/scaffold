@@ -20,7 +20,6 @@
 package goscr
 
 import (
-	"fmt"
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/ec/pt"
 	"git.golaxy.org/core/utils/exception"
@@ -179,16 +178,16 @@ func EntityScript(prototype, script string) *pt.EntityAttribute {
 // EntityScriptT 创建脚本化实体原型属性，用于注册实体原型时自定义相关属性
 func EntityScriptT[T any](prototype, script string) *pt.EntityAttribute {
 	if prototype == "" {
-		exception.Panicf("%w: prototype is empty", exception.ErrArgs)
+		exception.Panicf("goscr: %w: prototype is empty", exception.ErrArgs)
 	}
 
 	if script == "" {
-		exception.Panicf("%w: script is empty", exception.ErrArgs)
+		exception.Panicf("goscr: %w: script is empty", exception.ErrArgs)
 	}
 
 	idx := strings.LastIndexByte(script, '.')
 	if idx < 0 {
-		panic(fmt.Errorf("incorrect script %q format", script))
+		exception.Panicf("goscr: incorrect script %q format", script)
 	}
 
 	scriptPkg := script[:idx]
@@ -205,7 +204,7 @@ func GetEntityScript(entity ec.Entity) func() *EntityBehavior {
 // GetEntityScriptT 获取实体脚本
 func GetEntityScriptT[T interface{ This() func() T }](entity ec.Entity) func() T {
 	if entity == nil {
-		panic(fmt.Errorf("%s: entity is nil", exception.ErrArgs))
+		exception.Panicf("goscr: %s: entity is nil", exception.ErrArgs)
 	}
 
 	behavior, ok := entity.(T)
