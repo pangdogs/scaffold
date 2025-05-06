@@ -127,8 +127,8 @@ func (W _git_golaxy_org_framework_addins_router_IMapping) Value(key any) any { r
 type _git_golaxy_org_framework_addins_router_IRouter struct {
 	IValue          interface{}
 	WAddGroup       func(ctx context.Context, name string) (router.IGroup, error)
-	WCleanEntity    func(entityId uid.Id)
-	WCleanSession   func(sessionId uid.Id)
+	WClearEntity    func(entityId uid.Id)
+	WClearSession   func(sessionId uid.Id)
 	WDeleteGroup    func(ctx context.Context, name string)
 	WEachGroups     func(ctx context.Context, entityId uid.Id, fun generic.Action1[router.IGroup])
 	WGetGroup       func(ctx context.Context, name string) (router.IGroup, bool)
@@ -142,11 +142,11 @@ type _git_golaxy_org_framework_addins_router_IRouter struct {
 func (W _git_golaxy_org_framework_addins_router_IRouter) AddGroup(ctx context.Context, name string) (router.IGroup, error) {
 	return W.WAddGroup(ctx, name)
 }
-func (W _git_golaxy_org_framework_addins_router_IRouter) CleanEntity(entityId uid.Id) {
-	W.WCleanEntity(entityId)
+func (W _git_golaxy_org_framework_addins_router_IRouter) ClearEntity(entityId uid.Id) {
+	W.WClearEntity(entityId)
 }
-func (W _git_golaxy_org_framework_addins_router_IRouter) CleanSession(sessionId uid.Id) {
-	W.WCleanSession(sessionId)
+func (W _git_golaxy_org_framework_addins_router_IRouter) ClearSession(sessionId uid.Id) {
+	W.WClearSession(sessionId)
 }
 func (W _git_golaxy_org_framework_addins_router_IRouter) DeleteGroup(ctx context.Context, name string) {
 	W.WDeleteGroup(ctx, name)

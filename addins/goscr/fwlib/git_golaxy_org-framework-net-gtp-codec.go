@@ -12,8 +12,6 @@ import (
 func init() {
 	Symbols["git.golaxy.org/framework/net/gtp/codec/codec"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"BuildDecoder":            reflect.ValueOf(codec.BuildDecoder),
-		"BuildEncoder":            reflect.ValueOf(codec.BuildEncoder),
 		"ErrCompress":             reflect.ValueOf(&codec.ErrCompress).Elem(),
 		"ErrDecode":               reflect.ValueOf(&codec.ErrDecode).Elem(),
 		"ErrEncode":               reflect.ValueOf(&codec.ErrEncode).Elem(),
@@ -21,114 +19,88 @@ func init() {
 		"ErrIncorrectMAC":         reflect.ValueOf(&codec.ErrIncorrectMAC).Elem(),
 		"ErrMAC":                  reflect.ValueOf(&codec.ErrMAC).Elem(),
 		"ErrUnableToDetectLength": reflect.ValueOf(&codec.ErrUnableToDetectLength).Elem(),
-		"NewCompressionModule":    reflect.ValueOf(codec.NewCompressionModule),
-		"NewEncryptionModule":     reflect.ValueOf(codec.NewEncryptionModule),
-		"NewMAC32Module":          reflect.ValueOf(codec.NewMAC32Module),
-		"NewMAC64Module":          reflect.ValueOf(codec.NewMAC64Module),
-		"NewMACModule":            reflect.ValueOf(codec.NewMACModule),
+		"NewCompression":          reflect.ValueOf(codec.NewCompression),
+		"NewDecoder":              reflect.ValueOf(codec.NewDecoder),
+		"NewEncoder":              reflect.ValueOf(codec.NewEncoder),
+		"NewEncryption":           reflect.ValueOf(codec.NewEncryption),
+		"NewMAC":                  reflect.ValueOf(codec.NewMAC),
+		"NewMAC32":                reflect.ValueOf(codec.NewMAC32),
+		"NewMAC64":                reflect.ValueOf(codec.NewMAC64),
 
 		// type definitions
-		"CompressionModule":  reflect.ValueOf((*codec.CompressionModule)(nil)),
-		"Decoder":            reflect.ValueOf((*codec.Decoder)(nil)),
-		"DecoderCreator":     reflect.ValueOf((*codec.DecoderCreator)(nil)),
-		"Encoder":            reflect.ValueOf((*codec.Encoder)(nil)),
-		"EncoderCreator":     reflect.ValueOf((*codec.EncoderCreator)(nil)),
-		"EncryptionModule":   reflect.ValueOf((*codec.EncryptionModule)(nil)),
-		"FetchNonce":         reflect.ValueOf((*codec.FetchNonce)(nil)),
-		"ICompressionModule": reflect.ValueOf((*codec.ICompressionModule)(nil)),
-		"IDecoder":           reflect.ValueOf((*codec.IDecoder)(nil)),
-		"IEncoder":           reflect.ValueOf((*codec.IEncoder)(nil)),
-		"IEncryptionModule":  reflect.ValueOf((*codec.IEncryptionModule)(nil)),
-		"IMACModule":         reflect.ValueOf((*codec.IMACModule)(nil)),
-		"IValidate":          reflect.ValueOf((*codec.IValidate)(nil)),
-		"MAC32Module":        reflect.ValueOf((*codec.MAC32Module)(nil)),
-		"MAC64Module":        reflect.ValueOf((*codec.MAC64Module)(nil)),
-		"MACModule":          reflect.ValueOf((*codec.MACModule)(nil)),
+		"Compression":  reflect.ValueOf((*codec.Compression)(nil)),
+		"Decoder":      reflect.ValueOf((*codec.Decoder)(nil)),
+		"Encoder":      reflect.ValueOf((*codec.Encoder)(nil)),
+		"Encryption":   reflect.ValueOf((*codec.Encryption)(nil)),
+		"FetchNonce":   reflect.ValueOf((*codec.FetchNonce)(nil)),
+		"ICompression": reflect.ValueOf((*codec.ICompression)(nil)),
+		"IEncryption":  reflect.ValueOf((*codec.IEncryption)(nil)),
+		"IMAC":         reflect.ValueOf((*codec.IMAC)(nil)),
+		"IValidation":  reflect.ValueOf((*codec.IValidation)(nil)),
+		"MAC":          reflect.ValueOf((*codec.MAC)(nil)),
+		"MAC32":        reflect.ValueOf((*codec.MAC32)(nil)),
+		"MAC64":        reflect.ValueOf((*codec.MAC64)(nil)),
 
 		// interface wrapper definitions
-		"_ICompressionModule": reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_ICompressionModule)(nil)),
-		"_IDecoder":           reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IDecoder)(nil)),
-		"_IEncoder":           reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IEncoder)(nil)),
-		"_IEncryptionModule":  reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IEncryptionModule)(nil)),
-		"_IMACModule":         reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IMACModule)(nil)),
-		"_IValidate":          reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IValidate)(nil)),
+		"_ICompression": reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_ICompression)(nil)),
+		"_IEncryption":  reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IEncryption)(nil)),
+		"_IMAC":         reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IMAC)(nil)),
+		"_IValidation":  reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IValidation)(nil)),
 	}
 }
 
-// _git_golaxy_org_framework_net_gtp_codec_ICompressionModule is an interface wrapper for ICompressionModule type
-type _git_golaxy_org_framework_net_gtp_codec_ICompressionModule struct {
+// _git_golaxy_org_framework_net_gtp_codec_ICompression is an interface wrapper for ICompression type
+type _git_golaxy_org_framework_net_gtp_codec_ICompression struct {
 	IValue      interface{}
 	WCompress   func(src []byte) (dst binaryutil.RecycleBytes, compressed bool, err error)
 	WUncompress func(src []byte) (dst binaryutil.RecycleBytes, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_codec_ICompressionModule) Compress(src []byte) (dst binaryutil.RecycleBytes, compressed bool, err error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_ICompression) Compress(src []byte) (dst binaryutil.RecycleBytes, compressed bool, err error) {
 	return W.WCompress(src)
 }
-func (W _git_golaxy_org_framework_net_gtp_codec_ICompressionModule) Uncompress(src []byte) (dst binaryutil.RecycleBytes, err error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_ICompression) Uncompress(src []byte) (dst binaryutil.RecycleBytes, err error) {
 	return W.WUncompress(src)
 }
 
-// _git_golaxy_org_framework_net_gtp_codec_IDecoder is an interface wrapper for IDecoder type
-type _git_golaxy_org_framework_net_gtp_codec_IDecoder struct {
-	IValue  interface{}
-	WDecode func(data []byte, validate ...codec.IValidate) (gtp.MsgPacket, int, error)
-	WGC     func()
-}
-
-func (W _git_golaxy_org_framework_net_gtp_codec_IDecoder) Decode(data []byte, validate ...codec.IValidate) (gtp.MsgPacket, int, error) {
-	return W.WDecode(data, validate...)
-}
-func (W _git_golaxy_org_framework_net_gtp_codec_IDecoder) GC() { W.WGC() }
-
-// _git_golaxy_org_framework_net_gtp_codec_IEncoder is an interface wrapper for IEncoder type
-type _git_golaxy_org_framework_net_gtp_codec_IEncoder struct {
-	IValue  interface{}
-	WEncode func(flags gtp.Flags, msg gtp.MsgReader) (binaryutil.RecycleBytes, error)
-}
-
-func (W _git_golaxy_org_framework_net_gtp_codec_IEncoder) Encode(flags gtp.Flags, msg gtp.MsgReader) (binaryutil.RecycleBytes, error) {
-	return W.WEncode(flags, msg)
-}
-
-// _git_golaxy_org_framework_net_gtp_codec_IEncryptionModule is an interface wrapper for IEncryptionModule type
-type _git_golaxy_org_framework_net_gtp_codec_IEncryptionModule struct {
+// _git_golaxy_org_framework_net_gtp_codec_IEncryption is an interface wrapper for IEncryption type
+type _git_golaxy_org_framework_net_gtp_codec_IEncryption struct {
 	IValue          interface{}
 	WSizeOfAddition func(msgLen int) (int, error)
 	WTransforming   func(dst []byte, src []byte) (binaryutil.RecycleBytes, error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_codec_IEncryptionModule) SizeOfAddition(msgLen int) (int, error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_IEncryption) SizeOfAddition(msgLen int) (int, error) {
 	return W.WSizeOfAddition(msgLen)
 }
-func (W _git_golaxy_org_framework_net_gtp_codec_IEncryptionModule) Transforming(dst []byte, src []byte) (binaryutil.RecycleBytes, error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_IEncryption) Transforming(dst []byte, src []byte) (binaryutil.RecycleBytes, error) {
 	return W.WTransforming(dst, src)
 }
 
-// _git_golaxy_org_framework_net_gtp_codec_IMACModule is an interface wrapper for IMACModule type
-type _git_golaxy_org_framework_net_gtp_codec_IMACModule struct {
+// _git_golaxy_org_framework_net_gtp_codec_IMAC is an interface wrapper for IMAC type
+type _git_golaxy_org_framework_net_gtp_codec_IMAC struct {
 	IValue     interface{}
 	WPatchMAC  func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst binaryutil.RecycleBytes, err error)
 	WSizeofMAC func(msgLen int) int
 	WVerifyMAC func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst []byte, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_codec_IMACModule) PatchMAC(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst binaryutil.RecycleBytes, err error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_IMAC) PatchMAC(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst binaryutil.RecycleBytes, err error) {
 	return W.WPatchMAC(msgId, flags, msgBuf)
 }
-func (W _git_golaxy_org_framework_net_gtp_codec_IMACModule) SizeofMAC(msgLen int) int {
+func (W _git_golaxy_org_framework_net_gtp_codec_IMAC) SizeofMAC(msgLen int) int {
 	return W.WSizeofMAC(msgLen)
 }
-func (W _git_golaxy_org_framework_net_gtp_codec_IMACModule) VerifyMAC(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst []byte, err error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_IMAC) VerifyMAC(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst []byte, err error) {
 	return W.WVerifyMAC(msgId, flags, msgBuf)
 }
 
-// _git_golaxy_org_framework_net_gtp_codec_IValidate is an interface wrapper for IValidate type
-type _git_golaxy_org_framework_net_gtp_codec_IValidate struct {
+// _git_golaxy_org_framework_net_gtp_codec_IValidation is an interface wrapper for IValidation type
+type _git_golaxy_org_framework_net_gtp_codec_IValidation struct {
 	IValue    interface{}
 	WValidate func(msgHead gtp.MsgHead, msgBuf []byte) error
 }
 
-func (W _git_golaxy_org_framework_net_gtp_codec_IValidate) Validate(msgHead gtp.MsgHead, msgBuf []byte) error {
+func (W _git_golaxy_org_framework_net_gtp_codec_IValidation) Validate(msgHead gtp.MsgHead, msgBuf []byte) error {
 	return W.WValidate(msgHead, msgBuf)
 }

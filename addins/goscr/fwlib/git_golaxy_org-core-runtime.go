@@ -241,8 +241,8 @@ type _git_golaxy_org_core_runtime_Context struct {
 	WGetWaitGroup          func() *sync.WaitGroup
 	WManagedAddHooks       func(hooks ...event.Hook)
 	WManagedAddTagHooks    func(tag string, hooks ...event.Hook)
-	WManagedCleanTagHooks  func(tag string)
 	WManagedGetTagHooks    func(tag string) []event.Hook
+	WManagedUnbindTagHooks func(tag string)
 	WString                func() string
 	WTerminate             func() async.AsyncRet
 	WTerminated            func() async.AsyncRet
@@ -306,11 +306,11 @@ func (W _git_golaxy_org_core_runtime_Context) ManagedAddHooks(hooks ...event.Hoo
 func (W _git_golaxy_org_core_runtime_Context) ManagedAddTagHooks(tag string, hooks ...event.Hook) {
 	W.WManagedAddTagHooks(tag, hooks...)
 }
-func (W _git_golaxy_org_core_runtime_Context) ManagedCleanTagHooks(tag string) {
-	W.WManagedCleanTagHooks(tag)
-}
 func (W _git_golaxy_org_core_runtime_Context) ManagedGetTagHooks(tag string) []event.Hook {
 	return W.WManagedGetTagHooks(tag)
+}
+func (W _git_golaxy_org_core_runtime_Context) ManagedUnbindTagHooks(tag string) {
+	W.WManagedUnbindTagHooks(tag)
 }
 func (W _git_golaxy_org_core_runtime_Context) String() string {
 	if W.WString == nil {

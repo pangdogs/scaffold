@@ -67,18 +67,18 @@ func init() {
 
 // _git_golaxy_org_framework_net_gtp_transport_ISynchronizer is an interface wrapper for ISynchronizer type
 type _git_golaxy_org_framework_net_gtp_transport_ISynchronizer struct {
-	IValue           interface{}
-	WAck             func(ack uint32)
-	WAckSeq          func() uint32
-	WCached          func() int
-	WCap             func() int
-	WClean           func()
-	WRecvSeq         func() uint32
-	WSendSeq         func() uint32
-	WSynchronization func(remoteRecvSeq uint32) error
-	WValidate        func(msgHead gtp.MsgHead, msgBuf []byte) error
-	WWrite           func(p []byte) (n int, err error)
-	WWriteTo         func(w io.Writer) (n int64, err error)
+	IValue       interface{}
+	WAck         func(ack uint32)
+	WAckSeq      func() uint32
+	WCached      func() int
+	WCap         func() int
+	WDispose     func()
+	WRecvSeq     func() uint32
+	WSendSeq     func() uint32
+	WSynchronize func(remoteRecvSeq uint32) error
+	WValidate    func(msgHead gtp.MsgHead, msgBuf []byte) error
+	WWrite       func(p []byte) (n int, err error)
+	WWriteTo     func(w io.Writer) (n int64, err error)
 }
 
 func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Ack(ack uint32) { W.WAck(ack) }
@@ -87,15 +87,15 @@ func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) AckSeq() uint
 }
 func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Cached() int { return W.WCached() }
 func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Cap() int    { return W.WCap() }
-func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Clean()      { W.WClean() }
+func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Dispose()    { W.WDispose() }
 func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) RecvSeq() uint32 {
 	return W.WRecvSeq()
 }
 func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) SendSeq() uint32 {
 	return W.WSendSeq()
 }
-func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Synchronization(remoteRecvSeq uint32) error {
-	return W.WSynchronization(remoteRecvSeq)
+func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Synchronize(remoteRecvSeq uint32) error {
+	return W.WSynchronize(remoteRecvSeq)
 }
 func (W _git_golaxy_org_framework_net_gtp_transport_ISynchronizer) Validate(msgHead gtp.MsgHead, msgBuf []byte) error {
 	return W.WValidate(msgHead, msgBuf)

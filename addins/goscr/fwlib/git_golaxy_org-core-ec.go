@@ -166,8 +166,8 @@ type _git_golaxy_org_core_ec_Component struct {
 	WGetState                    func() ec.ComponentState
 	WManagedAddHooks             func(hooks ...event.Hook)
 	WManagedAddTagHooks          func(tag string, hooks ...event.Hook)
-	WManagedCleanTagHooks        func(tag string)
 	WManagedGetTagHooks          func(tag string) []event.Hook
+	WManagedUnbindTagHooks       func(tag string)
 	WSetEnable                   func(b bool)
 	WString                      func() string
 	WTerminated                  func() async.AsyncRet
@@ -206,11 +206,11 @@ func (W _git_golaxy_org_core_ec_Component) ManagedAddHooks(hooks ...event.Hook) 
 func (W _git_golaxy_org_core_ec_Component) ManagedAddTagHooks(tag string, hooks ...event.Hook) {
 	W.WManagedAddTagHooks(tag, hooks...)
 }
-func (W _git_golaxy_org_core_ec_Component) ManagedCleanTagHooks(tag string) {
-	W.WManagedCleanTagHooks(tag)
-}
 func (W _git_golaxy_org_core_ec_Component) ManagedGetTagHooks(tag string) []event.Hook {
 	return W.WManagedGetTagHooks(tag)
+}
+func (W _git_golaxy_org_core_ec_Component) ManagedUnbindTagHooks(tag string) {
+	W.WManagedUnbindTagHooks(tag)
 }
 func (W _git_golaxy_org_core_ec_Component) SetEnable(b bool) { W.WSetEnable(b) }
 func (W _git_golaxy_org_core_ec_Component) String() string {
@@ -305,8 +305,8 @@ type _git_golaxy_org_core_ec_Entity struct {
 	WGetTreeNodeState                         func() ec.TreeNodeState
 	WManagedAddHooks                          func(hooks ...event.Hook)
 	WManagedAddTagHooks                       func(tag string, hooks ...event.Hook)
-	WManagedCleanTagHooks                     func(tag string)
 	WManagedGetTagHooks                       func(tag string) []event.Hook
+	WManagedUnbindTagHooks                    func(tag string)
 	WRangeComponents                          func(fun generic.Func1[ec.Component, bool])
 	WRemoveComponent                          func(name string)
 	WRemoveComponentById                      func(id uid.Id)
@@ -399,11 +399,11 @@ func (W _git_golaxy_org_core_ec_Entity) ManagedAddHooks(hooks ...event.Hook) {
 func (W _git_golaxy_org_core_ec_Entity) ManagedAddTagHooks(tag string, hooks ...event.Hook) {
 	W.WManagedAddTagHooks(tag, hooks...)
 }
-func (W _git_golaxy_org_core_ec_Entity) ManagedCleanTagHooks(tag string) {
-	W.WManagedCleanTagHooks(tag)
-}
 func (W _git_golaxy_org_core_ec_Entity) ManagedGetTagHooks(tag string) []event.Hook {
 	return W.WManagedGetTagHooks(tag)
+}
+func (W _git_golaxy_org_core_ec_Entity) ManagedUnbindTagHooks(tag string) {
+	W.WManagedUnbindTagHooks(tag)
 }
 func (W _git_golaxy_org_core_ec_Entity) RangeComponents(fun generic.Func1[ec.Component, bool]) {
 	W.WRangeComponents(fun)

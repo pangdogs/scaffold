@@ -156,7 +156,7 @@ func init() {
 type _git_golaxy_org_framework_IRuntime struct {
 	IValue                 interface{}
 	WActivateEvent         func(event event.IEventCtrl, recursion event.EventRecursion)
-	WBuildEntity           func(prototype string) core.EntityCreator
+	WBuildEntity           func(prototype string) *core.EntityCreator
 	WCallAsync             func(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet
 	WCallDelegateAsync     func(fun generic.DelegateVar0[any, async.Ret], args ...any) async.AsyncRet
 	WCallDelegateVoidAsync func(fun generic.DelegateVoidVar0[any], args ...any) async.AsyncRet
@@ -185,8 +185,8 @@ type _git_golaxy_org_framework_IRuntime struct {
 	WGetWaitGroup          func() *sync.WaitGroup
 	WManagedAddHooks       func(hooks ...event.Hook)
 	WManagedAddTagHooks    func(tag string, hooks ...event.Hook)
-	WManagedCleanTagHooks  func(tag string)
 	WManagedGetTagHooks    func(tag string) []event.Hook
+	WManagedUnbindTagHooks func(tag string)
 	WString                func() string
 	WTerminate             func() async.AsyncRet
 	WTerminated            func() async.AsyncRet
@@ -196,7 +196,7 @@ type _git_golaxy_org_framework_IRuntime struct {
 func (W _git_golaxy_org_framework_IRuntime) ActivateEvent(event event.IEventCtrl, recursion event.EventRecursion) {
 	W.WActivateEvent(event, recursion)
 }
-func (W _git_golaxy_org_framework_IRuntime) BuildEntity(prototype string) core.EntityCreator {
+func (W _git_golaxy_org_framework_IRuntime) BuildEntity(prototype string) *core.EntityCreator {
 	return W.WBuildEntity(prototype)
 }
 func (W _git_golaxy_org_framework_IRuntime) CallAsync(fun generic.FuncVar0[any, async.Ret], args ...any) async.AsyncRet {
@@ -257,11 +257,11 @@ func (W _git_golaxy_org_framework_IRuntime) ManagedAddHooks(hooks ...event.Hook)
 func (W _git_golaxy_org_framework_IRuntime) ManagedAddTagHooks(tag string, hooks ...event.Hook) {
 	W.WManagedAddTagHooks(tag, hooks...)
 }
-func (W _git_golaxy_org_framework_IRuntime) ManagedCleanTagHooks(tag string) {
-	W.WManagedCleanTagHooks(tag)
-}
 func (W _git_golaxy_org_framework_IRuntime) ManagedGetTagHooks(tag string) []event.Hook {
 	return W.WManagedGetTagHooks(tag)
+}
+func (W _git_golaxy_org_framework_IRuntime) ManagedUnbindTagHooks(tag string) {
+	W.WManagedUnbindTagHooks(tag)
 }
 func (W _git_golaxy_org_framework_IRuntime) String() string {
 	if W.WString == nil {
@@ -286,9 +286,9 @@ func (W _git_golaxy_org_framework_IRuntimeInstantiation) Instantiation() framewo
 // _git_golaxy_org_framework_IService is an interface wrapper for IService type
 type _git_golaxy_org_framework_IService struct {
 	IValue                 interface{}
-	WBuildEntityAsync      func(prototype string) framework.EntityCreatorAsync
-	WBuildEntityPT         func(prototype string) core.EntityPTCreator
-	WBuildRuntime          func() framework.RuntimeCreator
+	WBuildEntityAsync      func(prototype string) *framework.EntityCreatorAsync
+	WBuildEntityPT         func(prototype string) *framework.EntityPTCreator
+	WBuildRuntime          func() *framework.RuntimeCreator
 	WCallAsync             func(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Ret], args ...any) async.AsyncRet
 	WCallDelegateAsync     func(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Ret], args ...any) async.AsyncRet
 	WCallDelegateVoidAsync func(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.AsyncRet
@@ -323,13 +323,13 @@ type _git_golaxy_org_framework_IService struct {
 	WValue                 func(key any) any
 }
 
-func (W _git_golaxy_org_framework_IService) BuildEntityAsync(prototype string) framework.EntityCreatorAsync {
+func (W _git_golaxy_org_framework_IService) BuildEntityAsync(prototype string) *framework.EntityCreatorAsync {
 	return W.WBuildEntityAsync(prototype)
 }
-func (W _git_golaxy_org_framework_IService) BuildEntityPT(prototype string) core.EntityPTCreator {
+func (W _git_golaxy_org_framework_IService) BuildEntityPT(prototype string) *framework.EntityPTCreator {
 	return W.WBuildEntityPT(prototype)
 }
-func (W _git_golaxy_org_framework_IService) BuildRuntime() framework.RuntimeCreator {
+func (W _git_golaxy_org_framework_IService) BuildRuntime() *framework.RuntimeCreator {
 	return W.WBuildRuntime()
 }
 func (W _git_golaxy_org_framework_IService) CallAsync(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Ret], args ...any) async.AsyncRet {

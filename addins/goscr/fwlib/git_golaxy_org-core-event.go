@@ -10,7 +10,6 @@ import (
 func init() {
 	Symbols["git.golaxy.org/core/event/event"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"Clean":                   reflect.ValueOf(event.Clean),
 		"DeclareEventId":          reflect.ValueOf(event.DeclareEventId),
 		"DeclareEventTabId":       reflect.ValueOf(event.DeclareEventTabId),
 		"ErrArgs":                 reflect.ValueOf(&event.ErrArgs).Elem(),
@@ -25,6 +24,7 @@ func init() {
 		"MakeEventTabId":          reflect.ValueOf(event.MakeEventTabId),
 		"Panicf":                  reflect.ValueOf(event.Panicf),
 		"Unbind":                  reflect.ValueOf(event.Unbind),
+		"UnbindHooks":             reflect.ValueOf(event.UnbindHooks),
 		"UnsafeEvent":             reflect.ValueOf(event.UnsafeEvent),
 
 		// type definitions
@@ -51,19 +51,19 @@ type _git_golaxy_org_core_event_IEvent struct {
 
 // _git_golaxy_org_core_event_IEventCtrl is an interface wrapper for IEventCtrl type
 type _git_golaxy_org_core_event_IEventCtrl struct {
-	IValue interface{}
-	WClean func()
-	WClose func()
-	WInit  func(autoRecover bool, reportError chan error, recursion event.EventRecursion)
-	WOpen  func()
+	IValue     interface{}
+	WDisable   func()
+	WEnable    func()
+	WInit      func(autoRecover bool, reportError chan error, recursion event.EventRecursion)
+	WUnbindAll func()
 }
 
-func (W _git_golaxy_org_core_event_IEventCtrl) Clean() { W.WClean() }
-func (W _git_golaxy_org_core_event_IEventCtrl) Close() { W.WClose() }
+func (W _git_golaxy_org_core_event_IEventCtrl) Disable() { W.WDisable() }
+func (W _git_golaxy_org_core_event_IEventCtrl) Enable()  { W.WEnable() }
 func (W _git_golaxy_org_core_event_IEventCtrl) Init(autoRecover bool, reportError chan error, recursion event.EventRecursion) {
 	W.WInit(autoRecover, reportError, recursion)
 }
-func (W _git_golaxy_org_core_event_IEventCtrl) Open() { W.WOpen() }
+func (W _git_golaxy_org_core_event_IEventCtrl) UnbindAll() { W.WUnbindAll() }
 
 // _git_golaxy_org_core_event_IEventTab is an interface wrapper for IEventTab type
 type _git_golaxy_org_core_event_IEventTab struct {

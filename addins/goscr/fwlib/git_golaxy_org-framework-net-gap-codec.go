@@ -10,12 +10,10 @@ import (
 func init() {
 	Symbols["git.golaxy.org/framework/net/gap/codec/codec"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"DefaultDecoder": reflect.ValueOf(codec.DefaultDecoder),
-		"DefaultEncoder": reflect.ValueOf(codec.DefaultEncoder),
-		"ErrDecode":      reflect.ValueOf(&codec.ErrDecode).Elem(),
-		"ErrEncode":      reflect.ValueOf(&codec.ErrEncode).Elem(),
-		"MakeDecoder":    reflect.ValueOf(codec.MakeDecoder),
-		"MakeEncoder":    reflect.ValueOf(codec.MakeEncoder),
+		"ErrDecode":  reflect.ValueOf(&codec.ErrDecode).Elem(),
+		"ErrEncode":  reflect.ValueOf(&codec.ErrEncode).Elem(),
+		"NewDecoder": reflect.ValueOf(codec.NewDecoder),
+		"NewEncoder": reflect.ValueOf(codec.NewEncoder),
 
 		// type definitions
 		"Decoder": reflect.ValueOf((*codec.Decoder)(nil)),
