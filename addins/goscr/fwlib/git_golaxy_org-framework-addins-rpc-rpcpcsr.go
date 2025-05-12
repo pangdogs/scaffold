@@ -17,6 +17,7 @@ func init() {
 		"CallEntity":                      reflect.ValueOf(rpcpcsr.CallEntity),
 		"CallRuntime":                     reflect.ValueOf(rpcpcsr.CallRuntime),
 		"CallService":                     reflect.ValueOf(rpcpcsr.CallService),
+		"DefaultValidateCliPermission":    reflect.ValueOf(rpcpcsr.DefaultValidateCliPermission),
 		"ErrAddInInactive":                reflect.ValueOf(&rpcpcsr.ErrAddInInactive).Elem(),
 		"ErrAddInNotFound":                reflect.ValueOf(&rpcpcsr.ErrAddInNotFound).Elem(),
 		"ErrAsyncMethodReturnedNil":       reflect.ValueOf(&rpcpcsr.ErrAsyncMethodReturnedNil).Elem(),

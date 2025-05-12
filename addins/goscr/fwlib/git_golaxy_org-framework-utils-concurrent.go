@@ -8,6 +8,7 @@ import (
 	"go/constant"
 	"go/token"
 	"reflect"
+	"time"
 )
 
 func init() {
@@ -29,14 +30,40 @@ func init() {
 		"Deduplicator":   reflect.ValueOf((*concurrent.Deduplicator)(nil)),
 		"Future":         reflect.ValueOf((*concurrent.Future)(nil)),
 		"Futures":        reflect.ValueOf((*concurrent.Futures)(nil)),
+		"IWatcher":       reflect.ValueOf((*concurrent.IWatcher)(nil)),
 		"RequestHandler": reflect.ValueOf((*concurrent.RequestHandler)(nil)),
 		"Resp":           reflect.ValueOf((*concurrent.Resp)(nil)),
 		"RespAsyncRet":   reflect.ValueOf((*concurrent.RespAsyncRet)(nil)),
 
 		// interface wrapper definitions
-		"_Resp": reflect.ValueOf((*_git_golaxy_org_framework_utils_concurrent_Resp)(nil)),
+		"_IWatcher": reflect.ValueOf((*_git_golaxy_org_framework_utils_concurrent_IWatcher)(nil)),
+		"_Resp":     reflect.ValueOf((*_git_golaxy_org_framework_utils_concurrent_Resp)(nil)),
 	}
 }
+
+// _git_golaxy_org_framework_utils_concurrent_IWatcher is an interface wrapper for IWatcher type
+type _git_golaxy_org_framework_utils_concurrent_IWatcher struct {
+	IValue      interface{}
+	WDeadline   func() (deadline time.Time, ok bool)
+	WDone       func() <-chan struct{}
+	WErr        func() error
+	WTerminate  func() async.AsyncRet
+	WTerminated func() async.AsyncRet
+	WValue      func(key any) any
+}
+
+func (W _git_golaxy_org_framework_utils_concurrent_IWatcher) Deadline() (deadline time.Time, ok bool) {
+	return W.WDeadline()
+}
+func (W _git_golaxy_org_framework_utils_concurrent_IWatcher) Done() <-chan struct{} { return W.WDone() }
+func (W _git_golaxy_org_framework_utils_concurrent_IWatcher) Err() error            { return W.WErr() }
+func (W _git_golaxy_org_framework_utils_concurrent_IWatcher) Terminate() async.AsyncRet {
+	return W.WTerminate()
+}
+func (W _git_golaxy_org_framework_utils_concurrent_IWatcher) Terminated() async.AsyncRet {
+	return W.WTerminated()
+}
+func (W _git_golaxy_org_framework_utils_concurrent_IWatcher) Value(key any) any { return W.WValue(key) }
 
 // _git_golaxy_org_framework_utils_concurrent_Resp is an interface wrapper for Resp type
 type _git_golaxy_org_framework_utils_concurrent_Resp struct {

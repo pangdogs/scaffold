@@ -17,7 +17,6 @@ func init() {
 		"AtLeastOnce":     reflect.ValueOf(broker.AtLeastOnce),
 		"AtMostOnce":      reflect.ValueOf(broker.AtMostOnce),
 		"EffectivelyOnce": reflect.ValueOf(broker.EffectivelyOnce),
-		"ErrUnsubscribed": reflect.ValueOf(&broker.ErrUnsubscribed).Elem(),
 		"ExactlyOnce":     reflect.ValueOf(broker.ExactlyOnce),
 		"MakeReadChan":    reflect.ValueOf(broker.MakeReadChan),
 		"MakeWriteChan":   reflect.ValueOf(broker.MakeWriteChan),
@@ -26,28 +25,18 @@ func init() {
 		"With":            reflect.ValueOf(&broker.With).Elem(),
 
 		// type definitions
-		"DeliveryReliability":     reflect.ValueOf((*broker.DeliveryReliability)(nil)),
-		"ErrorHandler":            reflect.ValueOf((*broker.ErrorHandler)(nil)),
-		"Event":                   reflect.ValueOf((*broker.Event)(nil)),
-		"EventHandler":            reflect.ValueOf((*broker.EventHandler)(nil)),
-		"IBroker":                 reflect.ValueOf((*broker.IBroker)(nil)),
-		"IChanSubscriber":         reflect.ValueOf((*broker.IChanSubscriber)(nil)),
-		"IChanSubscriberSettings": reflect.ValueOf((*broker.IChanSubscriberSettings)(nil)),
-		"ISubscriber":             reflect.ValueOf((*broker.ISubscriber)(nil)),
-		"ISubscriberSettings":     reflect.ValueOf((*broker.ISubscriberSettings)(nil)),
-		"ISyncSubscriber":         reflect.ValueOf((*broker.ISyncSubscriber)(nil)),
-		"ISyncSubscriberSettings": reflect.ValueOf((*broker.ISyncSubscriberSettings)(nil)),
-		"SubscriberOptions":       reflect.ValueOf((*broker.SubscriberOptions)(nil)),
-		"UnsubscribedCB":          reflect.ValueOf((*broker.UnsubscribedCB)(nil)),
+		"DeliveryReliability": reflect.ValueOf((*broker.DeliveryReliability)(nil)),
+		"ErrorHandler":        reflect.ValueOf((*broker.ErrorHandler)(nil)),
+		"Event":               reflect.ValueOf((*broker.Event)(nil)),
+		"EventHandler":        reflect.ValueOf((*broker.EventHandler)(nil)),
+		"IBroker":             reflect.ValueOf((*broker.IBroker)(nil)),
+		"ISubscriber":         reflect.ValueOf((*broker.ISubscriber)(nil)),
+		"SubscriberOptions":   reflect.ValueOf((*broker.SubscriberOptions)(nil)),
+		"UnsubscribedCB":      reflect.ValueOf((*broker.UnsubscribedCB)(nil)),
 
 		// interface wrapper definitions
-		"_IBroker":                 reflect.ValueOf((*_git_golaxy_org_framework_addins_broker_IBroker)(nil)),
-		"_IChanSubscriber":         reflect.ValueOf((*_git_golaxy_org_framework_addins_broker_IChanSubscriber)(nil)),
-		"_IChanSubscriberSettings": reflect.ValueOf((*_git_golaxy_org_framework_addins_broker_IChanSubscriberSettings)(nil)),
-		"_ISubscriber":             reflect.ValueOf((*_git_golaxy_org_framework_addins_broker_ISubscriber)(nil)),
-		"_ISubscriberSettings":     reflect.ValueOf((*_git_golaxy_org_framework_addins_broker_ISubscriberSettings)(nil)),
-		"_ISyncSubscriber":         reflect.ValueOf((*_git_golaxy_org_framework_addins_broker_ISyncSubscriber)(nil)),
-		"_ISyncSubscriberSettings": reflect.ValueOf((*_git_golaxy_org_framework_addins_broker_ISyncSubscriberSettings)(nil)),
+		"_IBroker":     reflect.ValueOf((*_git_golaxy_org_framework_addins_broker_IBroker)(nil)),
+		"_ISubscriber": reflect.ValueOf((*_git_golaxy_org_framework_addins_broker_ISubscriber)(nil)),
 	}
 }
 
@@ -60,14 +49,8 @@ type _git_golaxy_org_framework_addins_broker_IBroker struct {
 	WGetSeparator           func() string
 	WPublish                func(ctx context.Context, topic string, data []byte) error
 	WSubscribe              func(ctx context.Context, pattern string, settings ...option.Setting[broker.SubscriberOptions]) (broker.ISubscriber, error)
-	WSubscribeChan          func(ctx context.Context, pattern string, settings ...option.Setting[broker.SubscriberOptions]) (broker.IChanSubscriber, error)
-	WSubscribeChanf         func(ctx context.Context, format string, args ...any) broker.IChanSubscriberSettings
-	WSubscribeChanp         func(ctx context.Context, elems ...string) broker.IChanSubscriberSettings
-	WSubscribeSync          func(ctx context.Context, pattern string, settings ...option.Setting[broker.SubscriberOptions]) (broker.ISyncSubscriber, error)
-	WSubscribeSyncf         func(ctx context.Context, format string, args ...any) broker.ISyncSubscriberSettings
-	WSubscribeSyncp         func(ctx context.Context, elems ...string) broker.ISyncSubscriberSettings
-	WSubscribef             func(ctx context.Context, format string, args ...any) broker.ISubscriberSettings
-	WSubscribep             func(ctx context.Context, elems ...string) broker.ISubscriberSettings
+	WSubscribef             func(ctx context.Context, format string, args ...any) func(settings ...option.Setting[broker.SubscriberOptions]) (broker.ISubscriber, error)
+	WSubscribep             func(ctx context.Context, elems ...string) func(settings ...option.Setting[broker.SubscriberOptions]) (broker.ISubscriber, error)
 }
 
 func (W _git_golaxy_org_framework_addins_broker_IBroker) Flush(ctx context.Context) error {
@@ -88,77 +71,11 @@ func (W _git_golaxy_org_framework_addins_broker_IBroker) Publish(ctx context.Con
 func (W _git_golaxy_org_framework_addins_broker_IBroker) Subscribe(ctx context.Context, pattern string, settings ...option.Setting[broker.SubscriberOptions]) (broker.ISubscriber, error) {
 	return W.WSubscribe(ctx, pattern, settings...)
 }
-func (W _git_golaxy_org_framework_addins_broker_IBroker) SubscribeChan(ctx context.Context, pattern string, settings ...option.Setting[broker.SubscriberOptions]) (broker.IChanSubscriber, error) {
-	return W.WSubscribeChan(ctx, pattern, settings...)
-}
-func (W _git_golaxy_org_framework_addins_broker_IBroker) SubscribeChanf(ctx context.Context, format string, args ...any) broker.IChanSubscriberSettings {
-	return W.WSubscribeChanf(ctx, format, args...)
-}
-func (W _git_golaxy_org_framework_addins_broker_IBroker) SubscribeChanp(ctx context.Context, elems ...string) broker.IChanSubscriberSettings {
-	return W.WSubscribeChanp(ctx, elems...)
-}
-func (W _git_golaxy_org_framework_addins_broker_IBroker) SubscribeSync(ctx context.Context, pattern string, settings ...option.Setting[broker.SubscriberOptions]) (broker.ISyncSubscriber, error) {
-	return W.WSubscribeSync(ctx, pattern, settings...)
-}
-func (W _git_golaxy_org_framework_addins_broker_IBroker) SubscribeSyncf(ctx context.Context, format string, args ...any) broker.ISyncSubscriberSettings {
-	return W.WSubscribeSyncf(ctx, format, args...)
-}
-func (W _git_golaxy_org_framework_addins_broker_IBroker) SubscribeSyncp(ctx context.Context, elems ...string) broker.ISyncSubscriberSettings {
-	return W.WSubscribeSyncp(ctx, elems...)
-}
-func (W _git_golaxy_org_framework_addins_broker_IBroker) Subscribef(ctx context.Context, format string, args ...any) broker.ISubscriberSettings {
+func (W _git_golaxy_org_framework_addins_broker_IBroker) Subscribef(ctx context.Context, format string, args ...any) func(settings ...option.Setting[broker.SubscriberOptions]) (broker.ISubscriber, error) {
 	return W.WSubscribef(ctx, format, args...)
 }
-func (W _git_golaxy_org_framework_addins_broker_IBroker) Subscribep(ctx context.Context, elems ...string) broker.ISubscriberSettings {
+func (W _git_golaxy_org_framework_addins_broker_IBroker) Subscribep(ctx context.Context, elems ...string) func(settings ...option.Setting[broker.SubscriberOptions]) (broker.ISubscriber, error) {
 	return W.WSubscribep(ctx, elems...)
-}
-
-// _git_golaxy_org_framework_addins_broker_IChanSubscriber is an interface wrapper for IChanSubscriber type
-type _git_golaxy_org_framework_addins_broker_IChanSubscriber struct {
-	IValue        interface{}
-	WDeadline     func() (deadline time.Time, ok bool)
-	WDone         func() <-chan struct{}
-	WErr          func() error
-	WEventChan    func() (<-chan broker.Event, error)
-	WPattern      func() string
-	WQueue        func() string
-	WUnsubscribe  func() async.AsyncRet
-	WUnsubscribed func() async.AsyncRet
-	WValue        func(key any) any
-}
-
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Deadline() (deadline time.Time, ok bool) {
-	return W.WDeadline()
-}
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Done() <-chan struct{} {
-	return W.WDone()
-}
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Err() error { return W.WErr() }
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) EventChan() (<-chan broker.Event, error) {
-	return W.WEventChan()
-}
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Pattern() string {
-	return W.WPattern()
-}
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Queue() string { return W.WQueue() }
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Unsubscribe() async.AsyncRet {
-	return W.WUnsubscribe()
-}
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Unsubscribed() async.AsyncRet {
-	return W.WUnsubscribed()
-}
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriber) Value(key any) any {
-	return W.WValue(key)
-}
-
-// _git_golaxy_org_framework_addins_broker_IChanSubscriberSettings is an interface wrapper for IChanSubscriberSettings type
-type _git_golaxy_org_framework_addins_broker_IChanSubscriberSettings struct {
-	IValue interface{}
-	WWith  func(settings ...option.Setting[broker.SubscriberOptions]) (broker.IChanSubscriber, error)
-}
-
-func (W _git_golaxy_org_framework_addins_broker_IChanSubscriberSettings) With(settings ...option.Setting[broker.SubscriberOptions]) (broker.IChanSubscriber, error) {
-	return W.WWith(settings...)
 }
 
 // _git_golaxy_org_framework_addins_broker_ISubscriber is an interface wrapper for ISubscriber type
@@ -167,6 +84,7 @@ type _git_golaxy_org_framework_addins_broker_ISubscriber struct {
 	WDeadline     func() (deadline time.Time, ok bool)
 	WDone         func() <-chan struct{}
 	WErr          func() error
+	WEventChan    func() <-chan broker.Event
 	WPattern      func() string
 	WQueue        func() string
 	WUnsubscribe  func() async.AsyncRet
@@ -179,8 +97,11 @@ func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Deadline() (deadlin
 }
 func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Done() <-chan struct{} { return W.WDone() }
 func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Err() error            { return W.WErr() }
-func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Pattern() string       { return W.WPattern() }
-func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Queue() string         { return W.WQueue() }
+func (W _git_golaxy_org_framework_addins_broker_ISubscriber) EventChan() <-chan broker.Event {
+	return W.WEventChan()
+}
+func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Pattern() string { return W.WPattern() }
+func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Queue() string   { return W.WQueue() }
 func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Unsubscribe() async.AsyncRet {
 	return W.WUnsubscribe()
 }
@@ -188,61 +109,3 @@ func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Unsubscribed() asyn
 	return W.WUnsubscribed()
 }
 func (W _git_golaxy_org_framework_addins_broker_ISubscriber) Value(key any) any { return W.WValue(key) }
-
-// _git_golaxy_org_framework_addins_broker_ISubscriberSettings is an interface wrapper for ISubscriberSettings type
-type _git_golaxy_org_framework_addins_broker_ISubscriberSettings struct {
-	IValue interface{}
-	WWith  func(settings ...option.Setting[broker.SubscriberOptions]) (broker.ISubscriber, error)
-}
-
-func (W _git_golaxy_org_framework_addins_broker_ISubscriberSettings) With(settings ...option.Setting[broker.SubscriberOptions]) (broker.ISubscriber, error) {
-	return W.WWith(settings...)
-}
-
-// _git_golaxy_org_framework_addins_broker_ISyncSubscriber is an interface wrapper for ISyncSubscriber type
-type _git_golaxy_org_framework_addins_broker_ISyncSubscriber struct {
-	IValue        interface{}
-	WDeadline     func() (deadline time.Time, ok bool)
-	WDone         func() <-chan struct{}
-	WErr          func() error
-	WNext         func() (broker.Event, error)
-	WPattern      func() string
-	WQueue        func() string
-	WUnsubscribe  func() async.AsyncRet
-	WUnsubscribed func() async.AsyncRet
-	WValue        func(key any) any
-}
-
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Deadline() (deadline time.Time, ok bool) {
-	return W.WDeadline()
-}
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Done() <-chan struct{} {
-	return W.WDone()
-}
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Err() error { return W.WErr() }
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Next() (broker.Event, error) {
-	return W.WNext()
-}
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Pattern() string {
-	return W.WPattern()
-}
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Queue() string { return W.WQueue() }
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Unsubscribe() async.AsyncRet {
-	return W.WUnsubscribe()
-}
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Unsubscribed() async.AsyncRet {
-	return W.WUnsubscribed()
-}
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriber) Value(key any) any {
-	return W.WValue(key)
-}
-
-// _git_golaxy_org_framework_addins_broker_ISyncSubscriberSettings is an interface wrapper for ISyncSubscriberSettings type
-type _git_golaxy_org_framework_addins_broker_ISyncSubscriberSettings struct {
-	IValue interface{}
-	WWith  func(settings ...option.Setting[broker.SubscriberOptions]) (broker.ISyncSubscriber, error)
-}
-
-func (W _git_golaxy_org_framework_addins_broker_ISyncSubscriberSettings) With(settings ...option.Setting[broker.SubscriberOptions]) (broker.ISyncSubscriber, error) {
-	return W.WWith(settings...)
-}

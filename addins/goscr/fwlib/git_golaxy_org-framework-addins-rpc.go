@@ -7,6 +7,8 @@ import (
 	"git.golaxy.org/framework/addins/rpc"
 	"git.golaxy.org/framework/addins/rpc/callpath"
 	"git.golaxy.org/framework/addins/rpcstack"
+	"go/constant"
+	"go/token"
 	"reflect"
 )
 
@@ -15,21 +17,37 @@ func init() {
 		// function, constant and variable definitions
 		"AssertVoid":                   reflect.ValueOf(rpc.AssertVoid),
 		"Asserts":                      reflect.ValueOf(rpc.Asserts),
+		"EntitySelf":                   reflect.ValueOf(constant.MakeFromLiteral("\"\"", token.STRING, 0)),
 		"ErrMethodResultCountMismatch": reflect.ValueOf(&rpc.ErrMethodResultCountMismatch).Elem(),
 		"ErrMethodResultTypeMismatch":  reflect.ValueOf(&rpc.ErrMethodResultTypeMismatch).Elem(),
 		"Install":                      reflect.ValueOf(&rpc.Install).Elem(),
+		"Main":                         reflect.ValueOf(constant.MakeFromLiteral("\"\"", token.STRING, 0)),
 		"Name":                         reflect.ValueOf(&rpc.Name).Elem(),
+		"ProxyEntity":                  reflect.ValueOf(rpc.ProxyEntity),
+		"ProxyGroup":                   reflect.ValueOf(rpc.ProxyGroup),
+		"ProxyRuntime":                 reflect.ValueOf(rpc.ProxyRuntime),
+		"ProxyService":                 reflect.ValueOf(rpc.ProxyService),
 		"ResultVoid":                   reflect.ValueOf(rpc.ResultVoid),
 		"Results":                      reflect.ValueOf(rpc.Results),
+		"RuntimeSelf":                  reflect.ValueOf(constant.MakeFromLiteral("\"\"", token.STRING, 0)),
+		"ServiceSelf":                  reflect.ValueOf(constant.MakeFromLiteral("\"\"", token.STRING, 0)),
 		"Uninstall":                    reflect.ValueOf(&rpc.Uninstall).Elem(),
+		"UntrackedProxyEntity":         reflect.ValueOf(rpc.UntrackedProxyEntity),
+		"UntrackedProxyGroup":          reflect.ValueOf(rpc.UntrackedProxyGroup),
+		"UntrackedProxyRuntime":        reflect.ValueOf(rpc.UntrackedProxyRuntime),
+		"UntrackedProxyService":        reflect.ValueOf(rpc.UntrackedProxyService),
 		"Using":                        reflect.ValueOf(&rpc.Using).Elem(),
 		"With":                         reflect.ValueOf(&rpc.With).Elem(),
 
 		// type definitions
-		"IRPC":         reflect.ValueOf((*rpc.IRPC)(nil)),
-		"RPCOptions":   reflect.ValueOf((*rpc.RPCOptions)(nil)),
-		"ResultTuple0": reflect.ValueOf((*rpc.ResultTuple0)(nil)),
-		"ResultValues": reflect.ValueOf((*rpc.ResultValues)(nil)),
+		"EntityProxied":  reflect.ValueOf((*rpc.EntityProxied)(nil)),
+		"GroupProxied":   reflect.ValueOf((*rpc.GroupProxied)(nil)),
+		"IRPC":           reflect.ValueOf((*rpc.IRPC)(nil)),
+		"RPCOptions":     reflect.ValueOf((*rpc.RPCOptions)(nil)),
+		"ResultTuple0":   reflect.ValueOf((*rpc.ResultTuple0)(nil)),
+		"ResultValues":   reflect.ValueOf((*rpc.ResultValues)(nil)),
+		"RuntimeProxied": reflect.ValueOf((*rpc.RuntimeProxied)(nil)),
+		"ServiceProxied": reflect.ValueOf((*rpc.ServiceProxied)(nil)),
 
 		// interface wrapper definitions
 		"_IRPC": reflect.ValueOf((*_git_golaxy_org_framework_addins_rpc_IRPC)(nil)),

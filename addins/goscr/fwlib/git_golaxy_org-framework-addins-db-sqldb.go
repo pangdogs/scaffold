@@ -28,10 +28,14 @@ func init() {
 
 // _git_golaxy_org_framework_addins_db_sqldb_ISQLDB is an interface wrapper for ISQLDB type
 type _git_golaxy_org_framework_addins_db_sqldb_ISQLDB struct {
-	IValue interface{}
-	WSQLDB func(tag string) *gorm.DB
+	IValue          interface{}
+	WReflectedSQLDB func(tag string) reflect.Value
+	WSQLDB          func(tag string) *gorm.DB
 }
 
+func (W _git_golaxy_org_framework_addins_db_sqldb_ISQLDB) ReflectedSQLDB(tag string) reflect.Value {
+	return W.WReflectedSQLDB(tag)
+}
 func (W _git_golaxy_org_framework_addins_db_sqldb_ISQLDB) SQLDB(tag string) *gorm.DB {
 	return W.WSQLDB(tag)
 }

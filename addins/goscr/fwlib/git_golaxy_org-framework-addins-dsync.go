@@ -19,17 +19,15 @@ func init() {
 		"With":           reflect.ValueOf(&dsync.With).Elem(),
 
 		// type definitions
-		"DelayFunc":          reflect.ValueOf((*dsync.DelayFunc)(nil)),
-		"DistMutexOptions":   reflect.ValueOf((*dsync.DistMutexOptions)(nil)),
-		"GenValueFunc":       reflect.ValueOf((*dsync.GenValueFunc)(nil)),
-		"IDistMutex":         reflect.ValueOf((*dsync.IDistMutex)(nil)),
-		"IDistMutexSettings": reflect.ValueOf((*dsync.IDistMutexSettings)(nil)),
-		"IDistSync":          reflect.ValueOf((*dsync.IDistSync)(nil)),
+		"DelayFunc":        reflect.ValueOf((*dsync.DelayFunc)(nil)),
+		"DistMutexOptions": reflect.ValueOf((*dsync.DistMutexOptions)(nil)),
+		"GenValueFunc":     reflect.ValueOf((*dsync.GenValueFunc)(nil)),
+		"IDistMutex":       reflect.ValueOf((*dsync.IDistMutex)(nil)),
+		"IDistSync":        reflect.ValueOf((*dsync.IDistSync)(nil)),
 
 		// interface wrapper definitions
-		"_IDistMutex":         reflect.ValueOf((*_git_golaxy_org_framework_addins_dsync_IDistMutex)(nil)),
-		"_IDistMutexSettings": reflect.ValueOf((*_git_golaxy_org_framework_addins_dsync_IDistMutexSettings)(nil)),
-		"_IDistSync":          reflect.ValueOf((*_git_golaxy_org_framework_addins_dsync_IDistSync)(nil)),
+		"_IDistMutex": reflect.ValueOf((*_git_golaxy_org_framework_addins_dsync_IDistMutex)(nil)),
+		"_IDistSync":  reflect.ValueOf((*_git_golaxy_org_framework_addins_dsync_IDistSync)(nil)),
 	}
 }
 
@@ -61,23 +59,13 @@ func (W _git_golaxy_org_framework_addins_dsync_IDistMutex) Valid(ctx context.Con
 }
 func (W _git_golaxy_org_framework_addins_dsync_IDistMutex) Value() string { return W.WValue() }
 
-// _git_golaxy_org_framework_addins_dsync_IDistMutexSettings is an interface wrapper for IDistMutexSettings type
-type _git_golaxy_org_framework_addins_dsync_IDistMutexSettings struct {
-	IValue interface{}
-	WWith  func(settings ...option.Setting[dsync.DistMutexOptions]) dsync.IDistMutex
-}
-
-func (W _git_golaxy_org_framework_addins_dsync_IDistMutexSettings) With(settings ...option.Setting[dsync.DistMutexOptions]) dsync.IDistMutex {
-	return W.WWith(settings...)
-}
-
 // _git_golaxy_org_framework_addins_dsync_IDistSync is an interface wrapper for IDistSync type
 type _git_golaxy_org_framework_addins_dsync_IDistSync struct {
 	IValue        interface{}
 	WGetSeparator func() string
 	WNewMutex     func(name string, settings ...option.Setting[dsync.DistMutexOptions]) dsync.IDistMutex
-	WNewMutexf    func(format string, args ...any) dsync.IDistMutexSettings
-	WNewMutexp    func(elems ...string) dsync.IDistMutexSettings
+	WNewMutexf    func(format string, args ...any) func(settings ...option.Setting[dsync.DistMutexOptions]) dsync.IDistMutex
+	WNewMutexp    func(elems ...string) func(settings ...option.Setting[dsync.DistMutexOptions]) dsync.IDistMutex
 }
 
 func (W _git_golaxy_org_framework_addins_dsync_IDistSync) GetSeparator() string {
@@ -86,9 +74,9 @@ func (W _git_golaxy_org_framework_addins_dsync_IDistSync) GetSeparator() string 
 func (W _git_golaxy_org_framework_addins_dsync_IDistSync) NewMutex(name string, settings ...option.Setting[dsync.DistMutexOptions]) dsync.IDistMutex {
 	return W.WNewMutex(name, settings...)
 }
-func (W _git_golaxy_org_framework_addins_dsync_IDistSync) NewMutexf(format string, args ...any) dsync.IDistMutexSettings {
+func (W _git_golaxy_org_framework_addins_dsync_IDistSync) NewMutexf(format string, args ...any) func(settings ...option.Setting[dsync.DistMutexOptions]) dsync.IDistMutex {
 	return W.WNewMutexf(format, args...)
 }
-func (W _git_golaxy_org_framework_addins_dsync_IDistSync) NewMutexp(elems ...string) dsync.IDistMutexSettings {
+func (W _git_golaxy_org_framework_addins_dsync_IDistSync) NewMutexp(elems ...string) func(settings ...option.Setting[dsync.DistMutexOptions]) dsync.IDistMutex {
 	return W.WNewMutexp(elems...)
 }

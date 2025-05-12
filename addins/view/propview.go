@@ -31,7 +31,6 @@ import (
 	"git.golaxy.org/framework/addins/log"
 	"git.golaxy.org/framework/addins/rpc"
 	"git.golaxy.org/framework/addins/rpc/rpcli"
-	"git.golaxy.org/framework/addins/rpc/rpcutil"
 	"git.golaxy.org/framework/net/gap/variant"
 	"reflect"
 )
@@ -81,7 +80,7 @@ func (m *_PropView) load(ps *PropSync, service string) ([]byte, int64, error) {
 		return nil, 0, errors.New("can't load data from the service itself")
 	}
 	return rpc.Assert3[[]byte, int64, error](
-		<-rpcutil.ProxyRuntime(m.rt, ps.entity.GetId()).RPC(service, Name, "DoLoad", ps.entity.GetId(), ps.name),
+		<-rpc.ProxyRuntime(m.rt, ps.entity.GetId()).RPC(service, Name, "DoLoad", ps.entity.GetId(), ps.name),
 	)
 }
 
@@ -90,7 +89,7 @@ func (m *_PropView) save(ps *PropSync, service string, data []byte, revision int
 		return errors.New("can't save data to the service itself")
 	}
 	return rpc.Assert1[error](
-		<-rpcutil.ProxyRuntime(m.rt, ps.entity.GetId()).RPC(service, Name, "DoSave", ps.entity.GetId(), ps.name, data, revision),
+		<-rpc.ProxyRuntime(m.rt, ps.entity.GetId()).RPC(service, Name, "DoSave", ps.entity.GetId(), ps.name, data, revision),
 	)
 }
 
@@ -98,20 +97,20 @@ func (m *_PropView) sync(ps *PropSync, revision int64, op string, args ...any) {
 	for _, dst := range ps.syncTo {
 		if gate.CliDetails.DomainUnicast.Equal(dst) {
 			// 同步至实体客户端
-			rpcutil.ProxyEntity(m.rt, ps.entity.GetId()).CliOnewayRPC(rpcli.Main, "DoSync", ps.name, revision, op, args)
+			rpc.ProxyEntity(m.rt, ps.entity.GetId()).CliOnewayRPC(rpcli.Main, "DoSync", ps.name, revision, op, args)
 
 		} else if gate.CliDetails.DomainMulticast.Contains(dst) {
 			// 同步至指定分组
 			group, _ := gate.CliDetails.DomainMulticast.Relative(dst)
-			rpcutil.ProxyGroup(m.rt, dst).CliOnewayRPC(group, "DoSync", ps.entity.GetId(), ps.name, revision, op, args)
+			rpc.ProxyGroup(m.rt, dst).CliOnewayRPC(group, "DoSync", ps.entity.GetId(), ps.name, revision, op, args)
 
 		} else if gate.CliDetails.DomainBroadcast.Equal(dst) {
 			// 同步至包含实体的所有分组
-			rpcutil.ProxyEntity(m.rt, ps.entity.GetId()).BroadcastCliOnewayRPC(rpcli.Main, "DoSync", ps.name, revision, op, args)
+			rpc.ProxyEntity(m.rt, ps.entity.GetId()).BroadcastCliOnewayRPC(rpcli.Main, "DoSync", ps.name, revision, op, args)
 
 		} else {
 			// 同步至其他服务
-			core.Await(m.rt, rpcutil.ProxyRuntime(m.rt, ps.entity.GetId()).RPC(dst, Name, "DoSync", ps.entity.GetId(), ps.name, revision, op, args)).
+			core.Await(m.rt, rpc.ProxyRuntime(m.rt, ps.entity.GetId()).RPC(dst, Name, "DoSync", ps.entity.GetId(), ps.name, revision, op, args)).
 				AnyVoid(m.syncRet, dst, ps.entity, ps.name, revision, op)
 		}
 	}

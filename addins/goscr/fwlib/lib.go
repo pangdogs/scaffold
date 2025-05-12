@@ -25,6 +25,8 @@ import (
 	_ "github.com/redis/go-redis/v9"
 	_ "go.mongodb.org/mongo-driver/mongo"
 	_ "gorm.io/driver/mysql"
+	_ "gorm.io/driver/postgres"
+	_ "gorm.io/driver/sqlserver"
 	_ "gorm.io/gorm"
 	"reflect"
 )
@@ -76,7 +78,7 @@ var Symbols = map[string]map[string]reflect.Value{}
 //go:generate yaegi extract git.golaxy.org/framework/addins/rpc
 //go:generate yaegi extract git.golaxy.org/framework/addins/rpcstack
 //go:generate yaegi extract git.golaxy.org/framework/addins/broker/nats_broker
-//go:generate yaegi extract git.golaxy.org/framework/addins/db/dbutil
+//go:generate yaegi extract git.golaxy.org/framework/addins/db/dbtypes
 //go:generate yaegi extract git.golaxy.org/framework/addins/db/mongodb
 //go:generate yaegi extract git.golaxy.org/framework/addins/db/redisdb
 //go:generate yaegi extract git.golaxy.org/framework/addins/db/sqldb
@@ -91,7 +93,6 @@ var Symbols = map[string]map[string]reflect.Value{}
 //go:generate yaegi extract git.golaxy.org/framework/addins/rpc/callpath
 //go:generate yaegi extract git.golaxy.org/framework/addins/rpc/rpcli
 //go:generate yaegi extract git.golaxy.org/framework/addins/rpc/rpcpcsr
-//go:generate yaegi extract git.golaxy.org/framework/addins/rpc/rpcutil
 //go:generate yaegi extract git.golaxy.org/framework/utils/binaryutil
 //go:generate yaegi extract git.golaxy.org/framework/utils/concurrent
 

@@ -4,22 +4,31 @@ package fwlib
 
 import (
 	"git.golaxy.org/framework/addins/db"
-	"go/constant"
-	"go/token"
 	"reflect"
 )
 
 func init() {
 	Symbols["git.golaxy.org/framework/addins/db/db"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"MongoDB":    reflect.ValueOf(constant.MakeFromLiteral("\"mongodb\"", token.STRING, 0)),
-		"MySQL":      reflect.ValueOf(constant.MakeFromLiteral("\"mysql\"", token.STRING, 0)),
-		"PostgreSQL": reflect.ValueOf(constant.MakeFromLiteral("\"postgresql\"", token.STRING, 0)),
-		"Redis":      reflect.ValueOf(constant.MakeFromLiteral("\"redis\"", token.STRING, 0)),
-		"SQLServer":  reflect.ValueOf(constant.MakeFromLiteral("\"sqlserver\"", token.STRING, 0)),
-		"SQLite":     reflect.ValueOf(constant.MakeFromLiteral("\"sqlite\"", token.STRING, 0)),
+		"InjectDB":   reflect.ValueOf(db.InjectDB),
+		"InjectDBRV": reflect.ValueOf(db.InjectDBRV),
+		"MigrateDB":  reflect.ValueOf(db.MigrateDB),
+		"MongoDB":    reflect.ValueOf(db.MongoDB),
+		"RedisDB":    reflect.ValueOf(db.RedisDB),
+		"SQLDB":      reflect.ValueOf(db.SQLDB),
 
 		// type definitions
-		"DBInfo": reflect.ValueOf((*db.DBInfo)(nil)),
+		"IMigrateDB": reflect.ValueOf((*db.IMigrateDB)(nil)),
+
+		// interface wrapper definitions
+		"_IMigrateDB": reflect.ValueOf((*_git_golaxy_org_framework_addins_db_IMigrateDB)(nil)),
 	}
 }
+
+// _git_golaxy_org_framework_addins_db_IMigrateDB is an interface wrapper for IMigrateDB type
+type _git_golaxy_org_framework_addins_db_IMigrateDB struct {
+	IValue     interface{}
+	WMigrateDB func() error
+}
+
+func (W _git_golaxy_org_framework_addins_db_IMigrateDB) MigrateDB() error { return W.WMigrateDB() }

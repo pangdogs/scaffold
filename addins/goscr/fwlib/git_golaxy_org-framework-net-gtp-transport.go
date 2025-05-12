@@ -21,7 +21,7 @@ func init() {
 		"ErrIncorrectMsg":            reflect.ValueOf(&transport.ErrIncorrectMsg).Elem(),
 		"ErrNetIO":                   reflect.ValueOf(&transport.ErrNetIO).Elem(),
 		"ErrProtocol":                reflect.ValueOf(&transport.ErrProtocol).Elem(),
-		"ErrRenew":                   reflect.ValueOf(&transport.ErrRenew).Elem(),
+		"ErrResume":                  reflect.ValueOf(&transport.ErrResume).Elem(),
 		"ErrShortBuffer":             reflect.ValueOf(&transport.ErrShortBuffer).Elem(),
 		"ErrShortWrite":              reflect.ValueOf(&transport.ErrShortWrite).Elem(),
 		"ErrSynchronizer":            reflect.ValueOf(&transport.ErrSynchronizer).Elem(),

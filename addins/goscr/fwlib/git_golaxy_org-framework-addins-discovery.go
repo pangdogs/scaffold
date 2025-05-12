@@ -73,19 +73,29 @@ func (W _git_golaxy_org_framework_addins_discovery_IRegistry) Watch(ctx context.
 // _git_golaxy_org_framework_addins_discovery_IWatcher is an interface wrapper for IWatcher type
 type _git_golaxy_org_framework_addins_discovery_IWatcher struct {
 	IValue      interface{}
+	WDeadline   func() (deadline time.Time, ok bool)
+	WDone       func() <-chan struct{}
+	WErr        func() error
 	WNext       func() (*discovery.Event, error)
 	WPattern    func() string
-	WTerminate  func() async.AsyncRet
-	WTerminated func() async.AsyncRet
+	WTerminate  func() async.AsyncRetT[any]
+	WTerminated func() async.AsyncRetT[any]
+	WValue      func(key any) any
 }
 
+func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Deadline() (deadline time.Time, ok bool) {
+	return W.WDeadline()
+}
+func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Done() <-chan struct{} { return W.WDone() }
+func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Err() error            { return W.WErr() }
 func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Next() (*discovery.Event, error) {
 	return W.WNext()
 }
 func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Pattern() string { return W.WPattern() }
-func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminate() async.AsyncRet {
+func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminate() async.AsyncRetT[any] {
 	return W.WTerminate()
 }
-func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminated() async.AsyncRet {
+func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminated() async.AsyncRetT[any] {
 	return W.WTerminated()
 }
+func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Value(key any) any { return W.WValue(key) }

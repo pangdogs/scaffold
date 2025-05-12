@@ -11,6 +11,7 @@ import (
 	"git.golaxy.org/framework/addins/gate"
 	"git.golaxy.org/framework/net/gtp/transport"
 	"git.golaxy.org/framework/utils/binaryutil"
+	"git.golaxy.org/framework/utils/concurrent"
 	"net"
 	"reflect"
 	"time"
@@ -39,7 +40,6 @@ func init() {
 		"GateOptions":                reflect.ValueOf((*gate.GateOptions)(nil)),
 		"IGate":                      reflect.ValueOf((*gate.IGate)(nil)),
 		"ISession":                   reflect.ValueOf((*gate.ISession)(nil)),
-		"IWatcher":                   reflect.ValueOf((*gate.IWatcher)(nil)),
 		"SessionRecvDataHandler":     reflect.ValueOf((*gate.SessionRecvDataHandler)(nil)),
 		"SessionRecvEventHandler":    reflect.ValueOf((*gate.SessionRecvEventHandler)(nil)),
 		"SessionSettings":            reflect.ValueOf((*gate.SessionSettings)(nil)),
@@ -50,7 +50,6 @@ func init() {
 		// interface wrapper definitions
 		"_IGate":    reflect.ValueOf((*_git_golaxy_org_framework_addins_gate_IGate)(nil)),
 		"_ISession": reflect.ValueOf((*_git_golaxy_org_framework_addins_gate_ISession)(nil)),
-		"_IWatcher": reflect.ValueOf((*_git_golaxy_org_framework_addins_gate_IWatcher)(nil)),
 	}
 }
 
@@ -61,7 +60,7 @@ type _git_golaxy_org_framework_addins_gate_IGate struct {
 	WEachSessions  func(fun generic.Action1[gate.ISession])
 	WGetSession    func(sessionId uid.Id) (gate.ISession, bool)
 	WRangeSessions func(fun generic.Func1[gate.ISession, bool])
-	WWatch         func(ctx context.Context, handler gate.SessionStateChangedHandler) gate.IWatcher
+	WWatchSession  func(ctx context.Context, handler gate.SessionStateChangedHandler) concurrent.IWatcher
 }
 
 func (W _git_golaxy_org_framework_addins_gate_IGate) CountSessions() int { return W.WCountSessions() }
@@ -74,36 +73,37 @@ func (W _git_golaxy_org_framework_addins_gate_IGate) GetSession(sessionId uid.Id
 func (W _git_golaxy_org_framework_addins_gate_IGate) RangeSessions(fun generic.Func1[gate.ISession, bool]) {
 	W.WRangeSessions(fun)
 }
-func (W _git_golaxy_org_framework_addins_gate_IGate) Watch(ctx context.Context, handler gate.SessionStateChangedHandler) gate.IWatcher {
-	return W.WWatch(ctx, handler)
+func (W _git_golaxy_org_framework_addins_gate_IGate) WatchSession(ctx context.Context, handler gate.SessionStateChangedHandler) concurrent.IWatcher {
+	return W.WWatchSession(ctx, handler)
 }
 
 // _git_golaxy_org_framework_addins_gate_ISession is an interface wrapper for ISession type
 type _git_golaxy_org_framework_addins_gate_ISession struct {
-	IValue         interface{}
-	WClose         func(err error) async.AsyncRet
-	WClosed        func() async.AsyncRet
-	WDeadline      func() (deadline time.Time, ok bool)
-	WDone          func() <-chan struct{}
-	WErr           func() error
-	WGetContext    func() service.Context
-	WGetId         func() uid.Id
-	WGetLocalAddr  func() net.Addr
-	WGetRemoteAddr func() net.Addr
-	WGetSettings   func() gate.SessionSettings
-	WGetState      func() gate.SessionState
-	WGetToken      func() string
-	WGetUserId     func() string
-	WRecvDataChan  func() <-chan binaryutil.RecycleBytes
-	WRecvEventChan func() <-chan transport.IEvent
-	WSendData      func(data []byte) error
-	WSendDataChan  func() chan<- binaryutil.RecycleBytes
-	WSendEvent     func(event transport.IEvent) error
-	WSendEventChan func() chan<- transport.IEvent
-	WString        func() string
-	WValue         func(key any) any
-	WWatchData     func(ctx context.Context, handler gate.SessionRecvDataHandler) gate.IWatcher
-	WWatchEvent    func(ctx context.Context, handler gate.SessionRecvEventHandler) gate.IWatcher
+	IValue             interface{}
+	WClose             func(err error) async.AsyncRet
+	WClosed            func() async.AsyncRet
+	WDeadline          func() (deadline time.Time, ok bool)
+	WDone              func() <-chan struct{}
+	WErr               func() error
+	WGetId             func() uid.Id
+	WGetLocalAddr      func() net.Addr
+	WGetRemoteAddr     func() net.Addr
+	WGetResumeTimes    func() int
+	WGetServiceContext func() service.Context
+	WGetSettings       func() gate.SessionSettings
+	WGetState          func() gate.SessionState
+	WGetToken          func() string
+	WGetUserId         func() string
+	WRecvDataChan      func() <-chan binaryutil.RecycleBytes
+	WRecvEventChan     func() <-chan transport.IEvent
+	WSendData          func(data []byte) error
+	WSendDataChan      func() chan<- binaryutil.RecycleBytes
+	WSendEvent         func(event transport.IEvent) error
+	WSendEventChan     func() chan<- transport.IEvent
+	WString            func() string
+	WValue             func(key any) any
+	WWatchData         func(ctx context.Context, handler gate.SessionRecvDataHandler) concurrent.IWatcher
+	WWatchEvent        func(ctx context.Context, handler gate.SessionRecvEventHandler) concurrent.IWatcher
 }
 
 func (W _git_golaxy_org_framework_addins_gate_ISession) Close(err error) async.AsyncRet {
@@ -115,15 +115,18 @@ func (W _git_golaxy_org_framework_addins_gate_ISession) Deadline() (deadline tim
 }
 func (W _git_golaxy_org_framework_addins_gate_ISession) Done() <-chan struct{} { return W.WDone() }
 func (W _git_golaxy_org_framework_addins_gate_ISession) Err() error            { return W.WErr() }
-func (W _git_golaxy_org_framework_addins_gate_ISession) GetContext() service.Context {
-	return W.WGetContext()
-}
-func (W _git_golaxy_org_framework_addins_gate_ISession) GetId() uid.Id { return W.WGetId() }
+func (W _git_golaxy_org_framework_addins_gate_ISession) GetId() uid.Id         { return W.WGetId() }
 func (W _git_golaxy_org_framework_addins_gate_ISession) GetLocalAddr() net.Addr {
 	return W.WGetLocalAddr()
 }
 func (W _git_golaxy_org_framework_addins_gate_ISession) GetRemoteAddr() net.Addr {
 	return W.WGetRemoteAddr()
+}
+func (W _git_golaxy_org_framework_addins_gate_ISession) GetResumeTimes() int {
+	return W.WGetResumeTimes()
+}
+func (W _git_golaxy_org_framework_addins_gate_ISession) GetServiceContext() service.Context {
+	return W.WGetServiceContext()
 }
 func (W _git_golaxy_org_framework_addins_gate_ISession) GetSettings() gate.SessionSettings {
 	return W.WGetSettings()
@@ -158,33 +161,9 @@ func (W _git_golaxy_org_framework_addins_gate_ISession) String() string {
 	return W.WString()
 }
 func (W _git_golaxy_org_framework_addins_gate_ISession) Value(key any) any { return W.WValue(key) }
-func (W _git_golaxy_org_framework_addins_gate_ISession) WatchData(ctx context.Context, handler gate.SessionRecvDataHandler) gate.IWatcher {
+func (W _git_golaxy_org_framework_addins_gate_ISession) WatchData(ctx context.Context, handler gate.SessionRecvDataHandler) concurrent.IWatcher {
 	return W.WWatchData(ctx, handler)
 }
-func (W _git_golaxy_org_framework_addins_gate_ISession) WatchEvent(ctx context.Context, handler gate.SessionRecvEventHandler) gate.IWatcher {
+func (W _git_golaxy_org_framework_addins_gate_ISession) WatchEvent(ctx context.Context, handler gate.SessionRecvEventHandler) concurrent.IWatcher {
 	return W.WWatchEvent(ctx, handler)
 }
-
-// _git_golaxy_org_framework_addins_gate_IWatcher is an interface wrapper for IWatcher type
-type _git_golaxy_org_framework_addins_gate_IWatcher struct {
-	IValue      interface{}
-	WDeadline   func() (deadline time.Time, ok bool)
-	WDone       func() <-chan struct{}
-	WErr        func() error
-	WTerminate  func() async.AsyncRet
-	WTerminated func() async.AsyncRet
-	WValue      func(key any) any
-}
-
-func (W _git_golaxy_org_framework_addins_gate_IWatcher) Deadline() (deadline time.Time, ok bool) {
-	return W.WDeadline()
-}
-func (W _git_golaxy_org_framework_addins_gate_IWatcher) Done() <-chan struct{} { return W.WDone() }
-func (W _git_golaxy_org_framework_addins_gate_IWatcher) Err() error            { return W.WErr() }
-func (W _git_golaxy_org_framework_addins_gate_IWatcher) Terminate() async.AsyncRet {
-	return W.WTerminate()
-}
-func (W _git_golaxy_org_framework_addins_gate_IWatcher) Terminated() async.AsyncRet {
-	return W.WTerminated()
-}
-func (W _git_golaxy_org_framework_addins_gate_IWatcher) Value(key any) any { return W.WValue(key) }

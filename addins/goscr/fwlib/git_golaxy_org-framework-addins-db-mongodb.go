@@ -28,10 +28,14 @@ func init() {
 
 // _git_golaxy_org_framework_addins_db_mongodb_IMongoDB is an interface wrapper for IMongoDB type
 type _git_golaxy_org_framework_addins_db_mongodb_IMongoDB struct {
-	IValue   interface{}
-	WMongoDB func(tag string) *mongo.Client
+	IValue            interface{}
+	WMongoDB          func(tag string) *mongo.Client
+	WReflectedMongoDB func(tag string) reflect.Value
 }
 
 func (W _git_golaxy_org_framework_addins_db_mongodb_IMongoDB) MongoDB(tag string) *mongo.Client {
 	return W.WMongoDB(tag)
+}
+func (W _git_golaxy_org_framework_addins_db_mongodb_IMongoDB) ReflectedMongoDB(tag string) reflect.Value {
+	return W.WReflectedMongoDB(tag)
 }
