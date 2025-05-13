@@ -17,7 +17,6 @@ import (
 	"git.golaxy.org/core/utils/uid"
 	"git.golaxy.org/framework"
 	"git.golaxy.org/framework/addins/broker"
-	"git.golaxy.org/framework/addins/conf"
 	"git.golaxy.org/framework/addins/dentq"
 	"git.golaxy.org/framework/addins/dentr"
 	"git.golaxy.org/framework/addins/discovery"
@@ -100,6 +99,7 @@ func init() {
 		"RuntimeCreator":                     reflect.ValueOf((*framework.RuntimeCreator)(nil)),
 		"RuntimeGeneric":                     reflect.ValueOf((*framework.RuntimeGeneric)(nil)),
 		"Service":                            reflect.ValueOf((*framework.Service)(nil)),
+		"ServiceConfigDefaults":              reflect.ValueOf((*framework.ServiceConfigDefaults)(nil)),
 		"ServiceGeneric":                     reflect.ValueOf((*framework.ServiceGeneric)(nil)),
 
 		// interface wrapper definitions
@@ -149,6 +149,7 @@ func init() {
 		"_LifecycleServiceStarting":           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceStarting)(nil)),
 		"_LifecycleServiceTerminated":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminated)(nil)),
 		"_LifecycleServiceTerminating":        reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminating)(nil)),
+		"_ServiceConfigDefaults":              reflect.ValueOf((*_git_golaxy_org_framework_ServiceConfigDefaults)(nil)),
 	}
 }
 
@@ -297,9 +298,9 @@ type _git_golaxy_org_framework_IService struct {
 	WDone                  func() <-chan struct{}
 	WErr                   func() error
 	WGetAddInManager       func() extension.AddInManager
+	WGetAppConf            func() *viper.Viper
 	WGetAutoRecover        func() bool
 	WGetBroker             func() broker.IBroker
-	WGetConf               func() conf.IConfig
 	WGetDistEntityQuerier  func() dentq.IDistEntityQuerier
 	WGetDistService        func() dsvc.IDistService
 	WGetDistSync           func() dsync.IDistSync
@@ -314,6 +315,7 @@ type _git_golaxy_org_framework_IService struct {
 	WGetReflected          func() reflect.Value
 	WGetRegistry           func() discovery.IRegistry
 	WGetReportError        func() chan error
+	WGetServiceConf        func() *viper.Viper
 	WGetStartupConf        func() *viper.Viper
 	WGetStartupNo          func() int
 	WGetWaitGroup          func() *sync.WaitGroup
@@ -352,9 +354,9 @@ func (W _git_golaxy_org_framework_IService) Err() error            { return W.WE
 func (W _git_golaxy_org_framework_IService) GetAddInManager() extension.AddInManager {
 	return W.WGetAddInManager()
 }
+func (W _git_golaxy_org_framework_IService) GetAppConf() *viper.Viper  { return W.WGetAppConf() }
 func (W _git_golaxy_org_framework_IService) GetAutoRecover() bool      { return W.WGetAutoRecover() }
 func (W _git_golaxy_org_framework_IService) GetBroker() broker.IBroker { return W.WGetBroker() }
-func (W _git_golaxy_org_framework_IService) GetConf() conf.IConfig     { return W.WGetConf() }
 func (W _git_golaxy_org_framework_IService) GetDistEntityQuerier() dentq.IDistEntityQuerier {
 	return W.WGetDistEntityQuerier()
 }
@@ -381,6 +383,7 @@ func (W _git_golaxy_org_framework_IService) GetRegistry() discovery.IRegistry {
 	return W.WGetRegistry()
 }
 func (W _git_golaxy_org_framework_IService) GetReportError() chan error    { return W.WGetReportError() }
+func (W _git_golaxy_org_framework_IService) GetServiceConf() *viper.Viper  { return W.WGetServiceConf() }
 func (W _git_golaxy_org_framework_IService) GetStartupConf() *viper.Viper  { return W.WGetStartupConf() }
 func (W _git_golaxy_org_framework_IService) GetStartupNo() int             { return W.WGetStartupNo() }
 func (W _git_golaxy_org_framework_IService) GetWaitGroup() *sync.WaitGroup { return W.WGetWaitGroup() }
@@ -814,4 +817,14 @@ type _git_golaxy_org_framework_LifecycleServiceTerminating struct {
 
 func (W _git_golaxy_org_framework_LifecycleServiceTerminating) Terminating(svc framework.IService) {
 	W.WTerminating(svc)
+}
+
+// _git_golaxy_org_framework_ServiceConfigDefaults is an interface wrapper for ServiceConfigDefaults type
+type _git_golaxy_org_framework_ServiceConfigDefaults struct {
+	IValue                 interface{}
+	WServiceConfigDefaults func(svc framework.IService) map[string]any
+}
+
+func (W _git_golaxy_org_framework_ServiceConfigDefaults) ServiceConfigDefaults(svc framework.IService) map[string]any {
+	return W.WServiceConfigDefaults(svc)
 }

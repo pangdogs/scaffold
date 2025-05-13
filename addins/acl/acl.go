@@ -53,14 +53,14 @@ func (acl *_ACL) Init(svcCtx service.Context) {
 
 	acl.svc = reinterpret.Cast[framework.IService](svcCtx)
 
-	localFilePath := acl.svc.GetConf().ServiceConf().GetString("acl.local_path")
-	remoteFilePath := acl.svc.GetConf().ServiceConf().GetString("acl.remote_path")
+	localFilePath := acl.svc.GetServiceConf().GetString("acl.local_path")
+	remoteFilePath := acl.svc.GetServiceConf().GetString("acl.remote_path")
 	if localFilePath == "" && remoteFilePath == "" {
 		log.Infof(acl.svc, "no acl file")
 		return
 	}
 
-	acl.config.SetConfigType(acl.svc.GetConf().ServiceConf().GetString("acl.format"))
+	acl.config.SetConfigType(acl.svc.GetServiceConf().GetString("acl.format"))
 
 	if localFilePath != "" {
 		acl.config.SetConfigFile(localFilePath)
@@ -70,8 +70,8 @@ func (acl *_ACL) Init(svcCtx service.Context) {
 		log.Infof(acl.svc, "load acl local config %q config ok", localFilePath)
 	}
 
-	remoteProvider := acl.svc.GetConf().ServiceConf().GetString("acl.remote_provider")
-	remoteEndpoint := acl.svc.GetConf().ServiceConf().GetString("acl.remote_endpoint")
+	remoteProvider := acl.svc.GetServiceConf().GetString("acl.remote_provider")
+	remoteEndpoint := acl.svc.GetServiceConf().GetString("acl.remote_endpoint")
 
 	if remoteFilePath != "" {
 		if err := acl.config.AddRemoteProvider(remoteProvider, remoteEndpoint, remoteFilePath); err != nil {
