@@ -88,6 +88,7 @@ func init() {
 		"LifecycleServiceAddInDeactivating":  reflect.ValueOf((*framework.LifecycleServiceAddInDeactivating)(nil)),
 		"LifecycleServiceBirth":              reflect.ValueOf((*framework.LifecycleServiceBirth)(nil)),
 		"LifecycleServiceBuilt":              reflect.ValueOf((*framework.LifecycleServiceBuilt)(nil)),
+		"LifecycleServiceDefaultConfig":      reflect.ValueOf((*framework.LifecycleServiceDefaultConfig)(nil)),
 		"LifecycleServiceEntityPTDeclared":   reflect.ValueOf((*framework.LifecycleServiceEntityPTDeclared)(nil)),
 		"LifecycleServiceEntityPTRedeclared": reflect.ValueOf((*framework.LifecycleServiceEntityPTRedeclared)(nil)),
 		"LifecycleServiceEntityPTUndeclared": reflect.ValueOf((*framework.LifecycleServiceEntityPTUndeclared)(nil)),
@@ -99,7 +100,6 @@ func init() {
 		"RuntimeCreator":                     reflect.ValueOf((*framework.RuntimeCreator)(nil)),
 		"RuntimeGeneric":                     reflect.ValueOf((*framework.RuntimeGeneric)(nil)),
 		"Service":                            reflect.ValueOf((*framework.Service)(nil)),
-		"ServiceConfigDefaults":              reflect.ValueOf((*framework.ServiceConfigDefaults)(nil)),
 		"ServiceGeneric":                     reflect.ValueOf((*framework.ServiceGeneric)(nil)),
 
 		// interface wrapper definitions
@@ -142,6 +142,7 @@ func init() {
 		"_LifecycleServiceAddInDeactivating":  reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceAddInDeactivating)(nil)),
 		"_LifecycleServiceBirth":              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceBirth)(nil)),
 		"_LifecycleServiceBuilt":              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceBuilt)(nil)),
+		"_LifecycleServiceDefaultConfig":      reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceDefaultConfig)(nil)),
 		"_LifecycleServiceEntityPTDeclared":   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityPTDeclared)(nil)),
 		"_LifecycleServiceEntityPTRedeclared": reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityPTRedeclared)(nil)),
 		"_LifecycleServiceEntityPTUndeclared": reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityPTUndeclared)(nil)),
@@ -149,7 +150,6 @@ func init() {
 		"_LifecycleServiceStarting":           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceStarting)(nil)),
 		"_LifecycleServiceTerminated":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminated)(nil)),
 		"_LifecycleServiceTerminating":        reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminating)(nil)),
-		"_ServiceConfigDefaults":              reflect.ValueOf((*_git_golaxy_org_framework_ServiceConfigDefaults)(nil)),
 	}
 }
 
@@ -308,7 +308,7 @@ type _git_golaxy_org_framework_IService struct {
 	WGetEntityManager      func() service.EntityManager
 	WGetId                 func() uid.Id
 	WGetInstanceFaceCache  func() iface.Cache
-	WGetMemKV              func() *sync.Map
+	WGetMemory             func() *sync.Map
 	WGetName               func() string
 	WGetParentContext      func() context.Context
 	WGetRPC                func() rpc.IRPC
@@ -316,7 +316,6 @@ type _git_golaxy_org_framework_IService struct {
 	WGetRegistry           func() discovery.IRegistry
 	WGetReportError        func() chan error
 	WGetServiceConf        func() *viper.Viper
-	WGetStartupConf        func() *viper.Viper
 	WGetStartupNo          func() int
 	WGetWaitGroup          func() *sync.WaitGroup
 	WString                func() string
@@ -372,8 +371,8 @@ func (W _git_golaxy_org_framework_IService) GetId() uid.Id { return W.WGetId() }
 func (W _git_golaxy_org_framework_IService) GetInstanceFaceCache() iface.Cache {
 	return W.WGetInstanceFaceCache()
 }
-func (W _git_golaxy_org_framework_IService) GetMemKV() *sync.Map { return W.WGetMemKV() }
-func (W _git_golaxy_org_framework_IService) GetName() string     { return W.WGetName() }
+func (W _git_golaxy_org_framework_IService) GetMemory() *sync.Map { return W.WGetMemory() }
+func (W _git_golaxy_org_framework_IService) GetName() string      { return W.WGetName() }
 func (W _git_golaxy_org_framework_IService) GetParentContext() context.Context {
 	return W.WGetParentContext()
 }
@@ -384,7 +383,6 @@ func (W _git_golaxy_org_framework_IService) GetRegistry() discovery.IRegistry {
 }
 func (W _git_golaxy_org_framework_IService) GetReportError() chan error    { return W.WGetReportError() }
 func (W _git_golaxy_org_framework_IService) GetServiceConf() *viper.Viper  { return W.WGetServiceConf() }
-func (W _git_golaxy_org_framework_IService) GetStartupConf() *viper.Viper  { return W.WGetStartupConf() }
 func (W _git_golaxy_org_framework_IService) GetStartupNo() int             { return W.WGetStartupNo() }
 func (W _git_golaxy_org_framework_IService) GetWaitGroup() *sync.WaitGroup { return W.WGetWaitGroup() }
 func (W _git_golaxy_org_framework_IService) String() string {
@@ -749,6 +747,16 @@ type _git_golaxy_org_framework_LifecycleServiceBuilt struct {
 
 func (W _git_golaxy_org_framework_LifecycleServiceBuilt) Built(svc framework.IService) { W.WBuilt(svc) }
 
+// _git_golaxy_org_framework_LifecycleServiceDefaultConfig is an interface wrapper for LifecycleServiceDefaultConfig type
+type _git_golaxy_org_framework_LifecycleServiceDefaultConfig struct {
+	IValue         interface{}
+	WDefaultConfig func(svc framework.IService) map[string]any
+}
+
+func (W _git_golaxy_org_framework_LifecycleServiceDefaultConfig) DefaultConfig(svc framework.IService) map[string]any {
+	return W.WDefaultConfig(svc)
+}
+
 // _git_golaxy_org_framework_LifecycleServiceEntityPTDeclared is an interface wrapper for LifecycleServiceEntityPTDeclared type
 type _git_golaxy_org_framework_LifecycleServiceEntityPTDeclared struct {
 	IValue            interface{}
@@ -817,14 +825,4 @@ type _git_golaxy_org_framework_LifecycleServiceTerminating struct {
 
 func (W _git_golaxy_org_framework_LifecycleServiceTerminating) Terminating(svc framework.IService) {
 	W.WTerminating(svc)
-}
-
-// _git_golaxy_org_framework_ServiceConfigDefaults is an interface wrapper for ServiceConfigDefaults type
-type _git_golaxy_org_framework_ServiceConfigDefaults struct {
-	IValue                 interface{}
-	WServiceConfigDefaults func(svc framework.IService) map[string]any
-}
-
-func (W _git_golaxy_org_framework_ServiceConfigDefaults) ServiceConfigDefaults(svc framework.IService) map[string]any {
-	return W.WServiceConfigDefaults(svc)
 }
