@@ -96,10 +96,10 @@ func init() {
 		"LifecycleServiceStarting":           reflect.ValueOf((*framework.LifecycleServiceStarting)(nil)),
 		"LifecycleServiceTerminated":         reflect.ValueOf((*framework.LifecycleServiceTerminated)(nil)),
 		"LifecycleServiceTerminating":        reflect.ValueOf((*framework.LifecycleServiceTerminating)(nil)),
-		"Runtime":                            reflect.ValueOf((*framework.Runtime)(nil)),
+		"RuntimeBehavior":                    reflect.ValueOf((*framework.RuntimeBehavior)(nil)),
 		"RuntimeCreator":                     reflect.ValueOf((*framework.RuntimeCreator)(nil)),
 		"RuntimeGeneric":                     reflect.ValueOf((*framework.RuntimeGeneric)(nil)),
-		"Service":                            reflect.ValueOf((*framework.Service)(nil)),
+		"ServiceBehavior":                    reflect.ValueOf((*framework.ServiceBehavior)(nil)),
 		"ServiceGeneric":                     reflect.ValueOf((*framework.ServiceGeneric)(nil)),
 
 		// interface wrapper definitions
