@@ -38,8 +38,8 @@ type Project struct {
 
 // NewSolution 创建解决方案
 func NewSolution(pkgRoot string) *Solution {
-	fs := NewCodeFS()
-	fs.AddFakeFile(path.Join("src/main/vendor/", pkgRoot, "go.mod"), []byte(fmt.Sprintf("module %s", pkgRoot)))
+	fs := NewCodeFS("src/main/vendor/")
+	fs.AddFakeFile(path.Join(pkgRoot, "go.mod"), []byte(fmt.Sprintf("module %s", pkgRoot)))
 
 	i := interp.New(interp.Options{
 		SourcecodeFilesystem: fs,
@@ -84,7 +84,7 @@ func (s *Solution) Range(fun generic.Func2[string, Scripts, bool]) {
 
 // Load 加载项目
 func (s *Solution) Load(project *Project) error {
-	if err := s.fs.Mapping(path.Join("src/main/vendor/", s.pkgRoot, project.PkgRoot), project.LocalPath); err != nil {
+	if err := s.fs.Mapping(path.Join(s.pkgRoot, project.PkgRoot), project.LocalPath); err != nil {
 		return err
 	}
 

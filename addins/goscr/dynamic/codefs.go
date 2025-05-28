@@ -33,9 +33,10 @@ import (
 )
 
 // NewCodeFS 创建代码文件系统
-func NewCodeFS() *CodeFS {
+func NewCodeFS(rootPath string) *CodeFS {
 	return &CodeFS{
-		fakeFs: afero.NewMemMapFs(),
+		rootPath: rootPath,
+		fakeFs:   afero.NewMemMapFs(),
 	}
 }
 
@@ -53,6 +54,7 @@ func (e *_FakeDirEntry) Info() (os.FileInfo, error) {
 
 // CodeFS 代码文件系统
 type CodeFS struct {
+	rootPath    string
 	mappingPath generic.SliceMap[string, string]
 	fakeFs      afero.Fs
 }
