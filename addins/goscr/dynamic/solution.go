@@ -21,6 +21,7 @@ package dynamic
 
 import (
 	"cmp"
+	"fmt"
 	"git.golaxy.org/core/utils/generic"
 	"github.com/pangdogs/yaegi/interp"
 	"path"
@@ -38,6 +39,7 @@ type Project struct {
 // NewSolution 创建解决方案
 func NewSolution(pkgRoot string) *Solution {
 	fs := NewCodeFS()
+	fs.AddFakeFile(path.Join("src/main/vendor/", pkgRoot, "go.mod"), []byte(fmt.Sprintf("module %s", pkgRoot)))
 
 	i := interp.New(interp.Options{
 		SourcecodeFilesystem: fs,

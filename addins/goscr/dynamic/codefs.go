@@ -21,22 +21,40 @@ package dynamic
 
 import (
 	"git.golaxy.org/core/utils/generic"
+	"github.com/spf13/afero"
 	"io"
 	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
+	"sort"
 	"strings"
 )
 
 // NewCodeFS 创建代码文件系统
 func NewCodeFS() *CodeFS {
-	return &CodeFS{}
+	return &CodeFS{
+		fakeFs: afero.NewMemMapFs(),
+	}
+}
+
+type _FakeDirEntry struct {
+	os.FileInfo
+}
+
+func (e *_FakeDirEntry) Type() os.FileMode {
+	return e.Mode().Type()
+}
+
+func (e *_FakeDirEntry) Info() (os.FileInfo, error) {
+	return e.FileInfo, nil
 }
 
 // CodeFS 代码文件系统
 type CodeFS struct {
 	mappingPath generic.SliceMap[string, string]
+	fakeFs      afero.Fs
 }
 
 // Mapping 映射包路径
@@ -56,9 +74,38 @@ func (cfs *CodeFS) Mapping(pkgRoot, localPath string) error {
 	return nil
 }
 
+// Unmapping 移除包路径映射
+func (cfs *CodeFS) Unmapping(pkgRoot string) {
+	pkgRoot = path.Clean(filepath.ToSlash(pkgRoot))
+	cfs.mappingPath.Delete(pkgRoot)
+}
+
+// AddFakeFile 添加虚拟文件
+func (cfs *CodeFS) AddFakeFile(name string, data []byte) error {
+	name = path.Clean(filepath.ToSlash(name))
+
+	if b, err := afero.Exists(cfs.fakeFs, name); err != nil {
+		return err
+	} else if b {
+		return os.ErrExist
+	}
+
+	return afero.WriteFile(cfs.fakeFs, name, data, os.ModePerm)
+}
+
+// RemoveFakeFile 移除虚拟文件
+func (cfs *CodeFS) RemoveFakeFile(name string) {
+	name = path.Clean(filepath.ToSlash(name))
+	cfs.fakeFs.Remove(name)
+}
+
 // Open implements fs.FS
 func (cfs *CodeFS) Open(name string) (file fs.File, err error) {
 	name = path.Clean(filepath.ToSlash(name))
+
+	if file, err = cfs.fakeFs.Open(name); err == nil {
+		return
+	}
 
 	cfs.mappingPath.ReversedRange(func(pkgRoot string, localPath string) bool {
 		if !strings.HasPrefix(name, pkgRoot) {
@@ -112,8 +159,11 @@ func (cfs *CodeFS) Stat(name string) (fs.FileInfo, error) {
 }
 
 // ReadDir implements fs.ReadDirFS
-func (cfs *CodeFS) ReadDir(name string) (files []fs.DirEntry, err error) {
+func (cfs *CodeFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	name = path.Clean(filepath.ToSlash(name))
+
+	var files []fs.DirEntry
+	var err error
 
 	cfs.mappingPath.ReversedRange(func(pkgRoot string, localPath string) bool {
 		if !strings.HasPrefix(name, pkgRoot) {
@@ -137,9 +187,26 @@ func (cfs *CodeFS) ReadDir(name string) (files []fs.DirEntry, err error) {
 		return false
 	})
 
-	if files == nil && err == nil {
+	fakeFiles, _ := afero.ReadDir(cfs.fakeFs, name)
+	if len(fakeFiles) > 0 {
+		for _, fakeFile := range fakeFiles {
+			idx := slices.IndexFunc(files, func(file fs.DirEntry) bool {
+				return file.Name() == fakeFile.Name()
+			})
+			if idx >= 0 {
+				files[idx] = &_FakeDirEntry{FileInfo: fakeFile}
+				continue
+			}
+			files = append(files, &_FakeDirEntry{FileInfo: fakeFile})
+		}
+		sort.Slice(files, func(i, j int) bool {
+			return files[i].Name() < files[j].Name()
+		})
+	}
+
+	if len(files) <= 0 {
 		return nil, os.ErrNotExist
 	}
 
-	return
+	return files, nil
 }

@@ -12,6 +12,7 @@ require (
 	github.com/go-redsync/redsync/v4 v4.13.0
 	github.com/pangdogs/yaegi v0.0.0-20250109024934-0e1e68421612
 	github.com/redis/go-redis/v9 v9.8.0
+	github.com/spf13/afero v1.12.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	github.com/xuri/excelize/v2 v2.9.0
@@ -98,7 +99,6 @@ require (
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
-	github.com/spf13/afero v1.12.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/spf13/viper/remote v1.20.1 // indirect
