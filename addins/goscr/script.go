@@ -146,6 +146,7 @@ func (s *_Script) autoHotFix() {
 
 	for _, project := range s.options.Projects {
 		if err = watcher.Add(project.LocalPath); err != nil {
+			watcher.Close()
 			log.Panicf(s.svcCtx, "auto hotfix solution %q watch changes failed, projects: %s, %s",
 				s.options.PkgRoot,
 				pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
@@ -156,6 +157,7 @@ func (s *_Script) autoHotFix() {
 	}
 
 	go func() {
+		defer watcher.Close()
 		for {
 			select {
 			case e, ok := <-watcher.Events:
