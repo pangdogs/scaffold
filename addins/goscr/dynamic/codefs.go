@@ -34,6 +34,9 @@ import (
 
 // NewCodeFS 创建代码文件系统
 func NewCodeFS(rootPath string) *CodeFS {
+	if !strings.HasSuffix(rootPath, "/") {
+		rootPath += "/"
+	}
 	return &CodeFS{
 		rootPath: rootPath,
 		fakeFs:   afero.NewMemMapFs(),
@@ -105,6 +108,10 @@ func (cfs *CodeFS) RemoveFakeFile(name string) {
 func (cfs *CodeFS) Open(name string) (file fs.File, err error) {
 	name = path.Clean(filepath.ToSlash(name))
 
+	if strings.HasPrefix(name, cfs.rootPath) {
+		name = strings.TrimPrefix(name, cfs.rootPath)
+	}
+
 	if file, err = cfs.fakeFs.Open(name); err == nil {
 		return
 	}
@@ -163,6 +170,10 @@ func (cfs *CodeFS) Stat(name string) (fs.FileInfo, error) {
 // ReadDir implements fs.ReadDirFS
 func (cfs *CodeFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	name = path.Clean(filepath.ToSlash(name))
+
+	if strings.HasPrefix(name, cfs.rootPath) {
+		name = strings.TrimPrefix(name, cfs.rootPath)
+	}
 
 	var files []fs.DirEntry
 	var err error
