@@ -56,7 +56,7 @@ func (acl *_ACL) Init(svcCtx service.Context) {
 	localFilePath := acl.svc.GetServiceConf().GetString("acl.local_path")
 	remoteFilePath := acl.svc.GetServiceConf().GetString("acl.remote_path")
 	if localFilePath == "" && remoteFilePath == "" {
-		log.Infof(acl.svc, "no acl file")
+		log.Infof(acl.svc, "no acl config file")
 		return
 	}
 
