@@ -31,15 +31,14 @@ import (
 )
 
 // BuildEntityPT 创建实体原型
-func BuildEntityPT(svcCtx service.Context, prototype string) EntityPTCreator {
+func BuildEntityPT(svcCtx service.Context, prototype string) *EntityPTCreator {
 	if svcCtx == nil {
 		exception.Panicf("goscr: %w: svcCtx is nil", core.ErrArgs)
 	}
-	c := EntityPTCreator{
+	return &EntityPTCreator{
 		svcCtx: svcCtx,
 		atti:   pt.NewEntityAttribute(prototype),
 	}
-	return c
 }
 
 // EntityPTCreator 实体原型构建器
@@ -50,47 +49,47 @@ type EntityPTCreator struct {
 }
 
 // SetInstance 设置实例，用于扩展实体能力
-func (c EntityPTCreator) SetInstance(instance any) EntityPTCreator {
+func (c *EntityPTCreator) SetInstance(instance any) *EntityPTCreator {
 	if c.atti == nil {
 		exception.Panic("goscr: atti is nil")
 	}
-	c.atti.Instance = instance
+	c.atti.SetInstance(instance)
 	return c
 }
 
 // SetScope 设置实体的可访问作用域
-func (c EntityPTCreator) SetScope(scope ec.Scope) EntityPTCreator {
+func (c *EntityPTCreator) SetScope(scope ec.Scope) *EntityPTCreator {
 	if c.atti == nil {
 		exception.Panic("goscr: atti is nil")
 	}
-	c.atti.Scope = &scope
+	c.atti.SetScope(scope)
 	return c
 }
 
 // SetComponentNameIndexing 设置是否开启组件名称索引
-func (c EntityPTCreator) SetComponentNameIndexing(b bool) EntityPTCreator {
+func (c *EntityPTCreator) SetComponentNameIndexing(b bool) *EntityPTCreator {
 	if c.atti == nil {
 		exception.Panic("goscr: atti is nil")
 	}
-	c.atti.ComponentNameIndexing = &b
+	c.atti.SetComponentNameIndexing(b)
 	return c
 }
 
 // SetComponentAwakeOnFirstTouch 设置当实体组件首次被访问时，生命周期是否进入唤醒（Awake）
-func (c EntityPTCreator) SetComponentAwakeOnFirstTouch(b bool) EntityPTCreator {
+func (c *EntityPTCreator) SetComponentAwakeOnFirstTouch(b bool) *EntityPTCreator {
 	if c.atti == nil {
 		exception.Panic("goscr: atti is nil")
 	}
-	c.atti.ComponentAwakeOnFirstTouch = &b
+	c.atti.SetComponentAwakeOnFirstTouch(b)
 	return c
 }
 
 // SetComponentUniqueID 设置是否为实体组件分配唯一Id
-func (c EntityPTCreator) SetComponentUniqueID(b bool) EntityPTCreator {
+func (c *EntityPTCreator) SetComponentUniqueID(b bool) *EntityPTCreator {
 	if c.atti == nil {
 		exception.Panic("goscr: atti is nil")
 	}
-	c.atti.ComponentUniqueID = &b
+	c.atti.SetComponentUniqueID(b)
 	return c
 }
 
@@ -131,7 +130,7 @@ func (c *EntityPTCreator) AssignExtra(m meta.Meta) *EntityPTCreator {
 }
 
 // SetScript 设置脚本
-func (c EntityPTCreator) SetScript(script string) EntityPTCreator {
+func (c *EntityPTCreator) SetScript(script string) *EntityPTCreator {
 	if c.atti == nil {
 		exception.Panic("goscr: atti is nil")
 	}
@@ -155,7 +154,7 @@ func (c EntityPTCreator) SetScript(script string) EntityPTCreator {
 }
 
 // AddComponent 添加组件
-func (c EntityPTCreator) AddComponent(comp any, name ...string) EntityPTCreator {
+func (c *EntityPTCreator) AddComponent(comp any, name ...string) *EntityPTCreator {
 	switch v := comp.(type) {
 	case pt.ComponentAttribute, *pt.ComponentAttribute:
 		c.comps = append(c.comps, v)
@@ -166,17 +165,23 @@ func (c EntityPTCreator) AddComponent(comp any, name ...string) EntityPTCreator 
 }
 
 // Declare 声明实体原型
-func (c EntityPTCreator) Declare() {
+func (c *EntityPTCreator) Declare() {
 	if c.svcCtx == nil {
 		exception.Panic("goscr: svcCtx is nil")
+	}
+	if c.atti == nil {
+		exception.Panic("goscr: atti is nil")
 	}
 	c.svcCtx.GetEntityLib().Declare(c.atti, c.comps...)
 }
 
 // Redeclare 重新声明实体原型
-func (c EntityPTCreator) Redeclare() {
+func (c *EntityPTCreator) Redeclare() {
 	if c.svcCtx == nil {
 		exception.Panic("goscr: svcCtx is nil")
+	}
+	if c.atti == nil {
+		exception.Panic("goscr: atti is nil")
 	}
 	c.svcCtx.GetEntityLib().Redeclare(c.atti, c.comps...)
 }

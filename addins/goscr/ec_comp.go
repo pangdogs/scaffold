@@ -23,177 +23,18 @@ import (
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/ec/pt"
 	"git.golaxy.org/core/utils/exception"
-	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/core/utils/types"
-	"git.golaxy.org/framework"
-	"reflect"
 	"strings"
 )
 
-// Component 脚本化组件
-type Component struct {
-	framework.ComponentBehavior
-}
-
-// Callee 被调函数
-func (c *Component) Callee(method string) reflect.Value {
-	return reflect.ValueOf(c.bindMethod(method))
-}
-
-// Awake 生命周期唤醒（Awake）
-func (c *Component) Awake() {
-	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnCreate); ok {
-		generic.CastAction0(cb.OnCreate).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
-	}
-
-	if c.GetState() != ec.ComponentState_Awake {
-		return
-	}
-
-	method, _ := c.bindMethod("Awake").(func())
-	if method != nil {
-		method()
-	}
-}
-
-// OnEnable 生命周期启用（OnEnable）
-func (c *Component) OnEnable() {
-	method, _ := c.bindMethod("OnEnable").(func())
-	if method != nil {
-		method()
-	}
-}
-
-// Start 生命周期开始（Start）
-func (c *Component) Start() {
-	method, _ := c.bindMethod("Start").(func())
-	if method != nil {
-		method()
-	}
-
-	if c.GetState() != ec.ComponentState_Start {
-		return
-	}
-
-	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnStarted); ok {
-		generic.CastAction0(cb.OnStarted).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
-	}
-}
-
-// Shut 生命周期结束（Shut）
-func (c *Component) Shut() {
-	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnStop); ok {
-		generic.CastAction0(cb.OnStop).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
-	}
-
-	if c.GetState() != ec.ComponentState_Shut {
-		return
-	}
-
-	method, _ := c.bindMethod("Shut").(func())
-	if method != nil {
-		method()
-	}
-}
-
-// OnDisable 生命周期关闭（OnDisable）
-func (c *Component) OnDisable() {
-	method, _ := c.bindMethod("OnDisable").(func())
-	if method != nil {
-		method()
-	}
-}
-
-// Dispose 生命周期死亡（Death）
-func (c *Component) Dispose() {
-	method, _ := c.bindMethod("Dispose").(func())
-	if method != nil {
-		method()
-	}
-
-	if c.GetState() != ec.ComponentState_Death {
-		return
-	}
-
-	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnDisposed); ok {
-		generic.CastAction0(cb.OnDisposed).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
-	}
-}
-
-func (c *Component) bindMethod(method string) any {
-	scriptPkg, ok := c.GetBuiltin().Extra.Get("script_pkg")
-	if !ok {
-		return nil
-	}
-
-	scriptIdent, ok := c.GetBuiltin().Extra.Get("script_ident")
-	if !ok {
-		return nil
-	}
-
-	thisMethod := Using(c.GetService()).Solution().BindMethod(c.GetReflected(), scriptPkg.(string), scriptIdent.(string), method)
-	if thisMethod == nil {
-		return nil
-	}
-
-	return thisMethod
-}
-
-// ComponentEnableUpdate 脚本化组件，支持帧更新（Update）
-type ComponentEnableUpdate struct {
-	Component
-}
-
-// Update 帧更新（Update）
-func (c *ComponentEnableUpdate) Update() {
-	method, _ := c.bindMethod("Update").(func())
-	if method != nil {
-		method()
-	}
-}
-
-// ComponentEnableLateUpdate 脚本化组件，支持帧迟滞更新（Late Update）
-type ComponentEnableLateUpdate struct {
-	Component
-}
-
-// LateUpdate 帧迟滞更新（Late Update）
-func (c *ComponentEnableLateUpdate) LateUpdate() {
-	method, _ := c.bindMethod("LateUpdate").(func())
-	if method != nil {
-		method()
-	}
-}
-
-// ComponentEnableUpdateAndLateUpdate 脚本化组件，支持帧更新（Update）、帧迟滞更新（Late Update）
-type ComponentEnableUpdateAndLateUpdate struct {
-	Component
-}
-
-// Update 帧更新（Update）
-func (c *ComponentEnableUpdateAndLateUpdate) Update() {
-	method, _ := c.bindMethod("Update").(func())
-	if method != nil {
-		method()
-	}
-}
-
-// LateUpdate 帧迟滞更新（Late Update）
-func (c *ComponentEnableUpdateAndLateUpdate) LateUpdate() {
-	method, _ := c.bindMethod("LateUpdate").(func())
-	if method != nil {
-		method()
-	}
-}
-
-// ComponentBehavior 组件脚本化行为
-type ComponentBehavior struct {
-	ComponentEnableUpdateAndLateUpdateThis[ComponentBehavior]
+// ComponentScriptBehavior 脚本化组件行为
+type ComponentScriptBehavior struct {
+	ComponentStateEnableUpdateAndLateUpdateThis[ComponentScriptBehavior]
 }
 
 // ComponentScript 创建脚本化组件原型属性，用于注册实体原型时自定义相关属性
 func ComponentScript(script string) *pt.ComponentAttribute {
-	return ComponentScriptT[ComponentBehavior](script)
+	return ComponentScriptT[ComponentScriptBehavior](script)
 }
 
 // ComponentScriptT 创建脚本化组件原型属性，用于注册实体原型时自定义相关属性
@@ -214,8 +55,8 @@ func ComponentScriptT[T any](script string) *pt.ComponentAttribute {
 }
 
 // GetComponentScript 获取组件脚本
-func GetComponentScript(entity ec.Entity, name string) func() *ComponentBehavior {
-	return GetComponentScriptT[*ComponentBehavior](entity, name)
+func GetComponentScript(entity ec.Entity, name string) func() *ComponentScriptBehavior {
+	return GetComponentScriptT[*ComponentScriptBehavior](entity, name)
 }
 
 // GetComponentScriptT 获取组件脚本
