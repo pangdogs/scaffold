@@ -164,6 +164,12 @@ func (c *EntityPTCreator) AddComponent(comp any, name ...string) *EntityPTCreato
 	return c
 }
 
+// AddComponentScript 添加脚本组件
+func (c *EntityPTCreator) AddComponentScript(script string, name ...string) *EntityPTCreator {
+	c.AddComponent(ComponentScript(script), name...)
+	return c
+}
+
 // Declare 声明实体原型
 func (c *EntityPTCreator) Declare() {
 	if c.svcCtx == nil {
