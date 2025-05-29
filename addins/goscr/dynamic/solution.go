@@ -31,7 +31,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"slices"
-	"strings"
 )
 
 // Project 项目
@@ -99,7 +98,12 @@ func (s *Solution) Load(project *Project) error {
 			return err
 		}
 
-		return afero.WriteFile(s.fs.AferoFs(), path.Join(s.pkgRoot, project.ScriptRoot, strings.TrimPrefix(filePath, project.LocalPath)), fileData, os.ModePerm)
+		relFilePath, err := filepath.Rel(project.LocalPath, filePath)
+		if err != nil {
+			return err
+		}
+
+		return afero.WriteFile(s.fs.AferoFs(), path.Join(s.pkgRoot, project.ScriptRoot, relFilePath), fileData, os.ModePerm)
 	})
 	if err != nil {
 		return err
