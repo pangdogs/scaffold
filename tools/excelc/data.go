@@ -63,7 +63,7 @@ func cmdGenData(cmd *cobra.Command, args []string) {
 	excelDir := viper.GetString("excel_dir")
 	if excelDir != "" {
 		filepath.Walk(excelDir, func(path string, info fs.FileInfo, err error) error {
-			if info.IsDir() || skip(path) {
+			if err != nil || info.IsDir() || skip(path) {
 				return nil
 			}
 

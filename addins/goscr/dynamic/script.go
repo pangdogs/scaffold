@@ -82,20 +82,20 @@ func (s *Script) UniquePkgName() string {
 	return strings.NewReplacer("/", "_", ".", "_").Replace(s.PkgPath)
 }
 
-// Scripts 脚本集合
-type Scripts map[string]*Script
+// ScriptBundle 脚本集合
+type ScriptBundle map[string]*Script
 
 // Ident 标识
-func (scripts Scripts) Ident(ident string) *Script {
-	if scripts == nil {
+func (scriptBundle ScriptBundle) Ident(ident string) *Script {
+	if scriptBundle == nil {
 		return nil
 	}
-	return scripts[ident]
+	return scriptBundle[ident]
 }
 
 // Range 遍历
-func (scripts Scripts) Range(fun generic.Func1[*Script, bool]) {
-	for _, script := range scripts {
+func (scriptBundle ScriptBundle) Range(fun generic.Func1[*Script, bool]) {
+	for _, script := range scriptBundle {
 		if !fun.UnsafeCall(script) {
 			return
 		}
@@ -108,17 +108,17 @@ func NewScriptLib() ScriptLib {
 }
 
 // ScriptLib 脚本库
-type ScriptLib map[string]Scripts
+type ScriptLib map[string]ScriptBundle
 
 // Package 包
-func (lib ScriptLib) Package(pkgPath string) Scripts {
+func (lib ScriptLib) Package(pkgPath string) ScriptBundle {
 	return lib[pkgPath]
 }
 
 // Range 遍历
-func (lib ScriptLib) Range(fun generic.Func2[string, Scripts, bool]) {
-	for pkgPath, scripts := range lib {
-		if !fun.UnsafeCall(pkgPath, scripts) {
+func (lib ScriptLib) Range(fun generic.Func2[string, ScriptBundle, bool]) {
+	for pkgPath, scriptBundle := range lib {
+		if !fun.UnsafeCall(pkgPath, scriptBundle) {
 			return
 		}
 	}
@@ -126,17 +126,17 @@ func (lib ScriptLib) Range(fun generic.Func2[string, Scripts, bool]) {
 
 // PushIdent 添加类型标识
 func (lib ScriptLib) PushIdent(pkgPath, ident string, bindMode BindMode, this *This) bool {
-	scripts, ok := lib[pkgPath]
+	scriptBundle, ok := lib[pkgPath]
 	if !ok {
-		scripts = Scripts{}
-		lib[pkgPath] = scripts
+		scriptBundle = ScriptBundle{}
+		lib[pkgPath] = scriptBundle
 	}
 
-	if _, ok := scripts[ident]; ok {
+	if _, ok := scriptBundle[ident]; ok {
 		return false
 	}
 
-	scripts[ident] = &Script{
+	scriptBundle[ident] = &Script{
 		PkgName:  path.Base(pkgPath),
 		PkgPath:  pkgPath,
 		Ident:    ident,
@@ -149,13 +149,13 @@ func (lib ScriptLib) PushIdent(pkgPath, ident string, bindMode BindMode, this *T
 
 // PushMethod 添加方法
 func (lib ScriptLib) PushMethod(pkgPath, ident string, method string) bool {
-	scripts, ok := lib[pkgPath]
+	scriptBundle, ok := lib[pkgPath]
 	if !ok {
-		scripts = Scripts{}
-		lib[pkgPath] = scripts
+		scriptBundle = ScriptBundle{}
+		lib[pkgPath] = scriptBundle
 	}
 
-	s, ok := scripts[ident]
+	s, ok := scriptBundle[ident]
 	if !ok {
 		return false
 	}
@@ -324,14 +324,14 @@ func (lib ScriptLib) Load(localPath string) error {
 func (lib ScriptLib) Compile(i *interp.Interpreter) error {
 	buff := &bytes.Buffer{}
 
-	for pkgPath, scripts := range lib {
+	for pkgPath, scriptBundle := range lib {
 		if _, err := i.EvalPath(pkgPath); err != nil {
 			return err
 		}
 
 		var no int
 
-		for _, s := range scripts {
+		for _, s := range scriptBundle {
 			if s.BindMode != None {
 				var code string
 

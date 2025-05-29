@@ -24,22 +24,27 @@ import (
 	"fmt"
 	"git.golaxy.org/core/utils/generic"
 	"github.com/pangdogs/yaegi/interp"
+	"github.com/spf13/afero"
+	"io/fs"
+	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"slices"
+	"strings"
 )
 
 // Project 项目
 type Project struct {
-	PkgRoot    string           // 包根路径
+	ScriptRoot string           // 脚本根路径
 	LocalPath  string           // 本地路径
 	SymbolsTab []interp.Exports // 符号表
 }
 
 // NewSolution 创建解决方案
 func NewSolution(pkgRoot string) *Solution {
-	fs := NewCodeFS("src/main/vendor/")
-	fs.AddFakeFile(path.Join(pkgRoot, "go.mod"), []byte(fmt.Sprintf("module %s", pkgRoot)))
+	fs := NewCodeFs("src/main/vendor/")
+	afero.WriteFile(fs.AferoFs(), path.Join(pkgRoot, "go.mod"), []byte(fmt.Sprintf("module %s", pkgRoot)), os.ModePerm)
 
 	i := interp.New(interp.Options{
 		SourcecodeFilesystem: fs,
@@ -57,7 +62,7 @@ func NewSolution(pkgRoot string) *Solution {
 // Solution 解决方案
 type Solution struct {
 	pkgRoot string
-	fs      *CodeFS
+	fs      *CodeFs
 	interp  *interp.Interpreter
 	lib     ScriptLib
 }
@@ -73,18 +78,30 @@ func (s *Solution) Eval(code string) (reflect.Value, error) {
 }
 
 // Package 包
-func (s *Solution) Package(pkgPath string) Scripts {
+func (s *Solution) Package(pkgPath string) ScriptBundle {
 	return s.lib.Package(pkgPath)
 }
 
 // Range 遍历
-func (s *Solution) Range(fun generic.Func2[string, Scripts, bool]) {
+func (s *Solution) Range(fun generic.Func2[string, ScriptBundle, bool]) {
 	s.lib.Range(fun)
 }
 
 // Load 加载项目
 func (s *Solution) Load(project *Project) error {
-	if err := s.fs.Mapping(path.Join(s.pkgRoot, project.PkgRoot), project.LocalPath); err != nil {
+	err := filepath.Walk(project.LocalPath, func(filePath string, fileInfo fs.FileInfo, err error) error {
+		if err != nil || fileInfo.IsDir() {
+			return nil
+		}
+
+		fileData, err := os.ReadFile(filePath)
+		if err != nil {
+			return err
+		}
+
+		return afero.WriteFile(s.fs.AferoFs(), path.Join(s.pkgRoot, project.ScriptRoot, strings.TrimPrefix(filePath, project.LocalPath)), fileData, os.ModePerm)
+	})
+	if err != nil {
 		return err
 	}
 

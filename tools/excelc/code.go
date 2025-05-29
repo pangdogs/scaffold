@@ -31,7 +31,7 @@ func cmdGenCode(cmd *cobra.Command, args []string) {
 	loadDependencyProtobuf()
 
 	filepath.Walk(viper.GetString("pb_dir"), func(path string, info fs.FileInfo, err error) error {
-		if info.IsDir() {
+		if err != nil || info.IsDir() {
 			return nil
 		}
 

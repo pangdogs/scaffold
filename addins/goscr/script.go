@@ -67,7 +67,7 @@ func (s *_Script) Init(svcCtx service.Context) {
 
 	log.Infof(s.svcCtx, "init load solution %q ok, projects: %s", s.options.PkgRoot,
 		pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-			return fmt.Sprintf("%q -> %q", project.PkgRoot, project.LocalPath)
+			return fmt.Sprintf("%q -> %q", project.ScriptRoot, project.LocalPath)
 		}))
 
 	if s.options.AutoHotFix {
@@ -117,7 +117,7 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 
 	for _, project := range s.options.Projects {
 		if err := solution.Load(project); err != nil {
-			return nil, fmt.Errorf("load project %s failed, %s", fmt.Sprintf("%q -> %q", project.PkgRoot, project.LocalPath), err)
+			return nil, fmt.Errorf("load project %s failed, %s", fmt.Sprintf("%q -> %q", project.ScriptRoot, project.LocalPath), err)
 		}
 	}
 
@@ -139,7 +139,7 @@ func (s *_Script) autoHotFix() {
 		log.Panicf(s.svcCtx, "auto hotfix solution %q watch changes failed, projects: %s, %s",
 			s.options.PkgRoot,
 			pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-				return fmt.Sprintf("%q -> %q", project.PkgRoot, project.LocalPath)
+				return fmt.Sprintf("%q -> %q", project.ScriptRoot, project.LocalPath)
 			}),
 			err)
 	}
@@ -150,7 +150,7 @@ func (s *_Script) autoHotFix() {
 			log.Panicf(s.svcCtx, "auto hotfix solution %q watch changes failed, projects: %s, %s",
 				s.options.PkgRoot,
 				pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-					return fmt.Sprintf("%q -> %q", project.PkgRoot, project.LocalPath)
+					return fmt.Sprintf("%q -> %q", project.ScriptRoot, project.LocalPath)
 				}),
 				err)
 		}
@@ -191,7 +191,7 @@ func (s *_Script) autoHotFix() {
 
 					log.Infof(s.svcCtx, "auto hotfix load solution %q ok, projects: %s", s.options.PkgRoot,
 						pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-							return fmt.Sprintf("%q -> %q", project.PkgRoot, project.LocalPath)
+							return fmt.Sprintf("%q -> %q", project.ScriptRoot, project.LocalPath)
 						}))
 				}()
 
@@ -202,7 +202,7 @@ func (s *_Script) autoHotFix() {
 				log.Errorf(s.svcCtx, "auto hotfix solution %q watch changes failed, projects: %s, %s",
 					s.options.PkgRoot,
 					pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-						return fmt.Sprintf("%q -> %q", project.PkgRoot, project.LocalPath)
+						return fmt.Sprintf("%q -> %q", project.ScriptRoot, project.LocalPath)
 					}),
 					err)
 			}
@@ -212,7 +212,7 @@ func (s *_Script) autoHotFix() {
 	log.Infof(s.svcCtx, "auto hotfix solution %q watch changes ok, projects: %s",
 		s.options.PkgRoot,
 		pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-			return fmt.Sprintf("%q -> %q", project.PkgRoot, project.LocalPath)
+			return fmt.Sprintf("%q -> %q", project.ScriptRoot, project.LocalPath)
 		}))
 }
 

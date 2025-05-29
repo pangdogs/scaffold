@@ -20,133 +20,97 @@
 package dynamic
 
 import (
-	"git.golaxy.org/core/utils/generic"
 	"github.com/spf13/afero"
 	"io"
 	"io/fs"
-	"os"
 	"path"
 	"path/filepath"
-	"slices"
-	"sort"
 	"strings"
 )
 
-// NewCodeFS 创建代码文件系统
-func NewCodeFS(rootPath string) *CodeFS {
-	if !strings.HasSuffix(rootPath, "/") {
-		rootPath += "/"
+// NewCodeFs 创建代码文件系统
+func NewCodeFs(fakePaths ...string) *CodeFs {
+	cfs := &CodeFs{
+		aferoFs: afero.NewMemMapFs(),
 	}
-	return &CodeFS{
-		rootPath: rootPath,
-		fakeFs:   afero.NewMemMapFs(),
+
+	for _, fakePath := range fakePaths {
+		if fakePath == "" {
+			continue
+		}
+		if !strings.HasSuffix(fakePath, "/") {
+			fakePath += "/"
+		}
+		cfs.fakePaths = append(cfs.fakePaths, fakePath)
 	}
+
+	return cfs
 }
 
-type _FakeDirEntry struct {
-	os.FileInfo
+type _CodeDirEntry struct {
+	fs.FileInfo
 }
 
-func (e *_FakeDirEntry) Type() os.FileMode {
-	return e.Mode().Type()
+func (e *_CodeDirEntry) Type() fs.FileMode {
+	return e.FileInfo.Mode()
 }
 
-func (e *_FakeDirEntry) Info() (os.FileInfo, error) {
+func (e *_CodeDirEntry) Info() (fs.FileInfo, error) {
 	return e.FileInfo, nil
 }
 
-// CodeFS 代码文件系统
-type CodeFS struct {
-	rootPath    string
-	mappingPath generic.SliceMap[string, string]
-	fakeFs      afero.Fs
+type _CodeFsDirFile struct {
+	afero.File
 }
 
-// Mapping 映射包路径
-func (cfs *CodeFS) Mapping(pkgRoot, localPath string) error {
-	pkgRoot = path.Clean(filepath.ToSlash(pkgRoot))
-
-	localPath, err := filepath.Abs(filepath.FromSlash(localPath))
+// ReadDir implements fs.ReadDirFile
+func (d *_CodeFsDirFile) ReadDir(n int) ([]fs.DirEntry, error) {
+	fileInfos, err := d.File.Readdir(n)
 	if err != nil {
-		return err
-	}
-	localPath = filepath.Clean(localPath)
-
-	if !cfs.mappingPath.TryAdd(pkgRoot, localPath) {
-		return os.ErrExist
+		return nil, err
 	}
 
-	return nil
-}
+	fileEntries := make([]fs.DirEntry, 0, len(fileInfos))
 
-// Unmapping 移除包路径映射
-func (cfs *CodeFS) Unmapping(pkgRoot string) {
-	pkgRoot = path.Clean(filepath.ToSlash(pkgRoot))
-	cfs.mappingPath.Delete(pkgRoot)
-}
-
-// AddFakeFile 添加虚拟文件
-func (cfs *CodeFS) AddFakeFile(name string, data []byte) error {
-	name = path.Clean(filepath.ToSlash(name))
-
-	if b, err := afero.Exists(cfs.fakeFs, name); err != nil {
-		return err
-	} else if b {
-		return os.ErrExist
+	for _, fileInfo := range fileInfos {
+		fileEntries = append(fileEntries, &_CodeDirEntry{FileInfo: fileInfo})
 	}
 
-	return afero.WriteFile(cfs.fakeFs, name, data, os.ModePerm)
+	return fileEntries, nil
 }
 
-// RemoveFakeFile 移除虚拟文件
-func (cfs *CodeFS) RemoveFakeFile(name string) {
-	name = path.Clean(filepath.ToSlash(name))
-	cfs.fakeFs.Remove(name)
+// CodeFs 代码文件系统
+type CodeFs struct {
+	fakePaths []string
+	aferoFs   afero.Fs
+}
+
+// AferoFs 获取Afero文件系统
+func (cfs *CodeFs) AferoFs() afero.Fs {
+	return cfs.aferoFs
 }
 
 // Open implements fs.FS
-func (cfs *CodeFS) Open(name string) (file fs.File, err error) {
-	name = path.Clean(filepath.ToSlash(name))
-
-	if strings.HasPrefix(name, cfs.rootPath) {
-		name = strings.TrimPrefix(name, cfs.rootPath)
+func (cfs *CodeFs) Open(name string) (fs.File, error) {
+	file, err := cfs.aferoFs.Open(cfs.normalizedPath(name))
+	if err != nil {
+		return nil, err
 	}
 
-	if file, err = cfs.fakeFs.Open(name); err == nil {
-		return
+	stat, err := file.Stat()
+	if err != nil {
+		return nil, err
 	}
 
-	cfs.mappingPath.ReversedRange(func(pkgRoot string, localPath string) bool {
-		if !strings.HasPrefix(name, pkgRoot) {
-			return true
-		}
-
-		localName := strings.TrimPrefix(name, pkgRoot)
-		if localName != "" {
-			if localName[0] != '/' {
-				return true
-			}
-			localName = filepath.FromSlash(localName)
-		}
-		realName := filepath.Join(localPath, localName)
-
-		file, err = os.OpenFile(realName, os.O_RDONLY, 0)
-		if err != nil {
-			return true
-		}
-
-		return false
-	})
-
-	if file == nil && err == nil {
-		return nil, os.ErrNotExist
+	if stat.IsDir() {
+		return &_CodeFsDirFile{File: file}, nil
 	}
 
-	return
+	return file, nil
 }
 
 // ReadFile implements fs.ReadFileFS
-func (cfs *CodeFS) ReadFile(name string) ([]byte, error) {
+func (cfs *CodeFs) ReadFile(name string) ([]byte, error) {
 	file, err := cfs.Open(name)
 	if err != nil {
 		return nil, err
@@ -157,7 +121,7 @@ func (cfs *CodeFS) ReadFile(name string) ([]byte, error) {
 }
 
 // Stat implements fs.StatFS
-func (cfs *CodeFS) Stat(name string) (fs.FileInfo, error) {
+func (cfs *CodeFs) Stat(name string) (fs.FileInfo, error) {
 	file, err := cfs.Open(name)
 	if err != nil {
 		return nil, err
@@ -168,58 +132,37 @@ func (cfs *CodeFS) Stat(name string) (fs.FileInfo, error) {
 }
 
 // ReadDir implements fs.ReadDirFS
-func (cfs *CodeFS) ReadDir(name string) ([]fs.DirEntry, error) {
+func (cfs *CodeFs) ReadDir(name string) ([]fs.DirEntry, error) {
+	name = cfs.normalizedPath(name)
+
+	fileInfos, err := afero.ReadDir(cfs.aferoFs, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fileEntries := make([]fs.DirEntry, 0, len(fileInfos))
+
+	for _, fileInfo := range fileInfos {
+		fileEntries = append(fileEntries, &_CodeDirEntry{FileInfo: fileInfo})
+	}
+
+	return fileEntries, nil
+}
+
+func (cfs *CodeFs) normalizedPath(name string) string {
 	name = path.Clean(filepath.ToSlash(name))
 
-	if strings.HasPrefix(name, cfs.rootPath) {
-		name = strings.TrimPrefix(name, cfs.rootPath)
+	for _, fakePath := range cfs.fakePaths {
+		if fakePath == "" {
+			continue
+		}
+		if strings.HasPrefix(name, fakePath) {
+			return strings.TrimPrefix(name, fakePath)
+		}
+		if name == fakePath[:len(fakePath)-1] {
+			return "/"
+		}
 	}
 
-	var files []fs.DirEntry
-	var err error
-
-	cfs.mappingPath.ReversedRange(func(pkgRoot string, localPath string) bool {
-		if !strings.HasPrefix(name, pkgRoot) {
-			return true
-		}
-
-		localName := strings.TrimPrefix(name, pkgRoot)
-		if localName != "" {
-			if localName[0] != '/' {
-				return true
-			}
-			localName = filepath.FromSlash(localName)
-		}
-		realName := filepath.Join(localPath, localName)
-
-		files, err = os.ReadDir(realName)
-		if err != nil {
-			return true
-		}
-
-		return false
-	})
-
-	fakeFiles, _ := afero.ReadDir(cfs.fakeFs, name)
-	if len(fakeFiles) > 0 {
-		for _, fakeFile := range fakeFiles {
-			idx := slices.IndexFunc(files, func(file fs.DirEntry) bool {
-				return file.Name() == fakeFile.Name()
-			})
-			if idx >= 0 {
-				files[idx] = &_FakeDirEntry{FileInfo: fakeFile}
-				continue
-			}
-			files = append(files, &_FakeDirEntry{FileInfo: fakeFile})
-		}
-		sort.Slice(files, func(i, j int) bool {
-			return files[i].Name() < files[j].Name()
-		})
-	}
-
-	if len(files) <= 0 {
-		return nil, os.ErrNotExist
-	}
-
-	return files, nil
+	return name
 }
