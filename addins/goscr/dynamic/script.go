@@ -26,8 +26,11 @@ import (
 	"git.golaxy.org/core/utils/generic"
 	"github.com/elliotchance/pie/v2"
 	"github.com/pangdogs/yaegi/interp"
+	"github.com/spf13/afero"
 	"go/ast"
-	"golang.org/x/tools/go/packages"
+	"go/parser"
+	"go/token"
+	"io/fs"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -178,143 +181,163 @@ func (lib ScriptLib) PushMethod(pkgPath, ident string, method string) bool {
 }
 
 // Load 加载
-func (lib ScriptLib) Load(localPath string) error {
-	cfg := &packages.Config{
-		Mode: packages.LoadAllSyntax,
+func (lib ScriptLib) Load(codeFs *CodeFs) error {
+	fset := token.NewFileSet()
+
+	type _Code struct {
+		PkgPath string
+		File    *ast.File
 	}
 
-	pkgs, err := packages.Load(cfg, filepath.Join(localPath, "..."))
+	var codes []*_Code
+
+	err := afero.Walk(codeFs.AferoFs(), ".", func(filePath string, fileInfo fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if fileInfo.IsDir() || filepath.Ext(filePath) != ".go" {
+			return nil
+		}
+
+		fileData, err := afero.ReadFile(codeFs.AferoFs(), filePath)
+		if err != nil {
+			return err
+		}
+
+		file, err := parser.ParseFile(fset, filePath, fileData, parser.AllErrors|parser.ParseComments)
+		if err != nil {
+			return err
+		}
+
+		pkgPath := path.Dir(filepath.ToSlash(filePath))
+
+		codes = append(codes, &_Code{PkgPath: pkgPath, File: file})
+
+		lib.PushIdent(pkgPath, "", None, nil)
+
+		return nil
+	})
 	if err != nil {
 		return err
 	}
 
-	for _, pkg := range pkgs {
-		if lib.Package(pkg.PkgPath) != nil {
-			return fmt.Errorf("package %q conflicted", pkg.PkgPath)
-		}
+	for _, code := range codes {
+		ast.Inspect(code.File, func(n ast.Node) bool {
+			genDecl, ok := n.(*ast.GenDecl)
+			if !ok {
+				return true
+			}
+
+			for _, spec := range genDecl.Specs {
+				ts, ok := spec.(*ast.TypeSpec)
+				if !ok {
+					continue
+				}
+
+				var thisField *ast.Field
+				var bindMode BindMode
+
+				switch ty := ts.Type.(type) {
+				case *ast.StructType:
+					if ty.Fields == nil {
+						continue
+					}
+
+					thisField = pie.First(ty.Fields.List)
+					if thisField == nil {
+						continue
+					}
+
+					bindMode = Struct
+
+				case *ast.FuncType:
+					if ty.TypeParams != nil && len(ty.TypeParams.List) > 0 {
+						continue
+					}
+
+					if ty.Params != nil && len(ty.Params.List) > 0 {
+						continue
+					}
+
+					if ty.Results == nil {
+						continue
+					}
+
+					thisField = pie.First(ty.Results.List)
+					if thisField == nil {
+						continue
+					}
+
+					bindMode = Func
+
+				default:
+					continue
+				}
+
+				thisFieldType, ok := thisField.Type.(*ast.StarExpr)
+				if !ok {
+					continue
+				}
+
+				thisFieldSelector, ok := thisFieldType.X.(*ast.SelectorExpr)
+				if !ok || thisFieldSelector.Sel == nil {
+					continue
+				}
+
+				thisFieldPkgIdent, ok := thisFieldSelector.X.(*ast.Ident)
+				if !ok {
+					continue
+				}
+
+				idx := slices.IndexFunc(code.File.Imports, func(spec *ast.ImportSpec) bool {
+					if spec.Path == nil {
+						return false
+					}
+					if spec.Name != nil {
+						return spec.Name.Name == thisFieldPkgIdent.Name
+					}
+					return path.Base(strings.Trim(spec.Path.Value, `"`)) == thisFieldPkgIdent.Name
+				})
+				if idx < 0 {
+					continue
+				}
+				imp := code.File.Imports[idx]
+
+				lib.PushIdent(code.PkgPath, ts.Name.Name, bindMode, &This{
+					Name:    thisFieldSelector.Sel.Name,
+					PkgName: thisFieldPkgIdent.Name,
+					PkgPath: strings.Trim(imp.Path.Value, `"`),
+				})
+			}
+
+			return true
+		})
 	}
 
-	for _, pkg := range pkgs {
-		lib.PushIdent(pkg.PkgPath, "", None, nil)
-
-		for _, file := range pkg.Syntax {
-			ast.Inspect(file, func(n ast.Node) bool {
-				genDecl, ok := n.(*ast.GenDecl)
-				if !ok {
-					return true
-				}
-
-				for _, spec := range genDecl.Specs {
-					ts, ok := spec.(*ast.TypeSpec)
-					if !ok {
-						continue
-					}
-
-					var thisField *ast.Field
-					var bindMode BindMode
-
-					switch ty := ts.Type.(type) {
-					case *ast.StructType:
-						if ty.Fields == nil {
-							continue
-						}
-
-						thisField = pie.First(ty.Fields.List)
-						if thisField == nil {
-							continue
-						}
-
-						bindMode = Struct
-
-					case *ast.FuncType:
-						if ty.TypeParams != nil && len(ty.TypeParams.List) > 0 {
-							continue
-						}
-
-						if ty.Params != nil && len(ty.Params.List) > 0 {
-							continue
-						}
-
-						if ty.Results == nil {
-							continue
-						}
-
-						thisField = pie.First(ty.Results.List)
-						if thisField == nil {
-							continue
-						}
-
-						bindMode = Func
-
-					default:
-						continue
-					}
-
-					thisFieldType, ok := thisField.Type.(*ast.StarExpr)
-					if !ok {
-						continue
-					}
-
-					thisFieldSelector, ok := thisFieldType.X.(*ast.SelectorExpr)
-					if !ok || thisFieldSelector.Sel == nil {
-						continue
-					}
-
-					thisFieldPkgIdent, ok := thisFieldSelector.X.(*ast.Ident)
-					if !ok {
-						continue
-					}
-
-					idx := slices.IndexFunc(file.Imports, func(spec *ast.ImportSpec) bool {
-						if spec.Path == nil {
-							return false
-						}
-						if spec.Name != nil {
-							return spec.Name.Name == thisFieldPkgIdent.Name
-						}
-						return path.Base(strings.Trim(spec.Path.Value, `"`)) == thisFieldPkgIdent.Name
-					})
-					if idx < 0 {
-						continue
-					}
-					imp := file.Imports[idx]
-
-					lib.PushIdent(pkg.PkgPath, ts.Name.Name, bindMode, &This{
-						Name:    thisFieldSelector.Sel.Name,
-						PkgName: thisFieldPkgIdent.Name,
-						PkgPath: strings.Trim(imp.Path.Value, `"`),
-					})
-				}
-
+	for _, code := range codes {
+		ast.Inspect(code.File, func(n ast.Node) bool {
+			funcDecl, ok := n.(*ast.FuncDecl)
+			if !ok {
 				return true
-			})
-		}
+			}
 
-		for _, file := range pkg.Syntax {
-			ast.Inspect(file, func(n ast.Node) bool {
-				funcDecl, ok := n.(*ast.FuncDecl)
-				if !ok {
-					return true
-				}
-
-				if funcDecl.Recv == nil {
-					lib.PushMethod(pkg.PkgPath, "", funcDecl.Name.Name)
-					return true
-				}
-
-				for _, field := range funcDecl.Recv.List {
-					if starExpr, ok := field.Type.(*ast.StarExpr); ok {
-						if ident, ok := starExpr.X.(*ast.Ident); ok {
-							lib.PushMethod(pkg.PkgPath, ident.Name, funcDecl.Name.Name)
-						}
-					} else if ident, ok := field.Type.(*ast.Ident); ok {
-						lib.PushMethod(pkg.PkgPath, ident.Name, funcDecl.Name.Name)
-					}
-				}
-
+			if funcDecl.Recv == nil {
+				lib.PushMethod(code.PkgPath, "", funcDecl.Name.Name)
 				return true
-			})
-		}
+			}
+
+			for _, field := range funcDecl.Recv.List {
+				if starExpr, ok := field.Type.(*ast.StarExpr); ok {
+					if ident, ok := starExpr.X.(*ast.Ident); ok {
+						lib.PushMethod(code.PkgPath, ident.Name, funcDecl.Name.Name)
+					}
+				} else if ident, ok := field.Type.(*ast.Ident); ok {
+					lib.PushMethod(code.PkgPath, ident.Name, funcDecl.Name.Name)
+				}
+			}
+
+			return true
+		})
 	}
 
 	return nil

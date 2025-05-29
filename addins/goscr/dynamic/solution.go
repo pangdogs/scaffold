@@ -21,7 +21,6 @@ package dynamic
 
 import (
 	"cmp"
-	"fmt"
 	"git.golaxy.org/core/utils/generic"
 	"github.com/pangdogs/yaegi/interp"
 	"github.com/spf13/afero"
@@ -43,7 +42,6 @@ type Project struct {
 // NewSolution 创建解决方案
 func NewSolution(pkgRoot string) *Solution {
 	fs := NewCodeFs("src/main/vendor/")
-	afero.WriteFile(fs.AferoFs(), path.Join(pkgRoot, "go.mod"), []byte(fmt.Sprintf("module %s", pkgRoot)), os.ModePerm)
 
 	i := interp.New(interp.Options{
 		SourcecodeFilesystem: fs,
@@ -51,19 +49,19 @@ func NewSolution(pkgRoot string) *Solution {
 	})
 
 	return &Solution{
-		pkgRoot: pkgRoot,
-		fs:      fs,
-		interp:  i,
-		lib:     NewScriptLib(),
+		pkgRoot:   pkgRoot,
+		codeFs:    fs,
+		interp:    i,
+		scriptLib: NewScriptLib(),
 	}
 }
 
 // Solution 解决方案
 type Solution struct {
-	pkgRoot string
-	fs      *CodeFs
-	interp  *interp.Interpreter
-	lib     ScriptLib
+	pkgRoot   string
+	codeFs    *CodeFs
+	interp    *interp.Interpreter
+	scriptLib ScriptLib
 }
 
 // Use 导入符号表
@@ -78,12 +76,12 @@ func (s *Solution) Eval(code string) (reflect.Value, error) {
 
 // Package 包
 func (s *Solution) Package(pkgPath string) ScriptBundle {
-	return s.lib.Package(pkgPath)
+	return s.scriptLib.Package(pkgPath)
 }
 
 // Range 遍历
 func (s *Solution) Range(fun generic.Func2[string, ScriptBundle, bool]) {
-	s.lib.Range(fun)
+	s.scriptLib.Range(fun)
 }
 
 // Load 加载项目
@@ -103,7 +101,7 @@ func (s *Solution) Load(project *Project) error {
 			return err
 		}
 
-		return afero.WriteFile(s.fs.AferoFs(), path.Join(s.pkgRoot, project.ScriptRoot, relFilePath), fileData, os.ModePerm)
+		return afero.WriteFile(s.codeFs.AferoFs(), path.Join(s.pkgRoot, project.ScriptRoot, relFilePath), fileData, os.ModePerm)
 	})
 	if err != nil {
 		return err
@@ -115,11 +113,11 @@ func (s *Solution) Load(project *Project) error {
 		}
 	}
 
-	if err := s.lib.Load(project.LocalPath); err != nil {
+	if err := s.scriptLib.Load(s.codeFs); err != nil {
 		return err
 	}
 
-	if err := s.lib.Compile(s.interp); err != nil {
+	if err := s.scriptLib.Compile(s.interp); err != nil {
 		return err
 	}
 
@@ -128,7 +126,7 @@ func (s *Solution) Load(project *Project) error {
 
 // Method 方法
 func (s *Solution) Method(pkgPath, method string) reflect.Value {
-	script := s.lib.Package(pkgPath).Ident("")
+	script := s.scriptLib.Package(pkgPath).Ident("")
 	if script == nil {
 		return reflect.Value{}
 	}
@@ -145,7 +143,7 @@ func (s *Solution) Method(pkgPath, method string) reflect.Value {
 
 // BindMethod 绑定成员方法
 func (s *Solution) BindMethod(this reflect.Value, pkgPath, ident string, method string) any {
-	script := s.lib.Package(pkgPath).Ident(ident)
+	script := s.scriptLib.Package(pkgPath).Ident(ident)
 	if script == nil {
 		return nil
 	}
