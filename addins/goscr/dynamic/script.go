@@ -192,21 +192,18 @@ func (lib ScriptLib) Load(codeFs *CodeFs) error {
 	var codes []*_Code
 
 	err := afero.Walk(codeFs.AferoFs(), ".", func(filePath string, fileInfo fs.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if fileInfo.IsDir() || filepath.Ext(filePath) != ".go" {
+		if err != nil || fileInfo.IsDir() || !strings.HasSuffix(fileInfo.Name(), ".go") {
 			return nil
 		}
 
 		fileData, err := afero.ReadFile(codeFs.AferoFs(), filePath)
 		if err != nil {
-			return err
+			return fmt.Errorf("read script file %q failed, %s", filePath, err)
 		}
 
 		file, err := parser.ParseFile(fset, filePath, fileData, parser.AllErrors|parser.ParseComments)
 		if err != nil {
-			return err
+			return fmt.Errorf("parse script file %q failed, %s", filePath, err)
 		}
 
 		pkgPath := path.Dir(filepath.ToSlash(filePath))
@@ -349,16 +346,16 @@ func (lib ScriptLib) Compile(i *interp.Interpreter) error {
 
 	for pkgPath, scriptBundle := range lib {
 		if _, err := i.EvalPath(pkgPath); err != nil {
-			return err
+			return fmt.Errorf("eval script path %q failed, %s", pkgPath, err)
 		}
 
 		var no int
 
-		for _, s := range scriptBundle {
-			if s.BindMode != None {
+		for _, script := range scriptBundle {
+			if script.BindMode != None {
 				var code string
 
-				switch s.BindMode {
+				switch script.BindMode {
 				case Func:
 					code = `
 package {{.UniquePkgName}}_export
@@ -403,7 +400,7 @@ func Bind_{{.Ident}}(this any, method string) any {
 
 				tmpl, err := template.New("").Parse(code)
 				if err != nil {
-					return err
+					return fmt.Errorf("script path %q new template failed, %s", pkgPath, err)
 				}
 
 				type _Args struct {
@@ -412,49 +409,49 @@ func Bind_{{.Ident}}(this any, method string) any {
 				}
 
 				args := _Args{
-					Script: s,
+					Script: script,
 					No:     no,
 				}
 
 				buff.Reset()
 				if err := tmpl.Execute(buff, args); err != nil {
-					return err
+					return fmt.Errorf("script path %q execute template failed, %s", pkgPath, err)
 				}
 
 				if _, err := i.Eval(buff.String()); err != nil {
-					return err
+					return fmt.Errorf("script path %q eval export code failed, %s", pkgPath, err)
 				}
 
-				binderRV, err := i.Eval(fmt.Sprintf(`%s_export.Bind_%s`, s.UniquePkgName(), s.Ident))
+				binderRV, err := i.Eval(fmt.Sprintf(`%s_export.Bind_%s`, script.UniquePkgName(), script.Ident))
 				if err != nil {
-					return err
+					return fmt.Errorf("script path %q export ident %q failed, %s", pkgPath, script.Ident, err)
 				}
 
 				binder, ok := binderRV.Interface().(MethodBinder)
 				if !ok {
-					return fmt.Errorf("package %q ident %q incorrect method binder type", pkgPath, s.Ident)
+					return fmt.Errorf("script path %q ident %q has incorrect method binder type", pkgPath, script.Ident)
 				}
 
-				s.MethodBinder = binder
+				script.MethodBinder = binder
 
 				no++
 			}
 
-			if _, err := i.Eval(fmt.Sprintf(`import %s "%s"`, s.UniquePkgName(), s.PkgPath)); err != nil {
-				return err
+			if _, err := i.Eval(fmt.Sprintf(`import %s "%s"`, script.UniquePkgName(), script.PkgPath)); err != nil {
+				return fmt.Errorf("import script path %q failed, %s", pkgPath, err)
 			}
 
-			for _, method := range s.Methods {
-				if s.Ident != "" {
-					methodRV, err := i.Eval(fmt.Sprintf(`%s.%s.%s`, s.UniquePkgName(), s.Ident, method.Name))
+			for _, method := range script.Methods {
+				if script.Ident != "" {
+					methodRV, err := i.Eval(fmt.Sprintf(`%s.%s.%s`, script.UniquePkgName(), script.Ident, method.Name))
 					if err != nil {
-						return err
+						return fmt.Errorf("script path %q export ident %q method %q failed, %s", pkgPath, script.Ident, method.Name, err)
 					}
 					method.Reflected = methodRV
 				} else {
-					methodRV, err := i.Eval(fmt.Sprintf(`%s.%s`, s.UniquePkgName(), method.Name))
+					methodRV, err := i.Eval(fmt.Sprintf(`%s.%s`, script.UniquePkgName(), method.Name))
 					if err != nil {
-						return err
+						return fmt.Errorf("script path %q export method %q failed, %s", pkgPath, method.Name, err)
 					}
 					method.Reflected = methodRV
 				}

@@ -21,6 +21,7 @@ package dynamic
 
 import (
 	"cmp"
+	"fmt"
 	"git.golaxy.org/core/utils/generic"
 	"github.com/pangdogs/yaegi/interp"
 	"github.com/spf13/afero"
@@ -86,22 +87,38 @@ func (s *Solution) Range(fun generic.Func2[string, ScriptBundle, bool]) {
 
 // Load 加载项目
 func (s *Solution) Load(project *Project) error {
-	err := filepath.Walk(project.LocalPath, func(filePath string, fileInfo fs.FileInfo, err error) error {
+	scriptPath := path.Join(s.pkgRoot, project.ScriptRoot)
+
+	b, err := afero.Exists(s.codeFs.AferoFs(), scriptPath)
+	if err != nil {
+		return fmt.Errorf("invalid script path %q, %s", scriptPath, err)
+	}
+	if b {
+		return fmt.Errorf("script path %q conflicted", scriptPath)
+	}
+
+	err = filepath.Walk(project.LocalPath, func(filePath string, fileInfo fs.FileInfo, err error) error {
 		if err != nil || fileInfo.IsDir() {
 			return nil
 		}
 
 		fileData, err := os.ReadFile(filePath)
 		if err != nil {
-			return err
+			return fmt.Errorf("read local file %q failed, %s", filePath, err)
 		}
 
-		relFilePath, err := filepath.Rel(project.LocalPath, filePath)
+		scriptFilePath, err := filepath.Rel(project.LocalPath, filePath)
 		if err != nil {
-			return err
+			return fmt.Errorf("relative local file %q failed, %s", filePath, err)
+		}
+		scriptFilePath = path.Join(scriptPath, scriptFilePath)
+
+		err = afero.WriteFile(s.codeFs.AferoFs(), scriptFilePath, fileData, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("write script file %q failed, %s", scriptFilePath, err)
 		}
 
-		return afero.WriteFile(s.codeFs.AferoFs(), path.Join(s.pkgRoot, project.ScriptRoot, relFilePath), fileData, os.ModePerm)
+		return nil
 	})
 	if err != nil {
 		return err
@@ -109,16 +126,16 @@ func (s *Solution) Load(project *Project) error {
 
 	for _, symbols := range project.SymbolsTab {
 		if err := s.interp.Use(symbols); err != nil {
-			return err
+			return fmt.Errorf("script path %q use symbols failed, %s", scriptPath, err)
 		}
 	}
 
 	if err := s.scriptLib.Load(s.codeFs); err != nil {
-		return err
+		return fmt.Errorf("load script path %q failed, %s", scriptPath, err)
 	}
 
 	if err := s.scriptLib.Compile(s.interp); err != nil {
-		return err
+		return fmt.Errorf("compile script path %q failed, %s", scriptPath, err)
 	}
 
 	return nil
