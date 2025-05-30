@@ -25,6 +25,7 @@ import (
 	"bytes"
 	"cmp"
 	"compress/gzip"
+	"crypto/sha1"
 	"errors"
 	"fmt"
 	"git.golaxy.org/core/utils/generic"
@@ -69,10 +70,11 @@ func NewSolution(pkgRoot string) *Solution {
 
 // Solution 解决方案
 type Solution struct {
-	pkgRoot   string
-	codeFs    *CodeFs
-	interp    *interp.Interpreter
-	scriptLib ScriptLib
+	pkgRoot    string
+	codeFs     *CodeFs
+	remoteHash generic.SliceMap[string, [sha1.Size]byte]
+	interp     *interp.Interpreter
+	scriptLib  ScriptLib
 }
 
 // Use 导入符号表
@@ -138,7 +140,6 @@ func (s *Solution) Load(project *Project) error {
 
 	if project.RemoteURL != "" {
 		resp, err := resty.New().
-			SetDoNotParseResponse(true).
 			R().
 			Get(project.RemoteURL)
 		if err != nil {
@@ -150,16 +151,18 @@ func (s *Solution) Load(project *Project) error {
 
 		switch strings.ToLower(path.Ext(project.RemoteURL)) {
 		case ".tar.gz":
-			if err := s.extractTarGzip(resp.RawBody()); err != nil {
+			if err := s.extractTarGzip(resp.Body()); err != nil {
 				return fmt.Errorf("extract remote file %q failed, %s", project.RemoteURL, err)
 			}
 		case ".zip":
-			if err := s.extractZip(resp.RawBody()); err != nil {
+			if err := s.extractZip(resp.Body()); err != nil {
 				return fmt.Errorf("extract remote file %q failed, %s", project.RemoteURL, err)
 			}
 		default:
 			return fmt.Errorf("unsupported remote file %q", project.RemoteURL)
 		}
+
+		s.remoteHash.Add(project.RemoteURL, sha1.Sum(resp.Body()))
 	}
 
 	for _, symbols := range project.SymbolsTab {
@@ -177,6 +180,25 @@ func (s *Solution) Load(project *Project) error {
 	}
 
 	return nil
+}
+
+// DetectRemoteChanged 检测项目远程下载文件是否有变化
+func (s *Solution) DetectRemoteChanged() (bool, error) {
+	for _, kv := range s.remoteHash {
+		resp, err := resty.New().
+			R().
+			Get(kv.K)
+		if err != nil {
+			return false, fmt.Errorf("download remote file %q failed, %s", kv.K, err)
+		}
+		if resp.StatusCode() != http.StatusOK {
+			return false, fmt.Errorf("download remote file %q failed, status code %d", kv.K, resp.StatusCode())
+		}
+		if sha1.Sum(resp.Body()) != kv.V {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // Method 方法
@@ -232,10 +254,8 @@ func (s *Solution) BindMethod(this reflect.Value, pkgPath, ident string, method 
 	return ret
 }
 
-func (s *Solution) extractTarGzip(reader io.ReadCloser) error {
-	defer reader.Close()
-
-	gzipReader, err := gzip.NewReader(reader)
+func (s *Solution) extractTarGzip(data []byte) error {
+	gzipReader, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
@@ -284,14 +304,7 @@ func (s *Solution) extractTarGzip(reader io.ReadCloser) error {
 	return nil
 }
 
-func (s *Solution) extractZip(reader io.ReadCloser) error {
-	defer reader.Close()
-
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return err
-	}
-
+func (s *Solution) extractZip(data []byte) error {
 	zipReader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return err

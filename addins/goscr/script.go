@@ -135,81 +135,139 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 }
 
 func (s *_Script) autoHotFix() {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Panicf(s.svcCtx, "auto hotfix solution %q watch changes failed, projects: [%s], %s",
-			s.options.PkgRoot,
-			strings.Join(pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-				return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-			}), ", "),
-			err)
-	}
-
-	for _, project := range s.options.Projects {
-		if err = watcher.Add(project.LocalPath); err != nil {
-			watcher.Close()
-			log.Panicf(s.svcCtx, "auto hotfix solution %q watch %q -> %q + %q changes failed, %s", s.options.PkgRoot, project.ScriptRoot, project.LocalPath, project.RemoteURL, err)
+	if pie.Any(s.options.Projects, func(project *dynamic.Project) bool { return project.LocalPath != "" }) {
+		watcher, err := fsnotify.NewWatcher()
+		if err != nil {
+			log.Panicf(s.svcCtx, "auto hotfix solution %q watch local changes failed, projects: [%s], %s",
+				s.options.PkgRoot,
+				strings.Join(pie.Of(s.options.Projects).Filter(func(project *dynamic.Project) bool {
+					return project.LocalPath != ""
+				}).StringsUsing(func(project *dynamic.Project) string {
+					return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
+				}), ", "),
+				err)
 		}
-	}
 
-	go func() {
-		defer watcher.Close()
-		for {
-			select {
-			case e, ok := <-watcher.Events:
-				if !ok {
-					return
+		for _, project := range s.options.Projects {
+			if project.LocalPath != "" {
+				if err = watcher.Add(project.LocalPath); err != nil {
+					watcher.Close()
+					log.Panicf(s.svcCtx, "auto hotfix solution %q watch %q -> %q + %q local changes failed, %s", s.options.PkgRoot, project.ScriptRoot, project.LocalPath, project.RemoteURL, err)
 				}
-
-				log.Infof(s.svcCtx, "auto hotfix solution %q detecting %q %s changes, preparing to reload in 3s", s.options.PkgRoot, e.Name, e.Op)
-
-				s.reloading.Add(1)
-
-				go func() {
-					time.Sleep(3 * time.Second)
-
-					if s.reloading.Add(-1) != 0 {
-						return
-					}
-
-					select {
-					case <-s.svcCtx.Done():
-						return
-					default:
-					}
-
-					solution, err := s.loadSolution()
-					if err != nil {
-						log.Errorf(s.svcCtx, "auto hotfix load solution %q failed, %s", s.options.PkgRoot, err)
-						return
-					}
-					s.solution = solution
-
-					log.Infof(s.svcCtx, "auto hotfix load solution %q ok, projects: [%s]", s.options.PkgRoot,
-						strings.Join(pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-							return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-						}), ", "))
-				}()
-
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				log.Errorf(s.svcCtx, "auto hotfix solution %q watch changes failed, projects: [%s], %s",
-					s.options.PkgRoot,
-					strings.Join(pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-						return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-					}), ", "),
-					err)
 			}
 		}
-	}()
 
-	log.Infof(s.svcCtx, "auto hotfix solution %q watch changes ok, projects: [%s]",
-		s.options.PkgRoot,
-		strings.Join(pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-			return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-		}), ", "))
+		go func() {
+			defer watcher.Close()
+			for {
+				select {
+				case <-s.svcCtx.Done():
+					return
+				case e, ok := <-watcher.Events:
+					if !ok {
+						return
+					}
+
+					log.Infof(s.svcCtx, "auto hotfix solution %q detecting local %q %s changes, preparing to reload in %s", s.options.PkgRoot, e.Name, e.Op, s.options.AutoHotFixLocalDetectingDelayTime)
+
+					s.reloading.Add(1)
+
+					go func() {
+						time.Sleep(s.options.AutoHotFixLocalDetectingDelayTime)
+
+						if s.reloading.Add(-1) != 0 {
+							return
+						}
+
+						select {
+						case <-s.svcCtx.Done():
+							return
+						default:
+						}
+
+						if err := s.Hotfix(); err != nil {
+							log.Errorf(s.svcCtx, "auto hotfix load solution %q failed, %s", s.options.PkgRoot, err)
+							return
+						}
+
+						log.Infof(s.svcCtx, "auto hotfix load solution %q ok, projects: [%s]", s.options.PkgRoot,
+							strings.Join(pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
+								return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
+							}), ", "))
+					}()
+
+				case err, ok := <-watcher.Errors:
+					if !ok {
+						return
+					}
+					log.Errorf(s.svcCtx, "auto hotfix solution %q watch local changes failed, projects: [%s], %s",
+						s.options.PkgRoot,
+						strings.Join(pie.Of(s.options.Projects).Filter(func(project *dynamic.Project) bool {
+							return project.LocalPath != ""
+						}).StringsUsing(func(project *dynamic.Project) string {
+							return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
+						}), ", "),
+						err)
+				}
+			}
+		}()
+
+		log.Infof(s.svcCtx, "auto hotfix solution %q watch local changes ok, projects: [%s]",
+			s.options.PkgRoot,
+			strings.Join(pie.Of(s.options.Projects).Filter(func(project *dynamic.Project) bool {
+				return project.LocalPath != ""
+			}).StringsUsing(func(project *dynamic.Project) string {
+				return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
+			}), ", "))
+	}
+
+	if pie.Any(s.options.Projects, func(project *dynamic.Project) bool { return project.RemoteURL != "" }) {
+		go func() {
+			for {
+				time.Sleep(s.options.AutoHotFixRemoteCheckingIntervalTime)
+
+				select {
+				case <-s.svcCtx.Done():
+					return
+				default:
+				}
+
+				b, err := s.solution.DetectRemoteChanged()
+				if err != nil {
+					log.Panicf(s.svcCtx, "auto hotfix solution %q watch remote changes failed, projects: [%s], %s",
+						s.options.PkgRoot,
+						strings.Join(pie.Of(s.options.Projects).Filter(func(project *dynamic.Project) bool {
+							return project.RemoteURL != ""
+						}).StringsUsing(func(project *dynamic.Project) string {
+							return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
+						}), ", "),
+						err)
+					continue
+				}
+				if !b {
+					continue
+				}
+
+				if err := s.Hotfix(); err != nil {
+					log.Errorf(s.svcCtx, "auto hotfix load solution %q failed, %s", s.options.PkgRoot, err)
+					continue
+				}
+
+				log.Infof(s.svcCtx, "auto hotfix load solution %q ok, projects: [%s]", s.options.PkgRoot,
+					strings.Join(pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
+						return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
+					}), ", "))
+			}
+		}()
+
+		log.Infof(s.svcCtx, "auto hotfix solution %q watch remote changes ok, projects: [%s]",
+			s.options.PkgRoot,
+			strings.Join(pie.Of(s.options.Projects).Filter(func(project *dynamic.Project) bool {
+				return project.RemoteURL != ""
+			}).StringsUsing(func(project *dynamic.Project) string {
+				return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
+			}), ", "))
+	}
 }
 
 func (s *_Script) cacheCallPath(solution *dynamic.Solution, entityPT ec.EntityPT) {

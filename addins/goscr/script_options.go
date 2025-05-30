@@ -20,9 +20,12 @@
 package goscr
 
 import (
+	"git.golaxy.org/core"
+	"git.golaxy.org/core/utils/exception"
 	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/core/utils/option"
 	"git.golaxy.org/scaffold/addins/goscr/dynamic"
+	"time"
 )
 
 type (
@@ -34,11 +37,13 @@ type (
 
 // ScriptOptions 所有选项
 type ScriptOptions struct {
-	PkgRoot    string             // 包根路径
-	Projects   []*dynamic.Project // 脚本工程列表
-	AutoHotFix bool               // 自动热更新
-	LoadingCB  LoadingCB          // 加载完成回调
-	LoadedCB   LoadedCB           // 加载完成回调
+	PkgRoot                              string             // 包根路径
+	Projects                             []*dynamic.Project // 脚本工程列表
+	AutoHotFix                           bool               // 自动热更新
+	AutoHotFixLocalDetectingDelayTime    time.Duration      // 自动热更新本地脚本文件延迟更新时间
+	AutoHotFixRemoteCheckingIntervalTime time.Duration      // 自动热更新远端脚本文件检测间隔时间
+	LoadingCB                            LoadingCB          // 加载完成回调
+	LoadedCB                             LoadedCB           // 加载完成回调
 }
 
 var With _Option
@@ -51,6 +56,8 @@ func (_Option) Default() option.Setting[ScriptOptions] {
 		With.PkgRoot("").Apply(options)
 		With.Projects().Apply(options)
 		With.AutoHotFix(true).Apply(options)
+		With.AutoHotFixLocalDetectingDelayTime(3 * time.Second).Apply(options)
+		With.AutoHotFixRemoteCheckingIntervalTime(time.Minute).Apply(options)
 		With.LoadingCB(nil).Apply(options)
 		With.LoadedCB(nil).Apply(options)
 	}
@@ -88,5 +95,25 @@ func (_Option) LoadingCB(cb LoadingCB) option.Setting[ScriptOptions] {
 func (_Option) LoadedCB(cb LoadedCB) option.Setting[ScriptOptions] {
 	return func(options *ScriptOptions) {
 		options.LoadedCB = cb
+	}
+}
+
+// AutoHotFixLocalDetectingDelayTime 自动热更新本地脚本文件延迟更新时间
+func (_Option) AutoHotFixLocalDetectingDelayTime(d time.Duration) option.Setting[ScriptOptions] {
+	return func(options *ScriptOptions) {
+		if d < 3*time.Second {
+			exception.Panicf("dentr: %w: option AutoHotFixLocalDetectingDelayTime can't be set to a value less than 3 second", core.ErrArgs)
+		}
+		options.AutoHotFixLocalDetectingDelayTime = d
+	}
+}
+
+// AutoHotFixRemoteCheckingIntervalTime 自动热更新远端脚本文件检测间隔时间
+func (_Option) AutoHotFixRemoteCheckingIntervalTime(d time.Duration) option.Setting[ScriptOptions] {
+	return func(options *ScriptOptions) {
+		if d < 3*time.Second {
+			exception.Panicf("dentr: %w: option AutoHotFixRemoteCheckingIntervalTime can't be set to a value less than 3 second", core.ErrArgs)
+		}
+		options.AutoHotFixRemoteCheckingIntervalTime = d
 	}
 }

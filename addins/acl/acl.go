@@ -86,6 +86,11 @@ func (acl *_ACL) Init(svcCtx service.Context) {
 
 	if localFilePath != "" {
 		acl.config.OnConfigChange(func(e fsnotify.Event) {
+			select {
+			case <-acl.svc.Done():
+				return
+			default:
+			}
 			log.Infof(acl.svc, "reload acl local config %q ok", localFilePath)
 		})
 		acl.config.WatchConfig()
@@ -94,7 +99,18 @@ func (acl *_ACL) Init(svcCtx service.Context) {
 	if remoteFilePath != "" {
 		go func() {
 			for {
-				time.Sleep(time.Second * 3)
+				d := acl.svc.GetServiceConf().GetDuration("acl.remote_checking_interval_time")
+				if d < time.Second*3 {
+					d = time.Second * 3
+				}
+
+				time.Sleep(d)
+
+				select {
+				case <-acl.svc.Done():
+					return
+				default:
+				}
 
 				err := acl.config.WatchRemoteConfig()
 				if err != nil {
