@@ -36,10 +36,10 @@ import (
 
 // IScript 脚本插件接口
 type IScript interface {
-	// Hotfix 热更新
-	Hotfix() error
 	// Solution 解决方案
 	Solution() *dynamic.Solution
+	// Hotfix 热更新
+	Hotfix() error
 }
 
 func newScript(setting ...option.Setting[ScriptOptions]) IScript {
@@ -80,6 +80,11 @@ func (s *_Script) Shut(svcCtx service.Context) {
 	log.Infof(svcCtx, "shut addin %q", self.Name)
 }
 
+// Solution 解决方案
+func (s *_Script) Solution() *dynamic.Solution {
+	return s.solution
+}
+
 // Hotfix 热更新
 func (s *_Script) Hotfix() error {
 	solution, err := s.loadSolution()
@@ -89,11 +94,6 @@ func (s *_Script) Hotfix() error {
 	s.solution = solution
 
 	return nil
-}
-
-// Solution 解决方案
-func (s *_Script) Solution() *dynamic.Solution {
-	return s.solution
 }
 
 func (s *_Script) OnServiceRunningStatusChanged(svcCtx service.Context, status service.RunningStatus, args ...any) {

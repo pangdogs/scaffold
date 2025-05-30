@@ -30,10 +30,12 @@ func init() {
 type _git_golaxy_org_framework_addins_conf_IConfig struct {
 	IValue       interface{}
 	WAppConf     func() *viper.Viper
+	WHotfix      func() error
 	WServiceConf func() *viper.Viper
 }
 
 func (W _git_golaxy_org_framework_addins_conf_IConfig) AppConf() *viper.Viper { return W.WAppConf() }
+func (W _git_golaxy_org_framework_addins_conf_IConfig) Hotfix() error         { return W.WHotfix() }
 func (W _git_golaxy_org_framework_addins_conf_IConfig) ServiceConf() *viper.Viper {
 	return W.WServiceConf()
 }
