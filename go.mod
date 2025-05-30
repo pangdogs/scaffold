@@ -10,6 +10,7 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-playground/form/v4 v4.2.1
 	github.com/go-redsync/redsync/v4 v4.13.0
+	github.com/go-resty/resty/v2 v2.16.5
 	github.com/pangdogs/yaegi v0.0.0-20250109024934-0e1e68421612
 	github.com/redis/go-redis/v9 v9.8.0
 	github.com/spf13/afero v1.12.0

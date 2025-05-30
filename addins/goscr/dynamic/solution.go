@@ -20,23 +20,33 @@
 package dynamic
 
 import (
+	"archive/tar"
+	"archive/zip"
+	"bytes"
 	"cmp"
+	"compress/gzip"
+	"errors"
 	"fmt"
 	"git.golaxy.org/core/utils/generic"
+	"github.com/go-resty/resty/v2"
 	"github.com/pangdogs/yaegi/interp"
 	"github.com/spf13/afero"
+	"io"
 	"io/fs"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"reflect"
 	"slices"
+	"strings"
 )
 
 // Project 项目
 type Project struct {
 	ScriptRoot string           // 脚本根路径
 	LocalPath  string           // 本地路径
+	RemoteURL  string           // 远程下载URL，支持打包格式：tar.gz、zip
 	SymbolsTab []interp.Exports // 符号表
 }
 
@@ -97,31 +107,59 @@ func (s *Solution) Load(project *Project) error {
 		return fmt.Errorf("script path %q conflicted", scriptPath)
 	}
 
-	err = filepath.Walk(project.LocalPath, func(filePath string, fileInfo fs.FileInfo, err error) error {
-		if err != nil || fileInfo.IsDir() {
+	if project.LocalPath != "" {
+		err = filepath.Walk(project.LocalPath, func(filePath string, fileInfo fs.FileInfo, err error) error {
+			if err != nil || fileInfo.IsDir() {
+				return nil
+			}
+
+			fileData, err := os.ReadFile(filePath)
+			if err != nil {
+				return fmt.Errorf("read local file %q failed, %s", filePath, err)
+			}
+
+			scriptFilePath, err := filepath.Rel(project.LocalPath, filePath)
+			if err != nil {
+				return fmt.Errorf("relative local file %q failed, %s", filePath, err)
+			}
+			scriptFilePath = path.Join(scriptPath, scriptFilePath)
+
+			err = afero.WriteFile(s.codeFs.AferoFs(), scriptFilePath, fileData, os.ModePerm)
+			if err != nil {
+				return fmt.Errorf("write script file %q failed, %s", scriptFilePath, err)
+			}
+
 			return nil
-		}
-
-		fileData, err := os.ReadFile(filePath)
+		})
 		if err != nil {
-			return fmt.Errorf("read local file %q failed, %s", filePath, err)
+			return err
 		}
+	}
 
-		scriptFilePath, err := filepath.Rel(project.LocalPath, filePath)
+	if project.RemoteURL != "" {
+		resp, err := resty.New().
+			SetDoNotParseResponse(true).
+			R().
+			Get(project.RemoteURL)
 		if err != nil {
-			return fmt.Errorf("relative local file %q failed, %s", filePath, err)
+			return fmt.Errorf("download remote file %q failed, %s", project.RemoteURL, err)
 		}
-		scriptFilePath = path.Join(scriptPath, scriptFilePath)
-
-		err = afero.WriteFile(s.codeFs.AferoFs(), scriptFilePath, fileData, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("write script file %q failed, %s", scriptFilePath, err)
+		if resp.StatusCode() != http.StatusOK {
+			return fmt.Errorf("download remote file %q failed, status code %d", project.RemoteURL, resp.StatusCode())
 		}
 
-		return nil
-	})
-	if err != nil {
-		return err
+		switch strings.ToLower(path.Ext(project.RemoteURL)) {
+		case ".tar.gz":
+			if err := s.extractTarGzip(resp.RawBody()); err != nil {
+				return fmt.Errorf("extract remote file %q failed, %s", project.RemoteURL, err)
+			}
+		case ".zip":
+			if err := s.extractZip(resp.RawBody()); err != nil {
+				return fmt.Errorf("extract remote file %q failed, %s", project.RemoteURL, err)
+			}
+		default:
+			return fmt.Errorf("unsupported remote file %q", project.RemoteURL)
+		}
 	}
 
 	for _, symbols := range project.SymbolsTab {
@@ -130,11 +168,11 @@ func (s *Solution) Load(project *Project) error {
 		}
 	}
 
-	if err := s.scriptLib.Load(s.codeFs); err != nil {
+	if err := s.scriptLib.Load(s.codeFs, scriptPath); err != nil {
 		return fmt.Errorf("load script path %q failed, %s", scriptPath, err)
 	}
 
-	if err := s.scriptLib.Compile(s.interp); err != nil {
+	if err := s.scriptLib.Compile(s.interp, scriptPath); err != nil {
 		return fmt.Errorf("compile script path %q failed, %s", scriptPath, err)
 	}
 
@@ -192,4 +230,113 @@ func (s *Solution) BindMethod(this reflect.Value, pkgPath, ident string, method 
 	}
 
 	return ret
+}
+
+func (s *Solution) extractTarGzip(reader io.ReadCloser) error {
+	defer reader.Close()
+
+	gzipReader, err := gzip.NewReader(reader)
+	if err != nil {
+		return err
+	}
+	defer gzipReader.Close()
+
+	tarReader := tar.NewReader(gzipReader)
+
+	for {
+		header, err := tarReader.Next()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := s.codeFs.AferoFs().MkdirAll(header.Name, os.ModePerm); err != nil {
+				return err
+			}
+		case tar.TypeReg:
+			if err := s.codeFs.AferoFs().MkdirAll(filepath.Dir(header.Name), os.ModePerm); err != nil {
+				return err
+			}
+
+			err := func() error {
+				dstFile, err := s.codeFs.AferoFs().Create(header.Name)
+				if err != nil {
+					return err
+				}
+				defer dstFile.Close()
+
+				if _, err := io.Copy(dstFile, tarReader); err != nil {
+					return err
+				}
+
+				return nil
+			}()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *Solution) extractZip(reader io.ReadCloser) error {
+	defer reader.Close()
+
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+
+	zipReader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return err
+	}
+
+	for _, zipFile := range zipReader.File {
+		filePath := filepath.Clean(zipFile.Name)
+		if strings.Contains(filePath, "..") {
+			continue
+		}
+
+		if zipFile.FileInfo().IsDir() {
+			if err := s.codeFs.AferoFs().MkdirAll(filePath, os.ModePerm); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if err := s.codeFs.AferoFs().MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			return err
+		}
+
+		err := func() error {
+			zipFileReader, err := zipFile.Open()
+			if err != nil {
+				return err
+			}
+			defer zipFileReader.Close()
+
+			dstFile, err := s.codeFs.AferoFs().OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+			if err != nil {
+				return err
+			}
+			defer dstFile.Close()
+
+			if _, err := io.Copy(dstFile, zipFileReader); err != nil {
+				return err
+			}
+
+			return nil
+		}()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -181,7 +181,8 @@ func (lib ScriptLib) PushMethod(pkgPath, ident string, method string) bool {
 }
 
 // Load 加载
-func (lib ScriptLib) Load(codeFs *CodeFs) error {
+func (lib ScriptLib) Load(codeFs *CodeFs, scriptPath string) error {
+	scriptPath = path.Clean(scriptPath)
 	fset := token.NewFileSet()
 
 	type _Code struct {
@@ -192,7 +193,12 @@ func (lib ScriptLib) Load(codeFs *CodeFs) error {
 	var codes []*_Code
 
 	err := afero.Walk(codeFs.AferoFs(), ".", func(filePath string, fileInfo fs.FileInfo, err error) error {
-		if err != nil || fileInfo.IsDir() || !strings.HasSuffix(fileInfo.Name(), ".go") {
+		if err != nil || fileInfo.IsDir() || filepath.Ext(fileInfo.Name()) != ".go" {
+			return nil
+		}
+
+		pkgPath := path.Dir(filepath.ToSlash(filePath))
+		if !strings.HasPrefix(pkgPath, scriptPath) {
 			return nil
 		}
 
@@ -205,8 +211,6 @@ func (lib ScriptLib) Load(codeFs *CodeFs) error {
 		if err != nil {
 			return fmt.Errorf("parse script file %q failed, %s", filePath, err)
 		}
-
-		pkgPath := path.Dir(filepath.ToSlash(filePath))
 
 		codes = append(codes, &_Code{PkgPath: pkgPath, File: file})
 
@@ -341,10 +345,15 @@ func (lib ScriptLib) Load(codeFs *CodeFs) error {
 }
 
 // Compile 编译
-func (lib ScriptLib) Compile(i *interp.Interpreter) error {
+func (lib ScriptLib) Compile(i *interp.Interpreter, scriptPath string) error {
+	scriptPath = path.Clean(scriptPath)
 	buff := &bytes.Buffer{}
 
 	for pkgPath, scriptBundle := range lib {
+		if !strings.HasPrefix(pkgPath, scriptPath) {
+			continue
+		}
+
 		if _, err := i.EvalPath(pkgPath); err != nil {
 			return fmt.Errorf("eval script path %q failed, %s", pkgPath, err)
 		}
