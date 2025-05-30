@@ -165,7 +165,7 @@ func (s *_Script) autoHotFix() {
 					return
 				}
 
-				log.Infof(s.svcCtx, "auto hotfix solution %q detecting %q -> %q changes, preparing to reload in 10s", s.options.PkgRoot, e.Op, e.Name)
+				log.Infof(s.svcCtx, "auto hotfix solution %q detecting %q -> %q changes, preparing to reload in 3s", s.options.PkgRoot, e.Op, e.Name)
 
 				s.reloading.Add(1)
 
