@@ -78,8 +78,8 @@ type _git_golaxy_org_framework_addins_discovery_IWatcher struct {
 	WErr        func() error
 	WNext       func() (*discovery.Event, error)
 	WPattern    func() string
-	WTerminate  func() async.AsyncRetT[any]
-	WTerminated func() async.AsyncRetT[any]
+	WTerminate  func() async.AsyncRet
+	WTerminated func() async.AsyncRet
 	WValue      func(key any) any
 }
 
@@ -92,10 +92,10 @@ func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Next() (*discovery.
 	return W.WNext()
 }
 func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Pattern() string { return W.WPattern() }
-func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminate() async.AsyncRetT[any] {
+func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminate() async.AsyncRet {
 	return W.WTerminate()
 }
-func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminated() async.AsyncRetT[any] {
+func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Terminated() async.AsyncRet {
 	return W.WTerminated()
 }
 func (W _git_golaxy_org_framework_addins_discovery_IWatcher) Value(key any) any { return W.WValue(key) }
