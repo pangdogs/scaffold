@@ -17,7 +17,7 @@
  * Copyright (c) 2024 pangdogs.
  */
 
-package view
+package propview
 
 import (
 	"git.golaxy.org/core/utils/exception"
@@ -42,7 +42,7 @@ type PropTab generic.SliceMap[string, IPropSync]
 // AddProp 添加属性
 func (pt *PropTab) AddProp(name string, ps IPropSync) {
 	if !pt.toSliceMap().TryAdd(name, ps) {
-		exception.Panicf("view: prop %q already exists", name)
+		exception.Panicf("propview: prop %q already exists", name)
 	}
 }
 

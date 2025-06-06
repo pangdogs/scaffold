@@ -17,7 +17,7 @@
  * Copyright (c) 2024 pangdogs.
  */
 
-package view
+package propview
 
 // Deprecated: UnsafeProp 访问属性内部函数
 func UnsafeProp(p IProp) _UnsafeProp {

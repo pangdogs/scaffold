@@ -17,20 +17,14 @@
  * Copyright (c) 2024 pangdogs.
  */
 
-package view
+package propview
 
-// Deprecated: UnsafePropSync 访问属性同步内部函数
-func UnsafePropSync(ps IPropSync) _UnsafePropSync {
-	return _UnsafePropSync{
-		IPropSync: ps,
-	}
-}
+import "git.golaxy.org/core/define"
 
-type _UnsafePropSync struct {
-	IPropSync
-}
-
-// Sync 同步
-func (ps _UnsafePropSync) Sync(revision int64, op string, args ...any) {
-	ps.sync(revision, op, args...)
-}
+var (
+	self      = define.RuntimeAddIn(newPropView)
+	Name      = self.Name
+	Using     = self.Using
+	Install   = self.Install
+	Uninstall = self.Uninstall
+)

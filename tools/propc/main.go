@@ -228,17 +228,17 @@ func run(*cobra.Command, []string) {
 
 	if !slices.ContainsFunc(imports, func(i string) bool {
 		switch i {
-		case `"git.golaxy.org/scaffold/addins/view"`, `view "git.golaxy.org/scaffold/addins/view"`:
+		case `"git.golaxy.org/scaffold/addins/propview"`, `propview "git.golaxy.org/scaffold/addins/propview"`:
 			return true
 		default:
 			return false
 		}
 	}) {
-		imports = append(imports, `view "git.golaxy.org/scaffold/addins/view"`)
+		imports = append(imports, `propview "git.golaxy.org/scaffold/addins/propview"`)
 	}
 
 	opImports := map[string]struct{}{
-		"view": {},
+		"propview": {},
 	}
 
 	props.Each(func(_ string, prop *Prop) {
@@ -287,7 +287,7 @@ import (
 
 {{range .Props -}}
 type {{.Name}}Sync struct {
-	view.PropSync
+	propview.PropSync
 	{{.Name}}
 }
 
@@ -307,7 +307,7 @@ func (ps *{{.Name}}Sync) Save(service string) error {
 	return ps.PropSync.Save(service, data, revision)
 }
 
-func (ps *{{.Name}}Sync) Managed() view.IProp {
+func (ps *{{.Name}}Sync) Managed() propview.IProp {
 	return &ps.{{.Name}}
 }
 
@@ -315,7 +315,7 @@ func (ps *{{.Name}}Sync) Managed() view.IProp {
 {{range .Ops}}
 func (ps *{{$propName}}Sync) {{.Decl}} {
 	{{.CallResults}}ps.{{$propName}}.{{.Call}}
-	view.UnsafePropSync(ps).Sync(view.UnsafeProp(&ps.{{$propName}}).IncrRevision(), "{{.Name}}", {{.Args}})
+	propview.UnsafePropSync(ps).Sync(propview.UnsafeProp(&ps.{{$propName}}).IncrRevision(), "{{.Name}}", {{.Args}})
 	{{.ReturnResults}}
 }
 {{end}}

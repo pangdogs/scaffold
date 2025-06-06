@@ -102,7 +102,7 @@ func (_Option) LoadedCB(cb LoadedCB) option.Setting[ScriptOptions] {
 func (_Option) AutoHotFixLocalDetectingDelayTime(d time.Duration) option.Setting[ScriptOptions] {
 	return func(options *ScriptOptions) {
 		if d < 3*time.Second {
-			exception.Panicf("dentr: %w: option AutoHotFixLocalDetectingDelayTime can't be set to a value less than 3 second", core.ErrArgs)
+			exception.Panicf("goscr: %w: option AutoHotFixLocalDetectingDelayTime can't be set to a value less than 3 second", core.ErrArgs)
 		}
 		options.AutoHotFixLocalDetectingDelayTime = d
 	}
@@ -112,7 +112,7 @@ func (_Option) AutoHotFixLocalDetectingDelayTime(d time.Duration) option.Setting
 func (_Option) AutoHotFixRemoteCheckingIntervalTime(d time.Duration) option.Setting[ScriptOptions] {
 	return func(options *ScriptOptions) {
 		if d < 3*time.Second {
-			exception.Panicf("dentr: %w: option AutoHotFixRemoteCheckingIntervalTime can't be set to a value less than 3 second", core.ErrArgs)
+			exception.Panicf("goscr: %w: option AutoHotFixRemoteCheckingIntervalTime can't be set to a value less than 3 second", core.ErrArgs)
 		}
 		options.AutoHotFixRemoteCheckingIntervalTime = d
 	}

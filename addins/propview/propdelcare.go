@@ -17,7 +17,7 @@
  * Copyright (c) 2024 pangdogs.
  */
 
-package view
+package propview
 
 import (
 	"git.golaxy.org/core"
@@ -28,31 +28,9 @@ import (
 	"reflect"
 )
 
-// PropCreatorT 属性创建器
-type PropCreatorT[T IPropSync] struct {
-	ps T
-}
-
-// SyncTo 设置同步目标
-func (c PropCreatorT[T]) SyncTo(to ...string) PropCreatorT[T] {
-	c.ps.setSyncTo(to)
-	return c
-}
-
-// Atti 设置Atti
-func (c PropCreatorT[T]) Atti(atti any) PropCreatorT[T] {
-	c.ps.setAtti(atti)
-	return c
-}
-
-// Reference 引用属性
-func (c PropCreatorT[T]) Reference() T {
-	return c.ps
-}
-
 // DeclarePropT 定义属性
-func DeclarePropT[T IPropSync](entity ec.Entity, name string) PropCreatorT[T] {
-	return PropCreatorT[T]{ps: declareProp(entity, name, reflect.TypeFor[T]()).(T)}
+func DeclarePropT[T IPropSync](entity ec.Entity, name string, syncTo ...string) T {
+	return declareProp(entity, name, reflect.TypeFor[T](), syncTo).(T)
 }
 
 // ReferencePropT 引用属性
@@ -60,12 +38,9 @@ func ReferencePropT[T IPropSync](entity ec.Entity, name string) T {
 	return referenceProp(entity, name).(T)
 }
 
-// PropCreator 属性创建器
-type PropCreator = PropCreatorT[IPropSync]
-
 // DeclareProp 定义属性
-func DeclareProp(entity ec.Entity, name string, prop any) PropCreator {
-	return PropCreator{ps: declareProp(entity, name, prop)}
+func DeclareProp(entity ec.Entity, name string, prop any, syncTo ...string) IPropSync {
+	return declareProp(entity, name, prop, syncTo)
 }
 
 // ReferenceProp 引用属性
@@ -73,18 +48,18 @@ func ReferenceProp(entity ec.Entity, name string) IPropSync {
 	return referenceProp(entity, name)
 }
 
-func declareProp(entity ec.Entity, name string, prop any) IPropSync {
+func declareProp(entity ec.Entity, name string, prop any, syncTo []string) IPropSync {
 	if entity == nil {
-		exception.Panicf("view: %s: entity is nil", core.ErrArgs)
+		exception.Panicf("propview: %s: entity is nil", core.ErrArgs)
 	}
 
 	if prop == nil {
-		exception.Panicf("view: %s: prop is nil", core.ErrArgs)
+		exception.Panicf("propview: %s: prop is nil", core.ErrArgs)
 	}
 
 	propTab, ok := entity.(IPropTab)
 	if !ok {
-		exception.Panicf("view: entity %q not implement view.IPropTab", entity)
+		exception.Panicf("propview: entity %q not implement propview.IPropTab", entity)
 	}
 
 	propRT, ok := prop.(reflect.Type)
@@ -98,11 +73,11 @@ func declareProp(entity ec.Entity, name string, prop any) IPropSync {
 
 	propInst, ok := reflect.New(propRT).Interface().(IPropSync)
 	if !ok {
-		exception.Panicf("view: prop %q not implement view.IPropSync", types.FullNameRT(propRT))
+		exception.Panicf("propview: prop %q not implement propview.IPropSync", types.FullNameRT(propRT))
 	}
 
 	propInst.Reset()
-	propInst.init(Using(runtime.Current(entity)), entity, name, reflect.ValueOf(propInst.Managed()))
+	propInst.init(Using(runtime.Current(entity)), entity, name, reflect.ValueOf(propInst.Managed()), syncTo)
 
 	propTab.AddProp(name, propInst)
 
@@ -111,12 +86,12 @@ func declareProp(entity ec.Entity, name string, prop any) IPropSync {
 
 func referenceProp(entity ec.Entity, name string) IPropSync {
 	if entity == nil {
-		exception.Panicf("view: %s: entity is nil", core.ErrArgs)
+		exception.Panicf("propview: %s: entity is nil", core.ErrArgs)
 	}
 
 	prop := entity.(IPropTab).GetProp(name)
 	if prop == nil {
-		exception.Panicf("view: prop %s not found", name)
+		exception.Panicf("propview: prop %q not found", name)
 	}
 
 	return prop

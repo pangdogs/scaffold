@@ -17,7 +17,7 @@
  * Copyright (c) 2024 pangdogs.
  */
 
-package view
+package propview
 
 import (
 	"errors"
