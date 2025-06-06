@@ -315,7 +315,7 @@ func (ps *{{.Name}}Sync) Managed() propview.IProp {
 {{range .Ops}}
 func (ps *{{$propName}}Sync) {{.Decl}} {
 	{{.CallResults}}ps.{{$propName}}.{{.Call}}
-	propview.UnsafePropSync(ps).Sync(propview.UnsafeProp(&ps.{{$propName}}).IncrRevision(), "{{.Name}}", {{.Args}})
+	ps.Sync(propview.UnsafeProp(&ps.{{$propName}}).IncrRevision(), "{{.Name}}", {{.Args}})
 	{{.ReturnResults}}
 }
 {{end}}
