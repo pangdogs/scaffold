@@ -227,7 +227,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 		return ErrDiscontinuousRevision
 	}
 
-	methodRV := prop.ReflectManaged().MethodByName(op)
+	methodRV := prop.ReflectedManaged().MethodByName(op)
 	if !methodRV.IsValid() {
 		log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, op=%q, caller="%s:%s", %s`,
 			entityId, propName, revision, op, caller.Svc, caller.Addr, ErrMethodNotFound)
