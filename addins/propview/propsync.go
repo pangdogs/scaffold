@@ -34,14 +34,14 @@ type IPropSync interface {
 	Save(service string) error
 	// Managed 托管的属性
 	Managed() IProp
-	// ReflectManaged 托管的属性反射值
-	ReflectManaged() reflect.Value
+	// ReflectedManaged 托管的属性反射值
+	ReflectedManaged() reflect.Value
 	// Meta meta信息
 	Meta() *meta.Meta
 }
 
 type iPropSyncer interface {
-	init(view IPropView, entity ec.Entity, name string, reflectManaged reflect.Value, syncTo []string)
+	init(view IPropView, entity ec.Entity, name string, reflectedManaged reflect.Value, syncTo []string)
 	load(service string) ([]byte, int64, error)
 	save(service string, data []byte, revision int64) error
 	sync(revision int64, op string, args ...any)
@@ -49,19 +49,19 @@ type iPropSyncer interface {
 
 // PropSyncer 属性同步器
 type PropSyncer struct {
-	view           IPropView
-	entity         ec.Entity
-	name           string
-	reflectManaged reflect.Value
-	syncTo         []string
-	meta           meta.Meta
+	view             IPropView
+	entity           ec.Entity
+	name             string
+	reflectedManaged reflect.Value
+	syncTo           []string
+	meta             meta.Meta
 }
 
-func (ps *PropSyncer) init(view IPropView, entity ec.Entity, name string, reflectManaged reflect.Value, syncTo []string) {
+func (ps *PropSyncer) init(view IPropView, entity ec.Entity, name string, reflectedManaged reflect.Value, syncTo []string) {
 	ps.view = view
 	ps.entity = entity
 	ps.name = name
-	ps.reflectManaged = reflectManaged
+	ps.reflectedManaged = reflectedManaged
 	ps.syncTo = syncTo
 }
 
@@ -77,9 +77,9 @@ func (ps *PropSyncer) sync(revision int64, op string, args ...any) {
 	ps.view.Sync(ps.entity.GetId(), ps.name, ps.syncTo, revision, op, args...)
 }
 
-// ReflectManaged 托管的属性反射值
-func (ps *PropSyncer) ReflectManaged() reflect.Value {
-	return ps.reflectManaged
+// ReflectedManaged 托管的属性反射值
+func (ps *PropSyncer) ReflectedManaged() reflect.Value {
+	return ps.reflectedManaged
 }
 
 // Meta meta信息
