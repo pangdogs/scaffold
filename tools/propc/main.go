@@ -287,12 +287,12 @@ import (
 
 {{range .Props -}}
 type {{.Name}}Sync struct {
-	propview.PropSync
+	propview.PropSyncer
 	{{.Name}}
 }
 
 func (ps *{{.Name}}Sync) Load(service string) error {
-	data, revision, err := ps.PropSync.Load(service)
+	data, revision, err := propview.UnsafePropSync(ps).Load(service)
 	if err != nil {
 		return err
 	}
@@ -304,7 +304,7 @@ func (ps *{{.Name}}Sync) Save(service string) error {
 	if err != nil {
 		return err
 	}
-	return ps.PropSync.Save(service, data, revision)
+	return propview.UnsafePropSync(ps).Save(service, data, revision)
 }
 
 func (ps *{{.Name}}Sync) Managed() propview.IProp {
@@ -315,7 +315,7 @@ func (ps *{{.Name}}Sync) Managed() propview.IProp {
 {{range .Ops}}
 func (ps *{{$propName}}Sync) {{.Decl}} {
 	{{.CallResults}}ps.{{$propName}}.{{.Call}}
-	ps.Sync(propview.UnsafeProp(&ps.{{$propName}}).IncrRevision(), "{{.Name}}", {{.Args}})
+	propview.UnsafePropSync(ps).Sync(propview.UnsafeProp(&ps.{{$propName}}).IncrRevision(), "{{.Name}}", {{.Args}})
 	{{.ReturnResults}}
 }
 {{end}}

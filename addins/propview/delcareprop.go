@@ -33,14 +33,14 @@ func DeclarePropT[T IPropSync](entity ec.Entity, name string, syncTo ...string) 
 	return declareProp(entity, name, reflect.TypeFor[T](), syncTo).(T)
 }
 
-// ReferencePropT 引用属性
-func ReferencePropT[T IPropSync](entity ec.Entity, name string) T {
-	return referenceProp(entity, name).(T)
-}
-
 // DeclareProp 定义属性
 func DeclareProp(entity ec.Entity, name string, prop any, syncTo ...string) IPropSync {
 	return declareProp(entity, name, prop, syncTo)
+}
+
+// ReferencePropT 引用属性
+func ReferencePropT[T IPropSync](entity ec.Entity, name string) T {
+	return referenceProp(entity, name).(T)
 }
 
 // ReferenceProp 引用属性
@@ -71,13 +71,14 @@ func declareProp(entity ec.Entity, name string, prop any, syncTo []string) IProp
 		propRT = propRT.Elem()
 	}
 
-	propInst, ok := reflect.New(propRT).Interface().(IPropSync)
+	propInstRV := reflect.New(propRT)
+	propInst, ok := propInstRV.Interface().(IPropSync)
 	if !ok {
 		exception.Panicf("propview: prop %q not implement propview.IPropSync", types.FullNameRT(propRT))
 	}
 
-	propInst.Reset()
-	propInst.init(Using(runtime.Current(entity)), entity, name, reflect.ValueOf(propInst.Managed()), syncTo)
+	propInst.Managed().Reset()
+	propInst.init(Using(runtime.Current(entity)), entity, name, propInstRV, syncTo)
 
 	propTab.AddProp(name, propInst)
 

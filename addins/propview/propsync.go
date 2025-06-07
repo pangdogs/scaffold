@@ -21,72 +21,68 @@ package propview
 
 import (
 	"git.golaxy.org/core/ec"
-	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/core/utils/meta"
 	"reflect"
 )
 
 // IPropSync 属性同步接口
 type IPropSync interface {
-	IProp
-	iPropSync
+	iPropSyncer
 	// Load 加载
 	Load(service string) error
 	// Save 保存
 	Save(service string) error
-	// Sync 同步
-	Sync(revision int64, op string, args ...any)
 	// Managed 托管的属性
 	Managed() IProp
-	// Reflected 反射值
-	Reflected() reflect.Value
-	// Extra 额外信息
-	Extra() *meta.Meta
+	// ReflectManaged 托管的属性反射值
+	ReflectManaged() reflect.Value
+	// Meta meta信息
+	Meta() *meta.Meta
 }
 
-type iPropSync interface {
-	init(view IPropView, entity ec.Entity, name string, reflected reflect.Value, syncTo []string)
+type iPropSyncer interface {
+	init(view IPropView, entity ec.Entity, name string, reflectManaged reflect.Value, syncTo []string)
+	load(service string) ([]byte, int64, error)
+	save(service string, data []byte, revision int64) error
+	sync(revision int64, op string, args ...any)
 }
 
-// PropSync 属性同步器
-type PropSync struct {
-	view      IPropView
-	entity    ec.Entity
-	name      string
-	reflected reflect.Value
-	syncTo    []string
-	extra     generic.SliceMap[string, any]
+// PropSyncer 属性同步器
+type PropSyncer struct {
+	view           IPropView
+	entity         ec.Entity
+	name           string
+	reflectManaged reflect.Value
+	syncTo         []string
+	meta           meta.Meta
 }
 
-func (ps *PropSync) init(view IPropView, entity ec.Entity, name string, reflected reflect.Value, syncTo []string) {
+func (ps *PropSyncer) init(view IPropView, entity ec.Entity, name string, reflectManaged reflect.Value, syncTo []string) {
 	ps.view = view
 	ps.entity = entity
 	ps.name = name
-	ps.reflected = reflected
+	ps.reflectManaged = reflectManaged
 	ps.syncTo = syncTo
 }
 
-// Load 加载数据
-func (ps *PropSync) Load(service string) ([]byte, int64, error) {
+func (ps *PropSyncer) load(service string) ([]byte, int64, error) {
 	return ps.view.Load(ps.entity.GetId(), ps.name, service)
 }
 
-// Save 保存数据
-func (ps *PropSync) Save(service string, data []byte, revision int64) error {
+func (ps *PropSyncer) save(service string, data []byte, revision int64) error {
 	return ps.view.Save(ps.entity.GetId(), ps.name, service, data, revision)
 }
 
-// Sync 同步变化
-func (ps *PropSync) Sync(revision int64, op string, args ...any) {
+func (ps *PropSyncer) sync(revision int64, op string, args ...any) {
 	ps.view.Sync(ps.entity.GetId(), ps.name, ps.syncTo, revision, op, args...)
 }
 
-// Reflected 反射值
-func (ps *PropSync) Reflected() reflect.Value {
-	return ps.reflected
+// ReflectManaged 托管的属性反射值
+func (ps *PropSyncer) ReflectManaged() reflect.Value {
+	return ps.reflectManaged
 }
 
-// Extra 额外信息
-func (ps *PropSync) Extra() *meta.Meta {
-	return &ps.extra
+// Meta meta信息
+func (ps *PropSyncer) Meta() *meta.Meta {
+	return &ps.meta
 }

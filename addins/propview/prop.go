@@ -37,6 +37,10 @@ type IProp interface {
 	Marshal() ([]byte, int64, error)
 	// Unmarshal 反序列化
 	Unmarshal(data []byte, revision int64) error
+	// VariantState 可变类型状态值
+	VariantState() variant.Value
+	// ReflectedState 反射状态值
+	ReflectedState() reflect.Value
 }
 
 type iProp interface {
@@ -45,19 +49,16 @@ type iProp interface {
 
 // PropT 属性
 type PropT[T variant.Value] struct {
-	value    T
-	revision int64
+	state          T
+	reflectedState reflect.Value
+	revision       int64
 }
 
 // Reset 重置
 func (p *PropT[T]) Reset() {
-	p.value = reflect.New(reflect.TypeFor[T]().Elem()).Interface().(T)
+	p.reflectedState = reflect.New(reflect.TypeFor[T]().Elem())
+	p.state = p.reflectedState.Interface().(T)
 	p.revision = 0
-}
-
-// Value 值
-func (p *PropT[T]) Value() T {
-	return p.value
 }
 
 // Revision 版本号
@@ -67,7 +68,7 @@ func (p *PropT[T]) Revision() int64 {
 
 // Marshal 序列化
 func (p *PropT[T]) Marshal() ([]byte, int64, error) {
-	v, err := variant.MakeReadonlyVariant(p.value)
+	v, err := variant.MakeReadonlyVariant(p.state)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -91,13 +92,28 @@ func (p *PropT[T]) Unmarshal(data []byte, revision int64) error {
 
 	value, ok := v.Value.(T)
 	if !ok {
-		return errors.New("incorrect data type")
+		return errors.New("incorrect state type")
 	}
 
-	p.value = value
+	p.state = value
 	p.revision = revision
 
 	return nil
+}
+
+// VariantState 可变类型状态值
+func (p *PropT[T]) VariantState() variant.Value {
+	return p.state
+}
+
+// ReflectedState 反射状态值
+func (p *PropT[T]) ReflectedState() reflect.Value {
+	return p.reflectedState
+}
+
+// State 状态值
+func (p *PropT[T]) State() T {
+	return p.state
 }
 
 func (p *PropT[T]) incrRevision() int64 {

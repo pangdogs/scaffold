@@ -6,6 +6,7 @@ import (
 	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/core/utils/meta"
 	"git.golaxy.org/core/utils/uid"
+	"git.golaxy.org/framework/net/gap/variant"
 	"git.golaxy.org/scaffold/addins/propview"
 	"reflect"
 )
@@ -29,15 +30,16 @@ func init() {
 		"ReferenceProp":                   reflect.ValueOf(propview.ReferenceProp),
 		"Uninstall":                       reflect.ValueOf(&propview.Uninstall).Elem(),
 		"UnsafeProp":                      reflect.ValueOf(propview.UnsafeProp),
+		"UnsafePropSync":                  reflect.ValueOf(propview.UnsafePropSync),
 		"Using":                           reflect.ValueOf(&propview.Using).Elem(),
 
 		// type definitions
-		"IProp":     reflect.ValueOf((*propview.IProp)(nil)),
-		"IPropSync": reflect.ValueOf((*propview.IPropSync)(nil)),
-		"IPropTab":  reflect.ValueOf((*propview.IPropTab)(nil)),
-		"IPropView": reflect.ValueOf((*propview.IPropView)(nil)),
-		"PropSync":  reflect.ValueOf((*propview.PropSync)(nil)),
-		"PropTab":   reflect.ValueOf((*propview.PropTab)(nil)),
+		"IProp":      reflect.ValueOf((*propview.IProp)(nil)),
+		"IPropSync":  reflect.ValueOf((*propview.IPropSync)(nil)),
+		"IPropTab":   reflect.ValueOf((*propview.IPropTab)(nil)),
+		"IPropView":  reflect.ValueOf((*propview.IPropView)(nil)),
+		"PropSyncer": reflect.ValueOf((*propview.PropSyncer)(nil)),
+		"PropTab":    reflect.ValueOf((*propview.PropTab)(nil)),
 
 		// interface wrapper definitions
 		"_IProp":     reflect.ValueOf((*_git_golaxy_org_scaffold_addins_propview_IProp)(nil)),
@@ -49,60 +51,52 @@ func init() {
 
 // _git_golaxy_org_scaffold_addins_propview_IProp is an interface wrapper for IProp type
 type _git_golaxy_org_scaffold_addins_propview_IProp struct {
-	IValue     interface{}
-	WMarshal   func() ([]byte, int64, error)
-	WReset     func()
-	WRevision  func() int64
-	WUnmarshal func(data []byte, revision int64) error
+	IValue          interface{}
+	WMarshal        func() ([]byte, int64, error)
+	WReflectedState func() reflect.Value
+	WReset          func()
+	WRevision       func() int64
+	WUnmarshal      func(data []byte, revision int64) error
+	WVariantState   func() variant.Value
 }
 
 func (W _git_golaxy_org_scaffold_addins_propview_IProp) Marshal() ([]byte, int64, error) {
 	return W.WMarshal()
+}
+func (W _git_golaxy_org_scaffold_addins_propview_IProp) ReflectedState() reflect.Value {
+	return W.WReflectedState()
 }
 func (W _git_golaxy_org_scaffold_addins_propview_IProp) Reset()          { W.WReset() }
 func (W _git_golaxy_org_scaffold_addins_propview_IProp) Revision() int64 { return W.WRevision() }
 func (W _git_golaxy_org_scaffold_addins_propview_IProp) Unmarshal(data []byte, revision int64) error {
 	return W.WUnmarshal(data, revision)
 }
+func (W _git_golaxy_org_scaffold_addins_propview_IProp) VariantState() variant.Value {
+	return W.WVariantState()
+}
 
 // _git_golaxy_org_scaffold_addins_propview_IPropSync is an interface wrapper for IPropSync type
 type _git_golaxy_org_scaffold_addins_propview_IPropSync struct {
-	IValue     interface{}
-	WExtra     func() *meta.Meta
-	WLoad      func(service string) error
-	WManaged   func() propview.IProp
-	WMarshal   func() ([]byte, int64, error)
-	WReflected func() reflect.Value
-	WReset     func()
-	WRevision  func() int64
-	WSave      func(service string) error
-	WSync      func(revision int64, op string, args ...any)
-	WUnmarshal func(data []byte, revision int64) error
+	IValue          interface{}
+	WLoad           func(service string) error
+	WManaged        func() propview.IProp
+	WMeta           func() *meta.Meta
+	WReflectManaged func() reflect.Value
+	WSave           func(service string) error
 }
 
-func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Extra() *meta.Meta { return W.WExtra() }
 func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Load(service string) error {
 	return W.WLoad(service)
 }
 func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Managed() propview.IProp {
 	return W.WManaged()
 }
-func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Marshal() ([]byte, int64, error) {
-	return W.WMarshal()
+func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Meta() *meta.Meta { return W.WMeta() }
+func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) ReflectManaged() reflect.Value {
+	return W.WReflectManaged()
 }
-func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Reflected() reflect.Value {
-	return W.WReflected()
-}
-func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Reset()          { W.WReset() }
-func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Revision() int64 { return W.WRevision() }
 func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Save(service string) error {
 	return W.WSave(service)
-}
-func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Sync(revision int64, op string, args ...any) {
-	W.WSync(revision, op, args...)
-}
-func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Unmarshal(data []byte, revision int64) error {
-	return W.WUnmarshal(data, revision)
 }
 
 // _git_golaxy_org_scaffold_addins_propview_IPropTab is an interface wrapper for IPropTab type

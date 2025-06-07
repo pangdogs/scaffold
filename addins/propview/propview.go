@@ -43,8 +43,8 @@ var (
 	ErrMethodNotFound               = variant.Errorln(-7, "op method not found")
 	ErrMethodParameterCountMismatch = variant.Errorln(-8, "op method parameter count mismatch")
 	ErrMethodParameterTypeMismatch  = variant.Errorln(-9, "op method parameter type mismatch")
-	ErrLoadFromServiceItself        = variant.Errorln(-10, "can't load data from the service itself")
-	ErrSaveToServiceItself          = variant.Errorln(-11, "can't save data to the service itself")
+	ErrLoadFromServiceItself        = variant.Errorln(-10, "can't load state from the service itself")
+	ErrSaveToServiceItself          = variant.Errorln(-11, "can't save state to the service itself")
 )
 
 // IPropView 属性视图插件接口
@@ -77,7 +77,7 @@ func (m *_PropView) Shut(rtCtx runtime.Context) {
 
 func (m *_PropView) Load(entityId uid.Id, prop string, service string) ([]byte, int64, error) {
 	if service == m.rt.GetService().GetName() {
-		log.Errorf(m.rt, "load data failed, entity=%q, prop=%q, service=%q, %s", entityId, prop, service, ErrLoadFromServiceItself)
+		log.Errorf(m.rt, "load state failed, entity=%q, prop=%q, service=%q, %s", entityId, prop, service, ErrLoadFromServiceItself)
 		return nil, 0, ErrLoadFromServiceItself
 	}
 	return rpc.Assert3[[]byte, int64, error](
@@ -87,7 +87,7 @@ func (m *_PropView) Load(entityId uid.Id, prop string, service string) ([]byte, 
 
 func (m *_PropView) Save(entityId uid.Id, prop string, service string, data []byte, revision int64) error {
 	if service == m.rt.GetService().GetName() {
-		log.Errorf(m.rt, "save data failed, entity=%q, prop=%q, service=%q, size=%d, revision=%d, %s",
+		log.Errorf(m.rt, "save state failed, entity=%q, prop=%q, service=%q, size=%d, revision=%d, %s",
 			entityId, prop, service, len(data), revision, ErrSaveToServiceItself)
 		return ErrSaveToServiceItself
 	}
@@ -124,33 +124,33 @@ func (m *_PropView) DoLoad(entityId uid.Id, propName string) ([]byte, int64, err
 
 	entity, ok := m.rt.GetEntityManager().GetEntity(entityId)
 	if !ok {
-		log.Errorf(m.rt, `do load data failed, entity=%q, prop=%q, caller="%s:%s", %s`,
+		log.Errorf(m.rt, `do load state failed, entity=%q, prop=%q, caller="%s:%s", %s`,
 			entityId, propName, caller.Svc, caller.Addr, ErrEntityNotFound)
 		return nil, 0, ErrEntityNotFound
 	}
 
 	propTab, ok := entity.(IPropTab)
 	if !ok {
-		log.Errorf(m.rt, `do load data failed, entity=%q, prop=%q, caller="%s:%s", %s`,
+		log.Errorf(m.rt, `do load state failed, entity=%q, prop=%q, caller="%s:%s", %s`,
 			entityId, propName, caller.Svc, caller.Addr, ErrEntityNoPropTab)
 		return nil, 0, ErrEntityNoPropTab
 	}
 
 	prop := propTab.GetProp(propName)
 	if prop == nil {
-		log.Errorf(m.rt, `do load data failed, entity=%q, prop=%q, caller="%s:%s", %s`,
+		log.Errorf(m.rt, `do load state failed, entity=%q, prop=%q, caller="%s:%s", %s`,
 			entityId, propName, caller.Svc, caller.Addr, ErrEntityNoProp)
 		return nil, 0, ErrEntityNoProp
 	}
 
-	data, revision, err := prop.Marshal()
+	data, revision, err := prop.Managed().Marshal()
 	if err != nil {
-		log.Errorf(m.rt, `do load data failed, entity=%q, prop=%q, caller="%s:%s", marshal failed, %s`,
+		log.Errorf(m.rt, `do load state failed, entity=%q, prop=%q, caller="%s:%s", marshal failed, %s`,
 			entityId, propName, caller.Svc, caller.Addr, err)
 		return nil, 0, err
 	}
 
-	log.Infof(m.rt, `do load data ok, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s"`,
+	log.Infof(m.rt, `do load state ok, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s"`,
 		entityId, propName, len(data), revision, caller.Svc, caller.Addr)
 	return data, revision, nil
 }
@@ -160,33 +160,33 @@ func (m *_PropView) DoSave(entityId uid.Id, propName string, data []byte, revisi
 
 	entity, ok := m.rt.GetEntityManager().GetEntity(entityId)
 	if !ok {
-		log.Errorf(m.rt, `do save data failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", %s`,
+		log.Errorf(m.rt, `do save state failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", %s`,
 			entityId, propName, len(data), revision, caller.Svc, caller.Addr, ErrEntityNotFound)
 		return ErrEntityNotFound
 	}
 
 	propTab, ok := entity.(IPropTab)
 	if !ok {
-		log.Errorf(m.rt, `do save data failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", %s`,
+		log.Errorf(m.rt, `do save state failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", %s`,
 			entityId, propName, len(data), revision, caller.Svc, caller.Addr, ErrEntityNoPropTab)
 		return ErrEntityNoPropTab
 	}
 
 	prop := propTab.GetProp(propName)
 	if prop == nil {
-		log.Errorf(m.rt, `do save data failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", %s`,
+		log.Errorf(m.rt, `do save state failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", %s`,
 			entityId, propName, len(data), revision, caller.Svc, caller.Addr, ErrEntityNoProp)
 		return ErrEntityNoProp
 	}
 
-	err := prop.Unmarshal(data, revision)
+	err := prop.Managed().Unmarshal(data, revision)
 	if err != nil {
-		log.Errorf(m.rt, `do save data failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", unmarshal failed, %s`,
+		log.Errorf(m.rt, `do save state failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", unmarshal failed, %s`,
 			entityId, propName, len(data), revision, caller.Svc, caller.Addr, err)
 		return err
 	}
 
-	log.Infof(m.rt, `do save data ok, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s`,
+	log.Infof(m.rt, `do save state ok, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s`,
 		entityId, propName, len(data), revision, caller.Svc, caller.Addr)
 	return nil
 }
@@ -215,19 +215,19 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 		return ErrEntityNoProp
 	}
 
-	if revision <= prop.Revision() {
+	if revision <= prop.Managed().Revision() {
 		log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, local_revision=%d, op=%q, caller="%s:%s", %s`,
-			entityId, propName, revision, prop.Revision(), op, caller.Svc, caller.Addr, ErrOutdatedRevision)
+			entityId, propName, revision, prop.Managed().Revision(), op, caller.Svc, caller.Addr, ErrOutdatedRevision)
 		return ErrOutdatedRevision
 	}
 
-	if revision != prop.Revision()+1 {
+	if revision != prop.Managed().Revision()+1 {
 		log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, local_revision=%d, op=%q, caller="%s:%s", %s`,
-			entityId, propName, revision, prop.Revision(), op, caller.Svc, caller.Addr, ErrDiscontinuousRevision)
+			entityId, propName, revision, prop.Managed().Revision(), op, caller.Svc, caller.Addr, ErrDiscontinuousRevision)
 		return ErrDiscontinuousRevision
 	}
 
-	methodRV := prop.Reflected().MethodByName(op)
+	methodRV := prop.ReflectManaged().MethodByName(op)
 	if !methodRV.IsValid() {
 		log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, op=%q, caller="%s:%s", %s`,
 			entityId, propName, revision, op, caller.Svc, caller.Addr, ErrMethodNotFound)
@@ -279,7 +279,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 	}
 
 	methodRV.Call(argsRV)
-	prop.incrRevision()
+	prop.Managed().incrRevision()
 
 	log.Infof(m.rt, `do sync op ok, entity=%q, prop=%q, revision=%d, op=%q, caller="%s:%s"`,
 		entityId, propName, revision, op, caller.Svc, caller.Addr)
