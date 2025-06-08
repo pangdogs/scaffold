@@ -76,8 +76,8 @@ func declareProp(entity ec.Entity, name string, prop any, syncTo []string) IProp
 		exception.Panicf("propview: prop %q not implement propview.IPropSync", types.FullNameRT(propRT))
 	}
 
-	propInst.Managed().Reset()
 	propInst.init(Using(runtime.Current(entity)), entity, name, reflect.ValueOf(propInst.Managed()), syncTo)
+	propInst.Managed().Reset()
 
 	propTab.AddProp(name, propInst)
 

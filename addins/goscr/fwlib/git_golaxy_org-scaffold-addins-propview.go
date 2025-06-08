@@ -34,18 +34,20 @@ func init() {
 		"Using":                           reflect.ValueOf(&propview.Using).Elem(),
 
 		// type definitions
-		"IProp":      reflect.ValueOf((*propview.IProp)(nil)),
-		"IPropSync":  reflect.ValueOf((*propview.IPropSync)(nil)),
-		"IPropTab":   reflect.ValueOf((*propview.IPropTab)(nil)),
-		"IPropView":  reflect.ValueOf((*propview.IPropView)(nil)),
-		"PropSyncer": reflect.ValueOf((*propview.PropSyncer)(nil)),
-		"PropTab":    reflect.ValueOf((*propview.PropTab)(nil)),
+		"IProp":             reflect.ValueOf((*propview.IProp)(nil)),
+		"IPropStateResetCB": reflect.ValueOf((*propview.IPropStateResetCB)(nil)),
+		"IPropSync":         reflect.ValueOf((*propview.IPropSync)(nil)),
+		"IPropTab":          reflect.ValueOf((*propview.IPropTab)(nil)),
+		"IPropView":         reflect.ValueOf((*propview.IPropView)(nil)),
+		"PropSyncer":        reflect.ValueOf((*propview.PropSyncer)(nil)),
+		"PropTab":           reflect.ValueOf((*propview.PropTab)(nil)),
 
 		// interface wrapper definitions
-		"_IProp":     reflect.ValueOf((*_git_golaxy_org_scaffold_addins_propview_IProp)(nil)),
-		"_IPropSync": reflect.ValueOf((*_git_golaxy_org_scaffold_addins_propview_IPropSync)(nil)),
-		"_IPropTab":  reflect.ValueOf((*_git_golaxy_org_scaffold_addins_propview_IPropTab)(nil)),
-		"_IPropView": reflect.ValueOf((*_git_golaxy_org_scaffold_addins_propview_IPropView)(nil)),
+		"_IProp":             reflect.ValueOf((*_git_golaxy_org_scaffold_addins_propview_IProp)(nil)),
+		"_IPropStateResetCB": reflect.ValueOf((*_git_golaxy_org_scaffold_addins_propview_IPropStateResetCB)(nil)),
+		"_IPropSync":         reflect.ValueOf((*_git_golaxy_org_scaffold_addins_propview_IPropSync)(nil)),
+		"_IPropTab":          reflect.ValueOf((*_git_golaxy_org_scaffold_addins_propview_IPropTab)(nil)),
+		"_IPropView":         reflect.ValueOf((*_git_golaxy_org_scaffold_addins_propview_IPropView)(nil)),
 	}
 }
 
@@ -75,14 +77,22 @@ func (W _git_golaxy_org_scaffold_addins_propview_IProp) VariantState() variant.V
 	return W.WVariantState()
 }
 
+// _git_golaxy_org_scaffold_addins_propview_IPropStateResetCB is an interface wrapper for IPropStateResetCB type
+type _git_golaxy_org_scaffold_addins_propview_IPropStateResetCB struct {
+	IValue   interface{}
+	WOnReset func()
+}
+
+func (W _git_golaxy_org_scaffold_addins_propview_IPropStateResetCB) OnReset() { W.WOnReset() }
+
 // _git_golaxy_org_scaffold_addins_propview_IPropSync is an interface wrapper for IPropSync type
 type _git_golaxy_org_scaffold_addins_propview_IPropSync struct {
-	IValue          interface{}
-	WLoad           func(service string) error
-	WManaged        func() propview.IProp
-	WMeta           func() *meta.Meta
-	WReflectManaged func() reflect.Value
-	WSave           func(service string) error
+	IValue            interface{}
+	WLoad             func(service string) error
+	WManaged          func() propview.IProp
+	WMeta             func() *meta.Meta
+	WReflectedManaged func() reflect.Value
+	WSave             func(service string) error
 }
 
 func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Load(service string) error {
@@ -92,8 +102,8 @@ func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Managed() propview.I
 	return W.WManaged()
 }
 func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Meta() *meta.Meta { return W.WMeta() }
-func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) ReflectManaged() reflect.Value {
-	return W.WReflectManaged()
+func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) ReflectedManaged() reflect.Value {
+	return W.WReflectedManaged()
 }
 func (W _git_golaxy_org_scaffold_addins_propview_IPropSync) Save(service string) error {
 	return W.WSave(service)
