@@ -43,11 +43,6 @@ type IProp interface {
 	ReflectedState() reflect.Value
 }
 
-// IPropStateResetCB 属性状态值重置回调
-type IPropStateResetCB interface {
-	OnReset()
-}
-
 type iProp interface {
 	incrRevision() int64
 }
@@ -64,10 +59,6 @@ func (p *PropT[T]) Reset() {
 	p.reflectedState = reflect.New(reflect.TypeFor[T]().Elem())
 	p.state = p.reflectedState.Interface().(T)
 	p.revision = 0
-
-	if cb, ok := p.reflectedState.Interface().(IPropStateResetCB); ok {
-		cb.OnReset()
-	}
 }
 
 // Revision 版本号
