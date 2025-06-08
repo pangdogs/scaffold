@@ -53,42 +53,84 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	g.Import(protoPackage)
 
 	for _, m := range file.Messages {
-		g.P("// NilFill 所有nil字段填充0值")
-		g.P("func (x *", m.GoIdent, ") NilFill() *", m.GoIdent, " {")
+		{
+			g.P("// FillNil 将所有为nil的字段填充0值")
+			g.P("func (x *", m.GoIdent, ") FillNil() *", m.GoIdent, " {")
 
-		for _, f := range m.Fields {
-			if f.Desc.IsList() {
-				continue
-			}
-
-			if f.Desc.IsMap() {
-				var mapValue string
-
-				switch f.Desc.MapValue().Kind() {
-				case protoreflect.MessageKind, protoreflect.GroupKind:
-					mapValue = "*" + string(f.Desc.MapValue().Message().Name())
-				default:
-					mapValue = f.Desc.MapValue().Kind().String()
+			for _, f := range m.Fields {
+				if f.Desc.IsList() {
+					continue
 				}
 
-				g.P("\tif x.", f.GoName, " == nil {")
-				g.P("\t\tx.", f.GoName, " = map[", f.Desc.MapKey().Kind(), "]", mapValue, "{}")
-				g.P("\t}")
-				continue
+				if f.Desc.IsMap() {
+					var mapValue string
+
+					switch f.Desc.MapValue().Kind() {
+					case protoreflect.MessageKind, protoreflect.GroupKind:
+						mapValue = "*" + string(f.Desc.MapValue().Message().Name())
+					default:
+						mapValue = f.Desc.MapValue().Kind().String()
+					}
+
+					g.P("\tif x.", f.GoName, " == nil {")
+					g.P("\t\tx.", f.GoName, " = map[", f.Desc.MapKey().Kind(), "]", mapValue, "{}")
+					g.P("\t}")
+					continue
+				}
+
+				switch f.Desc.Kind() {
+				case protoreflect.MessageKind, protoreflect.GroupKind:
+					g.P("\tif x.", f.GoName, " == nil {")
+					g.P("\t\tx.", f.GoName, " = &", f.Desc.Message().Name(), "{}")
+					g.P("\t}")
+					continue
+				}
 			}
 
-			switch f.Desc.Kind() {
-			case protoreflect.MessageKind, protoreflect.GroupKind:
-				g.P("\tif x.", f.GoName, " == nil {")
-				g.P("\t\tx.", f.GoName, " = (&", f.Desc.Message().Name(), "{}).NilFill()")
-				g.P("\t}")
-				continue
-			}
+			g.P("\treturn x")
+			g.P("}")
+			g.P()
 		}
 
-		g.P("\treturn x")
-		g.P("}")
-		g.P()
+		{
+			g.P("// ExplicitFillNil 递归将所有为nil的固定字段填充0值")
+			g.P("func (x *", m.GoIdent, ") ExplicitFillNil() *", m.GoIdent, " {")
+
+			for _, f := range m.Fields {
+				if f.Desc.IsList() {
+					continue
+				}
+
+				if f.Desc.IsMap() {
+					var mapValue string
+
+					switch f.Desc.MapValue().Kind() {
+					case protoreflect.MessageKind, protoreflect.GroupKind:
+						mapValue = "*" + string(f.Desc.MapValue().Message().Name())
+					default:
+						mapValue = f.Desc.MapValue().Kind().String()
+					}
+
+					g.P("\tif x.", f.GoName, " == nil {")
+					g.P("\t\tx.", f.GoName, " = map[", f.Desc.MapKey().Kind(), "]", mapValue, "{}")
+					g.P("\t}")
+					continue
+				}
+
+				switch f.Desc.Kind() {
+				case protoreflect.MessageKind, protoreflect.GroupKind:
+					g.P("\tif x.", f.GoName, " == nil {")
+					g.P("\t\tx.", f.GoName, " = &", f.Desc.Message().Name(), "{}")
+					g.P("\t}")
+					g.P("\tx.", f.GoName, ".ExplicitFillNil()")
+					continue
+				}
+			}
+
+			g.P("\treturn x")
+			g.P("}")
+			g.P()
+		}
 
 		g.P("// Clone 克隆")
 		g.P("func (x *", m.GoIdent, ") Clone() *", m.GoIdent, " {")
@@ -112,9 +154,12 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 
 				mapDecl := fmt.Sprintf("map[%s]%s", f.Desc.MapKey().Kind(), mapValue)
 
-				g.P("// NilFill", f.GoName, " nil字段 ", f.GoName, " 填充0值")
-				g.P("func (x *", m.GoIdent, ") NilFill", f.GoName, "() ", mapDecl, " {")
-				g.P("\treturn x.NilFill().", f.GoName)
+				g.P("// FillNil", f.GoName, " 字段 ", f.GoName, " 为nil时填充0值")
+				g.P("func (x *", m.GoIdent, ") FillNil", f.GoName, "() ", mapDecl, " {")
+				g.P("\tif x.", f.GoName, " == nil {")
+				g.P("\t\tx.", f.GoName, " = map[", f.Desc.MapKey().Kind(), "]", mapValue, "{}")
+				g.P("\t}")
+				g.P("\treturn x.", f.GoName, "")
 				g.P("}")
 				g.P()
 				continue
@@ -122,9 +167,9 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 
 			switch f.Desc.Kind() {
 			case protoreflect.MessageKind, protoreflect.GroupKind:
-				g.P("// NilFill", f.GoName, " nil字段 ", f.GoName, " 填充0值")
-				g.P("func (x *", m.GoIdent, ") NilFill", f.GoName, "() *", f.Desc.Message().Name(), " {")
-				g.P("\treturn x.NilFill().", f.GoName)
+				g.P("// FillNil", f.GoName, " 字段 ", f.GoName, " 为nil时填充0值")
+				g.P("func (x *", m.GoIdent, ") FillNil", f.GoName, "() *", f.Desc.Message().Name(), " {")
+				g.P("\treturn x.", f.GoName, ".FillNil()")
 				g.P("}")
 				g.P()
 				continue
@@ -150,7 +195,11 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 
 				g.P("// Clone", f.GoName, " 克隆字段 ", f.GoName)
 				g.P("func (x *", m.GoIdent, ") Clone", f.GoName, "() ", mapDecl, " {")
-				g.P("\treturn ", mapsPackage.Ident("Clone"), "(x.", f.GoName, ")")
+				g.P("\tcopied := ", mapsPackage.Ident("Clone"), "(x.", f.GoName, ")")
+				g.P("\tfor k, v := range copied {")
+				g.P("\t\tcopied[k] = v.Clone()")
+				g.P("\t}")
+				g.P("\treturn copied")
 				g.P("}")
 				g.P()
 				continue
