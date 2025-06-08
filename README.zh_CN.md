@@ -10,7 +10,7 @@
 | [/tools/excelc](https://github.com/pangdogs/scaffold/tree/main/tools/excelc) | Excel表格处理工具，基于Protobuf技术，可以导出Excel表配置的结构和数据。                                    |
 | [/tools/propc](https://github.com/pangdogs/scaffold/tree/main/tools/propc) | 属性同步代码生成工具，可以生成属性同步操作代码。                                                        |
 | [/tools/protoc-gen-go-excel](https://github.com/pangdogs/scaffold/tree/main/tools/protoc-gen-go-excel) | Protobuf插件，使Excel表导出的Protobuf结构，生成Golang代码时，加入一些表格操作相关函数。                       |
-| [/tools/protoc-gen-go-safe](https://github.com/pangdogs/scaffold/tree/main/tools/protoc-gen-go-safe) | Protobuf插件，生成Golang代码时，加入一些辅助函数。                                                |
+| [/tools/protoc-gen-go-structure](https://github.com/pangdogs/scaffold/tree/main/tools/protoc-gen-go-structure) | Protobuf插件，生成Golang代码时，加入一些辅助函数。                                                |
 | [/tools/protoc-gen-go-variant](https://github.com/pangdogs/scaffold/tree/main/tools/protoc-gen-go-variant) | Protobuf插件，生成Golang代码时，加入一些可变类型（Variant）相关函数，使Golaxy框架的RPC系统中能够支持生成出的Protobuf结构。 |
 
 ## 插件目录
