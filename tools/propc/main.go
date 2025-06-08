@@ -296,11 +296,11 @@ func (ps *{{.Name}}Sync) Load(service string) error {
 	if err != nil {
 		return err
 	}
-	return ps.Unmarshal(data, revision)
+	return ps.{{.Name}}.Unmarshal(data, revision)
 }
 
 func (ps *{{.Name}}Sync) Save(service string) error {
-	data, revision, err := ps.Marshal()
+	data, revision, err := ps.{{.Name}}.Marshal()
 	if err != nil {
 		return err
 	}
