@@ -21,10 +21,8 @@ package main
 
 import (
 	"fmt"
-	"git.golaxy.org/framework/net/gap/variant"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"hash/fnv"
 )
 
 func main() {
@@ -55,8 +53,8 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	g.Import(protoPackage)
 
 	for _, m := range file.Messages {
-		g.P("// Safe 安全访问")
-		g.P("func (x *", m.GoIdent, ") Safe() *", m.GoIdent, " {")
+		g.P("// ZeroFill 填充0值")
+		g.P("func (x *", m.GoIdent, ") ZeroFill() *", m.GoIdent, " {")
 
 		for _, f := range m.Fields {
 			if f.Desc.IsList() {
@@ -114,9 +112,9 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 
 				mapDecl := fmt.Sprintf("map[%s]%s", f.Desc.MapKey().Kind(), mapValue)
 
-				g.P("// Get", f.GoName, "Safe 安全访问字段")
-				g.P("func (x *", m.GoIdent, ") Get", f.GoName, "Safe() ", mapDecl, " {")
-				g.P("\treturn x.Safe().", f.GoName)
+				g.P("// Get", f.GoName, "ZeroFill 填充0值并访问字段")
+				g.P("func (x *", m.GoIdent, ") Get", f.GoName, "ZeroFill() ", mapDecl, " {")
+				g.P("\treturn x.ZeroFill().", f.GoName)
 				g.P("}")
 				g.P()
 				continue
@@ -124,9 +122,9 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 
 			switch f.Desc.Kind() {
 			case protoreflect.MessageKind, protoreflect.GroupKind:
-				g.P("// Get", f.GoName, "Safe 安全访问字段")
-				g.P("func (x *", m.GoIdent, ") Get", f.GoName, "Safe() *", f.Desc.Message().Name(), " {")
-				g.P("\treturn x.Safe().", f.GoName)
+				g.P("// Get", f.GoName, "ZeroFill 填充0值并访问字段")
+				g.P("func (x *", m.GoIdent, ") Get", f.GoName, "ZeroFill() *", f.Desc.Message().Name(), " {")
+				g.P("\treturn x.ZeroFill().", f.GoName)
 				g.P("}")
 				g.P()
 				continue
@@ -190,10 +188,4 @@ func genGeneratedHeader(gen *protogen.Plugin, file *protogen.File, g *protogen.G
 		g.P("// source: ", file.Desc.Path())
 	}
 	g.P()
-}
-
-func makeTypeId(pkgName, msgName string) variant.TypeId {
-	hash := fnv.New32a()
-	hash.Write([]byte(pkgName + "." + msgName))
-	return variant.TypeId(variant.TypeId_Customize + hash.Sum32())
 }
