@@ -182,26 +182,32 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 			}
 
 			if f.Desc.IsMap() {
-				var mapValue string
 
 				switch f.Desc.MapValue().Kind() {
 				case protoreflect.MessageKind, protoreflect.GroupKind:
-					mapValue = "*" + string(f.Desc.MapValue().Message().Name())
+					mapValue := "*" + string(f.Desc.MapValue().Message().Name())
+					mapDecl := fmt.Sprintf("map[%s]%s", f.Desc.MapKey().Kind(), mapValue)
+
+					g.P("// Clone", f.GoName, " 克隆字段 ", f.GoName)
+					g.P("func (x *", m.GoIdent, ") Clone", f.GoName, "() ", mapDecl, " {")
+					g.P("\tcopied := ", mapsPackage.Ident("Clone"), "(x.", f.GoName, ")")
+					g.P("\tfor k, v := range copied {")
+					g.P("\t\tcopied[k] = v.Clone()")
+					g.P("\t}")
+					g.P("\treturn copied")
+					g.P("}")
+					g.P()
+
 				default:
-					mapValue = f.Desc.MapValue().Kind().String()
+					mapValue := f.Desc.MapValue().Kind().String()
+					mapDecl := fmt.Sprintf("map[%s]%s", f.Desc.MapKey().Kind(), mapValue)
+
+					g.P("// Clone", f.GoName, " 克隆字段 ", f.GoName)
+					g.P("func (x *", m.GoIdent, ") Clone", f.GoName, "() ", mapDecl, " {")
+					g.P("\treturn ", mapsPackage.Ident("Clone"), "(x.", f.GoName, ")")
+					g.P("}")
+					g.P()
 				}
-
-				mapDecl := fmt.Sprintf("map[%s]%s", f.Desc.MapKey().Kind(), mapValue)
-
-				g.P("// Clone", f.GoName, " 克隆字段 ", f.GoName)
-				g.P("func (x *", m.GoIdent, ") Clone", f.GoName, "() ", mapDecl, " {")
-				g.P("\tcopied := ", mapsPackage.Ident("Clone"), "(x.", f.GoName, ")")
-				g.P("\tfor k, v := range copied {")
-				g.P("\t\tcopied[k] = v.Clone()")
-				g.P("\t}")
-				g.P("\treturn copied")
-				g.P("}")
-				g.P()
 				continue
 			}
 
