@@ -37,7 +37,7 @@ func ComponentScript(script string) *pt.ComponentAttribute {
 	return ComponentScriptT[ComponentScriptBehavior](script)
 }
 
-// ComponentScriptT 创建脚本化组件原型属性，用于注册实体原型时自定义相关属性
+// ComponentScriptT 创建脚本化组件原型属性，自定义组件状态类型，用于注册实体原型时自定义相关属性
 func ComponentScriptT[T any](script string) *pt.ComponentAttribute {
 	if script == "" {
 		exception.Panicf("goscr: %w: script is empty", exception.ErrArgs)
@@ -59,7 +59,7 @@ func GetComponentScript(entity ec.Entity, name string) func() *ComponentScriptBe
 	return GetComponentScriptT[*ComponentScriptBehavior](entity, name)
 }
 
-// GetComponentScriptT 获取组件脚本
+// GetComponentScriptT 获取自定义组件状态类型的脚本
 func GetComponentScriptT[T interface{ This() func() T }](entity ec.Entity, name string) func() T {
 	if entity == nil {
 		exception.Panicf("goscr: %s: entity is nil", exception.ErrArgs)

@@ -23,6 +23,7 @@ import (
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/ec/pt"
 	"git.golaxy.org/core/utils/exception"
+	"git.golaxy.org/core/utils/types"
 	"strings"
 )
 
@@ -36,7 +37,7 @@ func EntityScript(prototype, script string) *pt.EntityAttribute {
 	return EntityScriptT[EntityScriptBehavior](prototype, script)
 }
 
-// EntityScriptT 创建脚本化实体原型属性，用于注册实体原型时自定义相关属性
+// EntityScriptT 创建脚本化实体原型属性，自定义实体状态类型，用于注册实体原型时自定义相关属性
 func EntityScriptT[T any](prototype, script string) *pt.EntityAttribute {
 	if prototype == "" {
 		exception.Panicf("goscr: %w: prototype is empty", exception.ErrArgs)
@@ -54,7 +55,7 @@ func EntityScriptT[T any](prototype, script string) *pt.EntityAttribute {
 	scriptPkg := script[:idx]
 	scriptIdent := script[idx+1:]
 
-	return pt.NewEntityAttribute(prototype).SetExtra(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
+	return pt.NewEntityAttribute(prototype).SetInstance(types.ZeroT[T]()).SetExtra(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
 }
 
 // GetEntityScript 获取实体脚本
@@ -62,7 +63,7 @@ func GetEntityScript(entity ec.Entity) func() *EntityScriptBehavior {
 	return GetEntityScriptT[*EntityScriptBehavior](entity)
 }
 
-// GetEntityScriptT 获取实体脚本
+// GetEntityScriptT 获取自定义实体状态类型的脚本
 func GetEntityScriptT[T interface{ This() func() T }](entity ec.Entity) func() T {
 	if entity == nil {
 		exception.Panicf("goscr: %s: entity is nil", exception.ErrArgs)
