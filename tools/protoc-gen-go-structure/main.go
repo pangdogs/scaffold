@@ -93,8 +93,8 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 		}
 
 		{
-			g.P("// ExplicitFillNil 递归将所有为nil的固定字段填充0值")
-			g.P("func (x *", m.GoIdent, ") ExplicitFillNil() *", m.GoIdent, " {")
+			g.P("// DeepFillNil 递归将所有为nil的固定字段填充0值")
+			g.P("func (x *", m.GoIdent, ") DeepFillNil() *", m.GoIdent, " {")
 
 			for _, f := range m.Fields {
 				if f.Desc.IsList() {
@@ -122,7 +122,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 					g.P("\tif x.", f.GoName, " == nil {")
 					g.P("\t\tx.", f.GoName, " = &", f.Desc.Message().Name(), "{}")
 					g.P("\t}")
-					g.P("\tx.", f.GoName, ".ExplicitFillNil()")
+					g.P("\tx.", f.GoName, ".DeepFillNil()")
 					continue
 				}
 			}
