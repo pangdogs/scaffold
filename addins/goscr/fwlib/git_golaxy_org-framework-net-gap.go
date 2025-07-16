@@ -23,6 +23,7 @@ func init() {
 		"MsgId_RPC_Reply":   reflect.ValueOf(gap.MsgId_RPC_Reply),
 		"MsgId_RPC_Request": reflect.ValueOf(gap.MsgId_RPC_Request),
 		"NewMsgCreator":     reflect.ValueOf(gap.NewMsgCreator),
+		"Unmarshal":         reflect.ValueOf(gap.Unmarshal),
 
 		// type definitions
 		"IMsgCreator":   reflect.ValueOf((*gap.IMsgCreator)(nil)),
@@ -34,16 +35,14 @@ func init() {
 		"MsgPacket":     reflect.ValueOf((*gap.MsgPacket)(nil)),
 		"MsgRPCReply":   reflect.ValueOf((*gap.MsgRPCReply)(nil)),
 		"MsgRPCRequest": reflect.ValueOf((*gap.MsgRPCRequest)(nil)),
-		"MsgReader":     reflect.ValueOf((*gap.MsgReader)(nil)),
-		"MsgWriter":     reflect.ValueOf((*gap.MsgWriter)(nil)),
 		"Origin":        reflect.ValueOf((*gap.Origin)(nil)),
+		"ReadableMsg":   reflect.ValueOf((*gap.ReadableMsg)(nil)),
 		"SerializedMsg": reflect.ValueOf((*gap.SerializedMsg)(nil)),
 
 		// interface wrapper definitions
 		"_IMsgCreator": reflect.ValueOf((*_git_golaxy_org_framework_net_gap_IMsgCreator)(nil)),
 		"_Msg":         reflect.ValueOf((*_git_golaxy_org_framework_net_gap_Msg)(nil)),
-		"_MsgReader":   reflect.ValueOf((*_git_golaxy_org_framework_net_gap_MsgReader)(nil)),
-		"_MsgWriter":   reflect.ValueOf((*_git_golaxy_org_framework_net_gap_MsgWriter)(nil)),
+		"_ReadableMsg": reflect.ValueOf((*_git_golaxy_org_framework_net_gap_ReadableMsg)(nil)),
 	}
 }
 
@@ -77,30 +76,16 @@ func (W _git_golaxy_org_framework_net_gap_Msg) Read(p []byte) (n int, err error)
 func (W _git_golaxy_org_framework_net_gap_Msg) Size() int                         { return W.WSize() }
 func (W _git_golaxy_org_framework_net_gap_Msg) Write(p []byte) (n int, err error) { return W.WWrite(p) }
 
-// _git_golaxy_org_framework_net_gap_MsgReader is an interface wrapper for MsgReader type
-type _git_golaxy_org_framework_net_gap_MsgReader struct {
+// _git_golaxy_org_framework_net_gap_ReadableMsg is an interface wrapper for ReadableMsg type
+type _git_golaxy_org_framework_net_gap_ReadableMsg struct {
 	IValue interface{}
 	WMsgId func() gap.MsgId
 	WRead  func(p []byte) (n int, err error)
 	WSize  func() int
 }
 
-func (W _git_golaxy_org_framework_net_gap_MsgReader) MsgId() gap.MsgId { return W.WMsgId() }
-func (W _git_golaxy_org_framework_net_gap_MsgReader) Read(p []byte) (n int, err error) {
+func (W _git_golaxy_org_framework_net_gap_ReadableMsg) MsgId() gap.MsgId { return W.WMsgId() }
+func (W _git_golaxy_org_framework_net_gap_ReadableMsg) Read(p []byte) (n int, err error) {
 	return W.WRead(p)
 }
-func (W _git_golaxy_org_framework_net_gap_MsgReader) Size() int { return W.WSize() }
-
-// _git_golaxy_org_framework_net_gap_MsgWriter is an interface wrapper for MsgWriter type
-type _git_golaxy_org_framework_net_gap_MsgWriter struct {
-	IValue interface{}
-	WMsgId func() gap.MsgId
-	WSize  func() int
-	WWrite func(p []byte) (n int, err error)
-}
-
-func (W _git_golaxy_org_framework_net_gap_MsgWriter) MsgId() gap.MsgId { return W.WMsgId() }
-func (W _git_golaxy_org_framework_net_gap_MsgWriter) Size() int        { return W.WSize() }
-func (W _git_golaxy_org_framework_net_gap_MsgWriter) Write(p []byte) (n int, err error) {
-	return W.WWrite(p)
-}
+func (W _git_golaxy_org_framework_net_gap_ReadableMsg) Size() int { return W.WSize() }

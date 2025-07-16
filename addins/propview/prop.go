@@ -68,7 +68,7 @@ func (p *PropT[T]) Revision() int64 {
 
 // Marshal 序列化
 func (p *PropT[T]) Marshal() ([]byte, int64, error) {
-	v, err := variant.MakeReadonlyVariant(p.state)
+	v, err := variant.MakeVariant(p.state)
 	if err != nil {
 		return nil, 0, err
 	}

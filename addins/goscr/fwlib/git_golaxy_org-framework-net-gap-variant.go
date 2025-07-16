@@ -12,18 +12,18 @@ import (
 func init() {
 	Symbols["git.golaxy.org/framework/net/gap/variant/variant"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"CastReadonlyVariant":   reflect.ValueOf(variant.CastReadonlyVariant),
 		"CastSerializedVariant": reflect.ValueOf(variant.CastSerializedVariant),
+		"CastVariant":           reflect.ValueOf(variant.CastVariant),
 		"ErrInvalidCast":        reflect.ValueOf(&variant.ErrInvalidCast).Elem(),
 		"ErrNotDeclared":        reflect.ValueOf(&variant.ErrNotDeclared).Elem(),
 		"ErrVariant":            reflect.ValueOf(&variant.ErrVariant).Elem(),
 		"Errorf":                reflect.ValueOf(variant.Errorf),
 		"Errorln":               reflect.ValueOf(variant.Errorln),
 		"MakeError":             reflect.ValueOf(variant.MakeError),
-		"MakeReadonlyVariant":   reflect.ValueOf(variant.MakeReadonlyVariant),
 		"MakeSerializedValue":   reflect.ValueOf(variant.MakeSerializedValue),
 		"MakeSerializedVariant": reflect.ValueOf(variant.MakeSerializedVariant),
 		"MakeTypeId":            reflect.ValueOf(variant.MakeTypeId),
+		"MakeVariant":           reflect.ValueOf(variant.MakeVariant),
 		"TypeId_Array":          reflect.ValueOf(variant.TypeId_Array),
 		"TypeId_Bool":           reflect.ValueOf(variant.TypeId_Bool),
 		"TypeId_Byte":           reflect.ValueOf(variant.TypeId_Byte),
@@ -67,6 +67,8 @@ func init() {
 		"Int8":            reflect.ValueOf((*variant.Int8)(nil)),
 		"Map":             reflect.ValueOf((*variant.Map)(nil)),
 		"Null":            reflect.ValueOf((*variant.Null)(nil)),
+		"ReadableValue":   reflect.ValueOf((*variant.ReadableValue)(nil)),
+		"Releasable":      reflect.ValueOf((*variant.Releasable)(nil)),
 		"SerializedValue": reflect.ValueOf((*variant.SerializedValue)(nil)),
 		"String":          reflect.ValueOf((*variant.String)(nil)),
 		"TypeId":          reflect.ValueOf((*variant.TypeId)(nil)),
@@ -76,15 +78,13 @@ func init() {
 		"Uint64":          reflect.ValueOf((*variant.Uint64)(nil)),
 		"Uint8":           reflect.ValueOf((*variant.Uint8)(nil)),
 		"Value":           reflect.ValueOf((*variant.Value)(nil)),
-		"ValueReader":     reflect.ValueOf((*variant.ValueReader)(nil)),
-		"ValueWriter":     reflect.ValueOf((*variant.ValueWriter)(nil)),
 		"Variant":         reflect.ValueOf((*variant.Variant)(nil)),
 
 		// interface wrapper definitions
 		"_IVariantCreator": reflect.ValueOf((*_git_golaxy_org_framework_net_gap_variant_IVariantCreator)(nil)),
+		"_ReadableValue":   reflect.ValueOf((*_git_golaxy_org_framework_net_gap_variant_ReadableValue)(nil)),
+		"_Releasable":      reflect.ValueOf((*_git_golaxy_org_framework_net_gap_variant_Releasable)(nil)),
 		"_Value":           reflect.ValueOf((*_git_golaxy_org_framework_net_gap_variant_Value)(nil)),
-		"_ValueReader":     reflect.ValueOf((*_git_golaxy_org_framework_net_gap_variant_ValueReader)(nil)),
-		"_ValueWriter":     reflect.ValueOf((*_git_golaxy_org_framework_net_gap_variant_ValueWriter)(nil)),
 	}
 }
 
@@ -110,6 +110,32 @@ func (W _git_golaxy_org_framework_net_gap_variant_IVariantCreator) Undeclare(typ
 	W.WUndeclare(typeId)
 }
 
+// _git_golaxy_org_framework_net_gap_variant_ReadableValue is an interface wrapper for ReadableValue type
+type _git_golaxy_org_framework_net_gap_variant_ReadableValue struct {
+	IValue    interface{}
+	WIndirect func() any
+	WRead     func(p []byte) (n int, err error)
+	WSize     func() int
+	WTypeId   func() variant.TypeId
+}
+
+func (W _git_golaxy_org_framework_net_gap_variant_ReadableValue) Indirect() any { return W.WIndirect() }
+func (W _git_golaxy_org_framework_net_gap_variant_ReadableValue) Read(p []byte) (n int, err error) {
+	return W.WRead(p)
+}
+func (W _git_golaxy_org_framework_net_gap_variant_ReadableValue) Size() int { return W.WSize() }
+func (W _git_golaxy_org_framework_net_gap_variant_ReadableValue) TypeId() variant.TypeId {
+	return W.WTypeId()
+}
+
+// _git_golaxy_org_framework_net_gap_variant_Releasable is an interface wrapper for Releasable type
+type _git_golaxy_org_framework_net_gap_variant_Releasable struct {
+	IValue   interface{}
+	WRelease func()
+}
+
+func (W _git_golaxy_org_framework_net_gap_variant_Releasable) Release() { W.WRelease() }
+
 // _git_golaxy_org_framework_net_gap_variant_Value is an interface wrapper for Value type
 type _git_golaxy_org_framework_net_gap_variant_Value struct {
 	IValue    interface{}
@@ -127,39 +153,5 @@ func (W _git_golaxy_org_framework_net_gap_variant_Value) Read(p []byte) (n int, 
 func (W _git_golaxy_org_framework_net_gap_variant_Value) Size() int              { return W.WSize() }
 func (W _git_golaxy_org_framework_net_gap_variant_Value) TypeId() variant.TypeId { return W.WTypeId() }
 func (W _git_golaxy_org_framework_net_gap_variant_Value) Write(p []byte) (n int, err error) {
-	return W.WWrite(p)
-}
-
-// _git_golaxy_org_framework_net_gap_variant_ValueReader is an interface wrapper for ValueReader type
-type _git_golaxy_org_framework_net_gap_variant_ValueReader struct {
-	IValue    interface{}
-	WIndirect func() any
-	WRead     func(p []byte) (n int, err error)
-	WSize     func() int
-	WTypeId   func() variant.TypeId
-}
-
-func (W _git_golaxy_org_framework_net_gap_variant_ValueReader) Indirect() any { return W.WIndirect() }
-func (W _git_golaxy_org_framework_net_gap_variant_ValueReader) Read(p []byte) (n int, err error) {
-	return W.WRead(p)
-}
-func (W _git_golaxy_org_framework_net_gap_variant_ValueReader) Size() int { return W.WSize() }
-func (W _git_golaxy_org_framework_net_gap_variant_ValueReader) TypeId() variant.TypeId {
-	return W.WTypeId()
-}
-
-// _git_golaxy_org_framework_net_gap_variant_ValueWriter is an interface wrapper for ValueWriter type
-type _git_golaxy_org_framework_net_gap_variant_ValueWriter struct {
-	IValue  interface{}
-	WSize   func() int
-	WTypeId func() variant.TypeId
-	WWrite  func(p []byte) (n int, err error)
-}
-
-func (W _git_golaxy_org_framework_net_gap_variant_ValueWriter) Size() int { return W.WSize() }
-func (W _git_golaxy_org_framework_net_gap_variant_ValueWriter) TypeId() variant.TypeId {
-	return W.WTypeId()
-}
-func (W _git_golaxy_org_framework_net_gap_variant_ValueWriter) Write(p []byte) (n int, err error) {
 	return W.WWrite(p)
 }

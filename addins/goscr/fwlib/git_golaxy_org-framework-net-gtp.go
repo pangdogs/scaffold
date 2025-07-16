@@ -105,6 +105,7 @@ func init() {
 		"SymmetricEncryption_None":               reflect.ValueOf(gtp.SymmetricEncryption_None),
 		"SymmetricEncryption_XChaCha20":          reflect.ValueOf(gtp.SymmetricEncryption_XChaCha20),
 		"SymmetricEncryption_XChaCha20_Poly1305": reflect.ValueOf(gtp.SymmetricEncryption_XChaCha20_Poly1305),
+		"Unmarshal":                              reflect.ValueOf(gtp.Unmarshal),
 		"Version_V1_0":                           reflect.ValueOf(gtp.Version_V1_0),
 
 		// type definitions
@@ -134,12 +135,11 @@ func init() {
 		"MsgPacket":                 reflect.ValueOf((*gtp.MsgPacket)(nil)),
 		"MsgPacketLen":              reflect.ValueOf((*gtp.MsgPacketLen)(nil)),
 		"MsgPayload":                reflect.ValueOf((*gtp.MsgPayload)(nil)),
-		"MsgReader":                 reflect.ValueOf((*gtp.MsgReader)(nil)),
 		"MsgRst":                    reflect.ValueOf((*gtp.MsgRst)(nil)),
 		"MsgSyncTime":               reflect.ValueOf((*gtp.MsgSyncTime)(nil)),
-		"MsgWriter":                 reflect.ValueOf((*gtp.MsgWriter)(nil)),
 		"NamedCurve":                reflect.ValueOf((*gtp.NamedCurve)(nil)),
 		"PaddingMode":               reflect.ValueOf((*gtp.PaddingMode)(nil)),
+		"ReadableMsg":               reflect.ValueOf((*gtp.ReadableMsg)(nil)),
 		"SecretKeyExchange":         reflect.ValueOf((*gtp.SecretKeyExchange)(nil)),
 		"SignatureAlgorithm":        reflect.ValueOf((*gtp.SignatureAlgorithm)(nil)),
 		"SymmetricEncryption":       reflect.ValueOf((*gtp.SymmetricEncryption)(nil)),
@@ -148,8 +148,7 @@ func init() {
 		// interface wrapper definitions
 		"_IMsgCreator": reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_IMsgCreator)(nil)),
 		"_Msg":         reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_Msg)(nil)),
-		"_MsgReader":   reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_MsgReader)(nil)),
-		"_MsgWriter":   reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_MsgWriter)(nil)),
+		"_ReadableMsg": reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_ReadableMsg)(nil)),
 	}
 }
 
@@ -172,45 +171,31 @@ func (W _git_golaxy_org_framework_net_gtp_IMsgCreator) Undeclare(msgId gtp.MsgId
 // _git_golaxy_org_framework_net_gtp_Msg is an interface wrapper for Msg type
 type _git_golaxy_org_framework_net_gtp_Msg struct {
 	IValue interface{}
-	WClone func() gtp.MsgReader
+	WClone func() gtp.Msg
 	WMsgId func() gtp.MsgId
 	WRead  func(p []byte) (n int, err error)
 	WSize  func() int
 	WWrite func(p []byte) (n int, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_Msg) Clone() gtp.MsgReader              { return W.WClone() }
+func (W _git_golaxy_org_framework_net_gtp_Msg) Clone() gtp.Msg                    { return W.WClone() }
 func (W _git_golaxy_org_framework_net_gtp_Msg) MsgId() gtp.MsgId                  { return W.WMsgId() }
 func (W _git_golaxy_org_framework_net_gtp_Msg) Read(p []byte) (n int, err error)  { return W.WRead(p) }
 func (W _git_golaxy_org_framework_net_gtp_Msg) Size() int                         { return W.WSize() }
 func (W _git_golaxy_org_framework_net_gtp_Msg) Write(p []byte) (n int, err error) { return W.WWrite(p) }
 
-// _git_golaxy_org_framework_net_gtp_MsgReader is an interface wrapper for MsgReader type
-type _git_golaxy_org_framework_net_gtp_MsgReader struct {
+// _git_golaxy_org_framework_net_gtp_ReadableMsg is an interface wrapper for ReadableMsg type
+type _git_golaxy_org_framework_net_gtp_ReadableMsg struct {
 	IValue interface{}
-	WClone func() gtp.MsgReader
+	WClone func() gtp.Msg
 	WMsgId func() gtp.MsgId
 	WRead  func(p []byte) (n int, err error)
 	WSize  func() int
 }
 
-func (W _git_golaxy_org_framework_net_gtp_MsgReader) Clone() gtp.MsgReader { return W.WClone() }
-func (W _git_golaxy_org_framework_net_gtp_MsgReader) MsgId() gtp.MsgId     { return W.WMsgId() }
-func (W _git_golaxy_org_framework_net_gtp_MsgReader) Read(p []byte) (n int, err error) {
+func (W _git_golaxy_org_framework_net_gtp_ReadableMsg) Clone() gtp.Msg   { return W.WClone() }
+func (W _git_golaxy_org_framework_net_gtp_ReadableMsg) MsgId() gtp.MsgId { return W.WMsgId() }
+func (W _git_golaxy_org_framework_net_gtp_ReadableMsg) Read(p []byte) (n int, err error) {
 	return W.WRead(p)
 }
-func (W _git_golaxy_org_framework_net_gtp_MsgReader) Size() int { return W.WSize() }
-
-// _git_golaxy_org_framework_net_gtp_MsgWriter is an interface wrapper for MsgWriter type
-type _git_golaxy_org_framework_net_gtp_MsgWriter struct {
-	IValue interface{}
-	WMsgId func() gtp.MsgId
-	WSize  func() int
-	WWrite func(p []byte) (n int, err error)
-}
-
-func (W _git_golaxy_org_framework_net_gtp_MsgWriter) MsgId() gtp.MsgId { return W.WMsgId() }
-func (W _git_golaxy_org_framework_net_gtp_MsgWriter) Size() int        { return W.WSize() }
-func (W _git_golaxy_org_framework_net_gtp_MsgWriter) Write(p []byte) (n int, err error) {
-	return W.WWrite(p)
-}
+func (W _git_golaxy_org_framework_net_gtp_ReadableMsg) Size() int { return W.WSize() }
