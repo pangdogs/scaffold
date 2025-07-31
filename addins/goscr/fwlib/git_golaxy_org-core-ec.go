@@ -432,7 +432,7 @@ type _git_golaxy_org_core_ec_EntityPT struct {
 	WComponents                 func() []ec.BuiltinComponent
 	WConstruct                  func(settings ...option.Setting[ec.EntityOptions]) ec.Entity
 	WCountComponents            func() int
-	WExtra                      func() generic.SliceMap[string, any]
+	WExtra                      func() meta.Meta
 	WInstanceRT                 func() reflect.Type
 	WPrototype                  func() string
 	WScope                      func() *ec.Scope
@@ -452,11 +452,11 @@ func (W _git_golaxy_org_core_ec_EntityPT) Components() []ec.BuiltinComponent { r
 func (W _git_golaxy_org_core_ec_EntityPT) Construct(settings ...option.Setting[ec.EntityOptions]) ec.Entity {
 	return W.WConstruct(settings...)
 }
-func (W _git_golaxy_org_core_ec_EntityPT) CountComponents() int                 { return W.WCountComponents() }
-func (W _git_golaxy_org_core_ec_EntityPT) Extra() generic.SliceMap[string, any] { return W.WExtra() }
-func (W _git_golaxy_org_core_ec_EntityPT) InstanceRT() reflect.Type             { return W.WInstanceRT() }
-func (W _git_golaxy_org_core_ec_EntityPT) Prototype() string                    { return W.WPrototype() }
-func (W _git_golaxy_org_core_ec_EntityPT) Scope() *ec.Scope                     { return W.WScope() }
+func (W _git_golaxy_org_core_ec_EntityPT) CountComponents() int     { return W.WCountComponents() }
+func (W _git_golaxy_org_core_ec_EntityPT) Extra() meta.Meta         { return W.WExtra() }
+func (W _git_golaxy_org_core_ec_EntityPT) InstanceRT() reflect.Type { return W.WInstanceRT() }
+func (W _git_golaxy_org_core_ec_EntityPT) Prototype() string        { return W.WPrototype() }
+func (W _git_golaxy_org_core_ec_EntityPT) Scope() *ec.Scope         { return W.WScope() }
 
 // _git_golaxy_org_core_ec_EventComponentDestroySelf is an interface wrapper for EventComponentDestroySelf type
 type _git_golaxy_org_core_ec_EventComponentDestroySelf struct {
