@@ -22,5 +22,8 @@ func init() {
 		"Panicf":      reflect.ValueOf(exception.Panicf),
 		"PanicfSkip":  reflect.ValueOf(exception.PanicfSkip),
 		"TraceStack":  reflect.ValueOf(exception.TraceStack),
+
+		// type definitions
+		"StackedError": reflect.ValueOf((*exception.StackedError)(nil)),
 	}
 }
