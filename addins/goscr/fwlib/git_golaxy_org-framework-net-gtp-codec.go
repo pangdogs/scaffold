@@ -12,41 +12,55 @@ import (
 func init() {
 	Symbols["git.golaxy.org/framework/net/gtp/codec/codec"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"ErrCompress":             reflect.ValueOf(&codec.ErrCompress).Elem(),
-		"ErrDecode":               reflect.ValueOf(&codec.ErrDecode).Elem(),
-		"ErrEncode":               reflect.ValueOf(&codec.ErrEncode).Elem(),
-		"ErrEncrypt":              reflect.ValueOf(&codec.ErrEncrypt).Elem(),
-		"ErrIncorrectMAC":         reflect.ValueOf(&codec.ErrIncorrectMAC).Elem(),
-		"ErrMAC":                  reflect.ValueOf(&codec.ErrMAC).Elem(),
-		"ErrUnableToDetectLength": reflect.ValueOf(&codec.ErrUnableToDetectLength).Elem(),
-		"NewCompression":          reflect.ValueOf(codec.NewCompression),
-		"NewDecoder":              reflect.ValueOf(codec.NewDecoder),
-		"NewEncoder":              reflect.ValueOf(codec.NewEncoder),
-		"NewEncryption":           reflect.ValueOf(codec.NewEncryption),
-		"NewMAC":                  reflect.ValueOf(codec.NewMAC),
-		"NewMAC32":                reflect.ValueOf(codec.NewMAC32),
-		"NewMAC64":                reflect.ValueOf(codec.NewMAC64),
+		"ErrAuthenticate":       reflect.ValueOf(&codec.ErrAuthenticate).Elem(),
+		"ErrCompress":           reflect.ValueOf(&codec.ErrCompress).Elem(),
+		"ErrDecode":             reflect.ValueOf(&codec.ErrDecode).Elem(),
+		"ErrEncode":             reflect.ValueOf(&codec.ErrEncode).Elem(),
+		"ErrEncrypt":            reflect.ValueOf(&codec.ErrEncrypt).Elem(),
+		"ErrInvalidMAC":         reflect.ValueOf(&codec.ErrInvalidMAC).Elem(),
+		"ErrUnableToPeekLength": reflect.ValueOf(&codec.ErrUnableToPeekLength).Elem(),
+		"NewAuthentication":     reflect.ValueOf(codec.NewAuthentication),
+		"NewCompression":        reflect.ValueOf(codec.NewCompression),
+		"NewDecoder":            reflect.ValueOf(codec.NewDecoder),
+		"NewEncoder":            reflect.ValueOf(codec.NewEncoder),
+		"NewEncryption":         reflect.ValueOf(codec.NewEncryption),
 
 		// type definitions
-		"Compression":  reflect.ValueOf((*codec.Compression)(nil)),
-		"Decoder":      reflect.ValueOf((*codec.Decoder)(nil)),
-		"Encoder":      reflect.ValueOf((*codec.Encoder)(nil)),
-		"Encryption":   reflect.ValueOf((*codec.Encryption)(nil)),
-		"FetchNonce":   reflect.ValueOf((*codec.FetchNonce)(nil)),
-		"ICompression": reflect.ValueOf((*codec.ICompression)(nil)),
-		"IEncryption":  reflect.ValueOf((*codec.IEncryption)(nil)),
-		"IMAC":         reflect.ValueOf((*codec.IMAC)(nil)),
-		"IValidation":  reflect.ValueOf((*codec.IValidation)(nil)),
-		"MAC":          reflect.ValueOf((*codec.MAC)(nil)),
-		"MAC32":        reflect.ValueOf((*codec.MAC32)(nil)),
-		"MAC64":        reflect.ValueOf((*codec.MAC64)(nil)),
+		"Authentication":  reflect.ValueOf((*codec.Authentication)(nil)),
+		"Compression":     reflect.ValueOf((*codec.Compression)(nil)),
+		"Decoder":         reflect.ValueOf((*codec.Decoder)(nil)),
+		"Encoder":         reflect.ValueOf((*codec.Encoder)(nil)),
+		"Encryption":      reflect.ValueOf((*codec.Encryption)(nil)),
+		"FetchNonce":      reflect.ValueOf((*codec.FetchNonce)(nil)),
+		"IAuthentication": reflect.ValueOf((*codec.IAuthentication)(nil)),
+		"ICompression":    reflect.ValueOf((*codec.ICompression)(nil)),
+		"IEncryption":     reflect.ValueOf((*codec.IEncryption)(nil)),
+		"IValidation":     reflect.ValueOf((*codec.IValidation)(nil)),
 
 		// interface wrapper definitions
-		"_ICompression": reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_ICompression)(nil)),
-		"_IEncryption":  reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IEncryption)(nil)),
-		"_IMAC":         reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IMAC)(nil)),
-		"_IValidation":  reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IValidation)(nil)),
+		"_IAuthentication": reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IAuthentication)(nil)),
+		"_ICompression":    reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_ICompression)(nil)),
+		"_IEncryption":     reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IEncryption)(nil)),
+		"_IValidation":     reflect.ValueOf((*_git_golaxy_org_framework_net_gtp_codec_IValidation)(nil)),
 	}
+}
+
+// _git_golaxy_org_framework_net_gtp_codec_IAuthentication is an interface wrapper for IAuthentication type
+type _git_golaxy_org_framework_net_gtp_codec_IAuthentication struct {
+	IValue          interface{}
+	WAuth           func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst []byte, err error)
+	WSign           func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst binaryutil.RecycleBytes, err error)
+	WSizeOfAddition func(msgLen int) (int, error)
+}
+
+func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) Auth(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst []byte, err error) {
+	return W.WAuth(msgId, flags, msgBuf)
+}
+func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) Sign(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst binaryutil.RecycleBytes, err error) {
+	return W.WSign(msgId, flags, msgBuf)
+}
+func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) SizeOfAddition(msgLen int) (int, error) {
+	return W.WSizeOfAddition(msgLen)
 }
 
 // _git_golaxy_org_framework_net_gtp_codec_ICompression is an interface wrapper for ICompression type
@@ -75,24 +89,6 @@ func (W _git_golaxy_org_framework_net_gtp_codec_IEncryption) SizeOfAddition(msgL
 }
 func (W _git_golaxy_org_framework_net_gtp_codec_IEncryption) Transforming(dst []byte, src []byte) (binaryutil.RecycleBytes, error) {
 	return W.WTransforming(dst, src)
-}
-
-// _git_golaxy_org_framework_net_gtp_codec_IMAC is an interface wrapper for IMAC type
-type _git_golaxy_org_framework_net_gtp_codec_IMAC struct {
-	IValue     interface{}
-	WPatchMAC  func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst binaryutil.RecycleBytes, err error)
-	WSizeofMAC func(msgLen int) int
-	WVerifyMAC func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst []byte, err error)
-}
-
-func (W _git_golaxy_org_framework_net_gtp_codec_IMAC) PatchMAC(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst binaryutil.RecycleBytes, err error) {
-	return W.WPatchMAC(msgId, flags, msgBuf)
-}
-func (W _git_golaxy_org_framework_net_gtp_codec_IMAC) SizeofMAC(msgLen int) int {
-	return W.WSizeofMAC(msgLen)
-}
-func (W _git_golaxy_org_framework_net_gtp_codec_IMAC) VerifyMAC(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst []byte, err error) {
-	return W.WVerifyMAC(msgId, flags, msgBuf)
 }
 
 // _git_golaxy_org_framework_net_gtp_codec_IValidation is an interface wrapper for IValidation type
