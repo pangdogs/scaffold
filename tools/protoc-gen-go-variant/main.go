@@ -21,9 +21,10 @@ package main
 
 import (
 	"fmt"
+	"hash/fnv"
+
 	"git.golaxy.org/framework/net/gap/variant"
 	"google.golang.org/protobuf/compiler/protogen"
-	"hash/fnv"
 )
 
 func main() {

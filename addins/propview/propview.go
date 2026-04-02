@@ -21,6 +21,7 @@ package propview
 
 import (
 	"errors"
+
 	"git.golaxy.org/core"
 	"git.golaxy.org/core/runtime"
 	"git.golaxy.org/core/utils/async"
@@ -29,8 +30,9 @@ import (
 	"git.golaxy.org/framework/addins/gate"
 	"git.golaxy.org/framework/addins/log"
 	"git.golaxy.org/framework/addins/rpc"
-	"git.golaxy.org/framework/addins/rpc/rpcli"
 	"git.golaxy.org/framework/net/gap/variant"
+	"go.uber.org/zap"
+
 	"reflect"
 )
 
@@ -66,178 +68,282 @@ type _PropView struct {
 }
 
 func (m *_PropView) Init(rtCtx runtime.Context) {
-	log.Debugf(rtCtx, "init addin %q", self.Name)
+	log.L(rtCtx).Info("initializing add-in", zap.String("name", AddIn.Name))
 
 	m.rt = framework.GetRuntime(rtCtx)
 }
 
 func (m *_PropView) Shut(rtCtx runtime.Context) {
-	log.Debugf(rtCtx, "shut addin %q", self.Name)
+	log.L(rtCtx).Info("shutting down add-in", zap.String("name", AddIn.Name))
 }
 
 func (m *_PropView) Load(entityId uid.Id, prop string, service string) ([]byte, int64, error) {
-	if service == m.rt.GetService().GetName() {
-		log.Errorf(m.rt, "load data failed, entity=%q, prop=%q, service=%q, %s", entityId, prop, service, ErrLoadFromServiceItself)
+	if service == m.rt.Service().Name() {
+		log.L(m.rt).Error("load prop data failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", prop),
+			zap.String("service", service),
+			zap.Error(ErrLoadFromServiceItself))
 		return nil, 0, ErrLoadFromServiceItself
 	}
-	return rpc.Assert3[[]byte, int64, error](
-		<-rpc.ProxyRuntime(m.rt, entityId).RPC(service, Name, "DoLoad", entityId, prop),
-	)
+	return rpc.Assert3[[]byte, int64, error](rpc.ProxyRuntime(m.rt, entityId).RPC(service, AddIn.Name, "DoLoad", entityId, prop))
 }
 
 func (m *_PropView) Save(entityId uid.Id, prop string, service string, data []byte, revision int64) error {
-	if service == m.rt.GetService().GetName() {
-		log.Errorf(m.rt, "save data failed, entity=%q, prop=%q, service=%q, size=%d, revision=%d, %s",
-			entityId, prop, service, len(data), revision, ErrSaveToServiceItself)
+	if service == m.rt.Service().Name() {
+		log.L(m.rt).Error("save prop data failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", prop),
+			zap.String("service", service),
+			zap.Int64("revision", revision),
+			zap.Error(ErrSaveToServiceItself),
+		)
 		return ErrSaveToServiceItself
 	}
-	return rpc.Assert1[error](
-		<-rpc.ProxyRuntime(m.rt, entityId).RPC(service, Name, "DoSave", entityId, prop, data, revision),
-	)
+	return rpc.Assert1[error](rpc.ProxyRuntime(m.rt, entityId).RPC(service, AddIn.Name, "DoSave", entityId, prop, data, revision))
 }
 
 func (m *_PropView) Sync(entityId uid.Id, prop string, syncTo []string, revision int64, op string, args ...any) {
 	for _, dst := range syncTo {
-		if gate.CliDetails.DomainUnicast.Equal(dst) {
+		if gate.ClientDetails.DomainUnicast.Equal(dst) {
 			// 同步至实体客户端
-			rpc.ProxyEntity(m.rt, entityId).CliOnewayRPC(rpcli.Main, "DoSync", prop, revision, op, args)
+			rpc.ProxyEntity(m.rt, entityId).CliOnewayRPC("", "DoSync", prop, revision, op, args)
 
-		} else if gate.CliDetails.DomainMulticast.Contains(dst) {
+		} else if gate.ClientDetails.DomainMulticast.Contains(dst) {
 			// 同步至指定分组
-			group, _ := gate.CliDetails.DomainMulticast.Relative(dst)
+			group, _ := gate.ClientDetails.DomainMulticast.Relative(dst)
 			rpc.ProxyGroup(m.rt, dst).CliOnewayRPC(group, "DoSync", entityId, prop, revision, op, args)
 
-		} else if gate.CliDetails.DomainBroadcast.Equal(dst) {
-			// 同步至包含实体的所有分组
-			rpc.ProxyEntity(m.rt, entityId).BroadcastCliOnewayRPC(rpcli.Main, "DoSync", prop, revision, op, args)
-
-		} else {
+		} else if !gate.ClientDetails.DomainRoot.Contains(dst) {
 			// 同步至其他服务
-			core.Await(m.rt, rpc.ProxyRuntime(m.rt, entityId).RPC(dst, Name, "DoSync", entityId, prop, revision, op, args)).
-				AnyVoid(m.doSyncRet, dst, entityId, prop, revision, op)
+			core.Await(m.rt,
+				rpc.ProxyRuntime(m.rt, entityId).RPC(dst, AddIn.Name, "DoSync", entityId, prop, revision, op, args),
+			).AnyVoid(m.doSyncRet, dst, entityId, prop, revision, op)
 		}
 	}
 }
 
 func (m *_PropView) DoLoad(entityId uid.Id, propName string) ([]byte, int64, error) {
-	caller := m.rt.GetRPCStack().CallChain().Last()
+	caller := m.rt.RPCStack().CallChain().Last()
 
-	entity, ok := m.rt.GetEntityManager().GetEntity(entityId)
+	entity, ok := m.rt.EntityManager().GetEntity(entityId)
 	if !ok {
-		log.Errorf(m.rt, `do load data failed, entity=%q, prop=%q, caller="%s:%s", %s`,
-			entityId, propName, caller.Svc, caller.Addr, ErrEntityNotFound)
+		log.L(m.rt).Error("do load prop data failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrEntityNotFound),
+		)
 		return nil, 0, ErrEntityNotFound
 	}
 
 	propTab, ok := entity.(IPropTab)
 	if !ok {
-		log.Errorf(m.rt, `do load data failed, entity=%q, prop=%q, caller="%s:%s", %s`,
-			entityId, propName, caller.Svc, caller.Addr, ErrEntityNoPropTab)
+		log.L(m.rt).Error("do load prop data failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrEntityNoPropTab),
+		)
 		return nil, 0, ErrEntityNoPropTab
 	}
 
 	prop := propTab.GetProp(propName)
 	if prop == nil {
-		log.Errorf(m.rt, `do load data failed, entity=%q, prop=%q, caller="%s:%s", %s`,
-			entityId, propName, caller.Svc, caller.Addr, ErrEntityNoProp)
+		log.L(m.rt).Error("do load prop data failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrEntityNoProp),
+		)
 		return nil, 0, ErrEntityNoProp
 	}
 
 	data, revision, err := prop.Managed().Marshal()
 	if err != nil {
-		log.Errorf(m.rt, `do load data failed, entity=%q, prop=%q, caller="%s:%s", marshal failed, %s`,
-			entityId, propName, caller.Svc, caller.Addr, err)
+		log.L(m.rt).Error("do load prop data failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(err),
+		)
 		return nil, 0, err
 	}
 
-	log.Infof(m.rt, `do load data ok, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s"`,
-		entityId, propName, len(data), revision, caller.Svc, caller.Addr)
+	log.L(m.rt).Info("do load prop data ok",
+		zap.String("entity_id", entityId.String()),
+		zap.String("prop", propName),
+		zap.Int64("revision", revision),
+		zap.String("caller_svc", caller.Svc),
+		zap.String("caller_addr", caller.Addr))
 	return data, revision, nil
 }
 
 func (m *_PropView) DoSave(entityId uid.Id, propName string, data []byte, revision int64) error {
-	caller := m.rt.GetRPCStack().CallChain().Last()
+	caller := m.rt.RPCStack().CallChain().Last()
 
-	entity, ok := m.rt.GetEntityManager().GetEntity(entityId)
+	entity, ok := m.rt.EntityManager().GetEntity(entityId)
 	if !ok {
-		log.Errorf(m.rt, `do save data failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", %s`,
-			entityId, propName, len(data), revision, caller.Svc, caller.Addr, ErrEntityNotFound)
+		log.L(m.rt).Error("do save prop data failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrEntityNotFound),
+		)
 		return ErrEntityNotFound
 	}
 
 	propTab, ok := entity.(IPropTab)
 	if !ok {
-		log.Errorf(m.rt, `do save data failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", %s`,
-			entityId, propName, len(data), revision, caller.Svc, caller.Addr, ErrEntityNoPropTab)
+		log.L(m.rt).Error("do save prop data failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrEntityNoPropTab),
+		)
 		return ErrEntityNoPropTab
 	}
 
 	prop := propTab.GetProp(propName)
 	if prop == nil {
-		log.Errorf(m.rt, `do save data failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", %s`,
-			entityId, propName, len(data), revision, caller.Svc, caller.Addr, ErrEntityNoProp)
+		log.L(m.rt).Error("do save prop data failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrEntityNoProp),
+		)
 		return ErrEntityNoProp
 	}
 
 	err := prop.Managed().Unmarshal(data, revision)
 	if err != nil {
-		log.Errorf(m.rt, `do save data failed, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s", unmarshal failed, %s`,
-			entityId, propName, len(data), revision, caller.Svc, caller.Addr, err)
+		log.L(m.rt).Error("do save prop data failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(err),
+		)
 		return err
 	}
 
-	log.Infof(m.rt, `do save data ok, entity=%q, prop=%q, size=%d, revision=%d, caller="%s:%s`,
-		entityId, propName, len(data), revision, caller.Svc, caller.Addr)
+	log.L(m.rt).Info("do save prop data ok",
+		zap.String("entity_id", entityId.String()),
+		zap.String("prop", propName),
+		zap.Int64("revision", revision),
+		zap.String("caller_svc", caller.Svc),
+		zap.String("caller_addr", caller.Addr),
+	)
 	return nil
 }
 
 func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op string, argsRV []reflect.Value) error {
-	caller := m.rt.GetRPCStack().CallChain().Last()
+	caller := m.rt.RPCStack().CallChain().Last()
 
-	entity, ok := m.rt.GetEntityManager().GetEntity(entityId)
+	entity, ok := m.rt.EntityManager().GetEntity(entityId)
 	if !ok {
-		log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, op=%q, caller="%s:%s", %s`,
-			entityId, propName, revision, op, caller.Svc, caller.Addr, ErrEntityNotFound)
+		log.L(m.rt).Error("do sync op failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrEntityNotFound),
+		)
 		return ErrEntityNotFound
 	}
 
 	propTab, ok := entity.(IPropTab)
 	if !ok {
-		log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, op=%q, caller="%s:%s", %s`,
-			entityId, propName, revision, op, caller.Svc, caller.Addr, ErrEntityNoPropTab)
+		log.L(m.rt).Error("do sync op failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrEntityNoPropTab),
+		)
 		return ErrEntityNoPropTab
 	}
 
 	prop := propTab.GetProp(propName)
 	if prop == nil {
-		log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, op=%q, caller="%s:%s", %s`,
-			entityId, propName, revision, op, caller.Svc, caller.Addr, ErrEntityNoProp)
+		log.L(m.rt).Error("do sync op failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrEntityNoProp),
+		)
 		return ErrEntityNoProp
 	}
 
 	if revision <= prop.Managed().Revision() {
-		log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, local_revision=%d, op=%q, caller="%s:%s", %s`,
-			entityId, propName, revision, prop.Managed().Revision(), op, caller.Svc, caller.Addr, ErrOutdatedRevision)
+		log.L(m.rt).Error("do sync op failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrOutdatedRevision),
+		)
 		return ErrOutdatedRevision
 	}
 
 	if revision != prop.Managed().Revision()+1 {
-		log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, local_revision=%d, op=%q, caller="%s:%s", %s`,
-			entityId, propName, revision, prop.Managed().Revision(), op, caller.Svc, caller.Addr, ErrDiscontinuousRevision)
+		log.L(m.rt).Error("do sync op failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrDiscontinuousRevision),
+		)
 		return ErrDiscontinuousRevision
 	}
 
 	methodRV := prop.ReflectedManaged().MethodByName(op)
 	if !methodRV.IsValid() {
-		log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, op=%q, caller="%s:%s", %s`,
-			entityId, propName, revision, op, caller.Svc, caller.Addr, ErrMethodNotFound)
+		log.L(m.rt).Error("do sync op failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrMethodNotFound),
+		)
 		return ErrMethodNotFound
 	}
 	methodRT := methodRV.Type()
 
 	if methodRT.NumIn() != len(argsRV) {
-		log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, op=%q, caller="%s:%s", %s`,
-			entityId, propName, revision, op, caller.Svc, caller.Addr, ErrMethodParameterCountMismatch)
+		log.L(m.rt).Error("do sync op failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("caller_svc", caller.Svc),
+			zap.String("caller_addr", caller.Addr),
+			zap.Error(ErrMethodParameterCountMismatch),
+		)
 		return ErrMethodParameterCountMismatch
 	}
 
@@ -254,8 +360,15 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 
 		if argRV.CanConvert(paramRT) {
 			if argRT.Size() > paramRT.Size() {
-				log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, op=%q, caller="%s:%s", %s`,
-					entityId, propName, revision, op, caller.Svc, caller.Addr, ErrMethodParameterTypeMismatch)
+				log.L(m.rt).Error("do sync op failed",
+					zap.String("entity_id", entityId.String()),
+					zap.String("prop", propName),
+					zap.Int64("revision", revision),
+					zap.String("op", op),
+					zap.String("caller_svc", caller.Svc),
+					zap.String("caller_addr", caller.Addr),
+					zap.Error(ErrMethodParameterTypeMismatch),
+				)
 				return ErrMethodParameterTypeMismatch
 			}
 			argsRV[i] = argRV.Convert(paramRT)
@@ -270,8 +383,14 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 
 		argRV, err := argsRV[i].Interface().(variant.Variant).Convert(paramRT)
 		if err != nil {
-			log.Errorf(m.rt, `do sync op failed, entity=%q, prop=%q, revision=%d, op=%q, caller="%s:%s", %s`,
-				entityId, propName, revision, op, caller.Svc, caller.Addr, ErrMethodParameterTypeMismatch)
+			log.L(m.rt).Error("do sync op failed",
+				zap.String("entity_id", entityId.String()),
+				zap.String("prop", propName),
+				zap.Int64("revision", revision),
+				zap.String("op", op),
+				zap.String("caller_svc", caller.Svc),
+				zap.String("caller_addr", caller.Addr),
+				zap.Error(err))
 			return ErrMethodParameterTypeMismatch
 		}
 
@@ -281,13 +400,18 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 	methodRV.Call(argsRV)
 	prop.Managed().incrRevision()
 
-	log.Infof(m.rt, `do sync op ok, entity=%q, prop=%q, revision=%d, op=%q, caller="%s:%s"`,
-		entityId, propName, revision, op, caller.Svc, caller.Addr)
+	log.L(m.rt).Info("do sync op ok",
+		zap.String("entity_id", entityId.String()),
+		zap.String("prop", propName),
+		zap.Int64("revision", revision),
+		zap.String("op", op),
+		zap.String("caller_svc", caller.Svc),
+		zap.String("caller_addr", caller.Addr))
 	return nil
 }
 
-func (m *_PropView) doSyncRet(ctx runtime.Context, ret async.Ret, args ...any) {
-	err, retErr := rpc.Result1[error](ret).Extract()
+func (m *_PropView) doSyncRet(ctx runtime.Context, ret async.Result, args ...any) {
+	err, retErr := rpc.Parse1[error](ret).Extract()
 	if err == nil && retErr == nil {
 		return
 	}
@@ -299,37 +423,84 @@ func (m *_PropView) doSyncRet(ctx runtime.Context, ret async.Ret, args ...any) {
 	op := args[4].(string)
 
 	if retErr != nil {
-		log.Errorf(m.rt, `sync op failed, entity=%q, prop=%q, revision=%d, op=%q, sync_to_dst=%q, %s`, entityId, propName, revision, op, dst, err)
+		log.L(m.rt).Error("sync op failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("dst", dst),
+			zap.Error(retErr),
+		)
 		return
 	}
 
 	var syncErr *variant.Error
 
 	if ok := errors.As(err, &syncErr); !ok {
-		log.Errorf(m.rt, `sync op failed, entity=%q, prop=%q, revision=%d, op=%q, sync_to_dst=%q, %s`, entityId, propName, revision, op, dst, err)
+		log.L(m.rt).Error("sync op failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("dst", dst),
+			zap.Error(err),
+		)
 		return
 	}
 
 	switch syncErr.Code {
 	case ErrOutdatedRevision.Code, ErrDiscontinuousRevision.Code, ErrMethodNotFound.Code, ErrMethodParameterCountMismatch.Code, ErrMethodParameterTypeMismatch.Code:
-		log.Warnf(m.rt, `sync op failed, entity=%q, prop=%q, revision=%d, op=%q, sync_to_dst=%q, %s, trying to save`, entityId, propName, revision, op, dst, err)
+		log.L(m.rt).Warn("sync op failed, trying to save",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("dst", dst),
+			zap.NamedError("sync_err", err),
+		)
 
-		entity, ok := m.rt.GetEntityManager().GetEntity(entityId)
+		entity, ok := m.rt.EntityManager().GetEntity(entityId)
 		if !ok {
-			log.Errorf(m.rt, `sync op trying to save failed, entity=%q, prop=%q, revision=%d, op=%q, sync_to_dst=%q, %s`, entityId, propName, revision, op, dst, ErrEntityNotFound)
+			log.L(m.rt).Error("sync trying to save failed",
+				zap.String("entity_id", entityId.String()),
+				zap.String("prop", propName),
+				zap.Int64("revision", revision),
+				zap.String("op", op),
+				zap.String("dst", dst),
+				zap.Error(ErrEntityNotFound),
+			)
 			return
 		}
 
 		err := entity.(IPropTab).GetProp(propName).Save(dst)
 		if err != nil {
-			log.Errorf(m.rt, `sync op trying to save failed, entity=%q, prop=%q, revision=%d, op=%q, sync_to_dst=%q, %s`, entityId, propName, revision, op, dst, err)
+			log.L(m.rt).Error("sync trying to save failed",
+				zap.String("entity_id", entityId.String()),
+				zap.String("prop", propName),
+				zap.Int64("revision", revision),
+				zap.String("op", op),
+				zap.String("dst", dst),
+				zap.Error(err))
 			return
 		}
 
-		log.Infof(m.rt, `sync op trying to save ok, entity=%q, prop=%q, revision=%d, op=%q, sync_to_dst=%q`, entityId, propName, revision, op, dst)
+		log.L(m.rt).Info("sync trying to save ok",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("dst", dst))
 		return
+
 	default:
-		log.Errorf(m.rt, `sync op failed, entity=%q, prop=%q, revision=%d, op=%q, sync_to_dst=%q, %s`, entityId, propName, revision, op, dst, err)
+		log.L(m.rt).Error("sync op failed",
+			zap.String("entity_id", entityId.String()),
+			zap.String("prop", propName),
+			zap.Int64("revision", revision),
+			zap.String("op", op),
+			zap.String("dst", dst),
+			zap.Error(err),
+		)
 		return
 	}
 }

@@ -20,8 +20,9 @@
 package propview
 
 import (
-	"git.golaxy.org/core/ec"
 	"reflect"
+
+	"git.golaxy.org/core/ec"
 )
 
 // Deprecated: UnsafeProp 访问属性内部函数

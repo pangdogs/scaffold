@@ -20,12 +20,13 @@
 package propview
 
 import (
+	"reflect"
+
 	"git.golaxy.org/core"
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/runtime"
 	"git.golaxy.org/core/utils/exception"
 	"git.golaxy.org/core/utils/types"
-	"reflect"
 )
 
 // DeclarePropT 定义属性
@@ -76,7 +77,7 @@ func declareProp(entity ec.Entity, name string, prop any, syncTo []string) IProp
 		exception.Panicf("propview: prop %q not implement propview.IPropSync", types.FullNameRT(propRT))
 	}
 
-	propInst.init(Using(runtime.Current(entity)), entity, name, reflect.ValueOf(propInst.Managed()), syncTo)
+	propInst.init(AddIn.Require(runtime.Current(entity)), entity, name, reflect.ValueOf(propInst.Managed()), syncTo)
 	propInst.Managed().Reset()
 
 	propTab.AddProp(name, propInst)

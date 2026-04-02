@@ -20,11 +20,12 @@
 package goscr
 
 import (
+	"strings"
+
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/ec/pt"
 	"git.golaxy.org/core/utils/exception"
 	"git.golaxy.org/core/utils/types"
-	"strings"
 )
 
 // ComponentScriptBehavior 脚本化组件行为
@@ -33,12 +34,12 @@ type ComponentScriptBehavior struct {
 }
 
 // ComponentScript 创建脚本化组件原型属性，用于注册实体原型时自定义相关属性
-func ComponentScript(script string) *pt.ComponentAttribute {
+func ComponentScript(script string) *pt.ComponentDescriptor {
 	return ComponentScriptT[ComponentScriptBehavior](script)
 }
 
 // ComponentScriptT 创建脚本化组件原型属性，自定义组件状态类型，用于注册实体原型时自定义相关属性
-func ComponentScriptT[T any](script string) *pt.ComponentAttribute {
+func ComponentScriptT[T any](script string) *pt.ComponentDescriptor {
 	if script == "" {
 		exception.Panicf("goscr: %w: script is empty", exception.ErrArgs)
 	}
@@ -51,7 +52,7 @@ func ComponentScriptT[T any](script string) *pt.ComponentAttribute {
 	scriptPkg := script[:idx]
 	scriptIdent := script[idx+1:]
 
-	return pt.NewComponentAttribute(types.ZeroT[T]()).SetName(scriptIdent).SetExtra(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
+	return pt.NewComponentDescriptor(types.Zero[T]()).SetName(scriptIdent).SetMeta(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
 }
 
 // GetComponentScript 获取组件脚本

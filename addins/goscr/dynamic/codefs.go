@@ -20,12 +20,13 @@
 package dynamic
 
 import (
-	"github.com/spf13/afero"
 	"io"
 	"io/fs"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/spf13/afero"
 )
 
 // NewCodeFs 创建代码文件系统

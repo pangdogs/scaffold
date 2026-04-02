@@ -22,9 +22,5 @@ package goscr
 import "git.golaxy.org/core/define"
 
 var (
-	self      = define.ServiceAddIn(newScript)
-	Name      = self.Name
-	Using     = self.Using
-	Install   = self.Install
-	Uninstall = self.Uninstall
+	AddIn = define.ServiceAddIn(newScript)
 )

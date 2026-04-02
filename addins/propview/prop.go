@@ -21,9 +21,10 @@ package propview
 
 import (
 	"errors"
+	"reflect"
+
 	"git.golaxy.org/framework/net/gap/variant"
 	"git.golaxy.org/framework/utils/binaryutil"
-	"reflect"
 )
 
 // IProp 属性接口
@@ -68,7 +69,7 @@ func (p *PropT[T]) Revision() int64 {
 
 // Marshal 序列化
 func (p *PropT[T]) Marshal() ([]byte, int64, error) {
-	v, err := variant.MakeVariant(p.state)
+	v, err := variant.NewVariant(p.state)
 	if err != nil {
 		return nil, 0, err
 	}

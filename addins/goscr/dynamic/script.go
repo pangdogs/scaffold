@@ -23,10 +23,6 @@ import (
 	"bytes"
 	"cmp"
 	"fmt"
-	"git.golaxy.org/core/utils/generic"
-	"github.com/elliotchance/pie/v2"
-	"github.com/pangdogs/yaegi/interp"
-	"github.com/spf13/afero"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -37,6 +33,11 @@ import (
 	"slices"
 	"strings"
 	"text/template"
+
+	"git.golaxy.org/core/utils/generic"
+	"github.com/elliotchance/pie/v2"
+	"github.com/pangdogs/yaegi/interp"
+	"github.com/spf13/afero"
 )
 
 // BindMode 绑定模式

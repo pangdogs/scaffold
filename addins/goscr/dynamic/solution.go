@@ -28,10 +28,6 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
-	"git.golaxy.org/core/utils/generic"
-	"github.com/go-resty/resty/v2"
-	"github.com/pangdogs/yaegi/interp"
-	"github.com/spf13/afero"
 	"io"
 	"io/fs"
 	"net/http"
@@ -41,6 +37,11 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+
+	"git.golaxy.org/core/utils/generic"
+	"github.com/go-resty/resty/v2"
+	"github.com/pangdogs/yaegi/interp"
+	"github.com/spf13/afero"
 )
 
 // Project 项目

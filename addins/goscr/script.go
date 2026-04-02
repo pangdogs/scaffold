@@ -21,6 +21,8 @@ package goscr
 
 import (
 	"fmt"
+	"sync"
+
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/service"
 	"git.golaxy.org/core/utils/option"
@@ -30,8 +32,8 @@ import (
 	"github.com/elliotchance/pie/v2"
 	"github.com/fsnotify/fsnotify"
 	"github.com/pangdogs/yaegi/stdlib"
-	"strings"
-	"sync/atomic"
+	"go.uber.org/zap"
+
 	"time"
 )
 
@@ -45,31 +47,34 @@ type IScript interface {
 
 func newScript(setting ...option.Setting[ScriptOptions]) IScript {
 	return &_Script{
-		options: option.Make(With.Default(), setting...),
+		options: option.New(With.Default(), setting...),
 	}
 }
 
 type _Script struct {
-	svcCtx    service.Context
-	options   ScriptOptions
-	solution  *dynamic.Solution
-	reloading atomic.Int64
+	svcCtx      service.Context
+	options     ScriptOptions
+	solution    *dynamic.Solution
+	reloadingMu sync.Mutex
 }
 
 // Init 初始化插件
 func (s *_Script) Init(svcCtx service.Context) {
+	log.L(svcCtx).Info("initializing add-in", zap.String("name", AddIn.Name))
+
 	s.svcCtx = svcCtx
 
 	solution, err := s.loadSolution()
 	if err != nil {
-		log.Panicf(s.svcCtx, "init load solution %q failed, %s", s.options.PkgRoot, err)
+		log.L(s.svcCtx).Panic("init load solution failed",
+			zap.String("pkg_root", s.options.PkgRoot),
+			zap.Error(err))
 	}
 	s.solution = solution
 
-	log.Infof(s.svcCtx, "init load solution %q ok, projects: [%s]", s.options.PkgRoot,
-		strings.Join(pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-			return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-		}), ", "))
+	log.L(s.svcCtx).Info("init load solution ok",
+		zap.String("pkg_root", s.options.PkgRoot),
+		zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)))
 
 	if s.options.AutoHotFix {
 		s.autoHotFix()
@@ -78,7 +83,7 @@ func (s *_Script) Init(svcCtx service.Context) {
 
 // Shut 关闭插件
 func (s *_Script) Shut(svcCtx service.Context) {
-	log.Infof(svcCtx, "shut addin %q", self.Name)
+	log.L(svcCtx).Info("shutting down add-in", zap.String("name", AddIn.Name))
 }
 
 // Solution 解决方案
@@ -90,22 +95,18 @@ func (s *_Script) Solution() *dynamic.Solution {
 func (s *_Script) Hotfix() error {
 	solution, err := s.loadSolution()
 	if err != nil {
+		log.L(s.svcCtx).Error("hotfix load solution failed",
+			zap.String("pkg_root", s.options.PkgRoot),
+			zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)),
+			zap.Error(err))
 		return err
 	}
 	s.solution = solution
 
+	log.L(s.svcCtx).Info("hotfix load solution ok",
+		zap.String("pkg_root", s.options.PkgRoot),
+		zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)))
 	return nil
-}
-
-func (s *_Script) OnServiceRunningStatusChanged(svcCtx service.Context, status service.RunningStatus, args ...any) {
-	switch status {
-	case service.RunningStatus_EntityPTDeclared, service.RunningStatus_EntityPTRedeclared:
-		solution := s.solution
-		if solution == nil {
-			return
-		}
-		s.cacheCallPath(solution, args[0].(ec.EntityPT))
-	}
 }
 
 func (s *_Script) loadSolution() (*dynamic.Solution, error) {
@@ -118,7 +119,7 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 
 	for _, project := range s.options.Projects {
 		if err := solution.Load(project); err != nil {
-			return nil, fmt.Errorf("load project %q -> %q + %q failed, %s", project.ScriptRoot, project.LocalPath, project.RemoteURL, err)
+			return nil, fmt.Errorf("load project failed, project:%s, %s", s.showProject(project), err)
 		}
 	}
 
@@ -126,10 +127,9 @@ func (s *_Script) loadSolution() (*dynamic.Solution, error) {
 		return nil, fmt.Errorf("loaded callback error occurred, %s", err)
 	}
 
-	s.svcCtx.GetEntityLib().Range(func(entityPT ec.EntityPT) bool {
+	for _, entityPT := range s.svcCtx.EntityLib().List() {
 		s.cacheCallPath(solution, entityPT)
-		return true
-	})
+	}
 
 	return solution, nil
 }
@@ -138,21 +138,20 @@ func (s *_Script) autoHotFix() {
 	if pie.Any(s.options.Projects, func(project *dynamic.Project) bool { return project.LocalPath != "" }) {
 		watcher, err := fsnotify.NewWatcher()
 		if err != nil {
-			log.Panicf(s.svcCtx, "auto hotfix solution %q watch local changes failed, projects: [%s], %s",
-				s.options.PkgRoot,
-				strings.Join(pie.Of(s.options.Projects).Filter(func(project *dynamic.Project) bool {
-					return project.LocalPath != ""
-				}).StringsUsing(func(project *dynamic.Project) string {
-					return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-				}), ", "),
-				err)
+			log.L(s.svcCtx).Panic("auto hotfix watch solution local path changes failed",
+				zap.String("pkg_root", s.options.PkgRoot),
+				zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)),
+				zap.Error(err))
 		}
 
 		for _, project := range s.options.Projects {
 			if project.LocalPath != "" {
 				if err = watcher.Add(project.LocalPath); err != nil {
 					watcher.Close()
-					log.Panicf(s.svcCtx, "auto hotfix solution %q watch %q -> %q + %q local changes failed, %s", s.options.PkgRoot, project.ScriptRoot, project.LocalPath, project.RemoteURL, err)
+					log.L(s.svcCtx).Panic("auto hotfix watch project local path changes failed",
+						zap.String("pkg_root", s.options.PkgRoot),
+						zap.String("project", s.showProject(project)),
+						zap.Error(err))
 				}
 			}
 		}
@@ -168,16 +167,19 @@ func (s *_Script) autoHotFix() {
 						return
 					}
 
-					log.Infof(s.svcCtx, "auto hotfix solution %q detecting local %q %s changes, preparing to reload in %s", s.options.PkgRoot, e.Name, e.Op, s.options.AutoHotFixLocalDetectingDelayTime)
-
-					s.reloading.Add(1)
+					log.L(s.svcCtx).Info("auto hotfix detecting solution local path changes, preparing to reload in delay_time",
+						zap.String("pkg_root", s.options.PkgRoot),
+						zap.String("file_path", e.Name),
+						zap.String("file_op", e.Op.String()),
+						zap.Duration("delay_time", s.options.AutoHotFixLocalDetectingDelayTime))
 
 					go func() {
-						time.Sleep(s.options.AutoHotFixLocalDetectingDelayTime)
-
-						if s.reloading.Add(-1) != 0 {
+						if !s.reloadingMu.TryLock() {
 							return
 						}
+						defer s.reloadingMu.Unlock()
+
+						time.Sleep(s.options.AutoHotFixLocalDetectingDelayTime)
 
 						select {
 						case <-s.svcCtx.Done():
@@ -185,40 +187,35 @@ func (s *_Script) autoHotFix() {
 						default:
 						}
 
-						if err := s.Hotfix(); err != nil {
-							log.Errorf(s.svcCtx, "auto hotfix load solution %q failed, %s", s.options.PkgRoot, err)
+						solution, err := s.loadSolution()
+						if err != nil {
+							log.L(s.svcCtx).Error("auto hotfix load solution failed",
+								zap.String("pkg_root", s.options.PkgRoot),
+								zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)),
+								zap.Error(err))
 							return
 						}
+						s.solution = solution
 
-						log.Infof(s.svcCtx, "auto hotfix load solution %q ok, projects: [%s]", s.options.PkgRoot,
-							strings.Join(pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-								return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-							}), ", "))
+						log.L(s.svcCtx).Info("auto hotfix load solution ok",
+							zap.String("pkg_root", s.options.PkgRoot),
+							zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)))
 					}()
 
 				case err, ok := <-watcher.Errors:
 					if !ok {
 						return
 					}
-					log.Errorf(s.svcCtx, "auto hotfix solution %q watch local changes failed, projects: [%s], %s",
-						s.options.PkgRoot,
-						strings.Join(pie.Of(s.options.Projects).Filter(func(project *dynamic.Project) bool {
-							return project.LocalPath != ""
-						}).StringsUsing(func(project *dynamic.Project) string {
-							return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-						}), ", "),
-						err)
+					log.L(s.svcCtx).Error("auto hotfix watch solution local path changes failed",
+						zap.String("pkg_root", s.options.PkgRoot),
+						zap.Error(err))
 				}
 			}
 		}()
 
-		log.Infof(s.svcCtx, "auto hotfix solution %q watch local changes ok, projects: [%s]",
-			s.options.PkgRoot,
-			strings.Join(pie.Of(s.options.Projects).Filter(func(project *dynamic.Project) bool {
-				return project.LocalPath != ""
-			}).StringsUsing(func(project *dynamic.Project) string {
-				return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-			}), ", "))
+		log.L(s.svcCtx).Info("auto hotfix watch solution local path changes ok",
+			zap.String("pkg_root", s.options.PkgRoot),
+			zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)))
 	}
 
 	if pie.Any(s.options.Projects, func(project *dynamic.Project) bool { return project.RemoteURL != "" }) {
@@ -234,46 +231,52 @@ func (s *_Script) autoHotFix() {
 
 				b, err := s.solution.DetectRemoteChanged()
 				if err != nil {
-					log.Panicf(s.svcCtx, "auto hotfix solution %q watch remote changes failed, projects: [%s], %s",
-						s.options.PkgRoot,
-						strings.Join(pie.Of(s.options.Projects).Filter(func(project *dynamic.Project) bool {
-							return project.RemoteURL != ""
-						}).StringsUsing(func(project *dynamic.Project) string {
-							return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-						}), ", "),
-						err)
+					log.L(s.svcCtx).Error("auto hotfix detect solution remote path changes failed",
+						zap.String("pkg_root", s.options.PkgRoot),
+						zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)),
+						zap.Error(err))
 					continue
 				}
 				if !b {
 					continue
 				}
 
-				if err := s.Hotfix(); err != nil {
-					log.Errorf(s.svcCtx, "auto hotfix load solution %q failed, %s", s.options.PkgRoot, err)
-					continue
-				}
+				log.L(s.svcCtx).Info("auto hotfix detecting solution remote path changes, preparing to reload",
+					zap.String("pkg_root", s.options.PkgRoot))
 
-				log.Infof(s.svcCtx, "auto hotfix load solution %q ok, projects: [%s]", s.options.PkgRoot,
-					strings.Join(pie.Of(s.options.Projects).StringsUsing(func(project *dynamic.Project) string {
-						return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-					}), ", "))
+				func() {
+					if !s.reloadingMu.TryLock() {
+						return
+					}
+					defer s.reloadingMu.Unlock()
+
+					solution, err := s.loadSolution()
+					if err != nil {
+						log.L(s.svcCtx).Error("auto hotfix load solution failed",
+							zap.String("pkg_root", s.options.PkgRoot),
+							zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)),
+							zap.Error(err))
+						return
+					}
+					s.solution = solution
+
+					log.L(s.svcCtx).Info("auto hotfix load solution ok",
+						zap.String("pkg_root", s.options.PkgRoot),
+						zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)))
+				}()
 			}
 		}()
 
-		log.Infof(s.svcCtx, "auto hotfix solution %q watch remote changes ok, projects: [%s]",
-			s.options.PkgRoot,
-			strings.Join(pie.Of(s.options.Projects).Filter(func(project *dynamic.Project) bool {
-				return project.RemoteURL != ""
-			}).StringsUsing(func(project *dynamic.Project) string {
-				return fmt.Sprintf("%q -> %q + %q", project.ScriptRoot, project.LocalPath, project.RemoteURL)
-			}), ", "))
+		log.L(s.svcCtx).Info("auto hotfix watch solution remote path changes ok",
+			zap.String("pkg_root", s.options.PkgRoot),
+			zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)))
 	}
 }
 
 func (s *_Script) cacheCallPath(solution *dynamic.Solution, entityPT ec.EntityPT) {
-	scriptPkg, ok := entityPT.Extra().Get("script_pkg")
+	scriptPkg, ok := entityPT.Meta().Get("script_pkg")
 	if ok {
-		scriptIdent, ok := entityPT.Extra().Get("script_ident")
+		scriptIdent, ok := entityPT.Meta().Get("script_ident")
 		if ok {
 			script := solution.Package(scriptPkg.(string)).Ident(scriptIdent.(string))
 			if script != nil {
@@ -285,11 +288,11 @@ func (s *_Script) cacheCallPath(solution *dynamic.Solution, entityPT ec.EntityPT
 	}
 
 	for i := range entityPT.CountComponents() {
-		comp := entityPT.Component(i)
+		comp := entityPT.GetComponent(i)
 
-		scriptPkg, ok := comp.Extra.Get("script_pkg")
+		scriptPkg, ok := comp.Meta.Get("script_pkg")
 		if ok {
-			scriptIdent, ok := comp.Extra.Get("script_ident")
+			scriptIdent, ok := comp.Meta.Get("script_ident")
 			if ok {
 				script := solution.Package(scriptPkg.(string)).Ident(scriptIdent.(string))
 				if script != nil {
@@ -300,4 +303,15 @@ func (s *_Script) cacheCallPath(solution *dynamic.Solution, entityPT ec.EntityPT
 			}
 		}
 	}
+}
+
+func (s *_Script) showProject(project *dynamic.Project) string {
+	var files []string
+	if project.LocalPath != "" {
+		files = append(files, project.LocalPath)
+	}
+	if project.RemoteURL != "" {
+		files = append(files, project.RemoteURL)
+	}
+	return fmt.Sprintf("%s => %s", project.ScriptRoot, files)
 }

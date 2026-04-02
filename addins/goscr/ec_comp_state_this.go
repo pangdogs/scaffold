@@ -29,7 +29,7 @@ func (c *ComponentStateThis[T]) This() func() *T {
 }
 
 func (c *ComponentStateThis[T]) thisFunc() *T {
-	return c.GetReflected().Interface().(*T)
+	return c.Reflected().Interface().(*T)
 }
 
 // ComponentStateEnableUpdateThis 脚本化组件状态This指针，支持帧更新（Update），用于函数模式绑定脚本函数
@@ -42,7 +42,7 @@ func (c *ComponentStateEnableUpdateThis[T]) This() func() *T {
 }
 
 func (c *ComponentStateEnableUpdateThis[T]) thisFunc() *T {
-	return c.GetReflected().Interface().(*T)
+	return c.Reflected().Interface().(*T)
 }
 
 // ComponentStateEnableLateUpdateThis 脚本化组件状态This指针，支持帧迟滞更新（Late Update），用于函数模式绑定脚本函数
@@ -55,7 +55,7 @@ func (c *ComponentStateEnableLateUpdateThis[T]) This() func() *T {
 }
 
 func (c *ComponentStateEnableLateUpdateThis[T]) thisFunc() *T {
-	return c.GetReflected().Interface().(*T)
+	return c.Reflected().Interface().(*T)
 }
 
 // ComponentStateEnableUpdateAndLateUpdateThis 脚本化组件状态This指针，支持帧更新（Update）、帧迟滞更新（Late Update），用于函数模式绑定脚本函数
@@ -68,5 +68,5 @@ func (c *ComponentStateEnableUpdateAndLateUpdateThis[T]) This() func() *T {
 }
 
 func (c *ComponentStateEnableUpdateAndLateUpdateThis[T]) thisFunc() *T {
-	return c.GetReflected().Interface().(*T)
+	return c.Reflected().Interface().(*T)
 }

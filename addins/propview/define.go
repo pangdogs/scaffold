@@ -22,9 +22,5 @@ package propview
 import "git.golaxy.org/core/define"
 
 var (
-	self      = define.RuntimeAddIn(newPropView)
-	Name      = self.Name
-	Using     = self.Using
-	Install   = self.Install
-	Uninstall = self.Uninstall
+	AddIn = define.RuntimeAddIn(newPropView)
 )

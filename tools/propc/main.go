@@ -22,9 +22,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"git.golaxy.org/core/utils/generic"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"go/ast"
 	"go/parser"
 	"go/printer"
@@ -39,6 +36,10 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+
+	"git.golaxy.org/core/utils/generic"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func main() {

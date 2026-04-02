@@ -20,10 +20,11 @@
 package goscr
 
 import (
+	"reflect"
+
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/framework"
-	"reflect"
 )
 
 // EntityState 脚本化实体状态
@@ -38,11 +39,11 @@ func (e *EntityState) Callee(method string) reflect.Value {
 
 // Awake 生命周期唤醒（Awake）
 func (e *EntityState) Awake() {
-	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnCreate); ok {
-		generic.CastAction0(cb.OnCreate).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
+	if cb, ok := e.Reflected().Interface().(LifecycleEntityOnCreate); ok {
+		generic.CastAction0(cb.OnCreate).Call(e.Runtime().AutoRecover(), e.Runtime().ReportError())
 	}
 
-	if e.GetState() != ec.EntityState_Awake {
+	if e.State() != ec.EntityState_Awake {
 		return
 	}
 
@@ -59,22 +60,22 @@ func (e *EntityState) Start() {
 		method()
 	}
 
-	if e.GetState() != ec.EntityState_Start {
+	if e.State() != ec.EntityState_Start {
 		return
 	}
 
-	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnStarted); ok {
-		generic.CastAction0(cb.OnStarted).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
+	if cb, ok := e.Reflected().Interface().(LifecycleEntityOnStarted); ok {
+		generic.CastAction0(cb.OnStarted).Call(e.Runtime().AutoRecover(), e.Runtime().ReportError())
 	}
 }
 
 // Shut 生命周期结束（Shut）
 func (e *EntityState) Shut() {
-	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnStop); ok {
-		generic.CastAction0(cb.OnStop).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
+	if cb, ok := e.Reflected().Interface().(LifecycleEntityOnStop); ok {
+		generic.CastAction0(cb.OnStop).Call(e.Runtime().AutoRecover(), e.Runtime().ReportError())
 	}
 
-	if e.GetState() != ec.EntityState_Shut {
+	if e.State() != ec.EntityState_Shut {
 		return
 	}
 
@@ -91,8 +92,8 @@ func (e *EntityState) Dispose() {
 		method()
 	}
 
-	if cb, ok := e.GetReflected().Interface().(LifecycleEntityOnDisposed); ok {
-		generic.CastAction0(cb.OnDisposed).Call(e.GetRuntime().GetAutoRecover(), e.GetRuntime().GetReportError())
+	if cb, ok := e.Reflected().Interface().(LifecycleEntityOnDisposed); ok {
+		generic.CastAction0(cb.OnDisposed).Call(e.Runtime().AutoRecover(), e.Runtime().ReportError())
 	}
 }
 
@@ -110,17 +111,17 @@ func (e *EntityStateEnableUpdate) Update() {
 }
 
 func (e *EntityState) bindMethod(method string) any {
-	scriptPkg, ok := e.GetPT().Extra().Get("script_pkg")
+	scriptPkg, ok := e.PT().Meta().Get("script_pkg")
 	if !ok {
 		return nil
 	}
 
-	scriptIdent, ok := e.GetPT().Extra().Get("script_ident")
+	scriptIdent, ok := e.PT().Meta().Get("script_ident")
 	if !ok {
 		return nil
 	}
 
-	thisMethod := Using(e.GetService()).Solution().BindMethod(e.GetReflected(), scriptPkg.(string), scriptIdent.(string), method)
+	thisMethod := AddIn.Require(e.Service()).Solution().BindMethod(e.Reflected(), scriptPkg.(string), scriptIdent.(string), method)
 	if thisMethod == nil {
 		return nil
 	}

@@ -29,7 +29,7 @@ func (e *EntityStateThis[T]) This() func() *T {
 }
 
 func (e *EntityStateThis[T]) thisFunc() *T {
-	return e.GetReflected().Interface().(*T)
+	return e.Reflected().Interface().(*T)
 }
 
 // EntityStateEnableUpdateThis 脚本化实体状态This指针，支持帧更新（Update），用于函数模式绑定脚本函数
@@ -42,7 +42,7 @@ func (e *EntityStateEnableUpdateThis[T]) This() func() *T {
 }
 
 func (e *EntityStateEnableUpdateThis[T]) thisFunc() *T {
-	return e.GetReflected().Interface().(*T)
+	return e.Reflected().Interface().(*T)
 }
 
 // EntityStateEnableLateUpdateThis 脚本化实体状态This指针，支持帧迟滞更新（Late Update），用于函数模式绑定脚本函数
@@ -55,7 +55,7 @@ func (e *EntityStateEnableLateUpdateThis[T]) This() func() *T {
 }
 
 func (e *EntityStateEnableLateUpdateThis[T]) thisFunc() *T {
-	return e.GetReflected().Interface().(*T)
+	return e.Reflected().Interface().(*T)
 }
 
 // EntityStateEnableUpdateAndLateUpdateThis 脚本化实体状态This指针，支持帧更新（Update）、帧迟滞更新（Late Update），用于函数模式绑定脚本函数
@@ -68,5 +68,5 @@ func (e *EntityStateEnableUpdateAndLateUpdateThis[T]) This() func() *T {
 }
 
 func (e *EntityStateEnableUpdateAndLateUpdateThis[T]) thisFunc() *T {
-	return e.GetReflected().Interface().(*T)
+	return e.Reflected().Interface().(*T)
 }

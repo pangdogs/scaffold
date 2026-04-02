@@ -20,10 +20,11 @@
 package goscr
 
 import (
+	"reflect"
+
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/utils/generic"
 	"git.golaxy.org/framework"
-	"reflect"
 )
 
 // ComponentState 脚本化组件状态
@@ -38,11 +39,11 @@ func (c *ComponentState) Callee(method string) reflect.Value {
 
 // Awake 生命周期唤醒（Awake）
 func (c *ComponentState) Awake() {
-	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnCreate); ok {
-		generic.CastAction0(cb.OnCreate).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
+	if cb, ok := c.Reflected().Interface().(LifecycleComponentOnCreate); ok {
+		generic.CastAction0(cb.OnCreate).Call(c.Runtime().AutoRecover(), c.Runtime().ReportError())
 	}
 
-	if c.GetState() != ec.ComponentState_Awake {
+	if c.State() != ec.ComponentState_Awake {
 		return
 	}
 
@@ -67,22 +68,22 @@ func (c *ComponentState) Start() {
 		method()
 	}
 
-	if c.GetState() != ec.ComponentState_Start {
+	if c.State() != ec.ComponentState_Start {
 		return
 	}
 
-	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnStarted); ok {
-		generic.CastAction0(cb.OnStarted).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
+	if cb, ok := c.Reflected().Interface().(LifecycleComponentOnStarted); ok {
+		generic.CastAction0(cb.OnStarted).Call(c.Runtime().AutoRecover(), c.Runtime().ReportError())
 	}
 }
 
 // Shut 生命周期结束（Shut）
 func (c *ComponentState) Shut() {
-	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnStop); ok {
-		generic.CastAction0(cb.OnStop).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
+	if cb, ok := c.Reflected().Interface().(LifecycleComponentOnStop); ok {
+		generic.CastAction0(cb.OnStop).Call(c.Runtime().AutoRecover(), c.Runtime().ReportError())
 	}
 
-	if c.GetState() != ec.ComponentState_Shut {
+	if c.State() != ec.ComponentState_Shut {
 		return
 	}
 
@@ -107,27 +108,27 @@ func (c *ComponentState) Dispose() {
 		method()
 	}
 
-	if c.GetState() != ec.ComponentState_Death {
+	if c.State() != ec.ComponentState_Death {
 		return
 	}
 
-	if cb, ok := c.GetReflected().Interface().(LifecycleComponentOnDisposed); ok {
-		generic.CastAction0(cb.OnDisposed).Call(c.GetRuntime().GetAutoRecover(), c.GetRuntime().GetReportError())
+	if cb, ok := c.Reflected().Interface().(LifecycleComponentOnDisposed); ok {
+		generic.CastAction0(cb.OnDisposed).Call(c.Runtime().AutoRecover(), c.Runtime().ReportError())
 	}
 }
 
 func (c *ComponentState) bindMethod(method string) any {
-	scriptPkg, ok := c.GetBuiltin().Extra.Get("script_pkg")
+	scriptPkg, ok := c.Builtin().Meta.Get("script_pkg")
 	if !ok {
 		return nil
 	}
 
-	scriptIdent, ok := c.GetBuiltin().Extra.Get("script_ident")
+	scriptIdent, ok := c.Builtin().Meta.Get("script_ident")
 	if !ok {
 		return nil
 	}
 
-	thisMethod := Using(c.GetService()).Solution().BindMethod(c.GetReflected(), scriptPkg.(string), scriptIdent.(string), method)
+	thisMethod := AddIn.Require(c.Service()).Solution().BindMethod(c.Reflected(), scriptPkg.(string), scriptIdent.(string), method)
 	if thisMethod == nil {
 		return nil
 	}

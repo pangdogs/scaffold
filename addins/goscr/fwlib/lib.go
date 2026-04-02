@@ -60,7 +60,7 @@ var Symbols = map[string]map[string]reflect.Value{}
 //go:generate yaegi extract git.golaxy.org/framework
 //go:generate yaegi extract git.golaxy.org/framework/addins
 //go:generate yaegi extract git.golaxy.org/framework/addins/broker
-//go:generate yaegi extract git.golaxy.org/framework/addins/broker/nats_broker
+//go:generate yaegi extract git.golaxy.org/framework/addins/broker/broker_nats
 //go:generate yaegi extract git.golaxy.org/framework/addins/conf
 //go:generate yaegi extract git.golaxy.org/framework/addins/db
 //go:generate yaegi extract git.golaxy.org/framework/addins/db/dsn
@@ -91,7 +91,6 @@ var Symbols = map[string]map[string]reflect.Value{}
 //go:generate yaegi extract git.golaxy.org/framework/net/gtp/method
 //go:generate yaegi extract git.golaxy.org/framework/net/gtp/transport
 //go:generate yaegi extract git.golaxy.org/framework/net/netpath
-//go:generate yaegi extract git.golaxy.org/framework/utils
 //go:generate yaegi extract git.golaxy.org/framework/utils/binaryutil
 //go:generate yaegi extract git.golaxy.org/framework/utils/concurrent
 

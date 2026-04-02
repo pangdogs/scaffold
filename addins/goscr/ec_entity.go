@@ -20,11 +20,12 @@
 package goscr
 
 import (
+	"strings"
+
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/ec/pt"
 	"git.golaxy.org/core/utils/exception"
 	"git.golaxy.org/core/utils/types"
-	"strings"
 )
 
 // EntityScriptBehavior 脚本化实体行为
@@ -33,12 +34,12 @@ type EntityScriptBehavior struct {
 }
 
 // EntityScript 创建脚本化实体原型属性，用于注册实体原型时自定义相关属性
-func EntityScript(prototype, script string) *pt.EntityAttribute {
+func EntityScript(prototype, script string) *pt.EntityDescriptor {
 	return EntityScriptT[EntityScriptBehavior](prototype, script)
 }
 
 // EntityScriptT 创建脚本化实体原型属性，自定义实体状态类型，用于注册实体原型时自定义相关属性
-func EntityScriptT[T any](prototype, script string) *pt.EntityAttribute {
+func EntityScriptT[T any](prototype, script string) *pt.EntityDescriptor {
 	if prototype == "" {
 		exception.Panicf("goscr: %w: prototype is empty", exception.ErrArgs)
 	}
@@ -55,7 +56,7 @@ func EntityScriptT[T any](prototype, script string) *pt.EntityAttribute {
 	scriptPkg := script[:idx]
 	scriptIdent := script[idx+1:]
 
-	return pt.NewEntityAttribute(prototype).SetInstance(types.ZeroT[T]()).SetExtra(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
+	return pt.NewEntityDescriptor(prototype).SetInstance(types.Zero[T]()).SetMeta(map[string]any{"script_pkg": scriptPkg, "script_ident": scriptIdent})
 }
 
 // GetEntityScript 获取实体脚本
