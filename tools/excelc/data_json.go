@@ -20,10 +20,11 @@
 package main
 
 import (
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 	"os"
 	"path/filepath"
+
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 func genJsonData(tableMsg proto.Message, outDir string, multiline bool, indent string) (string, error) {

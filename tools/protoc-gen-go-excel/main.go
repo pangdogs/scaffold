@@ -22,6 +22,9 @@ package main
 import (
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
+
 	"git.golaxy.org/core/utils/generic"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
@@ -29,30 +32,19 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
-	"slices"
-	"strings"
 )
 
-func main() {
-	protogen.Options{}.Run(func(gen *protogen.Plugin) error {
-		for _, f := range gen.Files {
-			regProtobufTypes(protoregistry.GlobalTypes, f.Desc)
-		}
-		for _, f := range gen.Files {
-			if f.Generate {
-				generateFile(gen, f)
-			}
-		}
-		return nil
-	})
-}
-
 const (
-	protoPackage      = protogen.GoImportPath("google.golang.org/protobuf/proto")
 	excelutilsPackage = protogen.GoImportPath("git.golaxy.org/scaffold/tools/excelc/excelutils")
 	bytesPackage      = protogen.GoImportPath("bytes")
 	slicesPackage     = protogen.GoImportPath("slices")
 	cmpPackage        = protogen.GoImportPath("cmp")
+	mathPackage       = protogen.GoImportPath("math")
+)
+
+const (
+	indexTypeHashUnique   = "HashUniqueIndex"
+	indexTypeSortedUnique = "SortedUniqueIndex"
 )
 
 type FieldDecl struct {
@@ -60,7 +52,39 @@ type FieldDecl struct {
 	GOType string
 }
 
-func generateFile(gen *protogen.Plugin, file *protogen.File) {
+type ProtoDescriptors interface {
+	Enums() protoreflect.EnumDescriptors
+	Messages() protoreflect.MessageDescriptors
+	Extensions() protoreflect.ExtensionDescriptors
+}
+
+type Extensions struct {
+	IsTable,
+	IsColumns,
+	IsRows,
+	IndexTyp,
+	IndexFields protoreflect.ExtensionType
+}
+
+func main() {
+	protogen.Options{}.Run(func(gen *protogen.Plugin) error {
+		for _, f := range gen.Files {
+			if err := registerProtoTypes(protoregistry.GlobalTypes, f.Desc); err != nil {
+				return fmt.Errorf("register proto types for %q: %w", f.Desc.Path(), err)
+			}
+		}
+		for _, f := range gen.Files {
+			if f.Generate {
+				if err := generateFile(gen, f); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
+}
+
+func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 	fileName := file.GeneratedFilenamePrefix + ".excel.go"
 	g := gen.NewGeneratedFile(fileName, file.GoImportPath)
 
@@ -69,17 +93,15 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	g.P("package ", file.GoPackageName)
 	g.P()
 
-	g.Import(protoPackage)
-
 	ext, err := parseExtensions(file)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	indexTypeName := protoreflect.FullName(fmt.Sprintf("%s.IndexType.Enum", file.GoPackageName))
+	indexTypeName := protoFullName(file, "IndexType.Enum")
 	indexType, err := protoregistry.GlobalTypes.FindEnumByName(indexTypeName)
 	if err != nil {
-		panic(fmt.Errorf("解析Protobuf类型 %q 失败，%s", indexTypeName, err))
+		return fmt.Errorf("parse proto type %q failed, %s", indexTypeName, err)
 	}
 
 	for i, m := range file.Messages {
@@ -97,6 +119,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 			continue
 		}
 		fieldRows := m.Fields[fieldRowsIdx]
+		defaultMethodsEmitted := false
 
 		for j, f := range m.Fields {
 			indexTypeValue, ok := proto.GetExtension(pbMsg.Field[j].Options, ext.IndexTyp).(protoreflect.EnumNumber)
@@ -121,7 +144,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 					return string(f.Desc.Name()) == indexFieldName
 				})
 				if idx < 0 {
-					panic(fmt.Errorf("解析Protobuf类型 %q 失败，未找到索引字段 %q", fieldRows.Message.Desc.Name(), indexFieldName))
+					return fmt.Errorf("parse proto type %q failed, index field %q not found", fieldRows.Message.Desc.Name(), indexFieldName)
 				}
 
 				fd := &FieldDecl{}
@@ -147,16 +170,51 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 				indexArgs.WriteString(fd.GOType)
 			})
 
-			g.P("func (x *", m.GoIdent, ") QueryBy", f.GoName, "(", indexArgs.String(), ") (*", fieldRows.Message.GoIdent, ", bool) {")
+			var notFoundArgs strings.Builder
+
+			indexFieldDecls.Each(func(name string, fd *FieldDecl) {
+				if notFoundArgs.Len() > 0 {
+					notFoundArgs.WriteString(", ")
+				}
+				notFoundArgs.WriteString(`"`)
+				notFoundArgs.WriteString(name)
+				notFoundArgs.WriteString(`", `)
+				notFoundArgs.WriteString(name)
+			})
+
+			indexShorten := f.GoName
+			switch indexTypeValueDesc.Name() {
+			case indexTypeHashUnique:
+				indexShorten = indexTypeHashUnique + strings.TrimPrefix(indexShorten, indexTypeHashUnique)
+			case indexTypeSortedUnique:
+				indexShorten = indexTypeSortedUnique + strings.TrimPrefix(indexShorten, indexTypeSortedUnique)
+			}
+
+			if !defaultMethodsEmitted {
+				g.P("func (x *", m.GoIdent, ") Lookup(", indexArgs.String(), ") (*", fieldRows.Message.GoIdent, ", bool) {")
+				g.P("\treturn x.LookupBy", indexShorten, "(", indexFieldNames(indexFieldDecls), ")")
+				g.P("}")
+				g.P()
+
+				g.P("func (x *", m.GoIdent, ") Get(", indexArgs.String(), ") *", fieldRows.Message.GoIdent, " {")
+				g.P("\treturn x.GetBy", indexShorten, "(", indexFieldNames(indexFieldDecls), ")")
+				g.P("}")
+				g.P()
+
+				defaultMethodsEmitted = true
+			}
+
+			g.P("func (x *", m.GoIdent, ") LookupBy", indexShorten, "(", indexArgs.String(), ") (*", fieldRows.Message.GoIdent, ", bool) {")
 			g.P("if x.", fieldRows.GoName, " == nil {")
 			g.P("\treturn nil, false")
 			g.P("}")
+			g.P()
 
 			switch indexTypeValueDesc.Name() {
-			case "UniqueIndex":
+			case indexTypeHashUnique:
 				g.P()
 
-				hv := fieldsToIndex(g, indexFieldDecls)
+				hv := fieldsToIndex(g, indexFieldDecls, false, notFoundArgs.String())
 
 				g.P("offset, ok := x.", f.GoName, "[idx]")
 				g.P("if !ok {")
@@ -168,19 +226,85 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 				g.P()
 
 				if hv {
-					hashVerification(g, indexFieldDecls)
+					emitRowMatchesFunc(g, fieldRows.Message.GoIdent, indexFieldDecls)
+					g.P("if matchesRow(row) {")
+					g.P("\treturn row, true")
+					g.P("}")
+					g.P()
+					g.P("bucket, ok := x.", f.GoName, "Conflict[idx]")
+					g.P("if !ok {")
+					g.P("\treturn nil, false")
+					g.P("}")
+					g.P()
+					g.P("for _, conflictOffset := range bucket.Offsets {")
+					g.P("\trow = x.", fieldRows.GoName, "[conflictOffset]")
+					g.P("\tif matchesRow(row) {")
+					g.P("\t\treturn row, true")
+					g.P("\t}")
+					g.P("}")
+					g.P()
+					g.P("return nil, false")
+				} else {
+					g.P("return row, true")
 				}
 
-				g.P("return row, true")
-
-			case "UniqueSortedIndex":
+			case indexTypeSortedUnique:
 				g.P()
 
-				hv := fieldsToIndex(g, indexFieldDecls)
+				hv := fieldsToIndex(g, indexFieldDecls, false, notFoundArgs.String())
 
-				g.P("offset, ok := ", slicesPackage.Ident("BinarySearchFunc"), "(x.", f.GoName, ", idx, func(item *IndexItem, idx uint64) int { return ", cmpPackage.Ident("Compare"), "(item.Value, idx) } )")
+				g.P("itemOffset, ok := ", slicesPackage.Ident("BinarySearchFunc"), "(x.", f.GoName, ", idx, func(item *IndexItem, idx uint64) int { return ", cmpPackage.Ident("Compare"), "(item.Value, idx) } )")
 				g.P("if !ok {")
 				g.P("\treturn nil, false")
+				g.P("}")
+				g.P()
+
+				g.P("item := x.", f.GoName, "[itemOffset]")
+				g.P("row := x.", fieldRows.GoName, "[item.Offset]")
+				g.P()
+
+				if hv {
+					emitRowMatchesFunc(g, fieldRows.Message.GoIdent, indexFieldDecls)
+					g.P("if matchesRow(row) {")
+					g.P("\treturn row, true")
+					g.P("}")
+					g.P()
+					g.P("bucket, ok := x.", f.GoName, "Conflict[idx]")
+					g.P("if !ok {")
+					g.P("\treturn nil, false")
+					g.P("}")
+					g.P()
+					g.P("for _, conflictOffset := range bucket.Offsets {")
+					g.P("\trow = x.", fieldRows.GoName, "[conflictOffset]")
+					g.P("\tif matchesRow(row) {")
+					g.P("\t\treturn row, true")
+					g.P("\t}")
+					g.P("}")
+					g.P()
+					g.P("return nil, false")
+				} else {
+					g.P("return row, true")
+				}
+			}
+
+			g.P("}")
+			g.P()
+
+			g.P("func (x *", m.GoIdent, ") GetBy", indexShorten, "(", indexArgs.String(), ") *", fieldRows.Message.GoIdent, " {")
+			g.P("if x.", fieldRows.GoName, " == nil {")
+			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs.String(), "))")
+			g.P("}")
+			g.P()
+
+			switch indexTypeValueDesc.Name() {
+			case indexTypeHashUnique:
+				g.P()
+
+				hv := fieldsToIndex(g, indexFieldDecls, true, notFoundArgs.String())
+
+				g.P("offset, ok := x.", f.GoName, "[idx]")
+				g.P("if !ok {")
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs.String(), "))")
 				g.P("}")
 				g.P()
 
@@ -188,20 +312,88 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 				g.P()
 
 				if hv {
-					hashVerification(g, indexFieldDecls)
+					emitRowMatchesFunc(g, fieldRows.Message.GoIdent, indexFieldDecls)
+					g.P("if matchesRow(row) {")
+					g.P("\treturn row")
+					g.P("}")
+					g.P()
+					g.P("bucket, ok := x.", f.GoName, "Conflict[idx]")
+					g.P("if !ok {")
+					g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs.String(), "))")
+					g.P("}")
+					g.P()
+					g.P("for _, conflictOffset := range bucket.Offsets {")
+					g.P("\trow = x.", fieldRows.GoName, "[conflictOffset]")
+					g.P("\tif matchesRow(row) {")
+					g.P("\t\treturn row")
+					g.P("\t}")
+					g.P("}")
+					g.P()
+					g.P("panic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs.String(), "))")
+				} else {
+					g.P("return row")
 				}
 
-				g.P("return row, true")
+			case indexTypeSortedUnique:
+				g.P()
+
+				hv := fieldsToIndex(g, indexFieldDecls, true, notFoundArgs.String())
+
+				g.P("itemOffset, ok := ", slicesPackage.Ident("BinarySearchFunc"), "(x.", f.GoName, ", idx, func(item *IndexItem, idx uint64) int { return ", cmpPackage.Ident("Compare"), "(item.Value, idx) } )")
+				g.P("if !ok {")
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs.String(), "))")
+				g.P("}")
+				g.P()
+
+				g.P("item := x.", f.GoName, "[itemOffset]")
+				g.P("row := x.", fieldRows.GoName, "[item.Offset]")
+				g.P()
+
+				if hv {
+					emitRowMatchesFunc(g, fieldRows.Message.GoIdent, indexFieldDecls)
+					g.P("if matchesRow(row) {")
+					g.P("\treturn row")
+					g.P("}")
+					g.P()
+					g.P("bucket, ok := x.", f.GoName, "Conflict[idx]")
+					g.P("if !ok {")
+					g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs.String(), "))")
+					g.P("}")
+					g.P()
+					g.P("for _, conflictOffset := range bucket.Offsets {")
+					g.P("\trow = x.", fieldRows.GoName, "[conflictOffset]")
+					g.P("\tif matchesRow(row) {")
+					g.P("\t\treturn row")
+					g.P("\t}")
+					g.P("}")
+					g.P()
+					g.P("panic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs.String(), "))")
+				} else {
+					g.P("return row")
+				}
 			}
 
 			g.P("}")
 			g.P()
 		}
 	}
+
+	return nil
+}
+
+func indexFieldNames(fieldDecls generic.UnorderedSliceMap[string, *FieldDecl]) string {
+	var names strings.Builder
+	fieldDecls.Each(func(name string, fd *FieldDecl) {
+		if names.Len() > 0 {
+			names.WriteString(", ")
+		}
+		names.WriteString(name)
+	})
+	return names.String()
 }
 
 func genGeneratedHeader(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedFile) {
-	g.P("// Code generated by protoc-gen-go-variant. DO NOT EDIT.")
+	g.P("// Code generated by protoc-gen-go-excel. DO NOT EDIT.")
 
 	g.P("// versions:")
 	protocVersion := "(unknown)"
@@ -221,19 +413,16 @@ func genGeneratedHeader(gen *protogen.Plugin, file *protogen.File, g *protogen.G
 	g.P()
 }
 
-type ProtobufDescriptors interface {
-	Enums() protoreflect.EnumDescriptors
-	Messages() protoreflect.MessageDescriptors
-	Extensions() protoreflect.ExtensionDescriptors
-}
-
-func regProtobufTypes(pbTypes *protoregistry.Types, desc ProtobufDescriptors) error {
+func registerProtoTypes(pbTypes *protoregistry.Types, desc ProtoDescriptors) error {
 	for i := range desc.Extensions().Len() {
 		ext := desc.Extensions().Get(i)
 
 		_, err := pbTypes.FindExtensionByName(ext.FullName())
-		if !errors.Is(err, protoregistry.NotFound) {
+		if err == nil {
 			continue
+		}
+		if !errors.Is(err, protoregistry.NotFound) {
+			return err
 		}
 
 		err = pbTypes.RegisterExtension(dynamicpb.NewExtensionType(ext))
@@ -245,9 +434,12 @@ func regProtobufTypes(pbTypes *protoregistry.Types, desc ProtobufDescriptors) er
 	for i := range desc.Enums().Len() {
 		enum := desc.Enums().Get(i)
 
-		_, err := pbTypes.FindExtensionByName(enum.FullName())
-		if !errors.Is(err, protoregistry.NotFound) {
+		_, err := pbTypes.FindEnumByName(enum.FullName())
+		if err == nil {
 			continue
+		}
+		if !errors.Is(err, protoregistry.NotFound) {
+			return err
 		}
 
 		err = pbTypes.RegisterEnum(dynamicpb.NewEnumType(enum))
@@ -259,9 +451,12 @@ func regProtobufTypes(pbTypes *protoregistry.Types, desc ProtobufDescriptors) er
 	for i := range desc.Messages().Len() {
 		msg := desc.Messages().Get(i)
 
-		_, err := pbTypes.FindExtensionByName(msg.FullName())
-		if !errors.Is(err, protoregistry.NotFound) {
+		_, err := pbTypes.FindMessageByName(msg.FullName())
+		if err == nil {
 			continue
+		}
+		if !errors.Is(err, protoregistry.NotFound) {
+			return err
 		}
 
 		err = pbTypes.RegisterMessage(dynamicpb.NewMessageType(msg))
@@ -269,7 +464,7 @@ func regProtobufTypes(pbTypes *protoregistry.Types, desc ProtobufDescriptors) er
 			return err
 		}
 
-		err = regProtobufTypes(pbTypes, msg)
+		err = registerProtoTypes(pbTypes, msg)
 		if err != nil {
 			return err
 		}
@@ -278,45 +473,48 @@ func regProtobufTypes(pbTypes *protoregistry.Types, desc ProtobufDescriptors) er
 	return nil
 }
 
-type Extensions struct {
-	IsTable, IsColumns, IsRows, IndexTyp, IndexFields protoreflect.ExtensionType
-}
-
 func parseExtensions(file *protogen.File) (*Extensions, error) {
 	extensions := &Extensions{}
 	var err error
 
-	extName := protoreflect.FullName(fmt.Sprintf("%s.IsTable", file.GoPackageName))
+	extName := protoFullName(file, "IsTable")
 	extensions.IsTable, err = protoregistry.GlobalTypes.FindExtensionByName(extName)
 	if err != nil {
-		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
+		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.IsColumns", file.GoPackageName))
+	extName = protoFullName(file, "IsColumns")
 	extensions.IsColumns, err = protoregistry.GlobalTypes.FindExtensionByName(extName)
 	if err != nil {
-		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
+		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.IsRows", file.GoPackageName))
+	extName = protoFullName(file, "IsRows")
 	extensions.IsRows, err = protoregistry.GlobalTypes.FindExtensionByName(extName)
 	if err != nil {
-		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
+		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.IndexTyp", file.GoPackageName))
+	extName = protoFullName(file, "IndexTyp")
 	extensions.IndexTyp, err = protoregistry.GlobalTypes.FindExtensionByName(extName)
 	if err != nil {
-		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
+		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.IndexFields", file.GoPackageName))
+	extName = protoFullName(file, "IndexFields")
 	extensions.IndexFields, err = protoregistry.GlobalTypes.FindExtensionByName(extName)
 	if err != nil {
-		return nil, fmt.Errorf("查找Protobuf Option %q 失败，%s", extName, err)
+		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
 	return extensions, nil
+}
+
+func protoFullName(file *protogen.File, suffix string) protoreflect.FullName {
+	if pkg := string(file.Desc.Package()); pkg != "" {
+		return protoreflect.FullName(pkg + "." + suffix)
+	}
+	return protoreflect.FullName(suffix)
 }
 
 func fieldGoType(g *protogen.GeneratedFile, field *protogen.Field) (goType string, pointer bool) {
@@ -362,13 +560,17 @@ func fieldGoType(g *protogen.GeneratedFile, field *protogen.Field) (goType strin
 	return goType, pointer
 }
 
-func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl) (hashVerification bool) {
+func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl, panicForNotFound bool, notFoundArgs string) (hashVerification bool) {
 	defer g.P()
 
 	if decl.Field.Desc.IsMap() {
 		g.P("idx, err := ", excelutilsPackage.Ident("MapToIndex"), "(", name, ")")
 		g.P("if err != nil {")
-		g.P("\treturn nil, false")
+		if panicForNotFound {
+			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+		} else {
+			g.P("\treturn nil, false")
+		}
 		g.P("}")
 		return true
 	}
@@ -376,7 +578,11 @@ func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl)
 	if decl.Field.Desc.IsList() {
 		g.P("idx, err := ", excelutilsPackage.Ident("ListToIndex"), "(", name, ")")
 		g.P("if err != nil {")
-		g.P("\treturn nil, false")
+		if panicForNotFound {
+			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+		} else {
+			g.P("\treturn nil, false")
+		}
 		g.P("}")
 		return true
 	}
@@ -384,7 +590,10 @@ func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl)
 	switch decl.Field.Desc.Kind() {
 	case protoreflect.BoolKind:
 		g.P("idx := ", excelutilsPackage.Ident("BooleanToIndex"), "(", name, ")")
-	case protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Uint32Kind, protoreflect.Uint64Kind:
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind,
+		protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind,
+		protoreflect.Uint32Kind, protoreflect.Fixed32Kind,
+		protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
 		g.P("idx := ", excelutilsPackage.Ident("IntegerToIndex"), "(", name, ")")
 	case protoreflect.FloatKind:
 		g.P("idx := ", excelutilsPackage.Ident("FloatToIndex"), "(", name, ")")
@@ -393,13 +602,21 @@ func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl)
 	case protoreflect.StringKind:
 		g.P("idx, err := ", excelutilsPackage.Ident("StringToIndex"), "(", name, ")")
 		g.P("if err != nil {")
-		g.P("\treturn nil, false")
+		if panicForNotFound {
+			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+		} else {
+			g.P("\treturn nil, false")
+		}
 		g.P("}")
 		return true
 	case protoreflect.BytesKind:
 		g.P("idx, err := ", excelutilsPackage.Ident("BytesToIndex"), "(", name, ")")
 		g.P("if err != nil {")
-		g.P("\treturn nil, false")
+		if panicForNotFound {
+			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+		} else {
+			g.P("\treturn nil, false")
+		}
 		g.P("}")
 		return true
 	case protoreflect.EnumKind:
@@ -407,7 +624,11 @@ func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl)
 	default:
 		g.P("idx, err := ", excelutilsPackage.Ident("AnyToIndex"), "(", name, ")")
 		g.P("if err != nil {")
-		g.P("\treturn nil, false")
+		if panicForNotFound {
+			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+		} else {
+			g.P("\treturn nil, false")
+		}
 		g.P("}")
 		return true
 	}
@@ -415,9 +636,9 @@ func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl)
 	return false
 }
 
-func fieldsToIndex(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceMap[string, *FieldDecl]) (hashVerification bool) {
+func fieldsToIndex(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceMap[string, *FieldDecl], panicForNotFound bool, notFoundArgs string) (hashVerification bool) {
 	if fieldDecls.Len() <= 1 {
-		return singleFieldToIndex(g, fieldDecls[0].K, fieldDecls[0].V)
+		return singleFieldToIndex(g, fieldDecls[0].K, fieldDecls[0].V, panicForNotFound, notFoundArgs)
 	}
 
 	g.P("h := ", excelutilsPackage.Ident("NewHash"), "()")
@@ -428,20 +649,32 @@ func fieldsToIndex(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceM
 
 		if decl.Field.Desc.IsMap() {
 			g.P("if err := ", excelutilsPackage.Ident("MapToHash"), "(h, ", name, "); err != nil {")
-			g.P("\treturn nil, false")
+			if panicForNotFound {
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+			} else {
+				g.P("\treturn nil, false")
+			}
 			g.P("}")
 			return
 		}
 
 		if decl.Field.Desc.IsList() {
 			g.P("if err := ", excelutilsPackage.Ident("ListToHash"), "(h, ", name, "); err != nil {")
-			g.P("\treturn nil, false")
+			if panicForNotFound {
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+			} else {
+				g.P("\treturn nil, false")
+			}
 			g.P("}")
 			return
 		}
 
 		g.P("if err := ", excelutilsPackage.Ident("AnyToHash"), "(h, ", name, "); err != nil {")
-		g.P("\treturn nil, false")
+		if panicForNotFound {
+			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+		} else {
+			g.P("\treturn nil, false")
+		}
 		g.P("}")
 	})
 
@@ -452,9 +685,11 @@ func fieldsToIndex(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceM
 }
 
 func compareFunc(fd *FieldDecl) []any {
+	compareField := fd.Field
 	ty := fd.GOType
 
 	if fd.Field.Desc.IsMap() {
+		compareField = fd.Field.Message.Fields[1]
 		idx := strings.IndexByte(fd.GOType, ']')
 		ty = fd.GOType[idx+1:]
 	}
@@ -463,17 +698,21 @@ func compareFunc(fd *FieldDecl) []any {
 		ty = strings.TrimPrefix(fd.GOType, "[]")
 	}
 
-	switch fd.Field.Desc.Kind() {
-	case protoreflect.BoolKind, protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Uint32Kind, protoreflect.Uint64Kind, protoreflect.FloatKind, protoreflect.DoubleKind, protoreflect.StringKind, protoreflect.EnumKind:
+	switch compareField.Desc.Kind() {
+	case protoreflect.BoolKind, protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Uint32Kind, protoreflect.Uint64Kind, protoreflect.StringKind, protoreflect.EnumKind:
 		return []any{fmt.Sprintf("func(a, b %s) bool { return a == b }", ty)}
+	case protoreflect.FloatKind:
+		return []any{"func(a, b ", ty, ") bool { return ", mathPackage.Ident("Float32bits"), "(a) == ", mathPackage.Ident("Float32bits"), "(b) }"}
+	case protoreflect.DoubleKind:
+		return []any{"func(a, b ", ty, ") bool { return ", mathPackage.Ident("Float64bits"), "(a) == ", mathPackage.Ident("Float64bits"), "(b) }"}
 	case protoreflect.BytesKind:
 		return []any{"func(a, b ", ty, ") bool { return ", bytesPackage.Ident("Compare"), "(a, b) == 0 }"}
 	default:
-		return []any{"func(a, b ", ty, ") bool { return ", protoPackage.Ident("Equal"), "(a, b) }"}
+		return []any{"func(a, b ", ty, ") bool { return ", excelutilsPackage.Ident("ProtoMessageEqual"), "(a, b) }"}
 	}
 }
 
-func hashVerification(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceMap[string, *FieldDecl]) {
+func hashVerification(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceMap[string, *FieldDecl], panicForNotFound bool, notFoundArgs string) {
 	fieldDecls.Each(func(name string, decl *FieldDecl) {
 		defer g.P()
 
@@ -483,7 +722,11 @@ func hashVerification(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSli
 			output = append(output, ") {")
 
 			g.P(output...)
-			g.P("\treturn nil, false")
+			if panicForNotFound {
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+			} else {
+				g.P("\treturn nil, false")
+			}
 			g.P("}")
 			return
 		}
@@ -494,28 +737,121 @@ func hashVerification(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSli
 			output = append(output, ") {")
 
 			g.P(output...)
-			g.P("\treturn nil, false")
+			if panicForNotFound {
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+			} else {
+				g.P("\treturn nil, false")
+			}
 			g.P("}")
 			return
 		}
 
 		switch decl.Field.Desc.Kind() {
-		case protoreflect.BoolKind, protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Uint32Kind, protoreflect.Uint64Kind, protoreflect.FloatKind, protoreflect.DoubleKind, protoreflect.StringKind, protoreflect.EnumKind:
+		case protoreflect.BoolKind, protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Uint32Kind, protoreflect.Uint64Kind, protoreflect.StringKind, protoreflect.EnumKind:
 			g.P("if ", name, " != row.", name, " {")
-			g.P("\treturn nil, false")
+			if panicForNotFound {
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+			} else {
+				g.P("\treturn nil, false")
+			}
+			g.P("}")
+
+		case protoreflect.FloatKind:
+			g.P("if ", mathPackage.Ident("Float32bits"), "(", name, ") != ", mathPackage.Ident("Float32bits"), "(row.", name, ") {")
+			if panicForNotFound {
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+			} else {
+				g.P("\treturn nil, false")
+			}
+			g.P("}")
+
+		case protoreflect.DoubleKind:
+			g.P("if ", mathPackage.Ident("Float64bits"), "(", name, ") != ", mathPackage.Ident("Float64bits"), "(row.", name, ") {")
+			if panicForNotFound {
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+			} else {
+				g.P("\treturn nil, false")
+			}
 			g.P("}")
 
 		case protoreflect.BytesKind:
 			g.P("if ", bytesPackage.Ident("Compare"), "(", name, ", row.", name, ") != 0 {")
-			g.P("\treturn nil, false")
+			if panicForNotFound {
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+			} else {
+				g.P("\treturn nil, false")
+			}
 			g.P("}")
 
 		default:
-			g.P("if !", protoPackage.Ident("Equal"), "(", name, ", row.", name, ") {")
-			g.P("\treturn nil, false")
+			g.P("if !", excelutilsPackage.Ident("ProtoMessageEqual"), "(", name, ", row.", name, ") {")
+			if panicForNotFound {
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
+			} else {
+				g.P("\treturn nil, false")
+			}
 			g.P("}")
 		}
 	})
 
+	g.P()
+}
+
+func emitRowMatchesFunc(g *protogen.GeneratedFile, rowType protogen.GoIdent, fieldDecls generic.UnorderedSliceMap[string, *FieldDecl]) {
+	g.P("matchesRow := func(row *", rowType, ") bool {")
+
+	fieldDecls.Each(func(name string, decl *FieldDecl) {
+		defer g.P()
+
+		if decl.Field.Desc.IsMap() {
+			output := []any{"\tif !", excelutilsPackage.Ident("MapEqual"), "(", name, ", row.", name, ", "}
+			output = append(output, compareFunc(decl)...)
+			output = append(output, ") {")
+			g.P(output...)
+			g.P("\t\treturn false")
+			g.P("\t}")
+			return
+		}
+
+		if decl.Field.Desc.IsList() {
+			output := []any{"\tif !", excelutilsPackage.Ident("ListEqual"), "(", name, ", row.", name, ", "}
+			output = append(output, compareFunc(decl)...)
+			output = append(output, ") {")
+			g.P(output...)
+			g.P("\t\treturn false")
+			g.P("\t}")
+			return
+		}
+
+		switch decl.Field.Desc.Kind() {
+		case protoreflect.BoolKind, protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Uint32Kind, protoreflect.Uint64Kind, protoreflect.StringKind, protoreflect.EnumKind:
+			g.P("\tif ", name, " != row.", name, " {")
+			g.P("\t\treturn false")
+			g.P("\t}")
+
+		case protoreflect.FloatKind:
+			g.P("\tif ", mathPackage.Ident("Float32bits"), "(", name, ") != ", mathPackage.Ident("Float32bits"), "(row.", name, ") {")
+			g.P("\t\treturn false")
+			g.P("\t}")
+
+		case protoreflect.DoubleKind:
+			g.P("\tif ", mathPackage.Ident("Float64bits"), "(", name, ") != ", mathPackage.Ident("Float64bits"), "(row.", name, ") {")
+			g.P("\t\treturn false")
+			g.P("\t}")
+
+		case protoreflect.BytesKind:
+			g.P("\tif ", bytesPackage.Ident("Compare"), "(", name, ", row.", name, ") != 0 {")
+			g.P("\t\treturn false")
+			g.P("\t}")
+
+		default:
+			g.P("\tif !", excelutilsPackage.Ident("ProtoMessageEqual"), "(", name, ", row.", name, ") {")
+			g.P("\t\treturn false")
+			g.P("\t}")
+		}
+	})
+
+	g.P("\treturn true")
+	g.P("}")
 	g.P()
 }

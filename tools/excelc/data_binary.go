@@ -20,13 +20,14 @@
 package main
 
 import (
-	"google.golang.org/protobuf/proto"
 	"os"
 	"path/filepath"
+
+	"google.golang.org/protobuf/proto"
 )
 
 func genBinaryData(tableMsg proto.Message, outDir string) (string, error) {
-	tableData, err := proto.Marshal(tableMsg)
+	tableData, err := proto.MarshalOptions{Deterministic: true}.Marshal(tableMsg)
 	if err != nil {
 		return "", err
 	}

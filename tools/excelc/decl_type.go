@@ -21,14 +21,17 @@ package main
 
 import (
 	"fmt"
-	"git.golaxy.org/core/utils/generic"
-	"github.com/go-playground/form/v4"
-	"github.com/spf13/viper"
-	"github.com/xuri/excelize/v2"
+	"log"
 	"net/url"
 	"sort"
 	"strconv"
 	"strings"
+
+	"git.golaxy.org/core/utils/generic"
+	"github.com/elliotchance/pie/v2"
+	"github.com/go-playground/form/v4"
+	"github.com/spf13/viper"
+	"github.com/xuri/excelize/v2"
 )
 
 const (
@@ -89,7 +92,8 @@ func (ty Type) Child() Type {
 			return Type(strings.TrimSpace(strings.TrimPrefix(string(ty), "repeated ")))
 		}
 	}
-	panic(fmt.Errorf("not repeated: %s", ty))
+	log.Panicf("not repeated: %s", ty)
+	panic("unreachable")
 }
 
 func (ty Type) KV() (k Type, v Type) {
@@ -97,11 +101,12 @@ func (ty Type) KV() (k Type, v Type) {
 		t := strings.TrimSuffix(strings.TrimPrefix(string(ty), "map<"), ">")
 		s := strings.Split(t, ",")
 		if len(s) != 2 {
-			panic(fmt.Errorf("invalid map: %s", ty))
+			log.Panicf("invalid map: %s", ty)
 		}
 		return Type(strings.TrimSpace(s[0])), Type(strings.TrimSpace(s[1]))
 	}
-	panic(fmt.Errorf("not map: %s", ty))
+	log.Panicf("not map: %s", ty)
+	panic("unreachable")
 }
 
 func (ty Type) Repeated() Type {
@@ -109,15 +114,19 @@ func (ty Type) Repeated() Type {
 }
 
 type Meta struct {
-	UniqueIndex       int32  `form:"unique_index"`
-	UniqueSortedIndex int32  `form:"unique_sorted_index"`
-	Separator         string `form:"separator"`
+	Separator         string   `form:"separator"`
+	Scope             []string `form:"scope"`
+	UniqueIndex       []int32  `form:"unique_index"`
+	HashUniqueIndex   []int32  `form:"hash_unique_index"`
+	SortedUniqueIndex []int32  `form:"sorted_unique_index"`
 }
 
 var defaultMeta = &Meta{
-	UniqueIndex:       0,
-	UniqueSortedIndex: 0,
 	Separator:         ",",
+	Scope:             nil,
+	UniqueIndex:       nil,
+	HashUniqueIndex:   nil,
+	SortedUniqueIndex: nil,
 }
 
 func parseMeta(str string) (*Meta, error) {
@@ -137,21 +146,96 @@ func parseMeta(str string) (*Meta, error) {
 		return nil, err
 	}
 
-	if meta == *defaultMeta {
-		return defaultMeta, nil
+	meta.Separator = strings.TrimSpace(meta.Separator)
+
+	meta.Scope = pie.Of(meta.Scope).Map(func(s string) string {
+		return strings.TrimSpace(s)
+	}).Filter(func(s string) bool {
+		return s != ""
+	}).Result
+
+	meta.UniqueIndex = normalizeIndexTags(meta.UniqueIndex)
+	if len(meta.UniqueIndex) > 0 {
+		switch viper.GetString("pb_unique_index_as") {
+		case "hash_unique_index":
+			meta.HashUniqueIndex = append(meta.HashUniqueIndex, meta.UniqueIndex...)
+		case "sorted_unique_index":
+			meta.SortedUniqueIndex = append(meta.SortedUniqueIndex, meta.UniqueIndex...)
+		}
+	}
+
+	meta.HashUniqueIndex = normalizeIndexTags(meta.HashUniqueIndex)
+	meta.SortedUniqueIndex = normalizeIndexTags(meta.SortedUniqueIndex)
+
+	if conflicted := pie.Of(meta.HashUniqueIndex).Filter(func(tag int32) bool {
+		return pie.Contains(meta.SortedUniqueIndex, tag)
+	}).Result; len(conflicted) > 0 {
+		return nil, fmt.Errorf("hash_unique_index tags %v conflict with sorted_unique_index", conflicted)
 	}
 
 	return &meta, nil
 }
 
+func normalizeIndexTags(tags []int32) []int32 {
+	if len(tags) == 0 {
+		return nil
+	}
+
+	seen := make(map[int32]struct{}, len(tags))
+	out := make([]int32, 0, len(tags))
+
+	for _, tag := range tags {
+		if tag < 0 {
+			continue
+		}
+		if _, ok := seen[tag]; ok {
+			continue
+		}
+		seen[tag] = struct{}{}
+		out = append(out, tag)
+	}
+
+	sort.Slice(out, func(i, j int) bool {
+		return out[i] < out[j]
+	})
+
+	if len(out) == 0 {
+		return nil
+	}
+
+	return out
+}
+
 type Field struct {
 	*Decl
 	IsColumn bool
+	Number   int
 	Name     string
 	Alias    string
 	Default  string
 	Meta     *Meta
 	Comment  string
+}
+
+func (f *Field) MatchTargets() bool {
+	targets := pie.Of(viper.GetStringSlice("targets")).Map(func(target string) string {
+		return strings.TrimSpace(target)
+	}).Filter(func(target string) bool {
+		return target != ""
+	}).Result
+
+	if len(targets) <= 0 || len(f.Meta.Scope) <= 0 {
+		return true
+	}
+	if len(f.Meta.HashUniqueIndex) > 0 || len(f.Meta.SortedUniqueIndex) > 0 {
+		return true
+	}
+
+	return pie.Any(targets, func(target string) bool {
+		return pie.Any(f.Meta.Scope, func(scope string) bool {
+			return strings.EqualFold(scope, target)
+		})
+	})
 }
 
 func (f *Field) ProtobufMeta() string {
@@ -162,18 +246,25 @@ func (f *Field) ProtobufMeta() string {
 	}
 
 	if f.IsColumn {
-		if f.Meta.UniqueIndex > 0 {
+		for _, tag := range f.Meta.HashUniqueIndex {
 			if sb.Len() > 0 {
 				sb.WriteString(", ")
 			}
-			sb.WriteString(fmt.Sprintf("(%s.UniqueIndex) = %d", viper.GetString("pb_package"), f.Meta.UniqueIndex))
+			sb.WriteString(fmt.Sprintf("(%s.HashUniqueIndex) = %d", viper.GetString("pb_package"), tag))
 		}
-		if f.Meta.UniqueSortedIndex > 0 {
+		for _, tag := range f.Meta.SortedUniqueIndex {
 			if sb.Len() > 0 {
 				sb.WriteString(", ")
 			}
-			sb.WriteString(fmt.Sprintf("(%s.UniqueSortedIndex) = %d", viper.GetString("pb_package"), f.Meta.UniqueSortedIndex))
+			sb.WriteString(fmt.Sprintf("(%s.SortedUniqueIndex) = %d", viper.GetString("pb_package"), tag))
 		}
+	}
+
+	for _, scope := range f.Meta.Scope {
+		if sb.Len() > 0 {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(fmt.Sprintf("(%s.Scope) = '%s'", viper.GetString("pb_package"), scope))
 	}
 
 	if f.Alias != "" {
@@ -221,6 +312,9 @@ func (d *Decl) EnumFields() generic.UnorderedSliceMap[string, *Field] {
 	fields := make(generic.UnorderedSliceMap[string, *Field], 0, d.Fields.Len())
 
 	d.Fields.Each(func(name string, decl *Field) {
+		if !decl.MatchTargets() {
+			return
+		}
 		fields.Add(name, decl)
 	})
 
@@ -237,22 +331,37 @@ func (d *Decl) StructFields() generic.UnorderedSliceMap[string, *Field] {
 	fields := make(generic.UnorderedSliceMap[string, *Field], 0, d.Fields.Len())
 
 	d.Fields.Each(func(name string, decl *Field) {
+		if !decl.MatchTargets() {
+			return
+		}
 		fields.Add(name, decl)
 	})
 
 	return fields
 }
 
-func (d *Decl) StructUniqueIndexes() generic.UnorderedSliceMap[string, string] {
+func (d *Decl) StructHashUniqueIndexes() generic.UnorderedSliceMap[string, string] {
+	return d.structUniqueIndexes(func(field *Field) []int32 {
+		return field.Meta.HashUniqueIndex
+	})
+}
+
+func (d *Decl) StructSortedUniqueIndexes() generic.UnorderedSliceMap[string, string] {
+	return d.structUniqueIndexes(func(field *Field) []int32 {
+		return field.Meta.SortedUniqueIndex
+	})
+}
+
+func (d *Decl) structUniqueIndexes(tagsOf func(field *Field) []int32) generic.UnorderedSliceMap[string, string] {
 	var tagFields generic.SliceMap[int32, []*Field]
 
 	d.Fields.Each(func(name string, decl *Field) {
-		if decl.Meta.UniqueIndex > 0 {
-			fields, ok := tagFields.Get(decl.Meta.UniqueIndex)
+		for _, tag := range tagsOf(decl) {
+			fields, ok := tagFields.Get(tag)
 			if ok {
-				tagFields.Add(decl.Meta.UniqueIndex, append(fields, decl))
+				tagFields.Add(tag, append(fields, decl))
 			} else {
-				tagFields.Add(decl.Meta.UniqueIndex, []*Field{decl})
+				tagFields.Add(tag, []*Field{decl})
 			}
 		}
 	})
@@ -260,6 +369,10 @@ func (d *Decl) StructUniqueIndexes() generic.UnorderedSliceMap[string, string] {
 	indexes := make(generic.UnorderedSliceMap[string, string], 0, tagFields.Len())
 
 	tagFields.Each(func(tag int32, fields []*Field) {
+		if pie.Any(fields, func(field *Field) bool { return !field.MatchTargets() }) {
+			return
+		}
+
 		name := strings.Builder{}
 		indexFields := strings.Builder{}
 
@@ -278,47 +391,12 @@ func (d *Decl) StructUniqueIndexes() generic.UnorderedSliceMap[string, string] {
 	return indexes
 }
 
-func (d *Decl) StructUniqueSortedIndexes() generic.UnorderedSliceMap[string, string] {
-	var tagFields generic.SliceMap[int32, []*Field]
-
-	d.Fields.Each(func(name string, decl *Field) {
-		if decl.Meta.UniqueSortedIndex > 0 {
-			fields, ok := tagFields.Get(decl.Meta.UniqueSortedIndex)
-			if ok {
-				tagFields.Add(decl.Meta.UniqueSortedIndex, append(fields, decl))
-			} else {
-				tagFields.Add(decl.Meta.UniqueSortedIndex, []*Field{decl})
-			}
-		}
-	})
-
-	indexes := make(generic.UnorderedSliceMap[string, string], 0, tagFields.Len())
-
-	tagFields.Each(func(tag int32, fields []*Field) {
-		name := strings.Builder{}
-		indexFields := strings.Builder{}
-
-		for _, f := range fields {
-			name.WriteString(f.Name)
-
-			if indexFields.Len() > 0 {
-				indexFields.WriteString(",")
-			}
-			indexFields.WriteString(f.Name)
-		}
-
-		indexes.TryAdd(name.String(), indexFields.String())
-	})
-
-	return indexes
-}
-
-func (d *Decl) ProtobufType() string {
+func (d *Decl) ProtoType() string {
 	if d.IsEnum {
 		return string(d.Type) + ".Enum"
 	}
 	if d.IsRepeated {
-		return "repeated " + d.Child.ProtobufType()
+		return "repeated " + d.Child.ProtoType()
 	}
 	return string(d.Type)
 }
@@ -354,7 +432,7 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 		if _, ok := err.(excelize.ErrSheetNotExist); ok {
 			return &decls
 		}
-		panic(fmt.Errorf("读取Excel文件 %q Sheet %q 失败，%s", file.Path, SheetTypes, err))
+		log.Panicf("read excel file %q sheet %q failed, %s", file.Path, SheetTypes, err)
 	}
 	defer rows.Close()
 
@@ -399,7 +477,7 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 			case SheetTypesHeader:
 				row, err := rows.Columns()
 				if err != nil {
-					panic(fmt.Errorf("读取Excel文件 %q Sheet %q 行 %d 失败，%s", file.Path, SheetTypes, i, err))
+					log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, SheetTypes, i, err)
 				}
 
 				for j, cell := range row {
@@ -432,7 +510,7 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 
 		_row, err := rows.Columns()
 		if err != nil {
-			panic(fmt.Errorf("读取Excel文件 %q Sheet %q 行 %d 失败，%s", file.Path, SheetTypes, i, err))
+			log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, SheetTypes, i, err)
 		}
 		row := Row(_row)
 
@@ -456,13 +534,13 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 		ty := Type(fieldDesc.Type)
 
 		if ty.IsBuiltin() {
-			panic(fmt.Errorf("读取Excel文件 %q Sheet %q 行 %d 失败，不能定义内置类型", file.Path, SheetTypes, i))
+			log.Panicf("read excel file %q sheet %q row %d failed: built-in types cannot be defined", file.Path, SheetTypes, i)
 		}
 
 		ty = Type(snake2Camel(string(ty)))
 
 		if ty.IsRepeated() {
-			panic(fmt.Errorf("读取Excel文件 %q Sheet %q 行 %d 失败，不能定义数组类型", file.Path, SheetTypes, i))
+			log.Panicf("read excel file %q sheet %q row %d failed: array types cannot be defined", file.Path, SheetTypes, i)
 		}
 
 		typeDecl, ok := decls.Get(ty)
@@ -479,12 +557,12 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 		}
 
 		if typeDecl.Type != ty || typeDecl.IsStruct != fieldDesc.IsStruct || typeDecl.IsEnum != fieldDesc.IsEnum {
-			panic(fmt.Errorf("读取Excel文件 %q Sheet %q 行 %d 失败，与已定义类型 %q 不符", file.Path, SheetTypes, i, typeDecl.Type))
+			log.Panicf("read excel file %q sheet %q row %d failed: does not match previously defined type %q", file.Path, SheetTypes, i, typeDecl.Type)
 		}
 
 		meta, err := parseMeta(fieldDesc.Meta)
 		if err != nil {
-			panic(fmt.Errorf("读取Excel文件 %q Sheet %q 行 %d 失败，解析Meta %q 失败，%s", file.Path, SheetTypes, i, fieldDesc.Meta, err))
+			log.Panicf("read excel file %q sheet %q row %d failed: parse meta %q failed, %s", file.Path, SheetTypes, i, fieldDesc.Meta, err)
 		}
 
 		fieldName := fieldDesc.FieldName
@@ -502,16 +580,16 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 
 		if typeDecl.IsEnum {
 			if repeated {
-				panic(fmt.Errorf("读取Excel文件 %q Sheet %q 行 %d 失败，枚举字段类型不能定义为数组", file.Path, SheetTypes, i))
+				log.Panicf("read excel file %q sheet %q row %d failed: enum field types cannot be arrays", file.Path, SheetTypes, i)
 			}
 
 			ev, err := strconv.Atoi(fieldDesc.EnumValue)
 			if err != nil {
-				panic(fmt.Errorf("读取Excel文件 %q Sheet %q 行 %d 失败，解析枚举字段值错误，%s", file.Path, SheetTypes, i, err))
+				log.Panicf("read excel file %q sheet %q row %d failed: parse enum field value failed, %s", file.Path, SheetTypes, i, err)
 			}
 
 			if ev < 0 {
-				panic(fmt.Errorf("读取Excel文件 %q Sheet %q 行 %d 失败，枚举字段值不能为负数", file.Path, SheetTypes, i))
+				log.Panicf("read excel file %q sheet %q row %d failed: enum field value cannot be negative", file.Path, SheetTypes, i)
 			}
 
 			fieldType = Int32
@@ -539,7 +617,7 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 			if !ok {
 				fieldDecl, ok = globalDecls.Get(fieldType)
 				if !ok {
-					panic(fmt.Errorf("读取Excel文件 %q Sheet %q 行 %d 失败，字段类型 %q 未定义", file.Path, SheetTypes, i, fieldType))
+					log.Panicf("read excel file %q sheet %q row %d failed: field type %q is undefined", file.Path, SheetTypes, i, fieldType)
 				}
 			}
 			field.Decl = fieldDecl
@@ -547,12 +625,15 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 		}
 
 		if repeated {
+			fieldNumber := typeDecl.Fields.Len() + 1
+
 			parent := &Field{
 				Decl: &Decl{
 					Type:       fieldType.Repeated(),
 					IsRepeated: true,
 					Child:      field,
 				},
+				Number:  fieldNumber,
 				Name:    fieldName,
 				Alias:   fieldAlias,
 				Meta:    meta,
@@ -565,6 +646,7 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 			}
 
 		} else {
+			field.Number = typeDecl.Fields.Len() + 1
 			field.Name = fieldName
 			field.Alias = fieldAlias
 			field.Meta = meta

@@ -23,19 +23,33 @@ import (
 	"cmp"
 	"encoding/binary"
 	"errors"
-	"git.golaxy.org/core/utils/types"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"hash"
 	"hash/fnv"
+	"log"
 	"slices"
 	"sort"
+
+	"git.golaxy.org/core/utils/types"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var (
 	NewHash = fnv.New64a
 )
 
+const (
+	hashTagMap   int8 = 19
+	hashTagSlice int8 = 20
+)
+
 func ListToHash[T any](h hash.Hash64, l []T) error {
+	if err := writeHashTag(h, hashTagSlice); err != nil {
+		return err
+	}
+	if err := writeHashLength(h, len(l)); err != nil {
+		return err
+	}
 	for i := range l {
 		if err := AnyToHash(h, l[i]); err != nil {
 			return err
@@ -45,6 +59,13 @@ func ListToHash[T any](h hash.Hash64, l []T) error {
 }
 
 func MapToHash[K cmp.Ordered, V any](h hash.Hash64, m map[K]V) error {
+	if err := writeHashTag(h, hashTagMap); err != nil {
+		return err
+	}
+	if err := writeHashLength(h, len(m)); err != nil {
+		return err
+	}
+
 	keys := make([]K, 0, len(m))
 
 	for k := range m {
@@ -54,7 +75,7 @@ func MapToHash[K cmp.Ordered, V any](h hash.Hash64, m map[K]V) error {
 	slices.Sort(keys)
 
 	for _, k := range keys {
-		if err := AnyToHash(h, m[k]); err != nil {
+		if err := AnyToHash(h, k); err != nil {
 			return err
 		}
 		if err := AnyToHash(h, m[k]); err != nil {
@@ -67,60 +88,167 @@ func MapToHash[K cmp.Ordered, V any](h hash.Hash64, m map[K]V) error {
 
 func AnyToHash(h hash.Hash64, v any) error {
 	switch iv := v.(type) {
-	case nil:
-		return nil
-	case bool, int32, int64, uint32, uint64, float32, float64:
+	case bool:
+		if err := writeHashTag(h, protoreflect.BoolKind); err != nil {
+			return err
+		}
+		return writeHashByte(h, types.Bool2Int[byte](iv))
+	case int32:
+		if err := writeHashTag(h, protoreflect.Int32Kind); err != nil {
+			return err
+		}
+		return binary.Write(h, binary.BigEndian, iv)
+	case int64:
+		if err := writeHashTag(h, protoreflect.Int64Kind); err != nil {
+			return err
+		}
+		return binary.Write(h, binary.BigEndian, iv)
+	case uint32:
+		if err := writeHashTag(h, protoreflect.Uint32Kind); err != nil {
+			return err
+		}
+		return binary.Write(h, binary.BigEndian, iv)
+	case uint64:
+		if err := writeHashTag(h, protoreflect.Uint64Kind); err != nil {
+			return err
+		}
+		return binary.Write(h, binary.BigEndian, iv)
+	case float32:
+		if err := writeHashTag(h, protoreflect.FloatKind); err != nil {
+			return err
+		}
+		return binary.Write(h, binary.BigEndian, iv)
+	case float64:
+		if err := writeHashTag(h, protoreflect.DoubleKind); err != nil {
+			return err
+		}
 		return binary.Write(h, binary.BigEndian, iv)
 	case string:
+		if err := writeHashTag(h, protoreflect.StringKind); err != nil {
+			return err
+		}
+		if err := writeHashLength(h, len(iv)); err != nil {
+			return err
+		}
 		_, err := h.Write(types.String2Bytes(iv))
 		return err
 	case []byte:
+		if err := writeHashTag(h, protoreflect.BytesKind); err != nil {
+			return err
+		}
+		if err := writeHashLength(h, len(iv)); err != nil {
+			return err
+		}
 		_, err := h.Write(iv)
 		return err
+	case proto.Message:
+		mv := iv.ProtoReflect()
+		if !mv.IsValid() {
+			mv = mv.Type().Zero()
+		}
+		return messageToHash(h, mv)
 	case protoreflect.EnumNumber:
-		return AnyToHash(h, int32(iv))
+		if err := writeHashTag(h, protoreflect.EnumKind); err != nil {
+			return err
+		}
+		return binary.Write(h, binary.BigEndian, int32(iv))
 	case protoreflect.Message:
-		for i := 0; i < iv.Descriptor().Fields().Len(); i++ {
-			err := AnyToHash(h, iv.Get(iv.Descriptor().Fields().Get(i)))
-			if err != nil {
-				return err
-			}
-		}
-		return nil
+		return messageToHash(h, iv)
 	case protoreflect.List:
-		for i := range iv.Len() {
-			if err := AnyToHash(h, iv.Get(i)); err != nil {
-				return err
-			}
-		}
-		return nil
+		return hashProtoList(h, iv)
 	case protoreflect.Map:
-		keys := make([]protoreflect.MapKey, 0, iv.Len())
-
-		iv.Range(func(k protoreflect.MapKey, _ protoreflect.Value) bool {
-			keys = append(keys, k)
-			return true
-		})
-
-		sort.Slice(keys, func(i, j int) bool {
-			return mapKeyOrder(keys[i], keys[j])
-		})
-
-		for _, k := range keys {
-			if err := AnyToHash(h, k.Value()); err != nil {
-				return err
-			}
-			if err := AnyToHash(h, iv.Get(k)); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return hashProtoMap(h, iv)
 	case protoreflect.Value:
 		return AnyToHash(h, iv.Interface())
 	default:
 		return errors.New("value not supported for hashing")
 	}
+}
+
+func messageToHash(h hash.Hash64, msg protoreflect.Message) error {
+	if err := writeHashTag(h, protoreflect.MessageKind); err != nil {
+		return err
+	}
+	if !msg.IsValid() {
+		msg = msg.Type().Zero()
+	}
+
+	fields := msg.Descriptor().Fields()
+	if err := writeHashLength(h, fields.Len()); err != nil {
+		return err
+	}
+
+	for i := 0; i < fields.Len(); i++ {
+		if err := AnyToHash(h, msg.Get(fields.Get(i))); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func hashProtoList(h hash.Hash64, l protoreflect.List) error {
+	if err := writeHashTag(h, hashTagSlice); err != nil {
+		return err
+	}
+	if err := writeHashLength(h, l.Len()); err != nil {
+		return err
+	}
+
+	for i := 0; i < l.Len(); i++ {
+		if err := AnyToHash(h, l.Get(i)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func hashProtoMap(h hash.Hash64, m protoreflect.Map) error {
+	if err := writeHashTag(h, hashTagMap); err != nil {
+		return err
+	}
+	if err := writeHashLength(h, m.Len()); err != nil {
+		return err
+	}
+
+	keys := make([]protoreflect.MapKey, 0, m.Len())
+
+	m.Range(func(k protoreflect.MapKey, _ protoreflect.Value) bool {
+		keys = append(keys, k)
+		return true
+	})
+
+	sort.Slice(keys, func(i, j int) bool {
+		return mapKeyOrder(keys[i], keys[j])
+	})
+
+	for _, k := range keys {
+		if err := AnyToHash(h, k.Value()); err != nil {
+			return err
+		}
+		if err := AnyToHash(h, m.Get(k)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func writeHashTag[T ~int8](h hash.Hash64, tag T) error {
+	return writeHashByte(h, byte(tag))
+}
+
+func writeHashByte(h hash.Hash64, value byte) error {
+	_, err := h.Write([]byte{value})
+	return err
+}
+
+func writeHashLength(h hash.Hash64, length int) error {
+	if length < 0 {
+		return errors.New("hash length must be non-negative")
+	}
+	return binary.Write(h, binary.BigEndian, uint64(length))
 }
 
 func mapKeyOrder(a, b protoreflect.MapKey) bool {
@@ -134,6 +262,7 @@ func mapKeyOrder(a, b protoreflect.MapKey) bool {
 	case string:
 		return a.String() < b.String()
 	default:
-		panic("invalid map key type for hashing")
+		log.Panic("invalid map key type for hashing")
 	}
+	panic("unreachable")
 }

@@ -21,22 +21,24 @@ package main
 
 import (
 	"fmt"
-	"git.golaxy.org/core/utils/generic"
-	"github.com/elliotchance/pie/v2"
-	"github.com/spf13/viper"
-	"github.com/xuri/excelize/v2"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"text/template"
+
+	"git.golaxy.org/core/utils/generic"
+	"github.com/elliotchance/pie/v2"
+	"github.com/spf13/viper"
+	"github.com/xuri/excelize/v2"
 )
 
 const (
-	DependencyProtobuf = "excelc"
+	DependencyProto = "excelc"
 )
 
-func genDependencyProtobuf(outDir string) {
+func genDependencyProtoFile(outDir string) {
 	const tmpl = `{{.Comment}}
 syntax = 'proto3';
 
@@ -56,11 +58,15 @@ message IndexItem {
 	uint32 Offset = 2;
 } 
 
+message IndexConflict {
+	repeated uint32 Offsets = 1;
+}
+
 message IndexType {
 	enum Enum {
 		None = 0;
-		UniqueIndex = 1;
-		UniqueSortedIndex = 2;
+		HashUniqueIndex = 1;
+		SortedUniqueIndex = 2;
 	}
 }
 
@@ -72,11 +78,12 @@ extend google.protobuf.MessageOptions {
 extend google.protobuf.FieldOptions {
 	optional string Separator = {{Add .CustomOptions 201}};
 	optional string FieldAlias = {{Add .CustomOptions 202}};
-	optional int32 UniqueIndex = {{Add .CustomOptions 203}};
-	optional int32 UniqueSortedIndex = {{Add .CustomOptions 204}};
-	optional bool IsRows = {{Add .CustomOptions 205}};
-	optional IndexType.Enum IndexTyp = {{Add .CustomOptions 206}};
-	optional string IndexFields = {{Add .CustomOptions 207}};
+	repeated string Scope = {{Add .CustomOptions 203}};
+	optional bool IsRows = {{Add .CustomOptions 204}};
+	optional IndexType.Enum IndexTyp = {{Add .CustomOptions 205}};
+	optional string IndexFields = {{Add .CustomOptions 206}};
+	repeated int32 HashUniqueIndex = {{Add .CustomOptions 207}};
+	repeated int32 SortedUniqueIndex = {{Add .CustomOptions 208}};
 }
 
 extend google.protobuf.EnumValueOptions {
@@ -104,7 +111,7 @@ extend google.protobuf.EnumValueOptions {
 	}
 	sort.Strings(args.Options)
 
-	outFilePath, _ := filepath.Abs(filepath.Join(outDir, fmt.Sprintf("%s.proto", DependencyProtobuf)))
+	outFilePath, _ := filepath.Abs(filepath.Join(outDir, fmt.Sprintf("%s.proto", DependencyProto)))
 
 	t := template.Must(template.New("proto").
 		Funcs(template.FuncMap{
@@ -116,22 +123,22 @@ extend google.protobuf.EnumValueOptions {
 
 	outFile, err := os.OpenFile(outFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	defer outFile.Close()
 
 	err = t.Execute(outFile, args)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 }
 
-func genProtobuf(file *excelize.File, globalDecls *generic.SliceMap[Type, *Decl], outDir string) {
+func genProtoFile(file *excelize.File, globalDecls *generic.SliceMap[Type, *Decl], outDir string) {
 	typeDecls := parseTypeDecls(file, globalDecls)
 
 	typeDecls.Each(func(ty Type, decl *Decl) {
 		if !globalDecls.TryAdd(ty, decl) {
-			panic(fmt.Errorf("读取Excel文件 %q 失败，重复定义类型 %q", file.Path, ty))
+			log.Panicf("read excel file %q failed: duplicate type definition %q", file.Path, ty)
 		}
 	})
 
@@ -139,7 +146,7 @@ func genProtobuf(file *excelize.File, globalDecls *generic.SliceMap[Type, *Decl]
 
 	columnDecls.Each(func(ty Type, decl *Decl) {
 		if !globalDecls.TryAdd(ty, decl) {
-			panic(fmt.Errorf("读取Excel文件 %q 失败，重复定义类型 %q", file.Path, ty))
+			log.Panicf("read excel file %q failed: duplicate type definition %q", file.Path, ty)
 		}
 	})
 
@@ -178,7 +185,7 @@ message {{.Type}} {
 {{- range .Structs}}
 message {{.Type}} {
 	{{- range $i, $kv := .StructFields}}
-	{{$kv.V.ProtobufType}} {{$kv.K}} = {{Incr $i}}{{- $kv.V.ProtobufMeta -}}; // {{.V.Alias}} - {{.V.Comment}}
+	{{$kv.V.ProtoType}} {{$kv.K}} = {{$kv.V.Number}}{{- $kv.V.ProtobufMeta -}}; // {{.V.Alias}} - {{.V.Comment}}
 	{{- end}}
 }
 {{end}}
@@ -186,23 +193,29 @@ message {{.Type}} {
 // table and columns
 {{- $package := .Package -}}
 {{- range .Columns}}
-message {{.ProtobufType}} {
+message {{.ProtoType}} {
 	option ({{$package}}.IsColumns) = true;
 	{{- range $i, $kv := .StructFields}}
-	{{$kv.V.ProtobufType}} {{$kv.K}} = {{Incr $i}}{{- $kv.V.ProtobufMeta -}}; // {{.V.Alias}} - {{.V.Comment}}
+	{{$kv.V.ProtoType}} {{$kv.K}} = {{$kv.V.Number}}{{- $kv.V.ProtobufMeta -}}; // {{.V.Alias}} - {{.V.Comment}}
 	{{- end}}
 }
 
-message {{TableName .ProtobufType}} {
+message {{TableName .ProtoType}} {
 	option ({{$package}}.IsTable) = true;
-	repeated {{.ProtobufType}} Rows = 1 [({{$package}}.IsRows) = true];
-  	{{- $StructUniqueIndexesCount := .StructUniqueIndexes.Len -}}
-	{{- range $i, $kv := .StructUniqueIndexes}}
-	map<uint64, uint32> UniqueIndex{{$kv.K}} = {{Add $i 2}} [({{$package}}.IndexTyp) = UniqueIndex, ({{$package}}.IndexFields) = '{{$kv.V}}']; 
+	repeated {{.ProtoType}} Rows = 1 [({{$package}}.IsRows) = true];
+	{{- $StructHashUniqueIndexesCount := .StructHashUniqueIndexes.Len -}}
+	{{- $StructSortedUniqueIndexesCount := .StructSortedUniqueIndexes.Len -}}
+	{{- range $i, $kv := .StructHashUniqueIndexes}}
+	map<uint64, uint32> HashUniqueIndex{{$kv.K}} = {{Add $i 2}} [({{$package}}.IndexTyp) = HashUniqueIndex, ({{$package}}.IndexFields) = '{{$kv.V}}']; 
 	{{- end}}
-	{{- $StructUniqueSortedIndexesCount := .StructUniqueSortedIndexes.Len -}}
-	{{- range $i, $kv := .StructUniqueSortedIndexes}}
-	repeated IndexItem UniqueSortedIndex{{$kv.K}} = {{Add $i 2 $StructUniqueIndexesCount}} [({{$package}}.IndexTyp) = UniqueSortedIndex, ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- range $i, $kv := .StructHashUniqueIndexes}}
+	map<uint64, IndexConflict> HashUniqueIndex{{$kv.K}}Conflict = {{Add $i 2 $StructHashUniqueIndexesCount}};
+	{{- end}}
+	{{- range $i, $kv := .StructSortedUniqueIndexes}}
+	repeated IndexItem SortedUniqueIndex{{$kv.K}} = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount}} [({{$package}}.IndexTyp) = SortedUniqueIndex, ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- end}}
+	{{- range $i, $kv := .StructSortedUniqueIndexes}}
+	map<uint64, IndexConflict> SortedUniqueIndex{{$kv.K}}Conflict = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount}};
 	{{- end}}
 }
 {{end}}
@@ -224,7 +237,7 @@ message {{TableName .ProtobufType}} {
 // Excel File: %[3]s
 // Note: This file is auto-generated. DO NOT EDIT THIS FILE DIRECTLY.`, strings.TrimSuffix(filepath.Base(os.Args[0]), filepath.Ext(os.Args[0])), strings.Join(os.Args[1:], " "), file.Path),
 		Package: viper.GetString("pb_package"),
-		Imports: []string{fmt.Sprintf("import '%s.proto';", DependencyProtobuf)},
+		Imports: []string{fmt.Sprintf("import '%s.proto';", DependencyProto)},
 	}
 
 	outFilePath, _ := filepath.Abs(filepath.Join(outDir, strings.TrimSuffix(filepath.Base(file.Path), filepath.Ext(file.Path))+".proto"))
@@ -276,12 +289,12 @@ message {{TableName .ProtobufType}} {
 
 	outFile, err := os.OpenFile(outFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	defer outFile.Close()
 
 	err = t.Execute(outFile, args)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 }

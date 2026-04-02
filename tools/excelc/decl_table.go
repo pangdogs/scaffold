@@ -20,13 +20,14 @@
 package main
 
 import (
-	"fmt"
-	"git.golaxy.org/core/utils/generic"
-	"github.com/xuri/excelize/v2"
+	"log"
 	"path/filepath"
 	"slices"
 	"strings"
 	"unicode"
+
+	"git.golaxy.org/core/utils/generic"
+	"github.com/xuri/excelize/v2"
 )
 
 const (
@@ -53,7 +54,7 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 
 	rows, err := file.Rows(sheet)
 	if err != nil {
-		panic(fmt.Errorf("读取Excel文件 %q Sheet %q 失败，%s", file.Path, sheet, err))
+		log.Panicf("read excel file %q sheet %q failed, %s", file.Path, sheet, err)
 	}
 	defer rows.Close()
 
@@ -73,7 +74,7 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 
 		row, err := rows.Columns()
 		if err != nil {
-			panic(fmt.Errorf("读取Excel文件 %q Sheet %q 行 %d 失败，%s", file.Path, SheetTypes, i, err))
+			log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, SheetTypes, i, err)
 		}
 
 		for j, cell := range row {
@@ -144,7 +145,7 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 
 	for _, columnDesc := range tableDesc {
 		if columnDesc.Type == "" {
-			panic(fmt.Errorf("读取Excel文件 %q Sheet %q 失败，列 %q 未配置类型", file.Path, sheet, columnDesc.Name))
+			log.Panicf("read excel file %q sheet %q failed: column %q has no type configured", file.Path, sheet, columnDesc.Name)
 		}
 
 		columnType := Type(columnDesc.Type)
@@ -156,7 +157,7 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 			var kDecl, vDecl *Decl
 
 			if !k.CanK() {
-				panic(fmt.Errorf("读取Excel文件 %q Sheet %q 失败，列 %q 类型 %q，错误的Key类型", file.Path, sheet, columnDesc.Name, columnType))
+				log.Panicf("read excel file %q sheet %q failed: column %q type %q has an invalid key type", file.Path, sheet, columnDesc.Name, columnType)
 			}
 
 			kDecl = &Decl{
@@ -173,7 +174,7 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 				var ok bool
 				vDecl, ok = globalDecls.Get(v)
 				if !ok {
-					panic(fmt.Errorf("读取Excel文件 %q Sheet %q 失败，列 %q 类型 %q，未定义的Value类型", file.Path, sheet, columnDesc.Name, columnType))
+					log.Panicf("read excel file %q sheet %q failed: column %q type %q has an undefined value type", file.Path, sheet, columnDesc.Name, columnType)
 				}
 			}
 
@@ -188,12 +189,13 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 
 			meta, err := parseMeta(columnDesc.Meta)
 			if err != nil {
-				panic(fmt.Errorf("读取Excel文件 %q Sheet %q 失败，列 %q 解析Meta %q 失败，%s", file.Path, SheetTypes, columnDesc.Name, columnDesc.Meta, err))
+				log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, SheetTypes, columnDesc.Name, columnDesc.Meta, err)
 			}
 
 			columnField := &Field{
 				Decl:     columnDecl,
 				IsColumn: true,
+				Number:   tableDecl.Fields.Len() + 1,
 				Name:     columnDesc.Name,
 				Meta:     meta,
 				Comment:  columnDesc.Comment,
@@ -219,13 +221,13 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 			var ok bool
 			columnDecl, ok = globalDecls.Get(columnType)
 			if !ok {
-				panic(fmt.Errorf("读取Excel文件 %q Sheet %q 失败，列 %q 类型 %q 未定义", file.Path, sheet, columnDesc.Name, columnType))
+				log.Panicf("read excel file %q sheet %q failed: column %q type %q is undefined", file.Path, sheet, columnDesc.Name, columnType)
 			}
 		}
 
 		meta, err := parseMeta(columnDesc.Meta)
 		if err != nil {
-			panic(fmt.Errorf("读取Excel文件 %q Sheet %q 失败，列 %q 解析Meta %q 失败，%s", file.Path, SheetTypes, columnDesc.Name, columnDesc.Meta, err))
+			log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, SheetTypes, columnDesc.Name, columnDesc.Meta, err)
 		}
 
 		columnField := &Field{
@@ -234,12 +236,15 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 		}
 
 		if repeated {
+			fieldNumber := tableDecl.Fields.Len() + 1
+
 			parent := &Field{
 				Decl: &Decl{
 					Type:       columnType.Repeated(),
 					IsRepeated: true,
 					Child:      columnField,
 				},
+				Number:   fieldNumber,
 				IsColumn: true,
 				Name:     columnDesc.Name,
 				Meta:     meta,
@@ -250,6 +255,7 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 
 		} else {
 			columnField.IsColumn = true
+			columnField.Number = tableDecl.Fields.Len() + 1
 			columnField.Name = columnDesc.Name
 			columnField.Meta = meta
 			columnField.Comment = columnDesc.Comment

@@ -20,32 +20,27 @@
 package excelutils
 
 import (
-	"os"
-
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
+	"errors"
+	"fmt"
+	"strings"
 )
 
-func LoadTableFromBinaryFile(tab proto.Message, path string) error {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return err
+var (
+	ErrNotFound = errors.New("not found")
+)
+
+func NewErrNotFound(pairs ...any) error {
+	var sb strings.Builder
+
+	for i := 0; i < len(pairs); i += 2 {
+		if i >= len(pairs)-1 {
+			break
+		}
+		if sb.Len() > 0 {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(fmt.Sprintf("%v=%#v", pairs[i], pairs[i+1]))
 	}
-	return LoadTableFromBinaryData(tab, data)
-}
 
-func LoadTableFromBinaryData(tab proto.Message, data []byte) error {
-	return proto.UnmarshalOptions{}.Unmarshal(data, tab)
-}
-
-func LoadTableFromJsonFile(tab proto.Message, path string) error {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	return LoadTableFromJsonData(tab, data)
-}
-
-func LoadTableFromJsonData(tab proto.Message, data []byte) error {
-	return protojson.UnmarshalOptions{}.Unmarshal(data, tab)
+	return fmt.Errorf("%w: %s", ErrNotFound, sb.String())
 }

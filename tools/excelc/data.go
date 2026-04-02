@@ -22,6 +22,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/fs"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+	"unicode"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/xuri/excelize/v2"
@@ -31,16 +38,10 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
-	"io/fs"
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
-	"unicode"
 )
 
 func cmdGenData(cmd *cobra.Command, args []string) {
-	loadDependencyProtobuf()
+	loadDependencyProtoFile()
 
 	skipped := map[string]struct{}{}
 
@@ -79,18 +80,18 @@ func cmdGenData(cmd *cobra.Command, args []string) {
 	}
 }
 
-func loadDependencyProtobuf() {
-	pbPath := filepath.Join(viper.GetString("pb_dir"), fmt.Sprintf("%s.protoset", DependencyProtobuf))
+func loadDependencyProtoFile() {
+	pbPath := filepath.Join(viper.GetString("pb_dir"), fmt.Sprintf("%s.protoset", DependencyProto))
 
 	pbData, err := os.ReadFile(pbPath)
 	if err != nil {
-		panic(fmt.Errorf("读取Protobuf文件 %q 失败，%s", pbPath, err))
+		log.Panicf("read proto file %q failed, %s", pbPath, err)
 	}
 
 	pbSet := &descriptorpb.FileDescriptorSet{}
 	err = proto.Unmarshal(pbData, pbSet)
 	if err != nil {
-		panic(fmt.Errorf("读取Protobuf文件 %q 失败，%s", pbPath, err))
+		log.Panicf("read proto file %q failed, %s", pbPath, err)
 	}
 
 	pbFiles := protoregistry.GlobalFiles
@@ -99,7 +100,7 @@ func loadDependencyProtobuf() {
 	for _, fdProto := range pbSet.File {
 		pbFile, err := protodesc.NewFile(fdProto, pbFiles)
 		if err != nil {
-			panic(fmt.Errorf("读取Protobuf文件 %q 失败，%s", pbPath, err))
+			log.Panicf("read proto file %q failed, %s", pbPath, err)
 		}
 
 		_, err = pbFiles.FindFileByPath(pbFile.Path())
@@ -107,28 +108,31 @@ func loadDependencyProtobuf() {
 			continue
 		}
 		if !errors.Is(err, protoregistry.NotFound) {
-			panic(fmt.Errorf("读取Protobuf文件 %q 失败，%s", pbPath, err))
+			log.Panicf("read proto file %q failed, %s", pbPath, err)
 		}
 
 		err = pbFiles.RegisterFile(pbFile)
 		if err != nil {
-			panic(fmt.Errorf("读取Protobuf文件 %q 失败，%s", pbPath, err))
+			log.Panicf("read proto file %q failed, %s", pbPath, err)
 		}
 
-		regProtobufTypes(pbTypes, pbFile)
+		err = registerProtoTypes(pbTypes, pbFile)
+		if err != nil {
+			log.Panicf("register proto type %q failed, %s", pbFile.FullName(), err)
+		}
 	}
 }
 
-func loadProtobuf(pbPath string) {
+func loadProtoFile(pbPath string) {
 	pbData, err := os.ReadFile(pbPath)
 	if err != nil {
-		panic(fmt.Errorf("读取Protobuf文件 %q 失败，%s", pbPath, err))
+		log.Panicf("read proto file %q failed, %s", pbPath, err)
 	}
 
 	pbSet := &descriptorpb.FileDescriptorSet{}
 	err = proto.Unmarshal(pbData, pbSet)
 	if err != nil {
-		panic(fmt.Errorf("读取Protobuf文件 %q 失败，%s", pbPath, err))
+		log.Panicf("read proto file %q failed, %s", pbPath, err)
 	}
 
 	pbFiles := protoregistry.GlobalFiles
@@ -137,7 +141,7 @@ func loadProtobuf(pbPath string) {
 	for _, fdProto := range pbSet.File {
 		pbFile, err := protodesc.NewFile(fdProto, pbFiles)
 		if err != nil {
-			panic(fmt.Errorf("读取Protobuf文件 %q 失败，%s", pbPath, err))
+			log.Panicf("read proto file %q failed, %s", pbPath, err)
 		}
 
 		_, err = pbFiles.FindFileByPath(pbFile.Path())
@@ -145,63 +149,69 @@ func loadProtobuf(pbPath string) {
 			continue
 		}
 		if !errors.Is(err, protoregistry.NotFound) {
-			panic(fmt.Errorf("读取Protobuf文件 %q 失败，%s", pbPath, err))
+			log.Panicf("read proto file %q failed, %s", pbPath, err)
 		}
 
 		err = pbFiles.RegisterFile(pbFile)
 		if err != nil {
-			panic(fmt.Errorf("读取Protobuf文件 %q 失败，%s", pbPath, err))
+			log.Panicf("read proto file %q failed, %s", pbPath, err)
 		}
 
-		regProtobufTypes(pbTypes, pbFile)
+		err = registerProtoTypes(pbTypes, pbFile)
+		if err != nil {
+			log.Panicf("register proto type %q failed, %s", pbFile.FullName(), err)
+		}
 	}
 }
 
 func genData(excelPath string) {
 	excelFile, err := excelize.OpenFile(excelPath)
 	if err != nil {
-		panic(fmt.Errorf("打开Excel文件 %q 失败，%s", excelPath, err))
+		log.Panicf("open excel file %q failed, %s", excelPath, err)
 	}
 	defer excelFile.Close()
 
-	loadProtobuf(filepath.Join(viper.GetString("pb_dir"), snake2Camel(strings.TrimSuffix(filepath.Base(excelPath), filepath.Ext(excelPath)))+".protoset"))
+	loadProtoFile(filepath.Join(viper.GetString("pb_dir"), snake2Camel(strings.TrimSuffix(filepath.Base(excelPath), filepath.Ext(excelPath)))+".protoset"))
 
-	tableMsg := genProtobufMessage(excelFile)
+	tableMsg := genProtoMessage(excelFile)
 	if tableMsg == nil {
-		log.Printf("导出Excel文件 %q 没有数据。", excelPath)
+		log.Printf("export excel file %q skipped: no data.", excelPath)
 		return
 	}
 
 	if outDir := viper.GetString("binary_out"); outDir != "" {
 		outFile, err := genBinaryData(tableMsg, outDir)
 		if err != nil {
-			panic(fmt.Errorf("导出Excel文件 %q Binary数据文件失败，%s", excelPath, err))
+			log.Panicf("export excel file %q binary data file failed, %s", excelPath, err)
 		}
-		log.Printf("导出Excel文件 %q Binary数据文件 %q 成功。", excelPath, outFile)
+		log.Printf("export excel file %q binary data file %q succeeded.", excelPath, outFile)
 	}
 
 	if outDir := viper.GetString("json_out"); outDir != "" {
 		outFile, err := genJsonData(tableMsg, outDir, viper.GetBool("json_multiline"), viper.GetString("json_indent"))
 		if err != nil {
-			panic(fmt.Errorf("导出Excel文件 %q Json数据文件失败，%s", excelPath, err))
+			log.Panicf("export excel file %q JSON data file failed, %s", excelPath, err)
 		}
-		log.Printf("导出Excel文件 %q Json数据文件 %q 成功。", excelPath, outFile)
+		log.Printf("export excel file %q JSON data file %q succeeded.", excelPath, outFile)
 	}
 }
 
-type ProtobufDescriptors interface {
+type ProtoDescriptors interface {
 	Enums() protoreflect.EnumDescriptors
 	Messages() protoreflect.MessageDescriptors
 	Extensions() protoreflect.ExtensionDescriptors
 }
 
-func regProtobufTypes(pbTypes *protoregistry.Types, desc ProtobufDescriptors) error {
+func registerProtoTypes(pbTypes *protoregistry.Types, desc ProtoDescriptors) error {
 	for i := range desc.Extensions().Len() {
 		ext := desc.Extensions().Get(i)
 
 		_, err := pbTypes.FindExtensionByName(ext.FullName())
-		if !errors.Is(err, protoregistry.NotFound) {
+		if err == nil {
 			continue
+		}
+		if !errors.Is(err, protoregistry.NotFound) {
+			return err
 		}
 
 		err = pbTypes.RegisterExtension(dynamicpb.NewExtensionType(ext))
@@ -213,9 +223,12 @@ func regProtobufTypes(pbTypes *protoregistry.Types, desc ProtobufDescriptors) er
 	for i := range desc.Enums().Len() {
 		enum := desc.Enums().Get(i)
 
-		_, err := pbTypes.FindExtensionByName(enum.FullName())
-		if !errors.Is(err, protoregistry.NotFound) {
+		_, err := pbTypes.FindEnumByName(enum.FullName())
+		if err == nil {
 			continue
+		}
+		if !errors.Is(err, protoregistry.NotFound) {
+			return err
 		}
 
 		err = pbTypes.RegisterEnum(dynamicpb.NewEnumType(enum))
@@ -227,9 +240,12 @@ func regProtobufTypes(pbTypes *protoregistry.Types, desc ProtobufDescriptors) er
 	for i := range desc.Messages().Len() {
 		msg := desc.Messages().Get(i)
 
-		_, err := pbTypes.FindExtensionByName(msg.FullName())
-		if !errors.Is(err, protoregistry.NotFound) {
+		_, err := pbTypes.FindMessageByName(msg.FullName())
+		if err == nil {
 			continue
+		}
+		if !errors.Is(err, protoregistry.NotFound) {
+			return err
 		}
 
 		err = pbTypes.RegisterMessage(dynamicpb.NewMessageType(msg))
@@ -237,7 +253,7 @@ func regProtobufTypes(pbTypes *protoregistry.Types, desc ProtobufDescriptors) er
 			return err
 		}
 
-		err = regProtobufTypes(pbTypes, msg)
+		err = registerProtoTypes(pbTypes, msg)
 		if err != nil {
 			return err
 		}

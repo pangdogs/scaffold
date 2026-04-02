@@ -20,35 +20,29 @@
 package main
 
 import (
-	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"log"
 	"os"
 	"path/filepath"
 	"unicode"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func main() {
 	cmd := &cobra.Command{
-		Short: "Excel表格处理工具，生成表格结构代码和导出数据文件。",
-		PreRun: func(cmd *cobra.Command, args []string) {
-			viper.BindPFlags(cmd.Flags())
-		},
+		Short: "Excel table processing tool for generating schema code and exporting data files.",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
 		CompletionOptions: cobra.CompletionOptions{
-			DisableDefaultCmd:   true,
-			DisableNoDescFlag:   true,
-			DisableDescriptions: true,
+			DisableDefaultCmd: true,
 		},
 	}
-	cmd.PersistentFlags().StringSlice("excel_files", nil, "指定输入Excel文件列表（优先）。")
-	cmd.PersistentFlags().String("excel_dir", "", "指定输入Excel文件目录。")
 
 	protoCmd := &cobra.Command{
 		Use:   "proto",
-		Short: "生成Excel结构Protobuf文件。",
+		Short: "Generate excel schema proto files.",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 
@@ -57,17 +51,17 @@ func main() {
 
 				for _, path := range excelFilePaths {
 					if filepath.Ext(path) != ".xlsx" {
-						panic(fmt.Errorf("[--excel_files]文件 %q 错误，文件名后缀名必须为.xlsx", path))
+						log.Panicf("[--excel_files] file %q is invalid: file extension must be .xlsx", path)
 					}
 					if !unicode.IsLetter(rune(filepath.Base(path)[0])) {
-						panic(fmt.Errorf("[--excel_files]文件 %q 错误，文件名首字符必须为字母", path))
+						log.Panicf("[--excel_files] file %q is invalid: the first character of the file name must be a letter", path)
 					}
 					stat, err := os.Stat(path)
 					if err != nil {
-						panic(fmt.Errorf("[--excel_files]文件 %q 错误，%s", path, err))
+						log.Panicf("[--excel_files] file %q is invalid: %s", path, err)
 					}
 					if stat.IsDir() {
-						panic(fmt.Errorf("[--excel_files]文件 %q 错误，不能为文件夹", path))
+						log.Panicf("[--excel_files] file %q is invalid: directories are not allowed", path)
 					}
 				}
 			}
@@ -77,10 +71,10 @@ func main() {
 				if excelDir != "" {
 					stat, err := os.Stat(excelDir)
 					if err != nil {
-						panic(fmt.Errorf("[--excel_dir]文件夹错误，%s", err))
+						log.Panicf("[--excel_dir] directory is invalid: %s", err)
 					}
 					if !stat.IsDir() {
-						panic("[--excel_dir]文件夹错误，必须为文件夹")
+						log.Panic("[--excel_dir] path must be a directory")
 					}
 				}
 			}
@@ -88,54 +82,70 @@ func main() {
 			{
 				pkg := viper.GetString("pb_package")
 				if pkg == "" {
-					panic("[--pb_package]值不能为空")
+					log.Panic("[--pb_package] value cannot be empty")
+				}
+			}
+
+			{
+				uniqueIndexAs := viper.GetString("pb_unique_index_as")
+				switch uniqueIndexAs {
+				case "hash_unique_index", "sorted_unique_index":
+					break
+				default:
+					log.Panicf("[--pb_unique_index_as] value must be hash_unique_index or sorted_unique_index, but got %q", uniqueIndexAs)
 				}
 			}
 		},
 		Run: cmdGenProto,
 	}
-	protoCmd.Flags().String("pb_out", "", "指定输出Protobuf文件目录。")
-	protoCmd.Flags().String("pb_package", "excel", "指定输出Protobuf文件包名。")
-	protoCmd.Flags().StringSlice("pb_imports", nil, "指定输出Protobuf文件导入项。")
-	protoCmd.Flags().Int("pb_custom_options", 10000, "Protobuf自定义选项编号。")
-	protoCmd.Flags().StringToString("pb_options", map[string]string{"go_package": "./excel"}, "指定输出Protobuf文件选项。")
+	protoCmd.Flags().StringSlice("excel_files", nil, "Specify the input excel file list (preferred).")
+	protoCmd.Flags().String("excel_dir", "", "Specify the input excel file directory.")
+	protoCmd.Flags().String("pb_out", "", "Specify the output proto file directory.")
+	protoCmd.Flags().String("pb_package", "excel", "Specify the output proto package name.")
+	protoCmd.Flags().StringSlice("pb_imports", nil, "Specify output proto imports.")
+	protoCmd.Flags().Int("pb_custom_options", 10000, "Specify the custom proto option base number.")
+	protoCmd.Flags().StringToString("pb_options", map[string]string{"go_package": "./excel"}, "Specify output proto file options.")
+	protoCmd.Flags().String("pb_unique_index_as", "hash_unique_index", "Specify how `unique_index` is emitted in proto file (hash_unique_index/sorted_unique_index).")
+	protoCmd.Flags().StringSlice("targets", nil, "Specify output target platforms and control access by platform.")
 
 	codeCmd := &cobra.Command{
 		Use:   "code",
-		Short: "生成Excel数据访问代码。",
+		Short: "Generate excel data access code.",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 
 			{
 				pbDir := viper.GetString("pb_dir")
 				if pbDir == "" {
-					panic("[--pb_dir]值不能为空")
+					log.Panic("[--pb_dir] value cannot be empty")
 				}
 				stat, err := os.Stat(pbDir)
 				if err != nil {
-					panic(fmt.Errorf("[--pb_dir]文件夹错误，%s", err))
+					log.Panicf("[--pb_dir] directory is invalid: %s", err)
 				}
 				if !stat.IsDir() {
-					panic("[--pb_dir]文件夹错误，必须为文件夹")
+					log.Panic("[--pb_dir] path must be a directory")
 				}
 			}
 
 			{
 				pkg := viper.GetString("pb_package")
 				if pkg == "" {
-					panic("[--pb_package]值不能为空")
+					log.Panic("[--pb_package] value cannot be empty")
 				}
 			}
 		},
 		Run: cmdGenCode,
 	}
-	codeCmd.Flags().String("pb_dir", "", "指定Excel编译输出Protobuf文件的目录。")
-	codeCmd.Flags().String("pb_package", "excel", "指定Excel编译输出Protobuf文件的包名。")
-	codeCmd.Flags().String("go_out", "", "输出Golang代码目录。")
+	codeCmd.Flags().String("pb_dir", "", "Specify the directory of proto files generated by excel compilation.")
+	codeCmd.Flags().String("pb_package", "excel", "Specify the proto package name generated by excel compilation.")
+	codeCmd.Flags().String("go_out", "", "Output directory for Go code.")
+	codeCmd.Flags().String("gdscript_out", "", "Output directory for GDScript code.")
+	codeCmd.Flags().String("gdscript_default_load_data_dir", "res://res/excel/", "Default data loading directory in generated GDScript code.")
 
 	dataCmd := &cobra.Command{
 		Use:   "data",
-		Short: "导出Excel数据。",
+		Short: "Export excel data.",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 
@@ -144,17 +154,17 @@ func main() {
 
 				for _, path := range excelFilePaths {
 					if filepath.Ext(path) != ".xlsx" {
-						panic(fmt.Errorf("[--excel_files]文件 %q 错误，文件名后缀名必须为.xlsx", path))
+						log.Panicf("[--excel_files] file %q is invalid: file extension must be .xlsx", path)
 					}
 					if !unicode.IsLetter(rune(filepath.Base(path)[0])) {
-						panic(fmt.Errorf("[--excel_files]文件 %q 错误，文件名首字符必须为字母", path))
+						log.Panicf("[--excel_files] file %q is invalid: the first character of the file name must be a letter", path)
 					}
 					stat, err := os.Stat(path)
 					if err != nil {
-						panic(fmt.Errorf("[--excel_files]文件 %q 错误，%s", path, err))
+						log.Panicf("[--excel_files] file %q is invalid: %s", path, err)
 					}
 					if stat.IsDir() {
-						panic(fmt.Errorf("[--excel_files]文件 %q 错误，不能为文件夹", path))
+						log.Panicf("[--excel_files] file %q is invalid: directories are not allowed", path)
 					}
 				}
 			}
@@ -164,10 +174,10 @@ func main() {
 				if excelDir != "" {
 					stat, err := os.Stat(excelDir)
 					if err != nil {
-						panic(fmt.Errorf("[--excel_dir]文件夹错误，%s", err))
+						log.Panicf("[--excel_dir] directory is invalid: %s", err)
 					}
 					if !stat.IsDir() {
-						panic("[--excel_dir]文件夹错误，必须为文件夹")
+						log.Panic("[--excel_dir] path must be a directory")
 					}
 				}
 			}
@@ -175,37 +185,39 @@ func main() {
 			{
 				pbDir := viper.GetString("pb_dir")
 				if pbDir == "" {
-					panic("[--pb_dir]值不能为空")
+					log.Panic("[--pb_dir] value cannot be empty")
 				}
 				stat, err := os.Stat(pbDir)
 				if err != nil {
-					panic(fmt.Errorf("[--pb_dir]文件夹错误，%s", err))
+					log.Panicf("[--pb_dir] directory is invalid: %s", err)
 				}
 				if !stat.IsDir() {
-					panic("[--pb_dir]文件夹错误，必须为文件夹")
+					log.Panic("[--pb_dir] path must be a directory")
 				}
 			}
 
 			{
 				pkg := viper.GetString("pb_package")
 				if pkg == "" {
-					panic("[--pb_package]值不能为空")
+					log.Panic("[--pb_package] value cannot be empty")
 				}
 			}
 		},
 		Run: cmdGenData,
 	}
-	dataCmd.Flags().String("pb_dir", "", "指定Excel编译输出Protobuf文件的目录。")
-	dataCmd.Flags().String("pb_package", "excel", "指定Excel编译输出Protobuf文件的包名。")
-	dataCmd.Flags().Bool("gzip", false, "是否使用Gzip压缩数据。")
-	dataCmd.Flags().String("binary_out", "", "输出Binary数据目录。")
-	dataCmd.Flags().String("json_out", "", "输出Json数据目录。")
-	dataCmd.Flags().Bool("json_multiline", false, "Json数据是否多行。")
-	dataCmd.Flags().String("json_indent", "", "Json数据缩进。")
+	dataCmd.Flags().StringSlice("excel_files", nil, "Specify the input excel file list (preferred).")
+	dataCmd.Flags().String("excel_dir", "", "Specify the input excel file directory.")
+	dataCmd.Flags().String("pb_dir", "", "Specify the directory of proto files generated by excel compilation.")
+	dataCmd.Flags().String("pb_package", "excel", "Specify the proto package name generated by excel compilation.")
+	dataCmd.Flags().StringSlice("targets", nil, "Specify output target platforms and control access by platform.")
+	dataCmd.Flags().String("binary_out", "", "Output directory for binary data.")
+	dataCmd.Flags().String("json_out", "", "Output directory for JSON data.")
+	dataCmd.Flags().Bool("json_multiline", false, "Whether JSON data should be multiline.")
+	dataCmd.Flags().String("json_indent", "", "Indent string for JSON data.")
 
 	cmd.AddCommand(protoCmd, codeCmd, dataCmd)
 
 	if err := cmd.Execute(); err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 }

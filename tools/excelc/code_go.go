@@ -21,21 +21,23 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+	"text/template"
+
 	"git.golaxy.org/core/utils/generic"
 	"github.com/spf13/viper"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
-	"os"
-	"path/filepath"
-	"strings"
-	"text/template"
 )
 
 func genGoCode(outDir string) {
 	extensions, err := parseExtensions(protoregistry.GlobalTypes)
 	if err != nil {
-		panic(fmt.Errorf("解析Protobuf文件失败，%s", err))
+		log.Panicf("parse proto file failed, %s", err)
 	}
 
 	var msgDecls generic.SliceMap[string, protoreflect.MessageType]
@@ -64,24 +66,26 @@ type Tables struct {
 	{{- end}}
 }
 
-func (tabs *Tables) LoadFromBinaryFiles(dir string) error {
+func LoadBinaryFiles(dir string) (*Tables, error) {
+	tabs := &Tables{}
 	{{- range .Tables}}
 	tabs.{{.K}} = &{{.K}}{}
 	if err := excelutils.LoadTableFromBinaryFile(tabs.{{.K}}, filepath.Join(dir, "{{.K}}.bin")); err != nil {
-		return err
+		return nil, err
 	}
 	{{- end}}
-	return nil
+	return tabs, nil
 }
 
-func (tabs *Tables) LoadFromJsonFiles(dir string) error {
+func LoadJsonFiles(dir string) (*Tables, error) {
+	tabs := &Tables{}
 	{{- range .Tables}}
 	tabs.{{.K}} = &{{.K}}{}
 	if err := excelutils.LoadTableFromJsonFile(tabs.{{.K}}, filepath.Join(dir, "{{.K}}.json")); err != nil {
-		return err
+		return nil, err
 	}
 	{{- end}}
-	return nil
+	return tabs, nil
 }
 `
 
@@ -107,12 +111,12 @@ func (tabs *Tables) LoadFromJsonFiles(dir string) error {
 
 	file, err := os.OpenFile(outFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	defer file.Close()
 
 	err = t.Execute(file, args)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 }

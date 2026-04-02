@@ -22,8 +22,9 @@ package excelutils
 import (
 	"cmp"
 	"errors"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"math"
+
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 func BooleanToIndex(b bool) uint64 {
@@ -91,6 +92,19 @@ func AnyToIndex(v any) (uint64, error) {
 }
 
 func ProtoMessageFieldToIndex(msg protoreflect.Message, field protoreflect.FieldDescriptor) (uint64, error) {
+	if field == nil {
+		return 0, errors.New("field is nil")
+	}
+	if msg == nil {
+		return 0, errors.New("message is nil")
+	}
+	if !msg.IsValid() {
+		msg = msg.Type().Zero()
+	}
+	if containing := field.ContainingMessage(); containing == nil || msg.Descriptor().FullName() != containing.FullName() {
+		return 0, errors.New("field does not belong to message")
+	}
+
 	fieldValue := msg.Get(field)
 	if !fieldValue.IsValid() {
 		return 0, errors.New("field is invalid")

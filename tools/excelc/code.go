@@ -20,15 +20,16 @@
 package main
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"io/fs"
 	"path/filepath"
 	"unicode"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func cmdGenCode(cmd *cobra.Command, args []string) {
-	loadDependencyProtobuf()
+	loadDependencyProtoFile()
 
 	filepath.Walk(viper.GetString("pb_dir"), func(path string, info fs.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
@@ -41,12 +42,17 @@ func cmdGenCode(cmd *cobra.Command, args []string) {
 			return nil
 		}
 
-		loadProtobuf(path)
+		loadProtoFile(path)
 		return nil
 	})
 
 	goCodeDir := viper.GetString("go_out")
 	if goCodeDir != "" {
 		genGoCode(goCodeDir)
+	}
+
+	gdscriptCodeDir := viper.GetString("gdscript_out")
+	if gdscriptCodeDir != "" {
+		genGDScriptCode(gdscriptCodeDir)
 	}
 }
