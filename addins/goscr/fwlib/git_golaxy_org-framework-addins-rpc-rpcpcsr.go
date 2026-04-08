@@ -25,7 +25,6 @@ func init() {
 		"ErrDistEntityNodeNotFound":       reflect.ValueOf(&rpcpcsr.ErrDistEntityNodeNotFound).Elem(),
 		"ErrDistEntityNotFound":           reflect.ValueOf(&rpcpcsr.ErrDistEntityNotFound).Elem(),
 		"ErrEntityNotFound":               reflect.ValueOf(&rpcpcsr.ErrEntityNotFound).Elem(),
-		"ErrGroupChanIsFull":              reflect.ValueOf(&rpcpcsr.ErrGroupChanIsFull).Elem(),
 		"ErrGroupNotFound":                reflect.ValueOf(&rpcpcsr.ErrGroupNotFound).Elem(),
 		"ErrIncorrectDestAddress":         reflect.ValueOf(&rpcpcsr.ErrIncorrectDestAddress).Elem(),
 		"ErrMethodNotFound":               reflect.ValueOf(&rpcpcsr.ErrMethodNotFound).Elem(),

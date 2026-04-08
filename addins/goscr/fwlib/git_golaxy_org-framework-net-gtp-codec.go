@@ -48,46 +48,46 @@ func init() {
 // _git_golaxy_org_framework_net_gtp_codec_IAuthentication is an interface wrapper for IAuthentication type
 type _git_golaxy_org_framework_net_gtp_codec_IAuthentication struct {
 	IValue          interface{}
-	WAuth           func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst []byte, err error)
-	WSign           func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst binaryutil.Bytes, err error)
-	WSizeOfAddition func(msgLen int) (int, error)
+	WAuth           func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (authBuf []byte, err error)
+	WSign           func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (signedBuf binaryutil.Bytes, err error)
+	WSizeOfAddition func(msgLen int) (size int, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) Auth(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst []byte, err error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) Auth(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (authBuf []byte, err error) {
 	return W.WAuth(msgId, flags, msgBuf)
 }
-func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) Sign(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (dst binaryutil.Bytes, err error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) Sign(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (signedBuf binaryutil.Bytes, err error) {
 	return W.WSign(msgId, flags, msgBuf)
 }
-func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) SizeOfAddition(msgLen int) (int, error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) SizeOfAddition(msgLen int) (size int, err error) {
 	return W.WSizeOfAddition(msgLen)
 }
 
 // _git_golaxy_org_framework_net_gtp_codec_ICompression is an interface wrapper for ICompression type
 type _git_golaxy_org_framework_net_gtp_codec_ICompression struct {
 	IValue      interface{}
-	WCompress   func(src []byte) (dst binaryutil.Bytes, compressed bool, err error)
-	WUncompress func(src []byte) (dst binaryutil.Bytes, err error)
+	WCompress   func(src []byte) (compressedBuf binaryutil.Bytes, compressed bool, err error)
+	WUncompress func(src []byte, max int) (uncompressedBuf binaryutil.Bytes, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_codec_ICompression) Compress(src []byte) (dst binaryutil.Bytes, compressed bool, err error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_ICompression) Compress(src []byte) (compressedBuf binaryutil.Bytes, compressed bool, err error) {
 	return W.WCompress(src)
 }
-func (W _git_golaxy_org_framework_net_gtp_codec_ICompression) Uncompress(src []byte) (dst binaryutil.Bytes, err error) {
-	return W.WUncompress(src)
+func (W _git_golaxy_org_framework_net_gtp_codec_ICompression) Uncompress(src []byte, max int) (uncompressedBuf binaryutil.Bytes, err error) {
+	return W.WUncompress(src, max)
 }
 
 // _git_golaxy_org_framework_net_gtp_codec_IEncryption is an interface wrapper for IEncryption type
 type _git_golaxy_org_framework_net_gtp_codec_IEncryption struct {
 	IValue          interface{}
-	WSizeOfAddition func(msgLen int) (int, error)
-	WTransforming   func(dst []byte, src []byte) (binaryutil.Bytes, error)
+	WSizeOfAddition func(msgLen int) (size int, err error)
+	WTransforming   func(dst []byte, src []byte) (transformedBuf binaryutil.Bytes, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_codec_IEncryption) SizeOfAddition(msgLen int) (int, error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_IEncryption) SizeOfAddition(msgLen int) (size int, err error) {
 	return W.WSizeOfAddition(msgLen)
 }
-func (W _git_golaxy_org_framework_net_gtp_codec_IEncryption) Transforming(dst []byte, src []byte) (binaryutil.Bytes, error) {
+func (W _git_golaxy_org_framework_net_gtp_codec_IEncryption) Transforming(dst []byte, src []byte) (transformedBuf binaryutil.Bytes, err error) {
 	return W.WTransforming(dst, src)
 }
 

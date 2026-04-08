@@ -25,6 +25,7 @@ import (
 	"git.golaxy.org/framework/addins/rpc"
 	"git.golaxy.org/framework/addins/rpcstack"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 	"reflect"
 	"sync"
 	"time"
@@ -189,12 +190,14 @@ type _git_golaxy_org_framework_IRuntime struct {
 	WFrame                    func() runtime.Frame
 	WId                       func() uid.Id
 	WInstanceFaceCache        func() iface.Cache
+	WL                        func() *zap.Logger
 	WManaged                  func() *event.ManagedHandles
 	WName                     func() string
 	WParentContext            func() context.Context
 	WRPCStack                 func() rpcstack.IRPCStack
 	WReflected                func() reflect.Value
 	WReportError              func() chan error
+	WS                        func() *zap.SugaredLogger
 	WService                  func() framework.IService
 	WString                   func() string
 	WTerminate                func() async.Future
@@ -248,6 +251,7 @@ func (W _git_golaxy_org_framework_IRuntime) Id() uid.Id           { return W.WId
 func (W _git_golaxy_org_framework_IRuntime) InstanceFaceCache() iface.Cache {
 	return W.WInstanceFaceCache()
 }
+func (W _git_golaxy_org_framework_IRuntime) L() *zap.Logger                 { return W.WL() }
 func (W _git_golaxy_org_framework_IRuntime) Managed() *event.ManagedHandles { return W.WManaged() }
 func (W _git_golaxy_org_framework_IRuntime) Name() string                   { return W.WName() }
 func (W _git_golaxy_org_framework_IRuntime) ParentContext() context.Context {
@@ -256,6 +260,7 @@ func (W _git_golaxy_org_framework_IRuntime) ParentContext() context.Context {
 func (W _git_golaxy_org_framework_IRuntime) RPCStack() rpcstack.IRPCStack { return W.WRPCStack() }
 func (W _git_golaxy_org_framework_IRuntime) Reflected() reflect.Value     { return W.WReflected() }
 func (W _git_golaxy_org_framework_IRuntime) ReportError() chan error      { return W.WReportError() }
+func (W _git_golaxy_org_framework_IRuntime) S() *zap.SugaredLogger        { return W.WS() }
 func (W _git_golaxy_org_framework_IRuntime) Service() framework.IService  { return W.WService() }
 func (W _git_golaxy_org_framework_IRuntime) String() string {
 	if W.WString == nil {
@@ -302,6 +307,7 @@ type _git_golaxy_org_framework_IService struct {
 	WErr                   func() error
 	WId                    func() uid.Id
 	WInstanceFaceCache     func() iface.Cache
+	WL                     func() *zap.Logger
 	WMemory                func() *sync.Map
 	WName                  func() string
 	WParentContext         func() context.Context
@@ -310,6 +316,7 @@ type _git_golaxy_org_framework_IService struct {
 	WRegistry              func() discovery.IRegistry
 	WReplicaNo             func() int
 	WReportError           func() chan error
+	WS                     func() *zap.SugaredLogger
 	WServiceConf           func() *viper.Viper
 	WString                func() string
 	WTerminate             func() async.Future
@@ -363,6 +370,7 @@ func (W _git_golaxy_org_framework_IService) Id() uid.Id { return W.WId() }
 func (W _git_golaxy_org_framework_IService) InstanceFaceCache() iface.Cache {
 	return W.WInstanceFaceCache()
 }
+func (W _git_golaxy_org_framework_IService) L() *zap.Logger    { return W.WL() }
 func (W _git_golaxy_org_framework_IService) Memory() *sync.Map { return W.WMemory() }
 func (W _git_golaxy_org_framework_IService) Name() string      { return W.WName() }
 func (W _git_golaxy_org_framework_IService) ParentContext() context.Context {
@@ -373,6 +381,7 @@ func (W _git_golaxy_org_framework_IService) Reflected() reflect.Value      { ret
 func (W _git_golaxy_org_framework_IService) Registry() discovery.IRegistry { return W.WRegistry() }
 func (W _git_golaxy_org_framework_IService) ReplicaNo() int                { return W.WReplicaNo() }
 func (W _git_golaxy_org_framework_IService) ReportError() chan error       { return W.WReportError() }
+func (W _git_golaxy_org_framework_IService) S() *zap.SugaredLogger         { return W.WS() }
 func (W _git_golaxy_org_framework_IService) ServiceConf() *viper.Viper     { return W.WServiceConf() }
 func (W _git_golaxy_org_framework_IService) String() string {
 	if W.WString == nil {

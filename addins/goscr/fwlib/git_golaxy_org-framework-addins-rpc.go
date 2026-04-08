@@ -29,14 +29,14 @@ func init() {
 		"With":                         reflect.ValueOf(&rpc.With).Elem(),
 
 		// type definitions
-		"EntityProxied":  reflect.ValueOf((*rpc.EntityProxied)(nil)),
-		"GroupProxied":   reflect.ValueOf((*rpc.GroupProxied)(nil)),
-		"IRPC":           reflect.ValueOf((*rpc.IRPC)(nil)),
-		"RPCOptions":     reflect.ValueOf((*rpc.RPCOptions)(nil)),
-		"ResultTuple0":   reflect.ValueOf((*rpc.ResultTuple0)(nil)),
-		"ResultValues":   reflect.ValueOf((*rpc.ResultValues)(nil)),
-		"RuntimeProxied": reflect.ValueOf((*rpc.RuntimeProxied)(nil)),
-		"ServiceProxied": reflect.ValueOf((*rpc.ServiceProxied)(nil)),
+		"EntityProxied":   reflect.ValueOf((*rpc.EntityProxied)(nil)),
+		"GroupProxied":    reflect.ValueOf((*rpc.GroupProxied)(nil)),
+		"IRPC":            reflect.ValueOf((*rpc.IRPC)(nil)),
+		"RPCOptions":      reflect.ValueOf((*rpc.RPCOptions)(nil)),
+		"ResultTupleVoid": reflect.ValueOf((*rpc.ResultTupleVoid)(nil)),
+		"ResultValues":    reflect.ValueOf((*rpc.ResultValues)(nil)),
+		"RuntimeProxied":  reflect.ValueOf((*rpc.RuntimeProxied)(nil)),
+		"ServiceProxied":  reflect.ValueOf((*rpc.ServiceProxied)(nil)),
 
 		// interface wrapper definitions
 		"_IRPC": reflect.ValueOf((*_git_golaxy_org_framework_addins_rpc_IRPC)(nil)),

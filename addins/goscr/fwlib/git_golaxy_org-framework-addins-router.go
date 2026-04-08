@@ -120,13 +120,14 @@ func (W _git_golaxy_org_framework_addins_router_IMapping) Unmapped() async.Futur
 
 // _git_golaxy_org_framework_addins_router_IRouter is an interface wrapper for IRouter type
 type _git_golaxy_org_framework_addins_router_IRouter struct {
-	IValue          interface{}
-	WAddGroup       func(ctx context.Context, name string, ids []uid.Id, ttl time.Duration) (router.IGroup, error)
-	WDeleteGroup    func(ctx context.Context, name string)
-	WGetGroupByAddr func(ctx context.Context, addr string) (router.IGroup, bool)
-	WGetGroupByName func(ctx context.Context, name string) (router.IGroup, bool)
-	WLookup         func(id uid.Id) (router.IMapping, bool)
-	WMap            func(entityId uid.Id, sessionId uid.Id) (router.IMapping, error)
+	IValue             interface{}
+	WAddGroup          func(ctx context.Context, name string, ids []uid.Id, ttl time.Duration) (router.IGroup, error)
+	WDeleteGroup       func(ctx context.Context, name string)
+	WGetGroupByAddr    func(ctx context.Context, addr string) (router.IGroup, bool)
+	WGetGroupByName    func(ctx context.Context, name string) (router.IGroup, bool)
+	WGetGroupsByEntity func(ctx context.Context, entityId uid.Id) []router.IGroup
+	WLookup            func(id uid.Id) (router.IMapping, bool)
+	WMap               func(entityId uid.Id, sessionId uid.Id) (router.IMapping, error)
 }
 
 func (W _git_golaxy_org_framework_addins_router_IRouter) AddGroup(ctx context.Context, name string, ids []uid.Id, ttl time.Duration) (router.IGroup, error) {
@@ -140,6 +141,9 @@ func (W _git_golaxy_org_framework_addins_router_IRouter) GetGroupByAddr(ctx cont
 }
 func (W _git_golaxy_org_framework_addins_router_IRouter) GetGroupByName(ctx context.Context, name string) (router.IGroup, bool) {
 	return W.WGetGroupByName(ctx, name)
+}
+func (W _git_golaxy_org_framework_addins_router_IRouter) GetGroupsByEntity(ctx context.Context, entityId uid.Id) []router.IGroup {
+	return W.WGetGroupsByEntity(ctx, entityId)
 }
 func (W _git_golaxy_org_framework_addins_router_IRouter) Lookup(id uid.Id) (router.IMapping, bool) {
 	return W.WLookup(id)

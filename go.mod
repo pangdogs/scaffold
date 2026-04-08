@@ -3,8 +3,8 @@ module git.golaxy.org/scaffold
 go 1.25.0
 
 require (
-	git.golaxy.org/core v0.4.27-0.20260402121500-79bf5500189c
-	git.golaxy.org/framework v0.3.68-0.20260402122541-60ee9c053139
+	git.golaxy.org/core v0.4.27-0.20260407090430-dd9fb94ed020
+	git.golaxy.org/framework v0.3.68-0.20260407090803-9dcacf605b60
 	github.com/elliotchance/pie/v2 v2.9.1
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/glebarez/sqlite v1.11.0
