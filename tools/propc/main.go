@@ -59,9 +59,7 @@ func main() {
 		},
 		Run: run,
 		CompletionOptions: cobra.CompletionOptions{
-			DisableDefaultCmd:   true,
-			DisableNoDescFlag:   true,
-			DisableDescriptions: true,
+			DisableDefaultCmd: true,
 		},
 	}
 	cmd.Flags().String("decl_file", os.Getenv("GOFILE"), "Property declaration file (.go).")
