@@ -44,16 +44,16 @@ import (
 
 func main() {
 	cmd := &cobra.Command{
-		Short: "属性同步代码生成工具。",
+		Short: "Property synchronization code generator.",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 			{
 				declFile := viper.GetString("decl_file")
 				if declFile == "" {
-					panic("[--decl_file]值不能为空")
+					log.Panic("[--decl_file] cannot be empty")
 				}
 				if _, err := os.Stat(declFile); err != nil {
-					panic(fmt.Errorf("[--decl_file]文件错误，%s", err))
+					log.Panicf("[--decl_file] invalid file: %s, %s", declFile, err)
 				}
 			}
 		},
@@ -64,10 +64,10 @@ func main() {
 			DisableDescriptions: true,
 		},
 	}
-	cmd.Flags().String("decl_file", os.Getenv("GOFILE"), "属性定义文件（.go）。")
+	cmd.Flags().String("decl_file", os.Getenv("GOFILE"), "Property declaration file (.go).")
 
 	if err := cmd.Execute(); err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 }
 
@@ -345,13 +345,13 @@ func (ps *{{$propName}}Sync) {{.Decl}} {
 
 	file, err := os.OpenFile(filepath.Join(filepath.Dir(declFile), filepath.Base(strings.TrimSuffix(declFile, ".go"))+".sync.gen.go"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	defer file.Close()
 
 	err = t.Execute(file, args)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	props.Each(func(_ string, prop *Prop) {
@@ -367,14 +367,14 @@ func loadDeclFile() (*token.FileSet, *ast.File, []byte) {
 
 	fileData, err := ioutil.ReadFile(declFile)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	fset := token.NewFileSet()
 
 	fast, err := parser.ParseFile(fset, declFile, fileData, parser.ParseComments)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	return fset, fast, fileData
