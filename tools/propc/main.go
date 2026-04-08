@@ -148,53 +148,45 @@ func run(*cobra.Command, []string) {
 
 		op.Name = fd.Name.String()
 
+		paramNames, paramDecls, paramTypes, usedNames := expandFieldList(fd.Type.Params, fset, fdata, "p", nil)
+		resultNames, resultDecls, _, _ := expandFieldList(fd.Type.Results, fset, fdata, "r", usedNames)
+
+		op.Args = strings.Join(paramNames, ", ")
+
 		{
-			for i, field := range fd.Type.Params.List {
-				if i > 0 {
-					op.Args += ", "
-				}
-				op.Args += field.Names[0].String()
+			var sig strings.Builder
+			sig.WriteString(fd.Name.String())
+			sig.WriteString("(")
+			sig.WriteString(strings.Join(paramDecls, ", "))
+			sig.WriteString(")")
+
+			if len(resultDecls) > 0 {
+				sig.WriteString(" (")
+				sig.WriteString(strings.Join(resultDecls, ", "))
+				sig.WriteString(")")
 			}
-		}
 
-		{
-			var buf bytes.Buffer
-			printer.Fprint(&buf, fset, fd.Type)
-
-			op.Decl = fd.Name.String() + strings.TrimPrefix(buf.String(), "func")
+			op.Decl = sig.String()
 		}
 
 		{
 			op.Call = fd.Name.String() + "("
-
-			for i, field := range fd.Type.Params.List {
-				if i > 0 {
-					op.Call += ", "
-				}
-				op.Call += field.Names[0].String()
-			}
-
+			op.Call += strings.Join(paramNames, ", ")
 			op.Call += ")"
 		}
 
 		op.ReturnResults = "return"
 
-		if fd.Type.Results != nil && len(fd.Type.Results.List) > 0 {
+		if len(resultNames) > 0 {
 			op.ReturnResults += " "
 
-			for i, field := range fd.Type.Results.List {
+			for i, name := range resultNames {
 				if i > 0 {
 					op.ReturnResults += ", "
 					op.CallResults += ", "
 				}
-
-				if len(field.Names) > 0 {
-					op.ReturnResults += field.Names[0].String()
-					op.CallResults += field.Names[0].String()
-				} else {
-					op.ReturnResults += fmt.Sprintf("r%d", i+1)
-					op.CallResults += fmt.Sprintf("r%d", i+1)
-				}
+				op.ReturnResults += name
+				op.CallResults += name
 			}
 
 			op.CallResults += " = "
@@ -203,10 +195,7 @@ func run(*cobra.Command, []string) {
 		{
 			op.Types = make(map[string]any)
 
-			for _, field := range fd.Type.Params.List {
-				start := fset.Position(field.Type.Pos()).Offset
-				end := fset.Position(field.Type.End()).Offset
-				name := string(fdata[start:end])
+			for _, name := range paramTypes {
 				op.Types[name] = struct{}{}
 			}
 		}
@@ -410,4 +399,63 @@ func getAtti(fset *token.FileSet, fast *ast.File, node ast.Node) url.Values {
 		}
 	}
 	return url.Values{}
+}
+
+func expandFieldList(fields *ast.FieldList, fset *token.FileSet, fdata []byte, unnamedPrefix string, usedNames map[string]struct{}) ([]string, []string, []string, map[string]struct{}) {
+	if usedNames == nil {
+		usedNames = map[string]struct{}{}
+	}
+
+	if fields == nil || len(fields.List) == 0 {
+		return nil, nil, nil, usedNames
+	}
+
+	var (
+		names []string
+		decls []string
+		types []string
+	)
+
+	unnamedCount := 0
+
+	for _, field := range fields.List {
+		start := fset.Position(field.Type.Pos()).Offset
+		end := fset.Position(field.Type.End()).Offset
+		typeName := string(fdata[start:end])
+		types = append(types, typeName)
+
+		if len(field.Names) == 0 {
+			unnamedCount++
+			name := uniqueGeneratedName(unnamedPrefix, unnamedCount, usedNames)
+			names = append(names, name)
+			decls = append(decls, name+" "+typeName)
+			continue
+		}
+
+		for _, ident := range field.Names {
+			name := ident.String()
+			if name == "_" {
+				unnamedCount++
+				name = uniqueGeneratedName(unnamedPrefix, unnamedCount, usedNames)
+			} else {
+				usedNames[name] = struct{}{}
+			}
+			names = append(names, name)
+			decls = append(decls, name+" "+typeName)
+		}
+	}
+
+	return names, decls, types, usedNames
+}
+
+func uniqueGeneratedName(prefix string, n int, usedNames map[string]struct{}) string {
+	for {
+		name := fmt.Sprintf("%s%d", prefix, n)
+		if _, ok := usedNames[name]; ok {
+			n++
+			continue
+		}
+		usedNames[name] = struct{}{}
+		return name
+	}
 }
