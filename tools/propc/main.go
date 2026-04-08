@@ -50,10 +50,10 @@ func main() {
 			{
 				declFile := viper.GetString("decl_file")
 				if declFile == "" {
-					log.Panic("[--decl_file] cannot be empty")
+					log.Panic("[--decl_file] value cannot be empty")
 				}
 				if _, err := os.Stat(declFile); err != nil {
-					log.Panicf("[--decl_file] invalid file: %s, %s", declFile, err)
+					log.Panicf("[--decl_file] file %q is invalid: %s", declFile, err)
 				}
 			}
 		},

@@ -71,10 +71,10 @@ func main() {
 				if excelDir != "" {
 					stat, err := os.Stat(excelDir)
 					if err != nil {
-						log.Panicf("[--excel_dir] directory is invalid: %s", err)
+						log.Panicf("[--excel_dir] directory %q is invalid: %s", excelDir, err)
 					}
 					if !stat.IsDir() {
-						log.Panic("[--excel_dir] path must be a directory")
+						log.Panicf("[--excel_dir] path %q must be a directory", excelDir)
 					}
 				}
 			}
