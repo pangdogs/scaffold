@@ -31,12 +31,14 @@ func init() {
 // _git_golaxy_org_framework_addins_dsvc_IDistService is an interface wrapper for IDistService type
 type _git_golaxy_org_framework_addins_dsvc_IDistService struct {
 	IValue            interface{}
+	WBringUp          func()
 	WFutureController func() *concurrent.FutureController
 	WListen           func(ctx context.Context, handler dsvc.MsgHandler) (async.Future, error)
 	WNodeDetails      func() *dsvc.NodeDetails
 	WSend             func(dst string, msg gap.Msg) error
 }
 
+func (W _git_golaxy_org_framework_addins_dsvc_IDistService) BringUp() { W.WBringUp() }
 func (W _git_golaxy_org_framework_addins_dsvc_IDistService) FutureController() *concurrent.FutureController {
 	return W.WFutureController()
 }

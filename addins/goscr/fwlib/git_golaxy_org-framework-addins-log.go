@@ -11,11 +11,14 @@ import (
 func init() {
 	Symbols["git.golaxy.org/framework/addins/log/log"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"AddIn": reflect.ValueOf(&log.AddIn).Elem(),
-		"JSON":  reflect.ValueOf(log.JSON),
-		"L":     reflect.ValueOf(log.L),
-		"S":     reflect.ValueOf(log.S),
-		"With":  reflect.ValueOf(&log.With).Elem(),
+		"AddIn":             reflect.ValueOf(&log.AddIn).Elem(),
+		"JSON":              reflect.ValueOf(log.JSON),
+		"JSONRawByteString": reflect.ValueOf(log.JSONRawByteString),
+		"JSONRawString":     reflect.ValueOf(log.JSONRawString),
+		"JSONRawStringer":   reflect.ValueOf(log.JSONRawStringer),
+		"L":                 reflect.ValueOf(log.L),
+		"S":                 reflect.ValueOf(log.S),
+		"With":              reflect.ValueOf(&log.With).Elem(),
 
 		// type definitions
 		"ILogger":       reflect.ValueOf((*log.ILogger)(nil)),
