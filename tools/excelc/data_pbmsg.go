@@ -61,12 +61,6 @@ func genProtoMessage(file *excelize.File) proto.Message {
 	var tableHashUniqueIndexes, tableSortedUniqueIndexes generic.UnorderedSliceMap[string, []protoreflect.FieldDescriptor]
 	tableSortedUniqueIndexesData := map[string]*generic.SliceMap[uint64, uint32]{}
 
-	indexItemTypeName := protoreflect.FullName(fmt.Sprintf("%s.IndexItem", viper.GetString("pb_package")))
-	indexItemType, err := pbTypes.FindMessageByName(indexItemTypeName)
-	if err != nil {
-		log.Panicf("parse proto type %q failed, %s", indexItemTypeName, err)
-	}
-
 	indexConflictTypeName := protoreflect.FullName(fmt.Sprintf("%s.IndexConflict", viper.GetString("pb_package")))
 	indexConflictType, err := pbTypes.FindMessageByName(indexConflictTypeName)
 	if err != nil {
@@ -159,7 +153,7 @@ func genProtoMessage(file *excelize.File) proto.Message {
 					for j := range tableType.Descriptor().Fields().Len() {
 						field := tableType.Descriptor().Fields().Get(j)
 
-						indexTypeValue, ok := proto.GetExtension(field.Options(), extensions.IndexTyp).(protoreflect.EnumNumber)
+						indexTypeValue, ok := proto.GetExtension(field.Options(), extensions.IndexType).(protoreflect.EnumNumber)
 						if !ok || indexTypeValue <= 0 {
 							continue
 						}
@@ -333,7 +327,20 @@ func genProtoMessage(file *excelize.File) proto.Message {
 	}
 
 	tableSortedUniqueIndexes.Each(func(indexName string, _ []protoreflect.FieldDescriptor) {
-		tableIndex := tableMsg.Mutable(tableMsg.Descriptor().Fields().ByName(protoreflect.Name(indexName)))
+		tableIndexField := tableMsg.Descriptor().Fields().ByName(protoreflect.Name(indexName))
+		if tableIndexField == nil {
+			log.Panicf("parse proto type %q failed: index field %q not found", tableMsg.Descriptor().FullName(), indexName)
+		}
+
+		tableIndex := tableMsg.Mutable(tableIndexField).Message()
+		valuesField := tableIndex.Descriptor().Fields().ByName("Values")
+		if valuesField == nil {
+			log.Panicf("parse proto type %q failed: field %q not found", tableIndex.Descriptor().FullName(), "Values")
+		}
+		offsetsField := tableIndex.Descriptor().Fields().ByName("Offsets")
+		if offsetsField == nil {
+			log.Panicf("parse proto type %q failed: field %q not found", tableIndex.Descriptor().FullName(), "Offsets")
+		}
 
 		indexData, ok := tableSortedUniqueIndexesData[indexName]
 		if !ok {
@@ -341,11 +348,8 @@ func genProtoMessage(file *excelize.File) proto.Message {
 		}
 
 		indexData.Each(func(value uint64, offset uint32) {
-			indexItem := indexItemType.New()
-			indexItem.Set(indexItem.Descriptor().Fields().ByName("Value"), protoreflect.ValueOfUint64(value))
-			indexItem.Set(indexItem.Descriptor().Fields().ByName("Offset"), protoreflect.ValueOfUint32(offset))
-
-			tableIndex.List().Append(protoreflect.ValueOf(indexItem))
+			tableIndex.Mutable(valuesField).List().Append(protoreflect.ValueOfUint64(value))
+			tableIndex.Mutable(offsetsField).List().Append(protoreflect.ValueOfUint32(offset))
 		})
 	})
 
@@ -1002,7 +1006,7 @@ func parseStructValue(value string) (*yaml.Node, error) {
 
 type Extensions struct {
 	IsColumns, IsTable,
-	Separator, FieldAlias, Scope, IsRows, IndexTyp, IndexFields, HashUniqueIndex, SortedUniqueIndex,
+	Separator, FieldAlias, Scope, IndexType, IndexFields, HashUniqueIndex, SortedUniqueIndex,
 	EnumValueAlias protoreflect.ExtensionType
 }
 
@@ -1040,14 +1044,8 @@ func parseExtensions(pbTypes *protoregistry.Types) (*Extensions, error) {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.IsRows", viper.GetString("pb_package")))
-	extensions.IsRows, err = pbTypes.FindExtensionByName(extName)
-	if err != nil {
-		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
-	}
-
-	extName = protoreflect.FullName(fmt.Sprintf("%s.IndexTyp", viper.GetString("pb_package")))
-	extensions.IndexTyp, err = pbTypes.FindExtensionByName(extName)
+	extName = protoreflect.FullName(fmt.Sprintf("%s.IndexType_", viper.GetString("pb_package")))
+	extensions.IndexType, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
@@ -1064,7 +1062,7 @@ func parseExtensions(pbTypes *protoregistry.Types) (*Extensions, error) {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.SortedUniqueIndex", viper.GetString("pb_package")))
+	extName = protoreflect.FullName(fmt.Sprintf("%s.SortedUniqueIndex_", viper.GetString("pb_package")))
 	extensions.SortedUniqueIndex, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)

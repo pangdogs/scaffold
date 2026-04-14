@@ -53,10 +53,10 @@ import "google/protobuf/descriptor.proto";
 {{.}}
 {{- end}}
 
-message IndexItem {
-	uint64 Value = 1;
-	uint32 Offset = 2;
-} 
+message SortedUniqueIndex {
+	repeated uint64 Values = 1;
+	repeated uint32 Offsets = 2;
+}
 
 message IndexConflict {
 	repeated uint32 Offsets = 1;
@@ -70,6 +70,11 @@ message IndexType {
 	}
 }
 
+message Chunk {
+	uint32 Offset = 1;
+	uint32 Count = 2;
+}
+
 extend google.protobuf.MessageOptions {
 	optional bool IsColumns = {{Add .CustomOptions 101}};
 	optional bool IsTable = {{Add .CustomOptions 102}};
@@ -79,11 +84,10 @@ extend google.protobuf.FieldOptions {
 	optional string Separator = {{Add .CustomOptions 201}};
 	optional string FieldAlias = {{Add .CustomOptions 202}};
 	repeated string Scope = {{Add .CustomOptions 203}};
-	optional bool IsRows = {{Add .CustomOptions 204}};
-	optional IndexType.Enum IndexTyp = {{Add .CustomOptions 205}};
-	optional string IndexFields = {{Add .CustomOptions 206}};
-	repeated int32 HashUniqueIndex = {{Add .CustomOptions 207}};
-	repeated int32 SortedUniqueIndex = {{Add .CustomOptions 208}};
+	optional IndexType.Enum IndexType_ = {{Add .CustomOptions 204}};
+	optional string IndexFields = {{Add .CustomOptions 205}};
+	repeated int32 HashUniqueIndex = {{Add .CustomOptions 206}};
+	repeated int32 SortedUniqueIndex_ = {{Add .CustomOptions 207}};
 }
 
 extend google.protobuf.EnumValueOptions {
@@ -202,21 +206,23 @@ message {{.ProtoType}} {
 
 message {{TableName .ProtoType}} {
 	option ({{$package}}.IsTable) = true;
-	repeated {{.ProtoType}} Rows = 1 [({{$package}}.IsRows) = true];
+	repeated {{.ProtoType}} Rows = 1;
 	{{- $StructHashUniqueIndexesCount := .StructHashUniqueIndexes.Len -}}
 	{{- $StructSortedUniqueIndexesCount := .StructSortedUniqueIndexes.Len -}}
 	{{- range $i, $kv := .StructHashUniqueIndexes}}
-	map<uint64, uint32> HashUniqueIndex{{$kv.K}} = {{Add $i 2}} [({{$package}}.IndexTyp) = HashUniqueIndex, ({{$package}}.IndexFields) = '{{$kv.V}}']; 
+	map<uint64, uint32> HashUniqueIndex{{$kv.K}} = {{Add $i 2}} [({{$package}}.IndexType_) = HashUniqueIndex, ({{$package}}.IndexFields) = '{{$kv.V}}']; 
 	{{- end}}
 	{{- range $i, $kv := .StructHashUniqueIndexes}}
 	map<uint64, IndexConflict> HashUniqueIndex{{$kv.K}}Conflict = {{Add $i 2 $StructHashUniqueIndexesCount}};
 	{{- end}}
 	{{- range $i, $kv := .StructSortedUniqueIndexes}}
-	repeated IndexItem SortedUniqueIndex{{$kv.K}} = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount}} [({{$package}}.IndexTyp) = SortedUniqueIndex, ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	SortedUniqueIndex SortedUniqueIndex{{$kv.K}} = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount}} [({{$package}}.IndexType_) = SortedUniqueIndex, ({{$package}}.IndexFields) = '{{$kv.V}}'];
 	{{- end}}
 	{{- range $i, $kv := .StructSortedUniqueIndexes}}
 	map<uint64, IndexConflict> SortedUniqueIndex{{$kv.K}}Conflict = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount}};
 	{{- end}}
+	uint32 ChunkSize = {{Add 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}};
+	repeated Chunk Chunks = {{Add 3 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}};
 }
 {{end}}
 `

@@ -180,11 +180,19 @@ func genData(excelPath string) {
 	}
 
 	if outDir := viper.GetString("binary_out"); outDir != "" {
-		outFile, err := genBinaryData(tableMsg, outDir)
-		if err != nil {
-			log.Panicf("export excel file %q binary data file failed, %s", excelPath, err)
+		if viper.GetBool("binary_chunked") {
+			idxFile, chunksNum, err := genChunkedBinaryData(tableMsg, outDir)
+			if err != nil {
+				log.Panicf("export excel file %q chunked binary data file failed, %s", excelPath, err)
+			}
+			log.Printf("export excel file %q chunked binary data succeeded: index file %q, %d chunks.", excelPath, idxFile, chunksNum)
+		} else {
+			outFile, err := genBinaryData(tableMsg, outDir)
+			if err != nil {
+				log.Panicf("export excel file %q binary data file failed, %s", excelPath, err)
+			}
+			log.Printf("export excel file %q binary data file %q succeeded.", excelPath, outFile)
 		}
-		log.Printf("export excel file %q binary data file %q succeeded.", excelPath, outFile)
 	}
 
 	if outDir := viper.GetString("json_out"); outDir != "" {

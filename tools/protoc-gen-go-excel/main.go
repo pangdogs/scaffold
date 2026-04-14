@@ -30,7 +30,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
@@ -38,7 +37,6 @@ const (
 	excelutilsPackage = protogen.GoImportPath("git.golaxy.org/scaffold/tools/excelc/excelutils")
 	bytesPackage      = protogen.GoImportPath("bytes")
 	slicesPackage     = protogen.GoImportPath("slices")
-	cmpPackage        = protogen.GoImportPath("cmp")
 	mathPackage       = protogen.GoImportPath("math")
 )
 
@@ -61,8 +59,7 @@ type ProtoDescriptors interface {
 type Extensions struct {
 	IsTable,
 	IsColumns,
-	IsRows,
-	IndexTyp,
+	IndexType,
 	IndexFields protoreflect.ExtensionType
 }
 
@@ -112,8 +109,8 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 			continue
 		}
 
-		fieldRowsIdx := slices.IndexFunc(pbMsg.Field, func(pbField *descriptorpb.FieldDescriptorProto) bool {
-			return proto.GetExtension(pbField.Options, ext.IsRows).(bool)
+		fieldRowsIdx := slices.IndexFunc(m.Fields, func(field *protogen.Field) bool {
+			return string(field.Desc.Name()) == "Rows"
 		})
 		if fieldRowsIdx < 0 {
 			continue
@@ -122,7 +119,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 		defaultMethodsEmitted := false
 
 		for j, f := range m.Fields {
-			indexTypeValue, ok := proto.GetExtension(pbMsg.Field[j].Options, ext.IndexTyp).(protoreflect.EnumNumber)
+			indexTypeValue, ok := proto.GetExtension(pbMsg.Field[j].Options, ext.IndexType).(protoreflect.EnumNumber)
 			if !ok || indexTypeValue <= 0 {
 				continue
 			}
@@ -253,14 +250,17 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 
 				hv := fieldsToIndex(g, indexFieldDecls, false, notFoundArgs.String())
 
-				g.P("itemOffset, ok := ", slicesPackage.Ident("BinarySearchFunc"), "(x.", f.GoName, ", idx, func(item *IndexItem, idx uint64) int { return ", cmpPackage.Ident("Compare"), "(item.Value, idx) } )")
+				g.P("if x.", f.GoName, " == nil {")
+				g.P("\treturn nil, false")
+				g.P("}")
+				g.P()
+				g.P("itemOffset, ok := ", slicesPackage.Ident("BinarySearch"), "(x.", f.GoName, ".Values, idx)")
 				g.P("if !ok {")
 				g.P("\treturn nil, false")
 				g.P("}")
 				g.P()
 
-				g.P("item := x.", f.GoName, "[itemOffset]")
-				g.P("row := x.", fieldRows.GoName, "[item.Offset]")
+				g.P("row := x.", fieldRows.GoName, "[x.", f.GoName, ".Offsets[itemOffset]]")
 				g.P()
 
 				if hv {
@@ -339,14 +339,17 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 
 				hv := fieldsToIndex(g, indexFieldDecls, true, notFoundArgs.String())
 
-				g.P("itemOffset, ok := ", slicesPackage.Ident("BinarySearchFunc"), "(x.", f.GoName, ", idx, func(item *IndexItem, idx uint64) int { return ", cmpPackage.Ident("Compare"), "(item.Value, idx) } )")
+				g.P("if x.", f.GoName, " == nil {")
+				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs.String(), "))")
+				g.P("}")
+				g.P()
+				g.P("itemOffset, ok := ", slicesPackage.Ident("BinarySearch"), "(x.", f.GoName, ".Values, idx)")
 				g.P("if !ok {")
 				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs.String(), "))")
 				g.P("}")
 				g.P()
 
-				g.P("item := x.", f.GoName, "[itemOffset]")
-				g.P("row := x.", fieldRows.GoName, "[item.Offset]")
+				g.P("row := x.", fieldRows.GoName, "[x.", f.GoName, ".Offsets[itemOffset]]")
 				g.P()
 
 				if hv {
@@ -489,14 +492,8 @@ func parseExtensions(file *protogen.File) (*Extensions, error) {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoFullName(file, "IsRows")
-	extensions.IsRows, err = protoregistry.GlobalTypes.FindExtensionByName(extName)
-	if err != nil {
-		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
-	}
-
-	extName = protoFullName(file, "IndexTyp")
-	extensions.IndexTyp, err = protoregistry.GlobalTypes.FindExtensionByName(extName)
+	extName = protoFullName(file, "IndexType_")
+	extensions.IndexType, err = protoregistry.GlobalTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}

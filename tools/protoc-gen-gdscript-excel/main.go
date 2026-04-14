@@ -63,8 +63,7 @@ type ProtoDescriptors interface {
 
 type Extensions struct {
 	IsTable,
-	IsRows,
-	IndexTyp,
+	IndexType,
 	IndexFields protoreflect.ExtensionType
 }
 
@@ -165,11 +164,7 @@ func parseExtensions(file *protogen.File) (*Extensions, error) {
 	if err != nil {
 		return nil, err
 	}
-	result.IsRows, err = findExtension(file, "IsRows")
-	if err != nil {
-		return nil, err
-	}
-	result.IndexTyp, err = findExtension(file, "IndexTyp")
+	result.IndexType, err = findExtension(file, "IndexType_")
 	if err != nil {
 		return nil, err
 	}
@@ -204,8 +199,8 @@ func collectTables(file *protogen.File, ext *Extensions) ([]TableDecl, error) {
 			continue
 		}
 
-		rowsFieldIndex := slices.IndexFunc(pbMsg.Field, func(pbField *descriptorpb.FieldDescriptorProto) bool {
-			return proto.GetExtension(pbField.Options, ext.IsRows).(bool)
+		rowsFieldIndex := slices.IndexFunc(msg.Fields, func(field *protogen.Field) bool {
+			return string(field.Desc.Name()) == "Rows"
 		})
 		if rowsFieldIndex < 0 {
 			return nil, fmt.Errorf("table %s must declare exactly one rows field", msg.Desc.FullName())
@@ -285,7 +280,7 @@ func collectIndexMethods(msg *protogen.Message, pbMsg *descriptorpb.DescriptorPr
 }
 
 func resolveIndexTypeName(field *descriptorpb.FieldDescriptorProto, ext *Extensions, indexType protoreflect.EnumType) (string, error) {
-	indexTypeValue, ok := proto.GetExtension(field.Options, ext.IndexTyp).(protoreflect.EnumNumber)
+	indexTypeValue, ok := proto.GetExtension(field.Options, ext.IndexType).(protoreflect.EnumNumber)
 	if !ok || indexTypeValue <= 0 {
 		return "", nil
 	}
@@ -488,11 +483,13 @@ func emitLookupOffset(g *protogen.GeneratedFile, method IndexMethodDecl, indexFi
 		g.P("\t\tif offset == null:")
 		g.P("\t\t\treturn null")
 	case indexTypeSortedUnique:
-		g.P("\t\tvar item = ExcelUtils.binary_search_index_item(_msg.", indexFieldName, ", idx)")
-		g.P("\t\tif item == null:")
+		g.P("\t\tif _msg.", indexFieldName, " == null:")
+		g.P("\t\t\treturn null")
+		g.P("\t\tvar item_offset = ExcelUtils.binary_search_u64(_msg.", indexFieldName, ".Values, idx)")
+		g.P("\t\tif item_offset < 0:")
 		g.P("\t\t\treturn null")
 		g.P()
-		g.P("\t\tvar offset = item.Offset")
+		g.P("\t\tvar offset = _msg.", indexFieldName, ".Offsets[item_offset]")
 	default:
 		return fmt.Errorf("unsupported index type %q", method.IndexTypeName)
 	}

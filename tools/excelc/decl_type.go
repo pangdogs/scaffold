@@ -256,7 +256,7 @@ func (f *Field) ProtobufMeta() string {
 			if sb.Len() > 0 {
 				sb.WriteString(", ")
 			}
-			sb.WriteString(fmt.Sprintf("(%s.SortedUniqueIndex) = %d", viper.GetString("pb_package"), tag))
+			sb.WriteString(fmt.Sprintf("(%s.SortedUniqueIndex_) = %d", viper.GetString("pb_package"), tag))
 		}
 	}
 
