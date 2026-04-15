@@ -485,11 +485,12 @@ func emitLookupOffset(g *protogen.GeneratedFile, method IndexMethodDecl, indexFi
 	case indexTypeSortedUnique:
 		g.P("\t\tif _msg.", indexFieldName, " == null:")
 		g.P("\t\t\treturn null")
-		g.P("\t\tvar item_offset = ExcelUtils.binary_search_u64(_msg.", indexFieldName, ".Values, idx)")
-		g.P("\t\tif item_offset < 0:")
+		g.P()
+		g.P("\t\tvar idx_offset := ExcelUtils.binary_search_u64(_msg.", indexFieldName, ".Values, idx)")
+		g.P("\t\tif idx_offset < 0:")
 		g.P("\t\t\treturn null")
 		g.P()
-		g.P("\t\tvar offset = _msg.", indexFieldName, ".Offsets[item_offset]")
+		g.P("\t\tvar offset := _msg.", indexFieldName, ".Offsets[idx_offset]")
 	default:
 		return fmt.Errorf("unsupported index type %q", method.IndexTypeName)
 	}
