@@ -42,10 +42,14 @@ const (
 )
 
 type TableDecl struct {
-	Message      *protogen.Message
-	RowsField    *protogen.Field
-	RowsMessage  *protogen.Message
-	IndexMethods []IndexMethodDecl
+	Message            *protogen.Message
+	RowsField          *protogen.Field
+	RowsMessage        *protogen.Message
+	ChunkManifestField *protogen.Field
+	ChunkListField     *protogen.Field
+	ChunkOffsetField   *protogen.Field
+	ChunkCountField    *protogen.Field
+	IndexMethods       []IndexMethodDecl
 }
 
 type IndexMethodDecl struct {
@@ -211,10 +215,40 @@ func collectTables(file *protogen.File, ext *Extensions) ([]TableDecl, error) {
 			return nil, fmt.Errorf("rows field %q in %s must be a message", rowsField.Desc.Name(), msg.Desc.FullName())
 		}
 
+		chunkManifestField := fieldByName(msg.Fields, "ChunkManifest")
+		if chunkManifestField == nil {
+			return nil, fmt.Errorf("table %s must declare chunk manifest field %q", msg.Desc.FullName(), "ChunkManifest")
+		}
+		if chunkManifestField.Message == nil {
+			return nil, fmt.Errorf("chunk manifest field %q in %s must be a message", chunkManifestField.Desc.Name(), msg.Desc.FullName())
+		}
+
+		chunkListField := fieldByName(chunkManifestField.Message.Fields, "Chunks")
+		if chunkListField == nil {
+			return nil, fmt.Errorf("chunk manifest %s must declare field %q", chunkManifestField.Message.Desc.FullName(), "Chunks")
+		}
+		if chunkListField.Message == nil {
+			return nil, fmt.Errorf("chunk list field %q in %s must be a repeated message", chunkListField.Desc.Name(), chunkManifestField.Message.Desc.FullName())
+		}
+
+		chunkOffsetField := fieldByName(chunkListField.Message.Fields, "Offset")
+		if chunkOffsetField == nil {
+			return nil, fmt.Errorf("chunk message %s must declare field %q", chunkListField.Message.Desc.FullName(), "Offset")
+		}
+
+		chunkCountField := fieldByName(chunkListField.Message.Fields, "Count")
+		if chunkCountField == nil {
+			return nil, fmt.Errorf("chunk message %s must declare field %q", chunkListField.Message.Desc.FullName(), "Count")
+		}
+
 		table := TableDecl{
-			Message:     msg,
-			RowsField:   rowsField,
-			RowsMessage: rowsField.Message,
+			Message:            msg,
+			RowsField:          rowsField,
+			RowsMessage:        rowsField.Message,
+			ChunkManifestField: chunkManifestField,
+			ChunkListField:     chunkListField,
+			ChunkOffsetField:   chunkOffsetField,
+			ChunkCountField:    chunkCountField,
 		}
 
 		indexMethods, err := collectIndexMethods(msg, pbMsg, table.RowsMessage, ext, indexType)
@@ -227,6 +261,15 @@ func collectTables(file *protogen.File, ext *Extensions) ([]TableDecl, error) {
 	}
 
 	return tables, nil
+}
+
+func fieldByName(fields []*protogen.Field, name protoreflect.Name) *protogen.Field {
+	for _, field := range fields {
+		if field.Desc.Name() == name {
+			return field
+		}
+	}
+	return nil
 }
 
 func findIndexTypeEnum(file *protogen.File) (protoreflect.EnumType, error) {
@@ -375,21 +418,37 @@ func emitGeneratedHeader(gen *protogen.Plugin, file *protogen.File, g *protogen.
 
 func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
 	tableName := safeIdentifier(table.Message.GoIdent.GoName)
+	chunkedTableName := chunkedTableTypeName(tableName)
 	rowType := protoImportAlias + "." + safeIdentifier(table.RowsMessage.GoIdent.GoName)
 	protoTableType := protoImportAlias + "." + tableName
 	rowFieldName := safeIdentifier(table.RowsField.GoName)
+	chunkManifestFieldName := safeIdentifier(table.ChunkManifestField.GoName)
+	chunksFieldName := safeIdentifier(table.ChunkListField.GoName)
+	chunkOffsetFieldName := safeIdentifier(table.ChunkOffsetField.GoName)
+	chunkCountFieldName := safeIdentifier(table.ChunkCountField.GoName)
 
 	g.P("class ", tableName, ":")
 	g.P("\tvar _msg: ", protoTableType)
 	g.P()
-	g.P("\tfunc _init(msg: ", protoTableType, " = null) -> void:")
-	g.P("\t\t_msg = msg if msg != null else ", protoTableType, ".new()")
+	g.P("\tfunc _init(msg: ", protoTableType, ") -> void:")
+	g.P("\t\t_msg = msg")
 	g.P()
 	g.P("\tfunc rows() -> Array[", rowType, "]:")
-	g.P("\t\treturn _msg.", rowFieldName)
+	g.P("\t\treturn _msg.", rowFieldName, ".duplicate()")
+	g.P()
+	g.P("\tfunc rows_async() -> Array[", rowType, "]:")
+	g.P("\t\treturn rows()")
 	g.P()
 	g.P("\tfunc row_count() -> int:")
 	g.P("\t\treturn _msg.", rowFieldName, ".size()")
+	g.P()
+	g.P("\tfunc row_at(offset: int) -> ", rowType, ":")
+	g.P("\t\tif offset < 0 or offset >= _msg.", rowFieldName, ".size():")
+	g.P("\t\t\treturn null")
+	g.P("\t\treturn _msg.", rowFieldName, "[offset]")
+	g.P()
+	g.P("\tfunc row_at_async(offset: int) -> ", rowType, ":")
+	g.P("\t\treturn row_at(offset)")
 	g.P()
 
 	if len(table.IndexMethods) > 0 {
@@ -414,8 +473,55 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 		}
 	}
 
+	g.P("class ", chunkedTableName, " extends ", tableName, ":")
+	g.P("\tvar _chunk_loader: ExcelUtils.ChunkLoader")
+	g.P()
+	g.P("\tfunc _init(msg: ", protoTableType, ", chunk_base_path: String) -> void:")
+	g.P("\t\tsuper(msg)")
+	g.P("\t\t_chunk_loader = ExcelUtils.ChunkLoader.new(")
+	g.P("\t\t\tchunk_base_path,")
+	g.P("\t\t\t_msg.", chunkManifestFieldName, ".", chunksFieldName, ".size(),")
+	g.P("\t\t\tfunc(): return ", protoTableType, ".new()")
+	g.P("\t\t)")
+	g.P()
+	emitChunkedPublicMethods(
+		g,
+		rowType,
+		chunkManifestFieldName,
+		chunksFieldName,
+		chunkOffsetFieldName,
+		chunkCountFieldName,
+	)
+	if len(table.IndexMethods) > 0 {
+		if err := emitChunkedAsyncDefaultLookupMethod(g, table.IndexMethods[0], rowType, protoImportAlias, messageTypeNames); err != nil {
+			return err
+		}
+	}
+	for _, method := range table.IndexMethods {
+		if err := emitChunkedAsyncLookupMethod(g, method, rowType, protoImportAlias, messageTypeNames); err != nil {
+			return err
+		}
+	}
+	emitChunkLoaderInternalMethods(
+		g,
+		protoTableType,
+		rowType,
+		rowFieldName,
+		chunkManifestFieldName,
+		chunksFieldName,
+		chunkOffsetFieldName,
+		chunkCountFieldName,
+	)
+
 	g.P()
 	return nil
+}
+
+func chunkedTableTypeName(tableName string) string {
+	if strings.HasSuffix(tableName, "Table") {
+		return strings.TrimSuffix(tableName, "Table") + "ChunkedTable"
+	}
+	return tableName + "ChunkedTable"
 }
 
 func emitDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
@@ -428,6 +534,9 @@ func emitDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, 
 	g.P("\tfunc lookup(", argList, ") -> ", rowType, ":")
 	g.P("\t\treturn ", method.LookupMethodName, "(", argNames, ")")
 	g.P()
+	g.P("\tfunc lookup_async(", argList, ") -> ", rowType, ":")
+	g.P("\t\treturn lookup(", argNames, ")")
+	g.P()
 	return nil
 }
 
@@ -437,13 +546,11 @@ func emitLookupMethod(g *protogen.GeneratedFile, table TableDecl, method IndexMe
 		return err
 	}
 	argNames := gdscriptArgumentNames(method.IndexFields)
-	rowFieldName := safeIdentifier(table.RowsField.GoName)
 	indexFieldName := safeIdentifier(method.Field.GoName)
 
 	g.P("\tfunc ", method.LookupMethodName, "(", argList, ") -> ", rowType, ":")
-	g.P("\t\tif _msg == null or _msg.", rowFieldName, ".is_empty():")
+	g.P("\t\tif row_count() <= 0:")
 	g.P("\t\t\treturn null")
-	g.P()
 
 	if len(method.IndexFields) == 1 && supportsDirectIndex(method.IndexFields[0]) {
 		idxExpr, err := directIndexExpression(gdscriptArgumentName(method.IndexFields[0]), method.IndexFields[0])
@@ -454,33 +561,180 @@ func emitLookupMethod(g *protogen.GeneratedFile, table TableDecl, method IndexMe
 	} else {
 		g.P("\t\tvar idx := ", indexHashMethodName(method), "(", argNames, ")")
 	}
-	g.P()
 
 	if err := emitLookupOffset(g, method, indexFieldName); err != nil {
 		return err
 	}
 
-	g.P("\t\tif offset < 0 or offset >= _msg.", rowFieldName, ".size():")
+	g.P("\t\tif offset < 0 or offset >= row_count():")
 	g.P("\t\t\treturn null")
-	g.P()
-	g.P("\t\tvar row := _msg.", rowFieldName, "[offset]")
+	g.P("\t\tvar row := row_at(offset)")
+	g.P("\t\tif row == null:")
+	g.P("\t\t\treturn null")
 	if requiresHashIndex(method.IndexFields) {
 		g.P("\t\tif !", indexMatchMethodName(method), "(row, ", argNames, "):")
-		g.P("\t\t\tvar bucket := _msg.", indexFieldName, "Conflict.get(idx)")
+		g.P("\t\t\tvar bucket = _msg.", indexFieldName, "Conflict.get(idx)")
 		g.P("\t\t\tif bucket == null:")
 		g.P("\t\t\t\treturn null")
 		g.P("\t\t\tfor conflict_offset in bucket.Offsets:")
-		g.P("\t\t\t\tif conflict_offset < 0 or conflict_offset >= _msg.", rowFieldName, ".size():")
+		g.P("\t\t\t\trow = row_at(conflict_offset)")
+		g.P("\t\t\t\tif row == null:")
 		g.P("\t\t\t\t\tcontinue")
-		g.P("\t\t\t\trow = _msg.", rowFieldName, "[conflict_offset]")
 		g.P("\t\t\t\tif ", indexMatchMethodName(method), "(row, ", argNames, "):")
 		g.P("\t\t\t\t\treturn row")
 		g.P("\t\t\treturn null")
 	}
+	g.P("\t\treturn row")
 	g.P()
+	g.P("\tfunc ", method.LookupMethodName, "_async(", argList, ") -> ", rowType, ":")
+	g.P("\t\treturn ", method.LookupMethodName, "(", argNames, ")")
+	g.P()
+	return nil
+}
+
+func emitChunkedAsyncDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+	if err != nil {
+		return err
+	}
+	argNames := gdscriptArgumentNames(method.IndexFields)
+
+	g.P("\tfunc lookup_async(", argList, ") -> ", rowType, ":")
+	g.P("\t\treturn await ", method.LookupMethodName, "_async(", argNames, ")")
+	g.P()
+	return nil
+}
+
+func emitChunkedAsyncLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+	if err != nil {
+		return err
+	}
+	argNames := gdscriptArgumentNames(method.IndexFields)
+	indexFieldName := safeIdentifier(method.Field.GoName)
+
+	g.P("\tfunc ", method.LookupMethodName, "_async(", argList, ") -> ", rowType, ":")
+	g.P("\t\tif row_count() <= 0:")
+	g.P("\t\t\treturn null")
+
+	if len(method.IndexFields) == 1 && supportsDirectIndex(method.IndexFields[0]) {
+		idxExpr, err := directIndexExpression(gdscriptArgumentName(method.IndexFields[0]), method.IndexFields[0])
+		if err != nil {
+			return err
+		}
+		g.P("\t\tvar idx := ", idxExpr)
+	} else {
+		g.P("\t\tvar idx := ", indexHashMethodName(method), "(", argNames, ")")
+	}
+
+	if err := emitLookupOffset(g, method, indexFieldName); err != nil {
+		return err
+	}
+
+	g.P("\t\tif offset < 0 or offset >= row_count():")
+	g.P("\t\t\treturn null")
+	g.P("\t\tvar row := await row_at_async(offset)")
+	g.P("\t\tif row == null:")
+	g.P("\t\t\treturn null")
+	if requiresHashIndex(method.IndexFields) {
+		g.P("\t\tif !", indexMatchMethodName(method), "(row, ", argNames, "):")
+		g.P("\t\t\tvar bucket = _msg.", indexFieldName, "Conflict.get(idx)")
+		g.P("\t\t\tif bucket == null:")
+		g.P("\t\t\t\treturn null")
+		g.P("\t\t\tfor conflict_offset in bucket.Offsets:")
+		g.P("\t\t\t\trow = await row_at_async(conflict_offset)")
+		g.P("\t\t\t\tif row == null:")
+		g.P("\t\t\t\t\tcontinue")
+		g.P("\t\t\t\tif ", indexMatchMethodName(method), "(row, ", argNames, "):")
+		g.P("\t\t\t\t\treturn row")
+		g.P("\t\t\treturn null")
+	}
 	g.P("\t\treturn row")
 	g.P()
 	return nil
+}
+
+func emitChunkedPublicMethods(g *protogen.GeneratedFile, rowType, chunkManifestFieldName, chunksFieldName, chunkOffsetFieldName, chunkCountFieldName string) {
+	g.P("\tfunc rows() -> Array[", rowType, "]:")
+	g.P("\t\tif !_ensure_all_rows_loaded():")
+	g.P("\t\t\treturn []")
+	g.P("\t\treturn _build_rows_array()")
+	g.P()
+	g.P("\tfunc rows_async() -> Array[", rowType, "]:")
+	g.P("\t\tif !await _ensure_all_rows_loaded_async():")
+	g.P("\t\t\treturn []")
+	g.P("\t\treturn _build_rows_array()")
+	g.P()
+	g.P("\tfunc row_count() -> int:")
+	g.P("\t\tvar chunks = _msg.", chunkManifestFieldName, ".", chunksFieldName)
+	g.P("\t\tif chunks.is_empty():")
+	g.P("\t\t\treturn 0")
+	g.P("\t\treturn chunks[chunks.size() - 1].", chunkOffsetFieldName, " + chunks[chunks.size() - 1].", chunkCountFieldName)
+	g.P()
+	g.P("\tfunc row_at(offset: int) -> ", rowType, ":")
+	g.P("\t\tif offset < 0 or offset >= row_count():")
+	g.P("\t\t\treturn null")
+	g.P("\t\tvar chunk_index := _chunk_index_for_offset(offset)")
+	g.P("\t\tif !_chunk_loader.ensure_loaded(chunk_index):")
+	g.P("\t\t\treturn null")
+	g.P("\t\tvar chunk_rows: Array[", rowType, "] = _chunk_loader.rows(chunk_index)")
+	g.P("\t\tvar row_offset := offset - _msg.", chunkManifestFieldName, ".", chunksFieldName, "[chunk_index].", chunkOffsetFieldName)
+	g.P("\t\tif row_offset < 0 or row_offset >= chunk_rows.size():")
+	g.P("\t\t\treturn null")
+	g.P("\t\treturn chunk_rows[row_offset]")
+	g.P()
+	g.P("\tfunc row_at_async(offset: int) -> ", rowType, ":")
+	g.P("\t\tif offset < 0 or offset >= row_count():")
+	g.P("\t\t\treturn null")
+	g.P("\t\tvar chunk_index := _chunk_index_for_offset(offset)")
+	g.P("\t\tif !await _chunk_loader.ensure_loaded_async(chunk_index):")
+	g.P("\t\t\treturn null")
+	g.P("\t\tvar chunk_rows: Array[", rowType, "] = _chunk_loader.rows(chunk_index)")
+	g.P("\t\tvar row_offset := offset - _msg.", chunkManifestFieldName, ".", chunksFieldName, "[chunk_index].", chunkOffsetFieldName)
+	g.P("\t\tif row_offset < 0 or row_offset >= chunk_rows.size():")
+	g.P("\t\t\treturn null")
+	g.P("\t\treturn chunk_rows[row_offset]")
+	g.P()
+}
+
+func emitChunkLoaderInternalMethods(g *protogen.GeneratedFile, protoTableType, rowType, rowFieldName, chunkManifestFieldName, chunksFieldName, chunkOffsetFieldName, chunkCountFieldName string) {
+	g.P("\tfunc _chunk_index_for_offset(offset: int) -> int:")
+	g.P("\t\tvar chunks = _msg.", chunkManifestFieldName, ".", chunksFieldName)
+	g.P("\t\tvar low := 0")
+	g.P("\t\tvar high := chunks.size() - 1")
+	g.P("\t\twhile low <= high:")
+	g.P("\t\t\t@warning_ignore(\"integer_division\")")
+	g.P("\t\t\tvar mid := low + int((high - low) / 2)")
+	g.P("\t\t\tif offset < chunks[mid].", chunkOffsetFieldName, ":")
+	g.P("\t\t\t\thigh = mid - 1")
+	g.P("\t\t\telif offset >= chunks[mid].", chunkOffsetFieldName, " + chunks[mid].", chunkCountFieldName, ":")
+	g.P("\t\t\t\tlow = mid + 1")
+	g.P("\t\t\telse:")
+	g.P("\t\t\t\treturn mid")
+	g.P("\t\treturn -1")
+	g.P()
+	g.P("\tfunc _ensure_all_rows_loaded() -> bool:")
+	g.P("\t\tfor chunk_index in range(_msg.", chunkManifestFieldName, ".", chunksFieldName, ".size()):")
+	g.P("\t\t\tif !_chunk_loader.ensure_loaded(chunk_index):")
+	g.P("\t\t\t\treturn false")
+	g.P("\t\treturn true")
+	g.P()
+	g.P("\tfunc _ensure_all_rows_loaded_async() -> bool:")
+	g.P("\t\tfor chunk_index in range(_msg.", chunkManifestFieldName, ".", chunksFieldName, ".size()):")
+	g.P("\t\t\tif !await _chunk_loader.ensure_loaded_async(chunk_index):")
+	g.P("\t\t\t\treturn false")
+	g.P("\t\treturn true")
+	g.P()
+	g.P("\tfunc _build_rows_array() -> Array[", rowType, "]:")
+	g.P("\t\t@warning_ignore(\"shadowed_variable\")")
+	g.P("\t\tvar rows: Array[", rowType, "] = []")
+	g.P("\t\trows.resize(row_count())")
+	g.P("\t\tfor chunk_index in range(_msg.", chunkManifestFieldName, ".", chunksFieldName, ".size()):")
+	g.P("\t\t\tvar chunk_rows: Array[", rowType, "] = _chunk_loader.rows(chunk_index)")
+	g.P("\t\t\tfor row_offset in range(_msg.", chunkManifestFieldName, ".", chunksFieldName, "[chunk_index].", chunkCountFieldName, "):")
+	g.P("\t\t\t\trows[_msg.", chunkManifestFieldName, ".", chunksFieldName, "[chunk_index].", chunkOffsetFieldName, " + row_offset] = chunk_rows[row_offset]")
+	g.P("\t\treturn rows")
+	g.P()
 }
 
 func emitLookupOffset(g *protogen.GeneratedFile, method IndexMethodDecl, indexFieldName string) error {
@@ -492,11 +746,9 @@ func emitLookupOffset(g *protogen.GeneratedFile, method IndexMethodDecl, indexFi
 	case indexTypeSortedUnique:
 		g.P("\t\tif _msg.", indexFieldName, " == null:")
 		g.P("\t\t\treturn null")
-		g.P()
 		g.P("\t\tvar idx_offset := ExcelUtils.binary_search_u64(_msg.", indexFieldName, ".Values, idx)")
 		g.P("\t\tif idx_offset < 0:")
 		g.P("\t\t\treturn null")
-		g.P()
 		g.P("\t\tvar offset := _msg.", indexFieldName, ".Offsets[idx_offset]")
 	default:
 		return fmt.Errorf("unsupported index type %q", method.IndexTypeName)

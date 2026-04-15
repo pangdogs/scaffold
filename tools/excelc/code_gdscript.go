@@ -37,11 +37,12 @@ import (
 )
 
 type GDScriptTableDecl struct {
-	Name       string
-	ProtoAlias string
-	ExcelAlias string
-	ProtoType  string
-	ExcelType  string
+	Name             string
+	ProtoAlias       string
+	ExcelAlias       string
+	ProtoType        string
+	ExcelType        string
+	ChunkedExcelType string
 }
 
 type GDScriptExportMemberDecl struct {
@@ -93,11 +94,12 @@ func genGDScriptCode(outDir string) {
 
 		typeName := gdscriptTypeIdentifier(string(msg.Descriptor().Name()))
 		tables = append(tables, GDScriptTableDecl{
-			Name:       typeName,
-			ProtoAlias: importDecl.ProtoAlias,
-			ExcelAlias: importDecl.ExcelAlias,
-			ProtoType:  importDecl.ProtoAlias + "." + typeName,
-			ExcelType:  importDecl.ExcelAlias + "." + typeName,
+			Name:             typeName,
+			ProtoAlias:       importDecl.ProtoAlias,
+			ExcelAlias:       importDecl.ExcelAlias,
+			ProtoType:        importDecl.ProtoAlias + "." + typeName,
+			ExcelType:        importDecl.ExcelAlias + "." + typeName,
+			ChunkedExcelType: importDecl.ExcelAlias + "." + chunkedTableTypeName(typeName),
 		})
 	})
 
@@ -192,20 +194,33 @@ class Tables:
 
 	static func load_from_files(dir: String) -> Tables:
 		var tabs := Tables.new()
-{{- range .Tables}}
-		var {{.Name}}_proto := {{.ProtoType}}.new()
-		if !_load_table_from_file({{.Name}}_proto, dir.path_join("{{.Name}}.bin")):
-			return null
-		tabs.{{.Name}} = {{.ExcelType}}.new({{.Name}}_proto)
-{{- end}}
+{{range .Tables}}
+		var {{.Name}}_msg := {{.ProtoType}}.new()
+		var {{.Name}}_path := dir.path_join("{{.Name}}.bin")
+		if FileAccess.file_exists({{.Name}}_path + ".idx"):
+			if !_load_chunked_table_index_file({{.Name}}_msg, {{.Name}}_path):
+				return null
+			tabs.{{.Name}} = {{.ChunkedExcelType}}.new({{.Name}}_msg, {{.Name}}_path)
+		else:
+			if !_load_table_file({{.Name}}_msg, {{.Name}}_path):
+				return null
+			tabs.{{.Name}} = {{.ExcelType}}.new({{.Name}}_msg)
+{{end}}
 		return tabs
 
-	static func _load_table_from_file(message: ProtoMessage, path: String) -> bool:
+	static func _load_table_file(message: ProtoMessage, path: String) -> bool:
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file == null:
 			return false
 		var stream := ProtoInputFile.new(file)
 		return message.deserialize(stream)
+
+	static func _load_chunked_table_index_file(message, base_path: String) -> bool:
+		if !_load_table_file(message, base_path + ".idx"):
+			return false
+		if message.ChunkManifest == null:
+			return false
+		return true
 `
 
 	type TmplArgs struct {
@@ -298,6 +313,13 @@ func gdscriptTypeIdentifier(s string) string {
 		out += "_"
 	}
 	return out
+}
+
+func chunkedTableTypeName(tableName string) string {
+	if strings.HasSuffix(tableName, "Table") {
+		return strings.TrimSuffix(tableName, "Table") + "ChunkedTable"
+	}
+	return tableName + "ChunkedTable"
 }
 
 func gdscriptKeyword(s string) bool {
