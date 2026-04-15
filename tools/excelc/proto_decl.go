@@ -75,6 +75,11 @@ message Chunk {
 	uint32 Count = 2;
 }
 
+message ChunkManifest {
+	uint32 ChunkSize = 1;
+	repeated Chunk Chunks = 2;
+}
+
 extend google.protobuf.MessageOptions {
 	optional bool IsColumns = {{Add .CustomOptions 101}};
 	optional bool IsTable = {{Add .CustomOptions 102}};
@@ -221,8 +226,7 @@ message {{TableName .ProtoType}} {
 	{{- range $i, $kv := .StructSortedUniqueIndexes}}
 	map<uint64, IndexConflict> SortedUniqueIndex{{$kv.K}}Conflict = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount}};
 	{{- end}}
-	uint32 ChunkSize = {{Add 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}};
-	repeated Chunk Chunks = {{Add 3 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}};
+	ChunkManifest ChunkManifest = {{Add 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}}; 
 }
 {{end}}
 `

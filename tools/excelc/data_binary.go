@@ -58,20 +58,26 @@ func genChunkedBinaryData(tableMsg proto.Message, outDir string) (string, int, e
 		return "", 0, fmt.Errorf("parse proto type %q failed: field %q must be a repeated message", table.Descriptor().FullName(), "Rows")
 	}
 
-	chunkSizeField := fields.ByName("ChunkSize")
-	if chunkSizeField == nil {
-		return "", 0, fmt.Errorf("parse proto type %q failed: field %q not found", table.Descriptor().FullName(), "ChunkSize")
+	chunkManifestField := fields.ByName("ChunkManifest")
+	if chunkManifestField == nil {
+		return "", 0, fmt.Errorf("parse proto type %q failed: field %q not found", table.Descriptor().FullName(), "ChunkManifest")
 	}
-	if chunkSizeField.Kind() != protoreflect.Uint32Kind {
-		return "", 0, fmt.Errorf("parse proto type %q failed: field %q must be uint32", table.Descriptor().FullName(), "ChunkSize")
+	if chunkManifestField.Kind() != protoreflect.MessageKind {
+		return "", 0, fmt.Errorf("parse proto type %q failed: field %q must be a message", table.Descriptor().FullName(), "ChunkManifest")
 	}
 
-	chunksField := fields.ByName("Chunks")
+	chunkManifestFields := chunkManifestField.Message().Fields()
+	chunkSizeField := chunkManifestFields.ByName("ChunkSize")
+	if chunkSizeField == nil || chunkSizeField.Kind() != protoreflect.Uint32Kind {
+		return "", 0, fmt.Errorf("parse proto type %q failed: field %q must be uint32", chunkManifestField.Message().FullName(), "ChunkSize")
+	}
+
+	chunksField := chunkManifestFields.ByName("Chunks")
 	if chunksField == nil {
-		return "", 0, fmt.Errorf("parse proto type %q failed: field %q not found", table.Descriptor().FullName(), "Chunks")
+		return "", 0, fmt.Errorf("parse proto type %q failed: field %q not found", chunkManifestField.Message().FullName(), "Chunks")
 	}
 	if !chunksField.IsList() || chunksField.Kind() != protoreflect.MessageKind {
-		return "", 0, fmt.Errorf("parse proto type %q failed: field %q must be a repeated message", table.Descriptor().FullName(), "Chunks")
+		return "", 0, fmt.Errorf("parse proto type %q failed: field %q must be a repeated message", chunkManifestField.Message().FullName(), "Chunks")
 	}
 
 	chunkFields := chunksField.Message().Fields()
@@ -85,11 +91,6 @@ func genChunkedBinaryData(tableMsg proto.Message, outDir string) (string, int, e
 		return "", 0, fmt.Errorf("parse proto type %q failed: field %q not found", chunksField.Message().FullName(), "Count")
 	}
 
-	chunkSize := viper.GetUint32("binary_chunk_size")
-	if chunkSize <= 0 {
-		return "", 0, fmt.Errorf("[--binary_chunk_size] value must be greater than 0")
-	}
-
 	baseFile := filepath.Join(outDir, string(table.Descriptor().Name())+".bin")
 	idxFile := baseFile + ".idx"
 
@@ -100,14 +101,16 @@ func genChunkedBinaryData(tableMsg proto.Message, outDir string) (string, int, e
 	rows := table.Get(rowsField).List()
 	tableIdxMsg := table.New()
 	table.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		if field.Number() != rowsField.Number() {
+		if field.Number() != rowsField.Number() && field.Number() != chunkManifestField.Number() {
 			tableIdxMsg.Set(field, value)
 		}
 		return true
 	})
-	tableIdxMsg.Set(chunkSizeField, protoreflect.ValueOfUint32(chunkSize))
-	tableIdxMsg.Clear(chunksField)
-	chunks := tableIdxMsg.Mutable(chunksField).List()
+
+	chunkSize := max(viper.GetUint32("binary_chunk_size"), 1)
+	chunkManifestMsg := tableIdxMsg.Mutable(chunkManifestField).Message()
+	chunkManifestMsg.Set(chunkSizeField, protoreflect.ValueOfUint32(chunkSize))
+	chunks := chunkManifestMsg.Mutable(chunksField).List()
 
 	chunksNum := 0
 
