@@ -377,12 +377,19 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 	tableName := safeIdentifier(table.Message.GoIdent.GoName)
 	rowType := protoImportAlias + "." + safeIdentifier(table.RowsMessage.GoIdent.GoName)
 	protoTableType := protoImportAlias + "." + tableName
+	rowFieldName := safeIdentifier(table.RowsField.GoName)
 
 	g.P("class ", tableName, ":")
 	g.P("\tvar _msg: ", protoTableType)
 	g.P()
 	g.P("\tfunc _init(msg: ", protoTableType, " = null) -> void:")
 	g.P("\t\t_msg = msg if msg != null else ", protoTableType, ".new()")
+	g.P()
+	g.P("\tfunc rows() -> Array[", rowType, "]:")
+	g.P("\t\treturn _msg.", rowFieldName)
+	g.P()
+	g.P("\tfunc row_count() -> int:")
+	g.P("\t\treturn _msg.", rowFieldName, ".size()")
 	g.P()
 
 	if len(table.IndexMethods) > 0 {
@@ -456,10 +463,10 @@ func emitLookupMethod(g *protogen.GeneratedFile, table TableDecl, method IndexMe
 	g.P("\t\tif offset < 0 or offset >= _msg.", rowFieldName, ".size():")
 	g.P("\t\t\treturn null")
 	g.P()
-	g.P("\t\tvar row = _msg.", rowFieldName, "[offset]")
+	g.P("\t\tvar row := _msg.", rowFieldName, "[offset]")
 	if requiresHashIndex(method.IndexFields) {
 		g.P("\t\tif !", indexMatchMethodName(method), "(row, ", argNames, "):")
-		g.P("\t\t\tvar bucket = _msg.", indexFieldName, "Conflict.get(idx)")
+		g.P("\t\t\tvar bucket := _msg.", indexFieldName, "Conflict.get(idx)")
 		g.P("\t\t\tif bucket == null:")
 		g.P("\t\t\t\treturn null")
 		g.P("\t\t\tfor conflict_offset in bucket.Offsets:")
