@@ -198,7 +198,7 @@ class Tables:
 		var {{.Name}}_msg := {{.ProtoType}}.new()
 		var {{.Name}}_path := dir.path_join("{{.Name}}.bin")
 		if FileAccess.file_exists({{.Name}}_path + ".idx"):
-			if !_load_chunked_table_index_file({{.Name}}_msg, {{.Name}}_path):
+			if !_load_table_index_file({{.Name}}_msg, {{.Name}}_path):
 				return null
 			tabs.{{.Name}} = {{.ChunkedExcelType}}.new({{.Name}}_msg, {{.Name}}_path)
 		else:
@@ -215,7 +215,7 @@ class Tables:
 		var stream := ProtoInputFile.new(file)
 		return message.deserialize(stream)
 
-	static func _load_chunked_table_index_file(message, base_path: String) -> bool:
+	static func _load_table_index_file(message, base_path: String) -> bool:
 		if !_load_table_file(message, base_path + ".idx"):
 			return false
 		if message.ChunkManifest == null:

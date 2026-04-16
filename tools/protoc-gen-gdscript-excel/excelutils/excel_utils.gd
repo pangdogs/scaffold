@@ -30,12 +30,13 @@ class ChunkLoader:
 	class ChunkState:
 		extends RefCounted
 
-		signal completed()
+		const READY: int = -1
+		const LOADING: int = -2
+		const LOADED: int = -3
+
 		var mutex := Mutex.new()
-		var loading := false
-		var loaded := false
-		var task_id := -1
 		var rows: Array = []
+		var task_id := READY
 
 	var _chunk_base_path := ""
 	var _chunk_states: Array[ChunkState] = []
@@ -44,8 +45,9 @@ class ChunkLoader:
 	# Pre-allocates state objects for all chunks described by the manifest.
 	func _init(chunk_base_path: String, chunk_count: int, message_factory: Callable) -> void:
 		_chunk_base_path = chunk_base_path
+		_chunk_states.resize(chunk_count)
 		for chunk_index in range(chunk_count):
-			_chunk_states.append(ChunkState.new())
+			_chunk_states[chunk_index] = ChunkState.new()
 		_message_factory = message_factory
 
 	func rows(chunk_index: int) -> Array:
@@ -62,65 +64,70 @@ class ChunkLoader:
 		if chunk_index < 0 or chunk_index >= _chunk_states.size():
 			return false
 		var state := _chunk_states[chunk_index]
-		state.mutex.lock()
-		if state.loaded:
-			state.mutex.unlock()
-			return true
-		if !state.loading:
-			state.loading = true
-			state.task_id = WorkerThreadPool.add_task(_load_rows_task.bind(state, chunk_index))
-		var task_id := state.task_id
-		state.mutex.unlock()
-		var wait_err := WorkerThreadPool.wait_for_task_completion(task_id)
-		return _finish_loading(state, wait_err == OK)
+		var task_id := _ensure_task_started(state, chunk_index)
+		match task_id:
+			ChunkState.LOADING:
+				state.mutex.lock()
+				task_id = state.task_id
+				state.mutex.unlock()
+				if task_id == ChunkState.LOADED:
+					return true
+				while !WorkerThreadPool.is_task_completed(task_id):
+					OS.delay_usec(100)
+			ChunkState.LOADED:
+				return true
+			_:
+				WorkerThreadPool.wait_for_task_completion(task_id)
+		return true
 
 	# Asynchronously ensures one chunk is loaded.
-	# The first caller starts the task; later callers await the same completion signal.
+	# The first caller starts the task; later callers await the same task completion.
 	func ensure_loaded_async(chunk_index: int) -> bool:
 		if chunk_index < 0 or chunk_index >= _chunk_states.size():
 			return false
 		var state := _chunk_states[chunk_index]
-		var started := false
-		state.mutex.lock()
-		if state.loaded:
-			state.mutex.unlock()
-			return true
-		if !state.loading:
-			state.loading = true
-			state.task_id = WorkerThreadPool.add_task(_load_rows_task.bind(state, chunk_index))
-			started = true
-		var task_id := state.task_id
-		state.mutex.unlock()
-		if !started:
-			await state.completed
-			state.mutex.lock()
-			var loaded := state.loaded
-			state.mutex.unlock()
-			return loaded
-		var tree := Engine.get_main_loop() as SceneTree
-		while !WorkerThreadPool.is_task_completed(task_id):
-			await tree.process_frame
-		var wait_err := WorkerThreadPool.wait_for_task_completion(task_id)
-		return _finish_loading(state, wait_err == OK)
+		var task_id := _ensure_task_started(state, chunk_index)
+		match task_id:
+			ChunkState.LOADING:
+				state.mutex.lock()
+				task_id = state.task_id
+				state.mutex.unlock()
+				if task_id == ChunkState.LOADED:
+					return true
+				if Thread.is_main_thread():
+					var tree := Engine.get_main_loop() as SceneTree
+					while !WorkerThreadPool.is_task_completed(task_id):
+						await tree.process_frame
+				else:
+					while !WorkerThreadPool.is_task_completed(task_id):
+						OS.delay_usec(100)
+			ChunkState.LOADED:
+				return true
+			_:
+				WorkerThreadPool.wait_for_task_completion(task_id)
+		return true
 
-	func _finish_loading(state: ChunkState, wait_ok: bool) -> bool:
+	# Starts the chunk load task at most once and returns the shared task id.
+	func _ensure_task_started(state: ChunkState, chunk_index: int) -> int:
 		state.mutex.lock()
-		if state.loaded:
-			state.mutex.unlock()
-			return true
-		state.loading = false
-		state.task_id = -1
-		state.loaded = wait_ok
-		var ok := state.loaded
+		var task_id: int
+		match state.task_id:
+			ChunkState.READY:
+				state.task_id = WorkerThreadPool.add_task(_load_rows_task.bind(state, chunk_index))
+				task_id = state.task_id
+			ChunkState.LOADED:
+				task_id = ChunkState.LOADED
+			_:
+				task_id = ChunkState.LOADING
 		state.mutex.unlock()
-		state.completed.emit()
-		return ok
+		return task_id
 
 	# Worker entry point. It deserializes one chunk file into row data.
 	func _load_rows_task(state: ChunkState, chunk_index: int) -> void:
 		var chunk_rows: Array = _load_rows(_chunk_path(chunk_index))
 		state.mutex.lock()
 		state.rows = chunk_rows
+		state.task_id = ChunkState.LOADED
 		state.mutex.unlock()
 
 	# Builds chunk file path.
@@ -136,6 +143,7 @@ class ChunkLoader:
 		var stream := ProtoInputFile.new(file)
 		if !msg.deserialize(stream):
 			return []
+		print("table chunk file %s rows %d loaded" % [path, msg.Rows.size()])
 		return msg.Rows
 
 # Converts a bool into the integer form used by generated indexes.
