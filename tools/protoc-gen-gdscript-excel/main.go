@@ -931,6 +931,8 @@ func equalCallExpression(leftExpr, rightExpr string, field *protogen.Field, prot
 		return "ProtoUtils.equal_message(" + leftExpr + ", " + rightExpr + ", func(): return " + typeExpr + ".new())", nil
 	}
 	switch field.Desc.Kind() {
+	case protoreflect.StringKind:
+		return "String(" + leftExpr + ") == String(" + rightExpr + ")", nil
 	case protoreflect.BytesKind:
 		return "ProtoUtils.equal_bytes(" + leftExpr + ", " + rightExpr + ")", nil
 	case protoreflect.FloatKind:
