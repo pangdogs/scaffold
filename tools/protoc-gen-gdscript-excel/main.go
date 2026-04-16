@@ -21,6 +21,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"path"
 	"slices"
@@ -71,8 +72,20 @@ type Extensions struct {
 	IndexFields protoreflect.ExtensionType
 }
 
+type GeneratorConfig struct {
+	StringAsStringName bool
+}
+
+var config GeneratorConfig
+
 func main() {
-	protogen.Options{}.Run(func(gen *protogen.Plugin) error {
+	var flags flag.FlagSet
+	stringAsStringName := flags.Bool("string_as_stringname", false, "map proto string fields to GDScript StringName")
+
+	protogen.Options{ParamFunc: flags.Set}.Run(func(gen *protogen.Plugin) error {
+		config = GeneratorConfig{
+			StringAsStringName: *stringAsStringName,
+		}
 		for _, f := range gen.Files {
 			if err := registerProtoTypes(protoregistry.GlobalTypes, f.Desc); err != nil {
 				return err
@@ -994,6 +1007,9 @@ func gdscriptSingularTypeExpression(field *protogen.Field, protoImportAlias stri
 	case protoreflect.BoolKind:
 		return "bool", nil
 	case protoreflect.StringKind:
+		if config.StringAsStringName {
+			return "StringName", nil
+		}
 		return "String", nil
 	case protoreflect.BytesKind:
 		return "PackedByteArray", nil

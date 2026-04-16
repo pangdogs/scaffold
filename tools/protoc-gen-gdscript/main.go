@@ -20,6 +20,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"path"
 	"path/filepath"
@@ -32,8 +33,20 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+type GeneratorConfig struct {
+	StringAsStringName bool
+}
+
+var config GeneratorConfig
+
 func main() {
-	protogen.Options{}.Run(func(gen *protogen.Plugin) error {
+	var flags flag.FlagSet
+	stringAsStringName := flags.Bool("string_as_stringname", false, "map proto string fields to GDScript StringName")
+
+	protogen.Options{ParamFunc: flags.Set}.Run(func(gen *protogen.Plugin) error {
+		config = GeneratorConfig{
+			StringAsStringName: *stringAsStringName,
+		}
 		generatedPrefixes := map[string]string{}
 		for _, f := range gen.Files {
 			generatedPrefixes[f.Desc.Path()] = f.GeneratedFilenamePrefix
@@ -861,6 +874,9 @@ func fieldSingularTypeExpression(file *protogen.File, field *protogen.Field, imp
 	case protoreflect.BoolKind:
 		return "bool", nil
 	case protoreflect.StringKind:
+		if config.StringAsStringName {
+			return "StringName", nil
+		}
 		return "String", nil
 	case protoreflect.BytesKind:
 		return "PackedByteArray", nil
@@ -891,6 +907,9 @@ func fieldDefaultValueExpression(file *protogen.File, field *protogen.Field, imp
 	case protoreflect.BoolKind:
 		return "false", nil
 	case protoreflect.StringKind:
+		if config.StringAsStringName {
+			return "StringName()", nil
+		}
 		return `""`, nil
 	case protoreflect.BytesKind:
 		return "PackedByteArray()", nil
@@ -1021,7 +1040,7 @@ func shouldSerializeExpression(valueExpr string, field *protogen.Field) string {
 	case protoreflect.BoolKind:
 		return valueExpr
 	case protoreflect.StringKind:
-		return "!" + valueExpr + ".is_empty()"
+		return "!ProtoUtils.is_empty_string(" + valueExpr + ")"
 	case protoreflect.BytesKind:
 		return "!" + valueExpr + ".is_empty()"
 	case protoreflect.FloatKind, protoreflect.DoubleKind,
@@ -1066,6 +1085,9 @@ func decodeValueExpression(field *protogen.Field, streamName string) string {
 	case protoreflect.BoolKind:
 		return "ProtoUtils.decode_bool(" + streamName + ")"
 	case protoreflect.StringKind:
+		if config.StringAsStringName {
+			return "ProtoUtils.decode_string_name(" + streamName + ")"
+		}
 		return "ProtoUtils.decode_string(" + streamName + ")"
 	case protoreflect.BytesKind:
 		return "ProtoUtils.decode_bytes(" + streamName + ")"
@@ -1190,6 +1212,9 @@ func defaultMapKeyExpression(field *protogen.Field) string {
 	case protoreflect.BoolKind:
 		return "false"
 	case protoreflect.StringKind:
+		if config.StringAsStringName {
+			return "StringName()"
+		}
 		return `""`
 	default:
 		return "0"
@@ -1207,6 +1232,9 @@ func defaultMapValueExpression(file *protogen.File, field *protogen.Field, impor
 	case protoreflect.BoolKind:
 		return "false", nil
 	case protoreflect.StringKind:
+		if config.StringAsStringName {
+			return "StringName()", nil
+		}
 		return `""`, nil
 	case protoreflect.BytesKind:
 		return "PackedByteArray()", nil

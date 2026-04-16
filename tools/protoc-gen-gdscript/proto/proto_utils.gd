@@ -140,8 +140,8 @@ static func decode_double(stream: ProtoInputStream) -> float:
 
 #region String
 # Encodes a UTF-8 string as a length-delimited protobuf field payload.
-static func encode_string(stream: ProtoOutputStream, value: String) -> void:
-	var utf8_value := value.to_utf8_buffer()
+static func encode_string(stream: ProtoOutputStream, value) -> void:
+	var utf8_value := _string_utf8_bytes(value)
 	var size := utf8_value.size()
 	encode_varint(stream, size)
 	stream.write_bytes(utf8_value)
@@ -154,6 +154,13 @@ static func decode_string(stream: ProtoInputStream) -> String:
 	var str_bytes := stream.read_bytes(size)
 	var value := str_bytes.get_string_from_utf8()
 	return value
+
+# Decodes a UTF-8 string as a StringName.
+static func decode_string_name(stream: ProtoInputStream) -> StringName:
+	var value := decode_string(stream)
+	if value.is_empty():
+		return StringName()
+	return StringName(value)
 #endregion
 
 #region Bytes
@@ -196,6 +203,10 @@ static func decode_zigzag64(stream: ProtoInputStream) -> int:
 #endregion
 
 #region Sizeof Helpers
+# Returns whether the given value should be treated as an empty string field.
+static func is_empty_string(value) -> bool:
+	return value == null or String(value).is_empty()
+
 # Returns the encoded size of a zigzag32 payload.
 static func sizeof_zigzag32(value: int) -> int:
 	return sizeof_varint((value << 1) ^ (value >> 31))
@@ -205,10 +216,10 @@ static func sizeof_zigzag64(value: int) -> int:
 	return sizeof_varint((value << 1) ^ (value >> 63))
 
 # Returns the encoded size of a UTF-8 string payload.
-static func sizeof_string(value: String) -> int:
+static func sizeof_string(value) -> int:
 	if value == null:
 		return 0
-	var utf8_value := value.to_utf8_buffer()
+	var utf8_value := _string_utf8_bytes(value)
 	var size := utf8_value.size()
 	return size + sizeof_varint(size)
 
@@ -348,11 +359,9 @@ static func hash_float64(hasher: Fnv64aHasher, value: float) -> void:
 	hasher.write_uint64(_float64_bits(value))
 
 # Hashes a string by prefixing its byte length before the UTF-8 payload.
-static func hash_string(hasher: Fnv64aHasher, value: String) -> void:
+static func hash_string(hasher: Fnv64aHasher, value) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_STRING)
-	var data := PackedByteArray()
-	if value != null:
-		data = value.to_utf8_buffer()
+	var data := _string_utf8_bytes(value)
 	hasher.write_uint64(data.size())
 	hasher.write_bytes(data)
 
@@ -560,8 +569,15 @@ static func _variant_less(a, b) -> bool:
 			return a < b
 		TYPE_STRING:
 			return String(a) < String(b)
+		TYPE_STRING_NAME:
+			return String(a) < String(b)
 		_:
 			return var_to_str(a) < var_to_str(b)
+
+static func _string_utf8_bytes(value) -> PackedByteArray:
+	if value == null:
+		return PackedByteArray()
+	return String(value).to_utf8_buffer()
 
 # Compares two int values as if they were unsigned 64-bit integers.
 static func _compare_u64(a: int, b: int) -> int:

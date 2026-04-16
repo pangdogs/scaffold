@@ -207,6 +207,8 @@ static func _variant_less(a, b) -> bool:
 			return a < b
 		TYPE_STRING:
 			return String(a) < String(b)
+		TYPE_STRING_NAME:
+			return String(a) < String(b)
 		_:
 			return var_to_str(a) < var_to_str(b)
 
