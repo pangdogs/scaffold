@@ -213,7 +213,10 @@ class Tables:
 		if file == null:
 			return false
 		var stream := ProtoInputFile.new(file)
-		return message.deserialize(stream)
+		if !message.deserialize(stream):
+			return false
+		print("table file %s loaded" % path)
+		return true
 
 	static func _load_table_index_file(message, base_path: String) -> bool:
 		if !_load_table_file(message, base_path + ".idx"):
