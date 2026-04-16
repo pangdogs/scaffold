@@ -480,7 +480,7 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 	g.P("\t\tsuper(msg)")
 	g.P("\t\t_chunk_loader = ExcelUtils.ChunkLoader.new(")
 	g.P("\t\t\tchunk_base_path,")
-	g.P("\t\t\t_msg.", chunkManifestFieldName, ".", chunksFieldName, ".size(),")
+	g.P("\t\t\tmsg.", chunkManifestFieldName, ".", chunksFieldName, ".size() if msg.", chunkManifestFieldName, " != null else 0,")
 	g.P("\t\t\tfunc(): return ", protoTableType, ".new()")
 	g.P("\t\t)")
 	g.P()

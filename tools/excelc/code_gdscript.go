@@ -198,12 +198,10 @@ class Tables:
 		var {{.Name}}_msg := {{.ProtoType}}.new()
 		var {{.Name}}_path := dir.path_join("{{.Name}}.bin")
 		if FileAccess.file_exists({{.Name}}_path + ".idx"):
-			if !_load_table_index_file({{.Name}}_msg, {{.Name}}_path):
-				return null
+			_load_table_index_file({{.Name}}_msg, {{.Name}}_path)
 			tabs.{{.Name}} = {{.ChunkedExcelType}}.new({{.Name}}_msg, {{.Name}}_path)
 		else:
-			if !_load_table_file({{.Name}}_msg, {{.Name}}_path):
-				return null
+			_load_table_file({{.Name}}_msg, {{.Name}}_path)
 			tabs.{{.Name}} = {{.ExcelType}}.new({{.Name}}_msg)
 {{end}}
 		return tabs
@@ -211,19 +209,17 @@ class Tables:
 	static func _load_table_file(message: ProtoMessage, path: String) -> bool:
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file == null:
+			push_warning("failed to open table file %s" % path)
 			return false
 		var stream := ProtoInputFile.new(file)
 		if !message.deserialize(stream):
+			push_error("failed to deserialize table file %s" % path)
 			return false
 		print("table file %s loaded" % path)
 		return true
 
 	static func _load_table_index_file(message, base_path: String) -> bool:
-		if !_load_table_file(message, base_path + ".idx"):
-			return false
-		if message.ChunkManifest == null:
-			return false
-		return true
+		return _load_table_file(message, base_path + ".idx")
 `
 
 	type TmplArgs struct {
