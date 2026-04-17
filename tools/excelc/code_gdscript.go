@@ -206,21 +206,21 @@ class Tables:
 {{end}}
 		return tabs
 
-	static func _load_table_file(message: ProtoMessage, path: String) -> bool:
+	static func _load_table_file(msg: ProtoMessage, path: String) -> bool:
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file == null:
-			push_warning("failed to open table file %s" % path)
+			push_warning("failed to open excel table file %s" % path)
 			return false
 		var stream := ProtoInputFile.new(file)
-		message.reset()
-		if !message.deserialize(stream):
-			push_error("failed to deserialize table file %s" % path)
+		msg.reset()
+		if !msg.deserialize(stream):
+			push_error("failed to deserialize excel table file %s" % path)
 			return false
-		print("table file %s loaded" % path)
+		print("excel table file %s loaded" % path)
 		return true
 
-	static func _load_table_index_file(message, base_path: String) -> bool:
-		return _load_table_file(message, base_path + ".idx")
+	static func _load_table_index_file(msg, base_path: String) -> bool:
+		return _load_table_file(msg, base_path + ".idx")
 `
 
 	type TmplArgs struct {

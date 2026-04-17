@@ -143,7 +143,7 @@ class ChunkLoader:
 		var stream := ProtoInputFile.new(file)
 		if !msg.deserialize(stream):
 			return []
-		print("table chunk file %s rows %d loaded" % [path, msg.Rows.size()])
+		print("excel table chunk file %s rows %d loaded" % [path, msg.Rows.size()])
 		return msg.Rows
 
 # Converts a bool into the integer form used by generated indexes.
