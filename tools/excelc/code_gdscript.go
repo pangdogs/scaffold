@@ -197,12 +197,12 @@ class Tables:
 {{range .Tables}}
 		var {{.Name}}_msg := {{.ProtoType}}.new()
 		var {{.Name}}_path := dir.path_join("{{.Name}}.bin")
-		if FileAccess.file_exists({{.Name}}_path + ".idx"):
-			_load_table_index_file({{.Name}}_msg, {{.Name}}_path)
+		if _load_table_index_file({{.Name}}_msg, {{.Name}}_path):
 			tabs.{{.Name}} = {{.ChunkedExcelType}}.new({{.Name}}_msg, {{.Name}}_path)
-		else:
-			_load_table_file({{.Name}}_msg, {{.Name}}_path)
+		elif _load_table_file({{.Name}}_msg, {{.Name}}_path):	
 			tabs.{{.Name}} = {{.ExcelType}}.new({{.Name}}_msg)
+		else:
+			tabs.{{.Name}} = {{.ExcelType}}.new()
 {{end}}
 		return tabs
 
@@ -212,6 +212,7 @@ class Tables:
 			push_warning("failed to open table file %s" % path)
 			return false
 		var stream := ProtoInputFile.new(file)
+		message.reset()
 		if !message.deserialize(stream):
 			push_error("failed to deserialize table file %s" % path)
 			return false
