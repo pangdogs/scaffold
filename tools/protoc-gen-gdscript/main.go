@@ -291,7 +291,6 @@ func emitMessage(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.M
 	if err := emitEqualsMethod(g, file, msg, importAliases); err != nil {
 		return err
 	}
-	emitSkipFieldMethod(g)
 	return nil
 }
 
@@ -333,7 +332,7 @@ func emitEmptyMessageMethods(g *protogen.GeneratedFile, msgName string) {
 	g.P("\tfunc deserialize(stream: ProtoInputStream) -> bool:")
 	g.P("\t\twhile !stream.eof():")
 	g.P("\t\t\tvar tag := ProtoUtils.decode_tag(stream)")
-	g.P("\t\t\tif !_skip_field(stream, ProtoUtils.get_wire_type(tag)):")
+	g.P("\t\t\tif !ProtoUtils.skip_field(stream, ProtoUtils.get_wire_type(tag)):")
 	g.P("\t\t\t\treturn false")
 	g.P("\t\treturn true")
 	g.P()
@@ -356,7 +355,6 @@ func emitEmptyMessageMethods(g *protogen.GeneratedFile, msgName string) {
 	g.P("\tfunc equals(other: ProtoMessage) -> bool:")
 	g.P("\t\treturn other is ", msgName)
 	g.P()
-	emitSkipFieldMethod(g)
 }
 
 func emitSerializeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
@@ -469,7 +467,7 @@ func emitDeserializeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *
 		}
 	}
 	g.P("\t\t\t\t_:")
-	g.P("\t\t\t\t\tif !_skip_field(stream, wire_type):")
+	g.P("\t\t\t\t\tif !ProtoUtils.skip_field(stream, wire_type):")
 	g.P("\t\t\t\t\t\treturn false")
 	g.P("\t\treturn true")
 	g.P()
@@ -513,7 +511,7 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 			return err
 		}
 		g.P("\t\t\t\t\t\t\t_:")
-		g.P("\t\t\t\t\t\t\t\tif !_skip_field(entry_stream, entry_wire_type):")
+		g.P("\t\t\t\t\t\t\t\tif !ProtoUtils.skip_field(entry_stream, entry_wire_type):")
 		g.P("\t\t\t\t\t\t\t\t\treturn false")
 		g.P("\t\t\t\t\t", name, "[entry_key] = entry_value")
 		return nil
@@ -594,29 +592,6 @@ func emitCheckedDecodedAssignment(g *protogen.GeneratedFile, indent, target stri
 	g.P(indent, "if ", wireTypeExpr, " != ", wireTypeConst(field), ":")
 	g.P(indent, "\treturn false")
 	return emitDecodedAssignment(g, indent, target, field, file, importAliases, streamName)
-}
-
-func emitSkipFieldMethod(g *protogen.GeneratedFile) {
-	g.P("\tfunc _skip_field(stream: ProtoInputStream, wire_type: int) -> bool:")
-	g.P("\t\tmatch wire_type:")
-	g.P("\t\t\tProtoFieldDescriptor.WireType.WIRETYPE_VARINT:")
-	g.P("\t\t\t\tProtoUtils.decode_varint(stream)")
-	g.P("\t\t\t\treturn true")
-	g.P("\t\t\tProtoFieldDescriptor.WireType.WIRETYPE_FIXED64:")
-	g.P("\t\t\t\tstream.skip(8)")
-	g.P("\t\t\t\treturn true")
-	g.P("\t\t\tProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:")
-	g.P("\t\t\t\tvar field_size := ProtoUtils.decode_varint(stream)")
-	g.P("\t\t\t\tif field_size < 0:")
-	g.P("\t\t\t\t\treturn false")
-	g.P("\t\t\t\tstream.skip(field_size)")
-	g.P("\t\t\t\treturn true")
-	g.P("\t\t\tProtoFieldDescriptor.WireType.WIRETYPE_FIXED32:")
-	g.P("\t\t\t\tstream.skip(4)")
-	g.P("\t\t\t\treturn true")
-	g.P("\t\t\t_:")
-	g.P("\t\t\t\treturn false")
-	g.P()
 }
 
 func emitSizeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {

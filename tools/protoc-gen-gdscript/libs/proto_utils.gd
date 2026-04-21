@@ -507,6 +507,27 @@ static func get_field_number(tag: int) -> int:
 # Extracts the wire type from an encoded protobuf tag.
 static func get_wire_type(tag: int) -> int:
 	return tag & 0x07
+
+# Skips one field payload according to the protobuf wire type.
+static func skip_field(stream: ProtoInputStream, wire_type: int) -> bool:
+	match wire_type:
+		ProtoFieldDescriptor.WireType.WIRETYPE_VARINT:
+			decode_varint(stream)
+			return true
+		ProtoFieldDescriptor.WireType.WIRETYPE_FIXED64:
+			stream.skip(8)
+			return true
+		ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:
+			var field_size := decode_varint(stream)
+			if field_size < 0:
+				return false
+			stream.skip(field_size)
+			return true
+		ProtoFieldDescriptor.WireType.WIRETYPE_FIXED32:
+			stream.skip(4)
+			return true
+		_:
+			return false
 #endregion
 
 #region Message
