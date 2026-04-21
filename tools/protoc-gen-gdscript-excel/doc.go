@@ -19,7 +19,40 @@
 
 // Package main implements the protoc-gen-gdscript-excel protobuf plugin.
 /*
-Package main 实现 protoc-gen-gdscript-excel 插件，为 Excel 配表导出的 proto
-结构生成 GDScript 表包装器和按索引查找的辅助方法。
+Package main implements protoc-gen-gdscript-excel, a protoc plugin that emits
+Godot-facing `*.excel.gd` table wrappers and index lookup helpers for proto
+schemas generated from Excel tables.
+
+Generated Excel wrappers depend on two runtime layers:
+
+1. `tools/protoc-gen-gdscript/libs`, because the wrappers call protobuf helper
+   classes such as `ProtoUtils` and `ProtoInputFile`.
+2. `tools/protoc-gen-gdscript-excel/libs/excel_utils.gd`, because chunk
+   loading, index conversion, and binary-search helpers are implemented there.
+
+These runtime scripts do not need fixed directory names. In real projects it
+is common to place both runtime layers into one shared location such as
+`script/libs`.
+
+Keep each generated `*.excel.gd` file next to its matching `*.pb.gd` file.
+The wrapper preloads `./<name>.pb.gd`, and the protobuf file layout should also
+preserve the relative structure of the source `.proto` set.
+
+Package main 实现 protoc-gen-gdscript-excel 插件，为 Excel 配表导出的
+proto 结构生成 Godot 侧的 `*.excel.gd` 表包装器和按索引查询辅助方法。
+
+生成的 Excel 包装器依赖两层运行时脚本：
+
+1. `tools/protoc-gen-gdscript/libs`，因为包装器会调用 `ProtoUtils`、
+   `ProtoInputFile` 等 protobuf 基础能力。
+2. `tools/protoc-gen-gdscript-excel/libs/excel_utils.gd`，因为分块加载、
+   索引值转换和二分查找等辅助逻辑都在这里实现。
+
+这些运行时脚本不要求放在固定目录名下。实际项目里通常会把两层运行时都统一
+放到 `script/libs` 之类的共享目录中。
+
+每个生成的 `*.excel.gd` 都应与对应的 `*.pb.gd` 放在同一个输出目录下。
+包装器会预加载 `./<name>.pb.gd`，而 `*.pb.gd` 自身也应尽量保持源
+`.proto` 集合的相对目录结构，以保证跨文件引用可正常解析。
 */
 package main

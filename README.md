@@ -57,6 +57,46 @@ The repository is organized around two layers:
 4. Let the add-in reload script solutions on local file changes or remote
    source changes.
 
+## Godot Runtime Libraries
+- `tools/protoc-gen-gdscript/libs` is the protobuf runtime required by every
+  generated `*.pb.gd` file. Copy these scripts into your Godot project once so
+  global classes such as `ProtoMessage`, `ProtoUtils`, `ProtoInputFile`, and
+  `ProtoOutputBuffer` are available to the generated code.
+- `tools/protoc-gen-gdscript-excel/libs/excel_utils.gd` is an additional
+  runtime helper for generated `*.excel.gd` files. Excel wrappers also depend
+  on the protobuf runtime above, so both `libs` directories must be present in
+  the Godot project when using `protoc-gen-gdscript-excel`.
+- These runtime scripts do not need to live in a special fixed directory.
+  A common pattern in real projects is to put them into one shared directory
+  such as `script/libs` and let Godot register them through `class_name`.
+- Keep generated `*.pb.gd` files in the same relative layout as the source
+  `.proto` files. Cross-file protobuf references are emitted as relative
+  `preload(...)` calls.
+- Keep each generated `*.excel.gd` file next to its matching `*.pb.gd` file.
+  Generated Excel wrappers preload `./<name>.pb.gd` from the same output
+  directory, and `excelc code --gdscript_out=...` typically emits an aggregate
+  loader such as `tables.gd` into that directory as well.
+
+One common layout inside a Godot project:
+
+```text
+res://script/libs/proto_message.gd
+res://script/libs/proto_utils.gd
+res://script/libs/proto_input_file.gd
+res://script/libs/excel_utils.gd
+res://script/gen/excel/example.pb.gd
+res://script/gen/excel/example.excel.gd
+res://script/gen/excel/tables.gd
+```
+
+Typical generation flow:
+
+```bash
+protoc --gdscript_out=./script/gen path/to/example.proto
+protoc --gdscript_out=./script/gen --gdscript-excel_out=./script/gen path/to/example.proto
+excelc code --pb_dir=./excel_proto --pb_package=excel --gdscript_out=./script/gen/excel
+```
+
 ## Package Layout
 | Path | Responsibility |
 | --- | --- |

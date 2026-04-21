@@ -41,6 +41,46 @@
 3. 用 `goscr.BuildEntityPT(...)` 结合脚本元信息声明实体原型。
 4. 由 add-in 自动监听本地文件变更或远端源码变化并重新加载脚本方案。
 
+## Godot 运行时库
+- `tools/protoc-gen-gdscript/libs` 是所有生成的 `*.pb.gd` 文件都要依赖的
+  protobuf 运行时库。需要把这些脚本拷贝到 Godot 项目中一次，让
+  `ProtoMessage`、`ProtoUtils`、`ProtoInputFile`、`ProtoOutputBuffer`
+  等全局 `class_name` 类能被生成代码直接使用。
+- `tools/protoc-gen-gdscript-excel/libs/excel_utils.gd` 是生成
+  `*.excel.gd` 时额外需要的运行时辅助库。只使用
+  `protoc-gen-gdscript-excel` 还不够，Godot 项目里还必须同时放入上面的
+  protobuf `libs`，因为 Excel 包装器会一起调用 `ExcelUtils`、
+  `ProtoUtils` 和 `ProtoInputFile`。
+- 这些运行时脚本不要求放在某个固定目录下。实际项目里更常见的做法是统一
+  放到一个共享目录，例如 `script/libs`，交给 Godot 通过 `class_name`
+  完成注册。
+- 生成后的 `*.pb.gd` 文件需要尽量保持与源 `.proto` 相同的相对目录结构，
+  因为跨 proto 文件的类型引用会生成相对 `preload(...)`。
+- 每个 `*.excel.gd` 都需要和对应的 `*.pb.gd` 放在同一个输出目录下。
+  生成的 Excel 包装器会从同目录预加载 `./<name>.pb.gd`，而
+  `excelc code --gdscript_out=...` 也通常会在这个目录里继续生成
+  `tables.gd` 之类的聚合加载脚本。
+
+一个更贴近实际项目的 Godot 布局如下：
+
+```text
+res://script/libs/proto_message.gd
+res://script/libs/proto_utils.gd
+res://script/libs/proto_input_file.gd
+res://script/libs/excel_utils.gd
+res://script/gen/excel/example.pb.gd
+res://script/gen/excel/example.excel.gd
+res://script/gen/excel/tables.gd
+```
+
+一个典型的生成流程如下：
+
+```bash
+protoc --gdscript_out=./script/gen path/to/example.proto
+protoc --gdscript_out=./script/gen --gdscript-excel_out=./script/gen path/to/example.proto
+excelc code --pb_dir=./excel_proto --pb_package=excel --gdscript_out=./script/gen/excel
+```
+
 ## 目录说明
 | 路径 | 职责 |
 | --- | --- |
