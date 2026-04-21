@@ -52,8 +52,8 @@
   protobuf `libs`，因为 Excel 包装器会一起调用 `ExcelUtils`、
   `ProtoUtils` 和 `ProtoInputFile`。
 - 这些运行时脚本不要求放在某个固定目录下。实际项目里更常见的做法是统一
-  放到一个共享目录，例如 `script/libs`，交给 Godot 通过 `class_name`
-  完成注册。
+  放到一个共享目录，例如 `libs` 或 `addons/<name>`，交给 Godot 通过
+  `class_name` 完成注册。
 - 生成后的 `*.pb.gd` 文件需要尽量保持与源 `.proto` 相同的相对目录结构，
   因为跨 proto 文件的类型引用会生成相对 `preload(...)`。
 - 每个 `*.excel.gd` 都需要和对应的 `*.pb.gd` 放在同一个输出目录下。
@@ -64,10 +64,10 @@
 一个更贴近实际项目的 Godot 布局如下：
 
 ```text
-res://script/libs/proto_message.gd
-res://script/libs/proto_utils.gd
-res://script/libs/proto_input_file.gd
-res://script/libs/excel_utils.gd
+res://libs/proto_message.gd
+res://libs/proto_utils.gd
+res://libs/proto_input_file.gd
+res://libs/excel_utils.gd
 res://script/gen/excel/example.pb.gd
 res://script/gen/excel/example.excel.gd
 res://script/gen/excel/tables.gd

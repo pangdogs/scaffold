@@ -68,7 +68,8 @@ The repository is organized around two layers:
   the Godot project when using `protoc-gen-gdscript-excel`.
 - These runtime scripts do not need to live in a special fixed directory.
   A common pattern in real projects is to put them into one shared directory
-  such as `script/libs` and let Godot register them through `class_name`.
+  such as `libs` or `addons/<name>` and let Godot register them through
+  `class_name`.
 - Keep generated `*.pb.gd` files in the same relative layout as the source
   `.proto` files. Cross-file protobuf references are emitted as relative
   `preload(...)` calls.
@@ -80,10 +81,10 @@ The repository is organized around two layers:
 One common layout inside a Godot project:
 
 ```text
-res://script/libs/proto_message.gd
-res://script/libs/proto_utils.gd
-res://script/libs/proto_input_file.gd
-res://script/libs/excel_utils.gd
+res://libs/proto_message.gd
+res://libs/proto_utils.gd
+res://libs/proto_input_file.gd
+res://libs/excel_utils.gd
 res://script/gen/excel/example.pb.gd
 res://script/gen/excel/example.excel.gd
 res://script/gen/excel/tables.gd

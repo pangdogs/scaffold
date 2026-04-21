@@ -30,7 +30,8 @@ such as `ProtoMessage`, `ProtoUtils`, `ProtoInputStream`, `ProtoOutputStream`,
 and can be resolved by generated code.
 
 These runtime scripts do not need a fixed directory name. In real projects it
-is common to place them in one shared location such as `script/libs`.
+is common to place them in one shared location such as `libs` or
+`addons/<name>`.
 
 Keep generated `*.pb.gd` files in the same relative layout as the source
 `.proto` files. Cross-file references are emitted as relative `preload(...)`
@@ -47,7 +48,7 @@ Package main 实现 protoc-gen-gdscript 插件，把 protobuf 定义转换为 Go
 `class_name` 注册的运行时类型可被生成代码直接解析。
 
 这些运行时脚本不要求放在固定目录名下。实际项目里通常会把它们统一放到
-`script/libs` 之类的共享目录中。
+`libs` 或 `addons/<name>` 之类的共享目录中。
 
 生成的 `*.pb.gd` 文件应尽量保持与源 `.proto` 相同的相对目录结构。跨文件
 类型引用会被生成为相对 `preload(...)`，单独移动某个生成文件可能导致导入
