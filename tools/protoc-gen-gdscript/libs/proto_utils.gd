@@ -501,11 +501,11 @@ static func decode_tag(stream: ProtoInputStream) -> int:
 	return decode_varint(stream)
 
 # Extracts the field number from an encoded protobuf tag.
-static func get_field_number(tag: int) -> int:
+static func get_tag_field_number(tag: int) -> int:
 	return tag >> 3
 
 # Extracts the wire type from an encoded protobuf tag.
-static func get_wire_type(tag: int) -> int:
+static func get_tag_wire_type(tag: int) -> int:
 	return tag & 0x07
 
 # Skips one field payload according to the protobuf wire type.

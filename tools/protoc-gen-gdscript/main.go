@@ -332,7 +332,7 @@ func emitEmptyMessageMethods(g *protogen.GeneratedFile, msgName string) {
 	g.P("\tfunc deserialize(stream: ProtoInputStream) -> bool:")
 	g.P("\t\twhile !stream.eof():")
 	g.P("\t\t\tvar tag := ProtoUtils.decode_tag(stream)")
-	g.P("\t\t\tif !ProtoUtils.skip_field(stream, ProtoUtils.get_wire_type(tag)):")
+	g.P("\t\t\tif !ProtoUtils.skip_field(stream, ProtoUtils.get_tag_wire_type(tag)):")
 	g.P("\t\t\t\treturn false")
 	g.P("\t\treturn true")
 	g.P()
@@ -458,8 +458,8 @@ func emitDeserializeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *
 	g.P("\tfunc deserialize(stream: ProtoInputStream) -> bool:")
 	g.P("\t\twhile !stream.eof():")
 	g.P("\t\t\tvar tag := ProtoUtils.decode_tag(stream)")
-	g.P("\t\t\tvar field_number := ProtoUtils.get_field_number(tag)")
-	g.P("\t\t\tvar wire_type := ProtoUtils.get_wire_type(tag)")
+	g.P("\t\t\tvar field_number := ProtoUtils.get_tag_field_number(tag)")
+	g.P("\t\t\tvar wire_type := ProtoUtils.get_tag_wire_type(tag)")
 	g.P("\t\t\tmatch field_number:")
 	for _, field := range msg.Fields {
 		if err := emitDeserializeField(g, file, field, importAliases); err != nil {
@@ -499,8 +499,8 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 		g.P("\t\t\t\t\tvar entry_value: ", entryValueType, " = ", entryValueExpr)
 		g.P("\t\t\t\t\twhile !entry_stream.eof():")
 		g.P("\t\t\t\t\t\tvar entry_tag := ProtoUtils.decode_tag(entry_stream)")
-		g.P("\t\t\t\t\t\tvar entry_field_number := ProtoUtils.get_field_number(entry_tag)")
-		g.P("\t\t\t\t\t\tvar entry_wire_type := ProtoUtils.get_wire_type(entry_tag)")
+		g.P("\t\t\t\t\t\tvar entry_field_number := ProtoUtils.get_tag_field_number(entry_tag)")
+		g.P("\t\t\t\t\t\tvar entry_wire_type := ProtoUtils.get_tag_wire_type(entry_tag)")
 		g.P("\t\t\t\t\t\tmatch entry_field_number:")
 		g.P("\t\t\t\t\t\t\t1:")
 		if err := emitCheckedDecodedAssignment(g, "\t\t\t\t\t\t\t\t", "entry_key", keyField, file, importAliases, "entry_stream", "entry_wire_type"); err != nil {
