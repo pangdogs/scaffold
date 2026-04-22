@@ -639,11 +639,8 @@ func fieldsToIndex(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceM
 	}
 
 	g.P("h := ", excelutilsPackage.Ident("NewHash"), "()")
-	g.P()
 
 	fieldDecls.Each(func(name string, decl *FieldDecl) {
-		defer g.P()
-
 		if decl.Field.Desc.IsMap() {
 			g.P("if err := ", excelutilsPackage.Ident("MapToHash"), "(h, ", name, "); err != nil {")
 			if panicForNotFound {
@@ -711,8 +708,6 @@ func compareFunc(fd *FieldDecl) []any {
 
 func hashVerification(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceMap[string, *FieldDecl], panicForNotFound bool, notFoundArgs string) {
 	fieldDecls.Each(func(name string, decl *FieldDecl) {
-		defer g.P()
-
 		if decl.Field.Desc.IsMap() {
 			output := []any{"if !", excelutilsPackage.Ident("MapEqual"), "(", name, ", row.", name, ", "}
 			output = append(output, compareFunc(decl)...)
@@ -798,8 +793,6 @@ func emitRowMatchesFunc(g *protogen.GeneratedFile, rowType protogen.GoIdent, fie
 	g.P("matchesRow := func(row *", rowType, ") bool {")
 
 	fieldDecls.Each(func(name string, decl *FieldDecl) {
-		defer g.P()
-
 		if decl.Field.Desc.IsMap() {
 			output := []any{"\tif !", excelutilsPackage.Ident("MapEqual"), "(", name, ", row.", name, ", "}
 			output = append(output, compareFunc(decl)...)
