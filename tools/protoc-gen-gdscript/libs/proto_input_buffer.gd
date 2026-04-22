@@ -23,51 +23,89 @@ var _data := PackedByteArray()
 var _position := 0
 
 func _init(data: PackedByteArray) -> void:
-	assert(data != null, "data cannot be null")
 	_data = data
+	_set_error(OK)
 
 func eof() -> bool:
 	return _position >= _data.size()
 
 func read_byte() -> int:
-	_ensure_available(1)
+	if !_ensure_available(1):
+		return 0
 	var value := _data[_position]
 	_position += 1
+	_set_error(OK)
+	return value
+
+func read_varint() -> int:
+	var value := 0
+	var shift := 0
+	while true:
+		if !_ensure_available(1):
+			return 0
+		var b := _data[_position]
+		_position += 1
+		value |= (b & 0x7F) << shift
+		if (b & 0x80) == 0:
+			break
+		shift += 7
+		if shift >= 70:
+			_set_error(ERR_INVALID_DATA, "Varint is too long.")
+			return 0
+	_set_error(OK)
 	return value
 
 func read_bytes(size: int) -> PackedByteArray:
-	assert(size >= 0, "size must be >= 0.")
-	if size == 0:
+	if size < 0:
+		_set_error(ERR_INVALID_PARAMETER, "size must be >= 0.")
 		return PackedByteArray()
-	_ensure_available(size)
+	if size == 0:
+		_set_error(OK)
+		return PackedByteArray()
+	if !_ensure_available(size):
+		return PackedByteArray()
 	var value := _data.slice(_position, _position + size)
 	_position += size
+	_set_error(OK)
 	return value
 
 func read_fixed32() -> int:
-	_ensure_available(4)
+	if !_ensure_available(4):
+		return 0
 	var value := _data.decode_u32(_position)
 	_position += 4
+	_set_error(OK)
 	return value
 
 func read_fixed64() -> int:
-	_ensure_available(8)
+	if !_ensure_available(8):
+		return 0
 	var value := _data.decode_u64(_position)
 	_position += 8
+	_set_error(OK)
 	return value
 
 func read_float() -> float:
-	_ensure_available(4)
+	if !_ensure_available(4):
+		return 0.0
 	var value := _data.decode_float(_position)
 	_position += 4
+	_set_error(OK)
 	return value
 
 func read_double() -> float:
-	_ensure_available(8)
+	if !_ensure_available(8):
+		return 0.0
 	var value := _data.decode_double(_position)
 	_position += 8
+	_set_error(OK)
 	return value
 
-func _ensure_available(size: int) -> void:
-	assert(size >= 0, "size must be >= 0.")
-	assert(_data.size() - _position >= size, "Unexpected EOF while reading data.")
+func _ensure_available(size: int) -> bool:
+	if size < 0:
+		_set_error(ERR_INVALID_PARAMETER, "size must be >= 0.")
+		return false
+	if _data.size() - _position < size:
+		_set_error(ERR_FILE_EOF, "Unexpected EOF while reading data.")
+		return false
+	return true

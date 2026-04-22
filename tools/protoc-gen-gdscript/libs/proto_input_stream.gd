@@ -21,6 +21,20 @@
 class_name ProtoInputStream
 extends RefCounted
 
+var _error: int = OK
+var _error_message := ""
+var _init_failed := false
+
+func get_error() -> int:
+	return _error
+
+func get_error_message() -> String:
+	return _error_message
+
+func _set_error(err: int, message: String = "") -> void:
+	_error = err
+	_error_message = message if err != OK else ""
+
 @abstract
 # Returns true when no more bytes can be read from the stream.
 func eof() -> bool
@@ -43,15 +57,22 @@ func read_fixed64() -> int
 
 # Reads a protobuf varint using the standard 7-bit continuation encoding.
 func read_varint() -> int:
+	if _init_failed:
+		return 0
 	var value := 0
 	var shift := 0
 	while true:
 		var b := read_byte()
+		if get_error() != OK:
+			return 0
 		value |= (b & 0x7F) << shift
 		if (b & 0x80) == 0:
 			break
 		shift += 7
-		assert(shift < 70, "Varint is too long.")
+		if shift >= 70:
+			_set_error(ERR_INVALID_DATA, "Varint is too long.")
+			return 0
+	_set_error(OK)
 	return value
 	
 @abstract
@@ -64,4 +85,9 @@ func read_double() -> float
 
 # Discards size bytes from the stream.
 func skip(size: int) -> void:
+	if _init_failed:
+		return
+	if size < 0:
+		_set_error(ERR_INVALID_PARAMETER, "size must be >= 0.")
+		return
 	read_bytes(size)

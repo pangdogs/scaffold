@@ -26,46 +26,142 @@ var _remaining: int
 
 # size is clamped to zero to avoid negative remaining byte counts.
 func _init(stream: ProtoInputStream, size: int) -> void:
-	assert(stream != null, "stream cannot be null")
+	if stream == null:
+		_init_failed = true
+		_set_error(ERR_INVALID_PARAMETER, "stream cannot be null")
+		return
 	_stream = stream
 	_remaining = max(size, 0)
+	_set_error(OK)
 
 func eof() -> bool:
+	if _init_failed:
+		return true
 	return _remaining <= 0
 
 func read_byte() -> int:
-	assert(_remaining >= 1, "Unexpected EOF in limited stream.")
+	if _init_failed:
+		return 0
+	if _remaining < 1:
+		_set_error(ERR_FILE_EOF, "Unexpected EOF in limited stream.")
+		return 0
+	var value := _stream.read_byte()
+	if _stream.get_error() != OK:
+		_set_error(_stream.get_error(), _stream.get_error_message())
+		return 0
 	_remaining -= 1
-	return _stream.read_byte()
+	_set_error(OK)
+	return value
+
+func read_varint() -> int:
+	if _init_failed:
+		return 0
+	var value := 0
+	var shift := 0
+	while true:
+		if _remaining < 1:
+			_set_error(ERR_FILE_EOF, "Unexpected EOF in limited stream.")
+			return 0
+		var b := _stream.read_byte()
+		if _stream.get_error() != OK:
+			_set_error(_stream.get_error(), _stream.get_error_message())
+			return 0
+		_remaining -= 1
+		value |= (b & 0x7F) << shift
+		if (b & 0x80) == 0:
+			break
+		shift += 7
+		if shift >= 70:
+			_set_error(ERR_INVALID_DATA, "Varint is too long.")
+			return 0
+	_set_error(OK)
+	return value
 
 func read_bytes(size: int) -> PackedByteArray:
-	assert(size >= 0, "size must be >= 0.")
-	assert(_remaining >= size, "Unexpected EOF in limited stream.")
+	if _init_failed:
+		return PackedByteArray()
+	if size < 0:
+		_set_error(ERR_INVALID_PARAMETER, "size must be >= 0.")
+		return PackedByteArray()
+	if _remaining < size:
+		_set_error(ERR_FILE_EOF, "Unexpected EOF in limited stream.")
+		return PackedByteArray()
+	var value := _stream.read_bytes(size)
+	if _stream.get_error() != OK:
+		_set_error(_stream.get_error(), _stream.get_error_message())
+		return PackedByteArray()
 	_remaining -= size
-	return _stream.read_bytes(size)
+	_set_error(OK)
+	return value
 
 func read_fixed32() -> int:
-	assert(_remaining >= 4, "Unexpected EOF in limited stream.")
+	if _init_failed:
+		return 0
+	if _remaining < 4:
+		_set_error(ERR_FILE_EOF, "Unexpected EOF in limited stream.")
+		return 0
+	var value := _stream.read_fixed32()
+	if _stream.get_error() != OK:
+		_set_error(_stream.get_error(), _stream.get_error_message())
+		return 0
 	_remaining -= 4
-	return _stream.read_fixed32()
+	_set_error(OK)
+	return value
 
 func read_fixed64() -> int:
-	assert(_remaining >= 8, "Unexpected EOF in limited stream.")
+	if _init_failed:
+		return 0
+	if _remaining < 8:
+		_set_error(ERR_FILE_EOF, "Unexpected EOF in limited stream.")
+		return 0
+	var value := _stream.read_fixed64()
+	if _stream.get_error() != OK:
+		_set_error(_stream.get_error(), _stream.get_error_message())
+		return 0
 	_remaining -= 8
-	return _stream.read_fixed64()
+	_set_error(OK)
+	return value
 
 func read_float() -> float:
-	assert(_remaining >= 4, "Unexpected EOF in limited stream.")
+	if _init_failed:
+		return 0.0
+	if _remaining < 4:
+		_set_error(ERR_FILE_EOF, "Unexpected EOF in limited stream.")
+		return 0.0
+	var value := _stream.read_float()
+	if _stream.get_error() != OK:
+		_set_error(_stream.get_error(), _stream.get_error_message())
+		return 0.0
 	_remaining -= 4
-	return _stream.read_float()
+	_set_error(OK)
+	return value
 
 func read_double() -> float:
-	assert(_remaining >= 8, "Unexpected EOF in limited stream.")
+	if _init_failed:
+		return 0.0
+	if _remaining < 8:
+		_set_error(ERR_FILE_EOF, "Unexpected EOF in limited stream.")
+		return 0.0
+	var value := _stream.read_double()
+	if _stream.get_error() != OK:
+		_set_error(_stream.get_error(), _stream.get_error_message())
+		return 0.0
 	_remaining -= 8
-	return _stream.read_double()
+	_set_error(OK)
+	return value
 
 func skip(size: int) -> void:
-	assert(size >= 0, "size must be >= 0.")
-	assert(_remaining >= size, "Unexpected EOF in limited stream.")
-	_remaining -= size
+	if _init_failed:
+		return
+	if size < 0:
+		_set_error(ERR_INVALID_PARAMETER, "size must be >= 0.")
+		return
+	if _remaining < size:
+		_set_error(ERR_FILE_EOF, "Unexpected EOF in limited stream.")
+		return
 	_stream.skip(size)
+	if _stream.get_error() != OK:
+		_set_error(_stream.get_error(), _stream.get_error_message())
+		return
+	_remaining -= size
+	_set_error(OK)

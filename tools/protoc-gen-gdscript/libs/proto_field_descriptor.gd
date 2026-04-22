@@ -61,7 +61,7 @@ enum FieldLabel {
 
 # Maps a protobuf field type identifier to its wire encoding.
 # Returns -1 when the type does not have a supported wire representation.
-static func get_wire_type(field_type: int) -> int:
+static func get_field_wire_type(field_type: int) -> int:
 	match field_type:
 		FieldType.TYPE_INT32, FieldType.TYPE_INT64, FieldType.TYPE_UINT32, FieldType.TYPE_UINT64, FieldType.TYPE_SINT32, FieldType.TYPE_SINT64, FieldType.TYPE_BOOL, FieldType.TYPE_ENUM:
 			return WireType.WIRETYPE_VARINT

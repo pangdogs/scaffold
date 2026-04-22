@@ -176,7 +176,7 @@ func init(data_dir: String = DEFAULT_DATA_DIR) -> void:
 
 func _ready() -> void:
 	if !_load_data(_data_dir):
-		push_error("failed to load excel data from %s" % _data_dir)
+		push_error("failed to load excel data: data_dir=%s" % _data_dir)
 
 func _load_data(dir: String) -> bool:	
 	var tabs := Tables.load_from_files(dir)
@@ -209,14 +209,14 @@ class Tables:
 	static func _load_table_file(msg: ProtoMessage, path: String) -> bool:
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file == null:
-			push_warning("failed to open excel table file %s" % path)
+			push_warning("failed to open excel table file: file_path=%s" % path)
 			return false
 		var stream := ProtoInputFile.new(file)
 		msg.reset()
 		if !msg.deserialize(stream):
-			push_error("failed to deserialize excel table file %s" % path)
+			push_error("failed to deserialize excel table file: file_path=%s" % path)
 			return false
-		print("excel table file %s loaded" % path)
+		print("excel table file loaded: file_path=%s" % path)
 		return true
 
 	static func _load_table_index_file(msg, base_path: String) -> bool:

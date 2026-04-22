@@ -41,7 +41,7 @@ var config GeneratorConfig
 
 func main() {
 	var flags flag.FlagSet
-	stringAsStringName := flags.Bool("string_as_stringname", false, "map proto string fields to GDScript StringName")
+	stringAsStringName := flags.Bool("string_as_string_name", false, "map proto string fields to GDScript StringName")
 
 	protogen.Options{ParamFunc: flags.Set}.Run(func(gen *protogen.Plugin) error {
 		config = GeneratorConfig{
@@ -327,11 +327,15 @@ func emitMessageFields(g *protogen.GeneratedFile, file *protogen.File, msg *prot
 func emitEmptyMessageMethods(g *protogen.GeneratedFile, msgName string) {
 	g.P("\t@warning_ignore(\"unused_parameter\")")
 	g.P("\tfunc serialize(stream: ProtoOutputStream) -> bool:")
+	g.P("\t\tif stream.get_error() != OK:")
+	g.P("\t\t\treturn false")
 	g.P("\t\treturn true")
 	g.P()
 	g.P("\tfunc deserialize(stream: ProtoInputStream) -> bool:")
 	g.P("\t\twhile !stream.eof():")
 	g.P("\t\t\tvar tag := ProtoUtils.decode_tag(stream)")
+	g.P("\t\t\tif stream.get_error() != OK:")
+	g.P("\t\t\t\treturn false")
 	g.P("\t\t\tif !ProtoUtils.skip_field(stream, ProtoUtils.get_tag_wire_type(tag)):")
 	g.P("\t\t\t\treturn false")
 	g.P("\t\treturn true")
@@ -362,6 +366,8 @@ func emitSerializeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *pr
 		g.P("\t@warning_ignore(\"unused_parameter\")")
 	}
 	g.P("\tfunc serialize(stream: ProtoOutputStream) -> bool:")
+	g.P("\t\tif stream.get_error() != OK:")
+	g.P("\t\t\treturn false")
 	if len(msg.Fields) <= 0 {
 		g.P("\t\treturn true")
 		g.P()
@@ -402,7 +408,8 @@ func emitSerializeField(g *protogen.GeneratedFile, file *protogen.File, field *p
 			shouldSerializeExpression("value", valueField),
 			")",
 		)
-		g.P("\t\t\tProtoUtils.encode_varint(stream, entry_size)")
+		g.P("\t\t\tif !ProtoUtils.encode_varint(stream, entry_size):")
+		g.P("\t\t\t\treturn false")
 		g.P("\t\t\tif !ProtoUtils.encode_tag(stream, 1, ", fieldTypeConst(keyField), "):")
 		g.P("\t\t\t\treturn false")
 		emitEncodeValue(g, "\t\t\t", "key", keyField, file, importAliases)
@@ -420,7 +427,8 @@ func emitSerializeField(g *protogen.GeneratedFile, file *protogen.File, field *p
 			g.P("\t\t\tif !ProtoUtils.encode_tag(stream, ", fieldNumber, ", ", fieldType, "):")
 			g.P("\t\t\t\treturn false")
 			g.P("\t\t\tvar data_size := ProtoUtils.sizeof_array_payload(", name, ", func(value): return ", scalarSizeExpression("value", field, file, importAliases), ")")
-			g.P("\t\t\tProtoUtils.encode_varint(stream, data_size)")
+			g.P("\t\t\tif !ProtoUtils.encode_varint(stream, data_size):")
+			g.P("\t\t\t\treturn false")
 			g.P("\t\t\tfor value in ", name, ":")
 			if err := emitEncodeValue(g, "\t\t\t\t", "value", field, file, importAliases); err != nil {
 				return err
@@ -450,7 +458,8 @@ func emitEncodeValue(g *protogen.GeneratedFile, indent, valueExpr string, field 
 		g.P(indent, "\treturn false")
 		return nil
 	}
-	g.P(indent, encodeValueCall(valueExpr, field))
+	g.P(indent, "if !", encodeValueCall(valueExpr, field), ":")
+	g.P(indent, "\treturn false")
 	return nil
 }
 
@@ -458,6 +467,8 @@ func emitDeserializeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *
 	g.P("\tfunc deserialize(stream: ProtoInputStream) -> bool:")
 	g.P("\t\twhile !stream.eof():")
 	g.P("\t\t\tvar tag := ProtoUtils.decode_tag(stream)")
+	g.P("\t\t\tif stream.get_error() != OK:")
+	g.P("\t\t\t\treturn false")
 	g.P("\t\t\tvar field_number := ProtoUtils.get_tag_field_number(tag)")
 	g.P("\t\t\tvar wire_type := ProtoUtils.get_tag_wire_type(tag)")
 	g.P("\t\t\tmatch field_number:")
@@ -484,7 +495,7 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 		g.P("\t\t\t\t\tif wire_type != ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:")
 		g.P("\t\t\t\t\t\treturn false")
 		g.P("\t\t\t\t\tvar entry_size := ProtoUtils.decode_varint(stream)")
-		g.P("\t\t\t\t\tif entry_size < 0:")
+		g.P("\t\t\t\t\tif stream.get_error() != OK or entry_size < 0:")
 		g.P("\t\t\t\t\t\treturn false")
 		g.P("\t\t\t\t\tvar entry_stream := ProtoLimitedInputStream.new(stream, entry_size)")
 		g.P("\t\t\t\t\tvar entry_key := ", defaultMapKeyExpression(keyField))
@@ -499,6 +510,8 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 		g.P("\t\t\t\t\tvar entry_value: ", entryValueType, " = ", entryValueExpr)
 		g.P("\t\t\t\t\twhile !entry_stream.eof():")
 		g.P("\t\t\t\t\t\tvar entry_tag := ProtoUtils.decode_tag(entry_stream)")
+		g.P("\t\t\t\t\t\tif entry_stream.get_error() != OK:")
+		g.P("\t\t\t\t\t\t\treturn false")
 		g.P("\t\t\t\t\t\tvar entry_field_number := ProtoUtils.get_tag_field_number(entry_tag)")
 		g.P("\t\t\t\t\t\tvar entry_wire_type := ProtoUtils.get_tag_wire_type(entry_tag)")
 		g.P("\t\t\t\t\t\tmatch entry_field_number:")
@@ -520,7 +533,7 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 		if isPackedField(field) {
 			g.P("\t\t\t\t\tif wire_type == ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:")
 			g.P("\t\t\t\t\t\tvar packed_size := ProtoUtils.decode_varint(stream)")
-			g.P("\t\t\t\t\t\tif packed_size < 0:")
+			g.P("\t\t\t\t\t\tif stream.get_error() != OK or packed_size < 0:")
 			g.P("\t\t\t\t\t\t\treturn false")
 			g.P("\t\t\t\t\t\tvar packed_stream := ProtoLimitedInputStream.new(stream, packed_size)")
 			g.P("\t\t\t\t\t\twhile !packed_stream.eof():")
@@ -565,7 +578,10 @@ func emitDecodedAppend(g *protogen.GeneratedFile, indent, target string, field *
 	if field.Enum != nil {
 		g.P(indent, `@warning_ignore("int_as_enum_without_cast")`)
 	}
-	g.P(indent, target, ".append(", decodeValueExpression(field, streamName), ")")
+	g.P(indent, "var value := ", decodeValueExpression(field, streamName))
+	g.P(indent, "if ", streamName, ".get_error() != OK:")
+	g.P(indent, "\treturn false")
+	g.P(indent, target, ".append(value)")
 	return nil
 }
 
@@ -584,7 +600,10 @@ func emitDecodedAssignment(g *protogen.GeneratedFile, indent, target string, fie
 	if field.Enum != nil {
 		g.P(indent, `@warning_ignore("int_as_enum_without_cast")`)
 	}
-	g.P(indent, target, " = ", decodeValueExpression(field, streamName))
+	g.P(indent, "var value := ", decodeValueExpression(field, streamName))
+	g.P(indent, "if ", streamName, ".get_error() != OK:")
+	g.P(indent, "\treturn false")
+	g.P(indent, target, " = value")
 	return nil
 }
 
@@ -948,7 +967,7 @@ func enumQualifiedName(enum *protogen.Enum) string {
 }
 
 func wireTypeConst(field *protogen.Field) string {
-	return "ProtoFieldDescriptor.get_wire_type(" + fieldTypeConst(field) + ")"
+	return "ProtoFieldDescriptor.get_field_wire_type(" + fieldTypeConst(field) + ")"
 }
 
 func fieldTypeConst(field *protogen.Field) string {
@@ -1014,9 +1033,7 @@ func shouldSerializeExpression(valueExpr string, field *protogen.Field) string {
 	switch field.Desc.Kind() {
 	case protoreflect.BoolKind:
 		return valueExpr
-	case protoreflect.StringKind:
-		return "!ProtoUtils.is_empty_string(" + valueExpr + ")"
-	case protoreflect.BytesKind:
+	case protoreflect.StringKind, protoreflect.BytesKind:
 		return "!" + valueExpr + ".is_empty()"
 	case protoreflect.FloatKind, protoreflect.DoubleKind,
 		protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind,
@@ -1035,6 +1052,9 @@ func encodeValueCall(valueExpr string, field *protogen.Field) string {
 	case protoreflect.BoolKind:
 		return "ProtoUtils.encode_bool(stream, " + valueExpr + ")"
 	case protoreflect.StringKind:
+		if config.StringAsStringName {
+			return "ProtoUtils.encode_string_name(stream, " + valueExpr + ")"
+		}
 		return "ProtoUtils.encode_string(stream, " + valueExpr + ")"
 	case protoreflect.BytesKind:
 		return "ProtoUtils.encode_bytes(stream, " + valueExpr + ")"
@@ -1127,6 +1147,9 @@ func hashCallExpression(hasherName, valueExpr string, file *protogen.File, field
 	case protoreflect.BoolKind:
 		return "ProtoUtils.hash_bool(" + hasherName + ", " + valueExpr + ")", nil
 	case protoreflect.StringKind:
+		if config.StringAsStringName {
+			return "ProtoUtils.hash_string_name(" + hasherName + ", " + valueExpr + ")", nil
+		}
 		return "ProtoUtils.hash_string(" + hasherName + ", " + valueExpr + ")", nil
 	case protoreflect.BytesKind:
 		return "ProtoUtils.hash_bytes(" + hasherName + ", " + valueExpr + ")", nil
