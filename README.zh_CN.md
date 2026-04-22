@@ -77,9 +77,12 @@ res://script/gen/excel/tables.gd
 
 ```bash
 protoc --gdscript_out=./script/gen path/to/example.proto
+protoc --gdscript_out=deterministic=true:./script/gen path/to/example.proto
 protoc --gdscript_out=./script/gen --gdscript-excel_out=./script/gen path/to/example.proto
 excelc code --pb_dir=./excel_proto --pb_package=excel --gdscript_out=./script/gen/excel
 ```
+
+需要生成稳定的 map 字段序列化结果时，可传 `deterministic=true`。
 
 ## 目录说明
 | 路径 | 职责 |

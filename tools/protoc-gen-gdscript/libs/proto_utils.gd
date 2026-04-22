@@ -215,6 +215,82 @@ static func decode_zigzag64(stream: ProtoInputStream) -> int:
 	return (zv >> 1) ^ -(zv & 1)
 #endregion
 
+#region Tag
+# Encodes a field number and field type into a protobuf tag.
+static func encode_tag(stream: ProtoOutputStream, field_number: int, field_type: int) -> bool:
+	if field_number <= 0:
+		return false
+	var wire_type := ProtoFieldDescriptor.get_field_wire_type(field_type)
+	if wire_type < 0:
+		return false
+	var value := (field_number << 3) | wire_type
+	return encode_varint(stream, value)
+
+# Decodes a protobuf tag value from the stream.
+static func decode_tag(stream: ProtoInputStream) -> int:
+	return decode_varint(stream)
+
+# Extracts the field number from an encoded protobuf tag.
+static func get_tag_field_number(tag: int) -> int:
+	return tag >> 3
+
+# Extracts the wire type from an encoded protobuf tag.
+static func get_tag_wire_type(tag: int) -> int:
+	return tag & 0x07
+
+# Skips one field payload according to the protobuf wire type.
+static func skip_field(stream: ProtoInputStream, wire_type: int) -> bool:
+	match wire_type:
+		ProtoFieldDescriptor.WireType.WIRETYPE_VARINT:
+			decode_varint(stream)
+			return stream.get_error() == OK
+		ProtoFieldDescriptor.WireType.WIRETYPE_FIXED64:
+			stream.skip(8)
+			return stream.get_error() == OK
+		ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:
+			var field_size := decode_varint(stream)
+			if stream.get_error() != OK:
+				return false
+			if field_size < 0:
+				return false
+			stream.skip(field_size)
+			return stream.get_error() == OK
+		ProtoFieldDescriptor.WireType.WIRETYPE_FIXED32:
+			stream.skip(4)
+			return stream.get_error() == OK
+		_:
+			return false
+#endregion
+
+#region Message
+# Encodes a nested message as a length-delimited protobuf payload.
+static func encode_message(stream: ProtoOutputStream, msg: ProtoMessage) -> bool:
+	if msg == null:
+		return false
+	var size := msg.size()
+	if size < 0:
+		return false
+	if !encode_varint(stream, size):
+		return false
+	if !msg.serialize(stream):
+		return false
+	return stream.get_error() == OK
+
+# Decodes a nested message using a bounded substream of the declared message size.
+static func decode_message(stream: ProtoInputStream, msg: ProtoMessage) -> bool:
+	if msg == null:
+		return false
+	var size := decode_varint(stream)
+	if stream.get_error() != OK:
+		return false
+	if size < 0:
+		return false
+	var limited_stream := ProtoLimitedInputStream.new(stream, size)
+	if !msg.deserialize(limited_stream):
+		return false
+	return limited_stream.get_error() == OK and limited_stream.eof()
+#endregion
+
 #region Sizeof Helpers
 # Returns the encoded size of a zigzag32 payload.
 static func sizeof_zigzag32(value: int) -> int:
@@ -406,7 +482,7 @@ static func hash_message(hasher: Fnv64aHasher, value: ProtoMessage, default_fact
 
 # Hashes an array in declaration order with an element-count prefix.
 static func hash_array(hasher: Fnv64aHasher, values: Array, value_hasher: Callable) -> void:
-	hasher.write_byte(HASH_TAG_ARRAY)	
+	hasher.write_byte(HASH_TAG_ARRAY)
 	hasher.write_uint64(values.size())
 	if values.is_empty() or !value_hasher.is_valid():
 		return
@@ -421,11 +497,11 @@ static func hash_dictionary(
 	value_hasher: Callable,
 	key_order: int = DictionaryKeyOrder.DEFAULT
 ) -> void:
-	hasher.write_byte(HASH_TAG_DICTIONARY)	
+	hasher.write_byte(HASH_TAG_DICTIONARY)
 	hasher.write_uint64(values.size())
 	if values.is_empty() or !key_hasher.is_valid() or !value_hasher.is_valid():
 		return
-	for key in _sorted_keys(values, key_order):
+	for key in sorted_dictionary_keys(values, key_order):
 		key_hasher.call(key)
 		value_hasher.call(values[key])
 #endregion
@@ -483,85 +559,9 @@ static func equal_dictionary(a: Dictionary, b: Dictionary, value_equal: Callable
 	return true
 #endregion
 
-#region Tag
-# Encodes a field number and field type into a protobuf tag.
-static func encode_tag(stream: ProtoOutputStream, field_number: int, field_type: int) -> bool:
-	if field_number <= 0:
-		return false
-	var wire_type := ProtoFieldDescriptor.get_field_wire_type(field_type)
-	if wire_type < 0:
-		return false
-	var value := (field_number << 3) | wire_type
-	return encode_varint(stream, value)
-
-# Decodes a protobuf tag value from the stream.
-static func decode_tag(stream: ProtoInputStream) -> int:
-	return decode_varint(stream)
-
-# Extracts the field number from an encoded protobuf tag.
-static func get_tag_field_number(tag: int) -> int:
-	return tag >> 3
-
-# Extracts the wire type from an encoded protobuf tag.
-static func get_tag_wire_type(tag: int) -> int:
-	return tag & 0x07
-
-# Skips one field payload according to the protobuf wire type.
-static func skip_field(stream: ProtoInputStream, wire_type: int) -> bool:
-	match wire_type:
-		ProtoFieldDescriptor.WireType.WIRETYPE_VARINT:
-			decode_varint(stream)
-			return stream.get_error() == OK
-		ProtoFieldDescriptor.WireType.WIRETYPE_FIXED64:
-			stream.skip(8)
-			return stream.get_error() == OK
-		ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:
-			var field_size := decode_varint(stream)
-			if stream.get_error() != OK:
-				return false
-			if field_size < 0:
-				return false
-			stream.skip(field_size)
-			return stream.get_error() == OK
-		ProtoFieldDescriptor.WireType.WIRETYPE_FIXED32:
-			stream.skip(4)
-			return stream.get_error() == OK
-		_:
-			return false
-#endregion
-
-#region Message
-# Encodes a nested message as a length-delimited protobuf payload.
-static func encode_message(stream: ProtoOutputStream, msg: ProtoMessage) -> bool:
-	if msg == null:
-		return false
-	var size := msg.size()
-	if size < 0:
-		return false
-	if !encode_varint(stream, size):
-		return false
-	if !msg.serialize(stream):
-		return false
-	return stream.get_error() == OK
-
-# Decodes a nested message using a bounded substream of the declared message size.
-static func decode_message(stream: ProtoInputStream, msg: ProtoMessage) -> bool:
-	if msg == null:
-		return false
-	var size := decode_varint(stream)
-	if stream.get_error() != OK:
-		return false
-	if size < 0:
-		return false
-	var limited_stream := ProtoLimitedInputStream.new(stream, size)
-	if !msg.deserialize(limited_stream):
-		return false
-	return limited_stream.get_error() == OK and limited_stream.eof()
-#endregion
-
 #region Internal Helpers
-# Returns dictionary keys sorted with the same ordering rules used by generated hashes.
-static func _sorted_keys(values: Dictionary, key_order: int = DictionaryKeyOrder.DEFAULT) -> Array:
+# Returns dictionary keys sorted with the same ordering rules used by deterministic map serialization.
+static func sorted_dictionary_keys(values: Dictionary, key_order: int = DictionaryKeyOrder.DEFAULT) -> Array:
 	if values.is_empty():
 		return []
 	var keys := values.keys()

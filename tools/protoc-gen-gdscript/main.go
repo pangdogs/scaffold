@@ -35,6 +35,7 @@ import (
 
 type GeneratorConfig struct {
 	StringAsStringName bool
+	Deterministic      bool
 }
 
 var config GeneratorConfig
@@ -42,10 +43,12 @@ var config GeneratorConfig
 func main() {
 	var flags flag.FlagSet
 	stringAsStringName := flags.Bool("string_as_string_name", false, "map proto string fields to GDScript StringName")
+	deterministic := flags.Bool("deterministic", false, "serialize map fields in deterministic key order")
 
 	protogen.Options{ParamFunc: flags.Set}.Run(func(gen *protogen.Plugin) error {
 		config = GeneratorConfig{
 			StringAsStringName: *stringAsStringName,
+			Deterministic:      *deterministic,
 		}
 		generatedPrefixes := map[string]string{}
 		for _, f := range gen.Files {
@@ -390,7 +393,11 @@ func emitSerializeField(g *protogen.GeneratedFile, file *protogen.File, field *p
 	if field.Desc.IsMap() {
 		keyField := field.Message.Fields[0]
 		valueField := field.Message.Fields[1]
-		g.P("\t\tfor key in ", name, ":")
+		iterExpr := name
+		if config.Deterministic {
+			iterExpr = "ProtoUtils.sorted_dictionary_keys(" + name + dictionaryKeyOrderSuffix(keyField) + ")"
+		}
+		g.P("\t\tfor key in ", iterExpr, ":")
 		g.P("\t\t\tvar value := ", name, "[key]")
 		g.P("\t\t\tif !ProtoUtils.encode_tag(stream, ", fieldNumber, ", ProtoFieldDescriptor.FieldType.TYPE_MAP):")
 		g.P("\t\t\t\treturn false")
@@ -597,12 +604,12 @@ func emitDecodedAssignment(g *protogen.GeneratedFile, indent, target string, fie
 		g.P(indent, target, " = value")
 		return nil
 	}
-	if field.Enum != nil {
-		g.P(indent, `@warning_ignore("int_as_enum_without_cast")`)
-	}
 	g.P(indent, "var value := ", decodeValueExpression(field, streamName))
 	g.P(indent, "if ", streamName, ".get_error() != OK:")
 	g.P(indent, "\treturn false")
+	if field.Enum != nil {
+		g.P(indent, `@warning_ignore("int_as_enum_without_cast")`)
+	}
 	g.P(indent, target, " = value")
 	return nil
 }
@@ -730,7 +737,7 @@ func emitHashToField(g *protogen.GeneratedFile, file *protogen.File, field *prot
 		if err != nil {
 			return err
 		}
-		g.P("\t\tProtoUtils.hash_dictionary(hasher, ", name, ", func(key): ", keyHasher, ", func(value): ", valueHasher, hashDictionaryKeyOrderSuffix(keyField), ")")
+		g.P("\t\tProtoUtils.hash_dictionary(hasher, ", name, ", func(key): ", keyHasher, ", func(value): ", valueHasher, dictionaryKeyOrderSuffix(keyField), ")")
 		return nil
 	}
 	if field.Desc.IsList() {
@@ -1176,7 +1183,7 @@ func hashCallableExpression(hasherName, valueExpr string, file *protogen.File, f
 	return hashCallExpression(hasherName, valueExpr, file, field, importAliases)
 }
 
-func hashDictionaryKeyOrderSuffix(keyField *protogen.Field) string {
+func dictionaryKeyOrderSuffix(keyField *protogen.Field) string {
 	switch keyField.Desc.Kind() {
 	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
 		return ", ProtoUtils.DictionaryKeyOrder.UINT64"

@@ -94,9 +94,12 @@ Typical generation flow:
 
 ```bash
 protoc --gdscript_out=./script/gen path/to/example.proto
+protoc --gdscript_out=deterministic=true:./script/gen path/to/example.proto
 protoc --gdscript_out=./script/gen --gdscript-excel_out=./script/gen path/to/example.proto
 excelc code --pb_dir=./excel_proto --pb_package=excel --gdscript_out=./script/gen/excel
 ```
+
+Use `deterministic=true` when you need stable map-field serialization order in generated GDScript.
 
 ## Package Layout
 | Path | Responsibility |
