@@ -162,12 +162,6 @@ static func float_to_index(value: float) -> int:
 static func double_to_index(value: float) -> int:
 	return _float64_bits(value)
 
-# Returns dictionary keys sorted with the same ordering rules used by generated indexes.
-static func sorted_keys(values: Dictionary) -> Array:
-	var keys := values.keys()
-	keys.sort_custom(func(a, b): return _variant_less(a, b))
-	return keys
-
 # Performs a binary search over ordered unsigned 64-bit values and returns the matching position.
 static func binary_search_u64(items: Array[int], value: int) -> int:
 	var low := 0
@@ -197,20 +191,6 @@ static func _float64_bits(value: float) -> int:
 	buffer.resize(8)
 	buffer.encode_double(0, value)
 	return buffer.decode_u64(0)
-
-# Provides a stable fallback ordering for dictionary keys of mixed Variant types.
-static func _variant_less(a, b) -> bool:
-	match typeof(a):
-		TYPE_BOOL:
-			return !a and b
-		TYPE_INT:
-			return a < b
-		TYPE_STRING:
-			return String(a) < String(b)
-		TYPE_STRING_NAME:
-			return String(a) < String(b)
-		_:
-			return var_to_str(a) < var_to_str(b)
 
 # Compares two int values as if they were unsigned 64-bit integers.
 static func _compare_u64(a: int, b: int) -> int:

@@ -80,7 +80,7 @@ var config GeneratorConfig
 
 func main() {
 	var flags flag.FlagSet
-	stringAsStringName := flags.Bool("string_as_stringname", false, "map proto string fields to GDScript StringName")
+	stringAsStringName := flags.Bool("string_as_string_name", false, "map proto string fields to GDScript StringName")
 
 	protogen.Options{ParamFunc: flags.Set}.Run(func(gen *protogen.Plugin) error {
 		config = GeneratorConfig{
@@ -821,7 +821,7 @@ func emitHashStatements(g *protogen.GeneratedFile, indent, hasherName, valueExpr
 		if err != nil {
 			return err
 		}
-		g.P(indent, "ProtoUtils.hash_dictionary(", hasherName, ", ", valueExpr, ", func(key): ", keyHasher, ", func(value): ", valueHasher, hashDictionaryKeyOrderSuffix(keyField), ")")
+		g.P(indent, "ProtoUtils.hash_dictionary(", hasherName, ", ", valueExpr, ", func(key): ", keyHasher, ", func(value): ", valueHasher, dictionaryKeyOrderSuffix(keyField), ")")
 		return nil
 	}
 
@@ -913,7 +913,7 @@ func hashCallExpression(hasherName, valueExpr string, field *protogen.Field, pro
 	}
 }
 
-func hashDictionaryKeyOrderSuffix(keyField *protogen.Field) string {
+func dictionaryKeyOrderSuffix(keyField *protogen.Field) string {
 	switch keyField.Desc.Kind() {
 	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
 		return ", ProtoUtils.DictionaryKeyOrder.UINT64"
