@@ -80,6 +80,7 @@ res://script/gen/proto/login.pb.gd
 Godot 项目中，Excel 配表产物一种常见布局如下。这里仅列出 Excel 配表这一侧的目录：
 
 ```text
+res://addons/proto/          # 从 tools/protoc-gen-gdscript/libs 拷贝的运行时文件
 res://addons/excel/          # 从 tools/protoc-gen-gdscript-excel/libs 拷贝的运行时文件
 res://script/gen/excel/      # Excel protobuf 与包装器输出
 res://script/gen/excel/excelc.pb.gd

@@ -113,6 +113,7 @@ One common layout for Excel table output inside a Godot project.
 This section only lists the Excel table side of the layout:
 
 ```text
+res://addons/proto/          # files copied from tools/protoc-gen-gdscript/libs
 res://addons/excel/          # files copied from tools/protoc-gen-gdscript-excel/libs
 res://script/gen/excel/      # excel protobuf + wrapper output
 res://script/gen/excel/excelc.pb.gd
