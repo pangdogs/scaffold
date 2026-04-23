@@ -776,20 +776,20 @@ func emitEqualsField(g *protogen.GeneratedFile, file *protogen.File, field *prot
 	name := safeIdentifier(field.GoName)
 	if field.Desc.IsMap() {
 		valueField := field.Message.Fields[1]
-		valueEqualExpr, err := equalCallExpression("left", "right", valueField, file, importAliases)
+		valueEqualExpr, err := equalCallExpression("a", "b", valueField, file, importAliases)
 		if err != nil {
 			return err
 		}
-		g.P("\t\tif !ProtoUtils.equal_dictionary(", name, ", other_msg.", name, ", func(left, right): return ", valueEqualExpr, "):")
+		g.P("\t\tif !ProtoUtils.equal_dictionary(", name, ", other_msg.", name, ", func(a, b): return ", valueEqualExpr, "):")
 		g.P("\t\t\treturn false")
 		return nil
 	}
 	if field.Desc.IsList() {
-		valueEqualExpr, err := equalCallExpression("left", "right", field, file, importAliases)
+		valueEqualExpr, err := equalCallExpression("a", "b", field, file, importAliases)
 		if err != nil {
 			return err
 		}
-		g.P("\t\tif !ProtoUtils.equal_array(", name, ", other_msg.", name, ", func(left, right): return ", valueEqualExpr, "):")
+		g.P("\t\tif !ProtoUtils.equal_array(", name, ", other_msg.", name, ", func(a, b): return ", valueEqualExpr, "):")
 		g.P("\t\t\treturn false")
 		return nil
 	}
@@ -1201,8 +1201,6 @@ func equalCallExpression(leftExpr, rightExpr string, field *protogen.Field, file
 		return "ProtoUtils.equal_message(" + leftExpr + ", " + rightExpr + ", func(): return " + typeRef + ".new())", nil
 	}
 	switch field.Desc.Kind() {
-	case protoreflect.BytesKind:
-		return "ProtoUtils.equal_bytes(" + leftExpr + ", " + rightExpr + ")", nil
 	case protoreflect.FloatKind:
 		return "ProtoUtils.equal_float32(" + leftExpr + ", " + rightExpr + ")", nil
 	case protoreflect.DoubleKind:

@@ -854,21 +854,21 @@ func emitEqualityStatements(g *protogen.GeneratedFile, indent, leftExpr, rightEx
 		if field.Message == nil || len(field.Message.Fields) < 2 {
 			return fmt.Errorf("map field %s has invalid entry descriptor", field.Desc.FullName())
 		}
-		valueEqualExpr, err := equalCallExpression("left", "right", field.Message.Fields[1], protoImportAlias, messageTypeNames)
+		valueEqualExpr, err := equalCallExpression("a", "b", field.Message.Fields[1], protoImportAlias, messageTypeNames)
 		if err != nil {
 			return err
 		}
-		g.P(indent, "if !ProtoUtils.equal_dictionary(", leftExpr, ", ", rightExpr, ", func(left, right): return ", valueEqualExpr, "):")
+		g.P(indent, "if !ProtoUtils.equal_dictionary(", leftExpr, ", ", rightExpr, ", func(a, b): return ", valueEqualExpr, "):")
 		g.P(indent, "\treturn false")
 		return nil
 	}
 
 	if field.Desc.IsList() {
-		valueEqualExpr, err := equalCallExpression("left", "right", field, protoImportAlias, messageTypeNames)
+		valueEqualExpr, err := equalCallExpression("a", "b", field, protoImportAlias, messageTypeNames)
 		if err != nil {
 			return err
 		}
-		g.P(indent, "if !ProtoUtils.equal_array(", leftExpr, ", ", rightExpr, ", func(left, right): return ", valueEqualExpr, "):")
+		g.P(indent, "if !ProtoUtils.equal_array(", leftExpr, ", ", rightExpr, ", func(a, b): return ", valueEqualExpr, "):")
 		g.P(indent, "\treturn false")
 		return nil
 	}
@@ -938,10 +938,6 @@ func equalCallExpression(leftExpr, rightExpr string, field *protogen.Field, prot
 		return "ProtoUtils.equal_message(" + leftExpr + ", " + rightExpr + ", func(): return " + typeExpr + ".new())", nil
 	}
 	switch field.Desc.Kind() {
-	case protoreflect.StringKind:
-		return "String(" + leftExpr + ") == String(" + rightExpr + ")", nil
-	case protoreflect.BytesKind:
-		return "ProtoUtils.equal_bytes(" + leftExpr + ", " + rightExpr + ")", nil
 	case protoreflect.FloatKind:
 		return "ProtoUtils.equal_float32(" + leftExpr + ", " + rightExpr + ")", nil
 	case protoreflect.DoubleKind:

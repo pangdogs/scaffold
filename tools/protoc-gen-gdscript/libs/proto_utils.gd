@@ -476,10 +476,6 @@ static func equal_float32(a: float, b: float) -> bool:
 static func equal_float64(a: float, b: float) -> bool:
 	return _float64_bits(a) == _float64_bits(b)
 
-# Treats null and empty byte arrays as equivalent for equality checks.
-static func equal_bytes(a: PackedByteArray, b: PackedByteArray) -> bool:
-	return a == b
-
 # Compares two nested protobuf messages, materializing zero instances when requested.
 static func equal_message(a: ProtoMessage, b: ProtoMessage, default_factory: Callable = Callable()) -> bool:
 	if default_factory.is_valid():
