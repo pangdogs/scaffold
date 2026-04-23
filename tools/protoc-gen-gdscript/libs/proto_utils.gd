@@ -33,41 +33,6 @@ enum DictionaryKeyOrder {
 const HASH_TAG_DICTIONARY := 19
 const HASH_TAG_ARRAY := 20
 
-#region FNV-1a Hasher
-# Incremental 64-bit FNV-1a hasher used by generated message and index code.
-class Fnv64aHasher:
-	const _FNV64_OFFSET_BASIS := -3750763034362895579
-	const _FNV64_PRIME := 1099511628211
-
-	var _state := _FNV64_OFFSET_BASIS
-
-	func write_byte(value: int) -> void:
-		_state = (_state ^ (value & 0xFF)) * _FNV64_PRIME
-
-	func write_int32(value: int) -> void:
-		for shift in [24, 16, 8, 0]:
-			write_byte((value >> shift) & 0xFF)
-
-	func write_uint32(value: int) -> void:
-		for shift in [24, 16, 8, 0]:
-			write_byte((value >> shift) & 0xFF)
-
-	func write_int64(value: int) -> void:
-		for shift in [56, 48, 40, 32, 24, 16, 8, 0]:
-			write_byte((value >> shift) & 0xFF)
-
-	func write_uint64(value: int) -> void:
-		for shift in [56, 48, 40, 32, 24, 16, 8, 0]:
-			write_byte((value >> shift) & 0xFF)
-
-	func write_bytes(value: PackedByteArray) -> void:
-		for byte in value:
-			write_byte(byte)
-
-	func sum64() -> int:
-		return _state
-#endregion
-
 #region Bool
 # Encodes a protobuf bool as a single varint byte.
 static func encode_bool(stream: ProtoOutputStream, value: bool) -> bool:
@@ -401,56 +366,52 @@ static func sizeof_dictionary(
 #endregion
 
 #region Hash Helpers
-# Allocates a new hasher for generated message and index code.
-static func new_hasher() -> Fnv64aHasher:
-	return Fnv64aHasher.new()
-
 # Writes the fixed message field count prefix used by generated message hash_to methods.
-static func hash_message_fields(hasher: Fnv64aHasher, field_count: int) -> void:
+static func hash_message_fields(hasher: ProtoHasher, field_count: int) -> void:
 	hasher.write_uint64(max(field_count, 0))
 
 # Hashes a boolean in a stable single-byte form.
-static func hash_bool(hasher: Fnv64aHasher, value: bool) -> void:
+static func hash_bool(hasher: ProtoHasher, value: bool) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_BOOL)
-	hasher.write_byte(value)
+	hasher.write_byte(int(value))
 
 # Hashes a signed 32-bit integer.
-static func hash_int32(hasher: Fnv64aHasher, value: int) -> void:
+static func hash_int32(hasher: ProtoHasher, value: int) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_INT32)
 	hasher.write_int32(value)
 
 # Hashes an unsigned 32-bit integer.
-static func hash_uint32(hasher: Fnv64aHasher, value: int) -> void:
+static func hash_uint32(hasher: ProtoHasher, value: int) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_UINT32)
 	hasher.write_uint32(value)
 
 # Hashes a signed 64-bit integer.
-static func hash_int64(hasher: Fnv64aHasher, value: int) -> void:
+static func hash_int64(hasher: ProtoHasher, value: int) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_INT64)
 	hasher.write_int64(value)
 
 # Hashes an unsigned 64-bit integer.
-static func hash_uint64(hasher: Fnv64aHasher, value: int) -> void:
+static func hash_uint64(hasher: ProtoHasher, value: int) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_UINT64)
 	hasher.write_uint64(value)
 
 # Hashes an enum using its signed 32-bit numeric representation.
-static func hash_enum(hasher: Fnv64aHasher, value: int) -> void:
+static func hash_enum(hasher: ProtoHasher, value: int) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_ENUM)
 	hasher.write_int32(value)
 
 # Hashes a 32-bit float by using its IEEE 754 bit pattern.
-static func hash_float32(hasher: Fnv64aHasher, value: float) -> void:
+static func hash_float32(hasher: ProtoHasher, value: float) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_FLOAT)
 	hasher.write_uint32(_float32_bits(value))
 
 # Hashes a 64-bit float by using its IEEE 754 bit pattern.
-static func hash_float64(hasher: Fnv64aHasher, value: float) -> void:
+static func hash_float64(hasher: ProtoHasher, value: float) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_DOUBLE)
 	hasher.write_uint64(_float64_bits(value))
 
 # Hashes a string by prefixing its byte length before the UTF-8 payload.
-static func hash_string(hasher: Fnv64aHasher, value: String) -> void:
+static func hash_string(hasher: ProtoHasher, value: String) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_STRING)
 	var utf8_bytes := value.to_utf8_buffer()
 	var size := utf8_bytes.size()
@@ -458,7 +419,7 @@ static func hash_string(hasher: Fnv64aHasher, value: String) -> void:
 	hasher.write_bytes(utf8_bytes)
 
 # Hashes a StringName by prefixing its byte length before the UTF-8 payload.
-static func hash_string_name(hasher: Fnv64aHasher, value: StringName) -> void:
+static func hash_string_name(hasher: ProtoHasher, value: StringName) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_STRING)
 	var utf8_bytes := value.to_utf8_buffer()
 	var size := utf8_bytes.size()
@@ -466,13 +427,13 @@ static func hash_string_name(hasher: Fnv64aHasher, value: StringName) -> void:
 	hasher.write_bytes(utf8_bytes)
 
 # Hashes a byte array by prefixing its length before the payload.
-static func hash_bytes(hasher: Fnv64aHasher, value: PackedByteArray) -> void:
+static func hash_bytes(hasher: ProtoHasher, value: PackedByteArray) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_BYTES)
 	hasher.write_uint64(value.size())
 	hasher.write_bytes(value)
 
 # Hashes a nested protobuf message, materializing a zero instance when needed.
-static func hash_message(hasher: Fnv64aHasher, value: ProtoMessage, default_factory: Callable = Callable()) -> void:
+static func hash_message(hasher: ProtoHasher, value: ProtoMessage, default_factory: Callable = Callable()) -> void:
 	hasher.write_byte(ProtoFieldDescriptor.FieldType.TYPE_MESSAGE)
 	var msg := value
 	if msg == null and default_factory.is_valid():
@@ -481,7 +442,7 @@ static func hash_message(hasher: Fnv64aHasher, value: ProtoMessage, default_fact
 		msg.hash_to(hasher)
 
 # Hashes an array in declaration order with an element-count prefix.
-static func hash_array(hasher: Fnv64aHasher, values: Array, value_hasher: Callable) -> void:
+static func hash_array(hasher: ProtoHasher, values: Array, value_hasher: Callable) -> void:
 	hasher.write_byte(HASH_TAG_ARRAY)
 	hasher.write_uint64(values.size())
 	if values.is_empty() or !value_hasher.is_valid():
@@ -491,7 +452,7 @@ static func hash_array(hasher: Fnv64aHasher, values: Array, value_hasher: Callab
 
 # Hashes a dictionary in sorted-key order with an entry-count prefix.
 static func hash_dictionary(
-	hasher: Fnv64aHasher,
+	hasher: ProtoHasher,
 	values: Dictionary,
 	key_hasher: Callable,
 	value_hasher: Callable,

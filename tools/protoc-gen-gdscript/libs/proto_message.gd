@@ -48,11 +48,11 @@ func clone() -> ProtoMessage
 
 @abstract
 # Writes the current message into the provided hash state.
-func hash_to(hasher) -> void
+func hash_to(hasher: ProtoHasher) -> void
 
 # Returns the structural hash of the current message.
 func hash() -> int:
-	var hasher := ProtoUtils.new_hasher()
+	var hasher := ProtoFnv64a.new()
 	ProtoUtils.hash_message(hasher, self)
 	return hasher.sum64()
 

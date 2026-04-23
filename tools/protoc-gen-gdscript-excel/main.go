@@ -775,7 +775,7 @@ func emitIndexHashMethod(g *protogen.GeneratedFile, method IndexMethodDecl, prot
 		return err
 	}
 	g.P("\tfunc ", indexHashMethodName(method), "(", argList, ") -> int:")
-	g.P("\t\tvar hasher := ProtoUtils.new_hasher()")
+	g.P("\t\tvar hasher := ProtoFnv64a.new()")
 	for _, field := range method.IndexFields {
 		if err := emitHashStatements(g, "\t\t", "hasher", gdscriptArgumentName(field), field, protoImportAlias, messageTypeNames); err != nil {
 			return err

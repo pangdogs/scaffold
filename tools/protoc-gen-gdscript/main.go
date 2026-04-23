@@ -356,7 +356,7 @@ func emitEmptyMessageMethods(g *protogen.GeneratedFile, msgName string) {
 	g.P("\t\treturn ", msgName, ".new()")
 	g.P()
 	g.P("\t@warning_ignore(\"unused_parameter\")")
-	g.P("\tfunc hash_to(hasher) -> void:")
+	g.P("\tfunc hash_to(hasher: ProtoHasher) -> void:")
 	g.P("\t\tpass")
 	g.P()
 	g.P("\tfunc equals(other: ProtoMessage) -> bool:")
@@ -710,7 +710,7 @@ func emitCloneMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protog
 }
 
 func emitHashToMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
-	g.P("\tfunc hash_to(hasher) -> void:")
+	g.P("\tfunc hash_to(hasher: ProtoHasher) -> void:")
 	g.P("\t\tProtoUtils.hash_message_fields(hasher, ", len(msg.Fields), ")")
 	if len(msg.Fields) <= 0 {
 		g.P()
