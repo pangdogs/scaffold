@@ -493,15 +493,13 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 	g.P("\t\tsuper(msg)")
 	g.P("\t\t_chunk_loader = ExcelUtils.ChunkLoader.new(")
 	g.P("\t\t\tchunk_base_path,")
-	g.P("\t\t\t_msg.", chunkManifestFieldName, ".", chunksFieldName, ".size() if _msg.", chunkManifestFieldName, " != null else 0,")
+	g.P("\t\t\t_chunks().size(),")
 	g.P("\t\t\tfunc(): return ", protoTableType, ".new()")
 	g.P("\t\t)")
 	g.P()
 	emitChunkedPublicMethods(
 		g,
 		rowType,
-		chunkManifestFieldName,
-		chunksFieldName,
 		chunkOffsetFieldName,
 		chunkCountFieldName,
 	)
@@ -667,7 +665,7 @@ func emitChunkedAsyncLookupMethod(g *protogen.GeneratedFile, method IndexMethodD
 	return nil
 }
 
-func emitChunkedPublicMethods(g *protogen.GeneratedFile, rowType, chunkManifestFieldName, chunksFieldName, chunkOffsetFieldName, chunkCountFieldName string) {
+func emitChunkedPublicMethods(g *protogen.GeneratedFile, rowType, chunkOffsetFieldName, chunkCountFieldName string) {
 	g.P("\tfunc rows() -> Array[", rowType, "]:")
 	g.P("\t\tif !_ensure_all_rows_loaded():")
 	g.P("\t\t\treturn []")
@@ -679,7 +677,7 @@ func emitChunkedPublicMethods(g *protogen.GeneratedFile, rowType, chunkManifestF
 	g.P("\t\treturn _build_rows_array()")
 	g.P()
 	g.P("\tfunc row_count() -> int:")
-	g.P("\t\tvar chunks = _msg.", chunkManifestFieldName, ".", chunksFieldName)
+	g.P("\t\tvar chunks := _chunks()")
 	g.P("\t\tif chunks.is_empty():")
 	g.P("\t\t\treturn 0")
 	g.P("\t\treturn chunks[chunks.size() - 1].", chunkOffsetFieldName, " + chunks[chunks.size() - 1].", chunkCountFieldName)
@@ -691,7 +689,8 @@ func emitChunkedPublicMethods(g *protogen.GeneratedFile, rowType, chunkManifestF
 	g.P("\t\tif !_chunk_loader.ensure_loaded(chunk_index):")
 	g.P("\t\t\treturn null")
 	g.P("\t\tvar chunk_rows: Array[", rowType, "] = _chunk_loader.rows(chunk_index)")
-	g.P("\t\tvar row_offset := offset - _msg.", chunkManifestFieldName, ".", chunksFieldName, "[chunk_index].", chunkOffsetFieldName)
+	g.P("\t\tvar chunks := _chunks()")
+	g.P("\t\tvar row_offset: int = offset - chunks[chunk_index].", chunkOffsetFieldName)
 	g.P("\t\tif row_offset < 0 or row_offset >= chunk_rows.size():")
 	g.P("\t\t\treturn null")
 	g.P("\t\treturn chunk_rows[row_offset]")
@@ -703,7 +702,8 @@ func emitChunkedPublicMethods(g *protogen.GeneratedFile, rowType, chunkManifestF
 	g.P("\t\tif !await _chunk_loader.ensure_loaded_async(chunk_index):")
 	g.P("\t\t\treturn null")
 	g.P("\t\tvar chunk_rows: Array[", rowType, "] = _chunk_loader.rows(chunk_index)")
-	g.P("\t\tvar row_offset := offset - _msg.", chunkManifestFieldName, ".", chunksFieldName, "[chunk_index].", chunkOffsetFieldName)
+	g.P("\t\tvar chunks := _chunks()")
+	g.P("\t\tvar row_offset: int = offset - chunks[chunk_index].", chunkOffsetFieldName)
 	g.P("\t\tif row_offset < 0 or row_offset >= chunk_rows.size():")
 	g.P("\t\t\treturn null")
 	g.P("\t\treturn chunk_rows[row_offset]")
@@ -711,8 +711,11 @@ func emitChunkedPublicMethods(g *protogen.GeneratedFile, rowType, chunkManifestF
 }
 
 func emitChunkLoaderInternalMethods(g *protogen.GeneratedFile, protoTableType, rowType, rowFieldName, chunkManifestFieldName, chunksFieldName, chunkOffsetFieldName, chunkCountFieldName string) {
+	g.P("\tfunc _chunks() -> Array:")
+	g.P("\t\treturn [] if _msg.", chunkManifestFieldName, " == null else _msg.", chunkManifestFieldName, ".", chunksFieldName)
+	g.P()
 	g.P("\tfunc _chunk_index_for_offset(offset: int) -> int:")
-	g.P("\t\tvar chunks = _msg.", chunkManifestFieldName, ".", chunksFieldName)
+	g.P("\t\tvar chunks := _chunks()")
 	g.P("\t\tvar low := 0")
 	g.P("\t\tvar high := chunks.size() - 1")
 	g.P("\t\twhile low <= high:")
@@ -727,13 +730,15 @@ func emitChunkLoaderInternalMethods(g *protogen.GeneratedFile, protoTableType, r
 	g.P("\t\treturn -1")
 	g.P()
 	g.P("\tfunc _ensure_all_rows_loaded() -> bool:")
-	g.P("\t\tfor chunk_index in range(_msg.", chunkManifestFieldName, ".", chunksFieldName, ".size()):")
+	g.P("\t\tvar chunks := _chunks()")
+	g.P("\t\tfor chunk_index in range(chunks.size()):")
 	g.P("\t\t\tif !_chunk_loader.ensure_loaded(chunk_index):")
 	g.P("\t\t\t\treturn false")
 	g.P("\t\treturn true")
 	g.P()
 	g.P("\tfunc _ensure_all_rows_loaded_async() -> bool:")
-	g.P("\t\tfor chunk_index in range(_msg.", chunkManifestFieldName, ".", chunksFieldName, ".size()):")
+	g.P("\t\tvar chunks := _chunks()")
+	g.P("\t\tfor chunk_index in range(chunks.size()):")
 	g.P("\t\t\tif !await _chunk_loader.ensure_loaded_async(chunk_index):")
 	g.P("\t\t\t\treturn false")
 	g.P("\t\treturn true")
@@ -742,10 +747,11 @@ func emitChunkLoaderInternalMethods(g *protogen.GeneratedFile, protoTableType, r
 	g.P("\t\t@warning_ignore(\"shadowed_variable\")")
 	g.P("\t\tvar rows: Array[", rowType, "] = []")
 	g.P("\t\trows.resize(row_count())")
-	g.P("\t\tfor chunk_index in range(_msg.", chunkManifestFieldName, ".", chunksFieldName, ".size()):")
+	g.P("\t\tvar chunks := _chunks()")
+	g.P("\t\tfor chunk_index in range(chunks.size()):")
 	g.P("\t\t\tvar chunk_rows: Array[", rowType, "] = _chunk_loader.rows(chunk_index)")
-	g.P("\t\t\tfor row_offset in range(_msg.", chunkManifestFieldName, ".", chunksFieldName, "[chunk_index].", chunkCountFieldName, "):")
-	g.P("\t\t\t\trows[_msg.", chunkManifestFieldName, ".", chunksFieldName, "[chunk_index].", chunkOffsetFieldName, " + row_offset] = chunk_rows[row_offset]")
+	g.P("\t\t\tfor row_offset in range(chunks[chunk_index].", chunkCountFieldName, "):")
+	g.P("\t\t\t\trows[chunks[chunk_index].", chunkOffsetFieldName, " + row_offset] = chunk_rows[row_offset]")
 	g.P("\t\treturn rows")
 	g.P()
 }
