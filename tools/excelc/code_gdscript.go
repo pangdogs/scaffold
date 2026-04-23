@@ -207,6 +207,7 @@ class Tables:
 		return tabs
 
 	static func _load_table_file(msg: ProtoMessage, path: String) -> bool:
+		var start_usec := Time.get_ticks_usec()
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file == null:
 			push_warning("failed to open excel table file: file_path=%s" % path)
@@ -216,7 +217,8 @@ class Tables:
 		if !msg.deserialize(stream):
 			push_error("failed to deserialize excel table file: file_path=%s" % path)
 			return false
-		print("excel table file loaded: file_path=%s" % path)
+		var elapsed_ms := float(Time.get_ticks_usec() - start_usec) / 1000.0
+		print("excel table file loaded: file_path=%s elapsed_ms=%.3f" % [path, elapsed_ms])
 		return true
 
 	static func _load_table_index_file(msg, base_path: String) -> bool:

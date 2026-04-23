@@ -136,6 +136,7 @@ class ChunkLoader:
 
 	# Builds a fresh message instance and reads chunk rows from file.
 	func _load_rows(path: String) -> Array:
+		var start_usec := Time.get_ticks_usec()
 		var msg = _message_factory.call()
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file == null:
@@ -143,7 +144,8 @@ class ChunkLoader:
 		var stream := ProtoInputFile.new(file)
 		if !msg.deserialize(stream):
 			return []
-		print("excel table chunk file loaded: file_path=%s rows=%d" % [path, msg.Rows.size()])
+		var elapsed_ms := float(Time.get_ticks_usec() - start_usec) / 1000.0
+		print("excel table chunk file loaded: file_path=%s rows=%d elapsed_ms=%.3f" % [path, msg.Rows.size(), elapsed_ms])
 		return msg.Rows
 
 # Converts a bool into the integer form used by generated indexes.
