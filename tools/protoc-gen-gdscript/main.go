@@ -1304,6 +1304,14 @@ func isGDScriptKeyword(s string) bool {
 		"namespace", "not", "null", "or", "pass", "return", "self", "signal", "static", "super",
 		"tool", "true", "var", "while", "yield":
 		return true
+
+	case "serialize", "deserialize", "size", "reset", "new", "clone", "hash_to", "equals",
+		"stream", "tag", "field_number", "wire_type", "value", "data_size",
+		"entry_size", "entry_stream", "entry_key", "entry_value", "entry_tag",
+		"entry_field_number", "entry_wire_type", "packed_size", "packed_stream",
+		"msg_size", "msg", "hasher", "other", "other_msg", "key", "a", "b":
+		return true
+
 	default:
 		return false
 	}
