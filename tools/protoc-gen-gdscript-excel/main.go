@@ -375,7 +375,7 @@ func resolveIndexFields(rowsMessage *protogen.Message, indexFieldsValue string) 
 func buildIndexMethodSuffix(indexTypeName string, indexFields []*protogen.Field) (string, error) {
 	parts := make([]string, 0, len(indexFields))
 	for _, indexField := range indexFields {
-		name := safeIdentifier(string(indexField.Desc.Name()))
+		name := snakeIdentifier(string(indexField.Desc.Name()))
 		if name == "" {
 			return "", fmt.Errorf("index field %q produced an empty method suffix segment", indexField.Desc.FullName())
 		}
@@ -385,7 +385,7 @@ func buildIndexMethodSuffix(indexTypeName string, indexFields []*protogen.Field)
 		return "", fmt.Errorf("index fields cannot be empty")
 	}
 
-	suffix := strings.Join(parts, "")
+	suffix := strings.Join(parts, "_")
 	switch indexTypeName {
 	case indexTypeHashUnique:
 		return "hash_unique_index_" + suffix, nil
@@ -965,11 +965,11 @@ func gdscriptArgumentNames(fields []*protogen.Field) string {
 }
 
 func gdscriptArgumentName(field *protogen.Field) string {
-	name := safeIdentifier(string(field.Desc.Name()))
+	name := snakeIdentifier(string(field.Desc.Name()))
 	if name == "" {
 		return "_value"
 	}
-	return safeIdentifier(name)
+	return name
 }
 
 func gdscriptTypeExpression(field *protogen.Field, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) (string, error) {
@@ -1145,6 +1145,43 @@ func safeIdentifier(s string) string {
 		out += "_"
 	}
 	return out
+}
+
+func snakeIdentifier(s string) string {
+	return safeIdentifier(toSnakeCase(s))
+}
+
+func toSnakeCase(s string) string {
+	if s == "" {
+		return ""
+	}
+
+	runes := []rune(s)
+	var b strings.Builder
+	lastUnderscore := false
+
+	for i, r := range runes {
+		if !(unicode.IsLetter(r) || unicode.IsDigit(r)) {
+			if b.Len() > 0 && !lastUnderscore {
+				b.WriteRune('_')
+				lastUnderscore = true
+			}
+			continue
+		}
+
+		if unicode.IsUpper(r) && b.Len() > 0 && !lastUnderscore {
+			prev := runes[i-1]
+			nextIsLower := i+1 < len(runes) && unicode.IsLower(runes[i+1])
+			if unicode.IsLower(prev) || unicode.IsDigit(prev) || (unicode.IsUpper(prev) && nextIsLower) {
+				b.WriteRune('_')
+			}
+		}
+
+		b.WriteRune(unicode.ToLower(r))
+		lastUnderscore = false
+	}
+
+	return strings.Trim(b.String(), "_")
 }
 
 func isGDScriptKeyword(s string) bool {
