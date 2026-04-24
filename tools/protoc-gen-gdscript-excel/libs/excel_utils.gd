@@ -145,7 +145,7 @@ class ChunkLoader:
 		if !msg.deserialize(stream):
 			return []
 		var elapsed_ms := float(Time.get_ticks_usec() - start_usec) / 1000.0
-		print("excel table chunk file loaded: file_path=%s rows=%d elapsed_ms=%.3f" % [path, msg.Rows.size(), elapsed_ms])
+		print("excel table chunk file loaded, file_path=%s, rows=%d, elapsed_ms=%.3f" % [path, msg.Rows.size(), elapsed_ms])
 		return msg.Rows
 
 # Converts a bool into the integer form used by generated indexes.

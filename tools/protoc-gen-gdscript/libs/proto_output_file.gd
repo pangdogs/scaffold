@@ -146,7 +146,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		if !_flush_buffer():			
 			push_error(
-				"failed to flush on predelete: path=%s err=%d message=%s" % [
+				"failed to flush on predelete, path=%s, err=%d, message=%s" % [
 					_file.get_path_absolute(),
 					get_error(),
 					get_error_message(),
@@ -156,7 +156,7 @@ func _notification(what: int) -> void:
 		_file.flush()
 		if !_sync_file_error("Failed to flush file buffer."):
 			push_error(
-				"failed to flush file buffer on predelete: path=%s err=%d message=%s" % [
+				"failed to flush file buffer on predelete, path=%s, err=%d, message=%s" % [
 					_file.get_path_absolute(),
 					get_error(),
 					get_error_message(),
