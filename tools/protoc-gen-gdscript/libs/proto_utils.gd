@@ -19,16 +19,16 @@
 class_name ProtoUtils
 extends RefCounted
 
+enum DictionaryKeyOrder {
+	DEFAULT,
+	UINT64,
+}
+
 const SIZEOF_BOOL := 1
 const SIZEOF_FIXED32 := 4
 const SIZEOF_FIXED64 := 8
 const SIZEOF_FLOAT32 := 4
 const SIZEOF_FLOAT64 := 8
-
-enum DictionaryKeyOrder {
-	DEFAULT,
-	UINT64,
-}
 
 const HASH_TAG_DICTIONARY := 19
 const HASH_TAG_ARRAY := 20
