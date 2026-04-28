@@ -866,7 +866,7 @@ func emitScriptStaticInit(g *protogen.GeneratedFile, file *protogen.File, messag
 	g.P("static func _static_init() -> void:")
 	if config.GapVariant {
 		for _, msg := range messages {
-			g.P("\tGAPVariants.register_custom_type(", makeTypeId(string(file.Desc.Package()), string(msg.Desc.Name())), ", func(): return ", safeIdentifier(msg.GoIdent.GoName), ".new())")
+			g.P("\tGAPVariants.register_custom_type(", makeTypeId(string(file.Desc.Package()), string(msg.Desc.Name())), ", ", safeIdentifier(msg.GoIdent.GoName), ")")
 		}
 	}
 	g.P()
