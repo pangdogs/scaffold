@@ -26,4 +26,4 @@ extends ProtoMessage
 
 @abstract
 # Returns the Golaxy GAP custom variant type id for this message type.
-func gap_variant_type_id() -> int
+func type_id() -> int

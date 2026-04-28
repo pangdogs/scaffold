@@ -35,7 +35,7 @@ is common to place them in one shared location such as `libs` or
 
 When `gap_variant=true` is enabled, generated messages extend
 `ProtoGAPVariant` instead of `ProtoMessage` and expose a stable GAP custom
-variant type id through `gap_variant_type_id()`. Each generated script also
+variant type id through `type_id()`. Each generated script also
 emits top-level `_static_init()` code that registers its message factories through
 `GAPVariants.register_custom_type(...)`.
 

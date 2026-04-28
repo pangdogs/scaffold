@@ -710,7 +710,7 @@ func emitTypeIDMethod(g *protogen.GeneratedFile, file *protogen.File, msg *proto
 	if !config.GapVariant {
 		return
 	}
-	g.P("\tfunc gap_variant_type_id() -> int:")
+	g.P("\tfunc type_id() -> int:")
 	g.P("\t\treturn ", makeTypeId(string(file.Desc.Package()), string(msg.Desc.Name())))
 	g.P()
 }
@@ -1351,7 +1351,7 @@ func isGDScriptKeyword(s string) bool {
 		return true
 
 	case "serialize", "deserialize", "size", "reset", "new", "clone", "hash_to", "equals",
-		"gap_variant_type_id",
+		"type_id",
 		"stream", "tag", "field_number", "wire_type", "value", "data_size",
 		"entry_size", "entry_stream", "entry_key", "entry_value", "entry_tag",
 		"entry_field_number", "entry_wire_type", "packed_size", "packed_stream",
