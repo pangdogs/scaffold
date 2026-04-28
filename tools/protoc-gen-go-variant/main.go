@@ -20,15 +20,30 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"hash/fnv"
+	"strconv"
 
 	"git.golaxy.org/framework/net/gap/variant"
 	"google.golang.org/protobuf/compiler/protogen"
 )
 
+type GeneratorConfig struct {
+	Deterministic bool
+}
+
+var config GeneratorConfig
+
 func main() {
-	protogen.Options{}.Run(func(gen *protogen.Plugin) error {
+	var flags flag.FlagSet
+	deterministic := flags.Bool("deterministic", false, "serialize map fields in deterministic key order")
+
+	protogen.Options{ParamFunc: flags.Set}.Run(func(gen *protogen.Plugin) error {
+		config = GeneratorConfig{
+			Deterministic: *deterministic,
+		}
+
 		for _, f := range gen.Files {
 			if f.Generate {
 				generateFile(gen, f)
@@ -64,7 +79,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	for _, m := range file.Messages {
 		g.P("// Read implements io.Reader")
 		g.P("func (x *", m.GoIdent, ") Read(p []byte) (int, error) {")
-		g.P("\t_, err  := proto.MarshalOptions{}.MarshalAppend(p[:0], x)")
+		g.P("\t_, err  := ", protoPackage.Ident("MarshalOptions"), "{Deterministic: ", strconv.FormatBool(config.Deterministic), "}.MarshalAppend(p[:0], x)")
 		g.P("\tif err != nil {")
 		g.P("\t\treturn 0, err")
 		g.P("\t}")
@@ -74,7 +89,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 
 		g.P("// Write implements io.Writer")
 		g.P("func (x *", m.GoIdent, ") Write(p []byte) (int, error) {")
-		g.P("\tif err := proto.Unmarshal(p, x); err != nil {")
+		g.P("\tif err := ", protoPackage.Ident("Unmarshal"), "(p, x); err != nil {")
 		g.P("\t\treturn 0, err")
 		g.P("\t}")
 		g.P("\treturn x.Size(), nil")
@@ -83,7 +98,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 
 		g.P("// Size 大小")
 		g.P("func (x *", m.GoIdent, ") Size() int {")
-		g.P("\treturn ", protoPackage.Ident("Size"), "(x)")
+		g.P("\treturn ", protoPackage.Ident("MarshalOptions"), "{Deterministic: ", strconv.FormatBool(config.Deterministic), "}.Size(x)")
 		g.P("}")
 		g.P()
 
