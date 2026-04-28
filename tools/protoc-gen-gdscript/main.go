@@ -22,12 +22,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"hash/fnv"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"unicode"
 
+	"git.golaxy.org/framework/net/gap/variant"
 	"github.com/elliotchance/pie/v2"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -36,6 +38,7 @@ import (
 type GeneratorConfig struct {
 	StringAsStringName bool
 	Deterministic      bool
+	GapVariant         bool
 }
 
 var config GeneratorConfig
@@ -44,11 +47,13 @@ func main() {
 	var flags flag.FlagSet
 	stringAsStringName := flags.Bool("string_as_string_name", false, "map proto string fields to GDScript StringName")
 	deterministic := flags.Bool("deterministic", false, "serialize map fields in deterministic key order")
+	gapVariant := flags.Bool("gap_variant", false, "generate messages as ProtoGAPVariant implementations")
 
 	protogen.Options{ParamFunc: flags.Set}.Run(func(gen *protogen.Plugin) error {
 		config = GeneratorConfig{
 			StringAsStringName: *stringAsStringName,
 			Deterministic:      *deterministic,
+			GapVariant:         *gapVariant,
 		}
 		generatedPrefixes := map[string]string{}
 		for _, f := range gen.Files {
@@ -82,6 +87,8 @@ func generateFile(gen *protogen.Plugin, file *protogen.File, generatedPrefixes m
 		return err
 	}
 
+	emitScriptStaticInit(g, file, messages)
+
 	for _, enum := range enums {
 		emitEnum(g, enum)
 	}
@@ -91,6 +98,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File, generatedPrefixes m
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -257,7 +265,7 @@ func emitMessage(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.M
 	msgName := safeIdentifier(msg.GoIdent.GoName)
 
 	g.P("class ", msgName, ":")
-	g.P("\textends ProtoMessage")
+	g.P("\textends ", messageBaseType())
 	g.P()
 
 	for _, enum := range msg.Enums {
@@ -265,7 +273,7 @@ func emitMessage(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.M
 	}
 
 	if len(msg.Fields) <= 0 && len(msg.Enums) <= 0 {
-		emitEmptyMessageMethods(g, msgName)
+		emitEmptyMessageMethods(g, file, msg, msgName)
 		return nil
 	}
 
@@ -294,6 +302,7 @@ func emitMessage(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.M
 	if err := emitEqualsMethod(g, file, msg, importAliases); err != nil {
 		return err
 	}
+	emitTypeIDMethod(g, file, msg)
 	return nil
 }
 
@@ -327,7 +336,7 @@ func emitMessageFields(g *protogen.GeneratedFile, file *protogen.File, msg *prot
 	return nil
 }
 
-func emitEmptyMessageMethods(g *protogen.GeneratedFile, msgName string) {
+func emitEmptyMessageMethods(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, msgName string) {
 	g.P("\t@warning_ignore(\"unused_parameter\")")
 	g.P("\tfunc serialize(stream: ProtoOutputStream) -> bool:")
 	g.P("\t\tif stream.get_error() != OK:")
@@ -362,6 +371,7 @@ func emitEmptyMessageMethods(g *protogen.GeneratedFile, msgName string) {
 	g.P("\tfunc equals(other: ProtoMessage) -> bool:")
 	g.P("\t\treturn other is ", msgName)
 	g.P()
+	emitTypeIDMethod(g, file, msg)
 }
 
 func emitSerializeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
@@ -696,6 +706,15 @@ func emitNewMethod(g *protogen.GeneratedFile, msgName string) {
 	g.P()
 }
 
+func emitTypeIDMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message) {
+	if !config.GapVariant {
+		return
+	}
+	g.P("\tfunc gap_variant_type_id() -> int:")
+	g.P("\t\treturn ", makeTypeId(string(file.Desc.Package()), string(msg.Desc.Name())))
+	g.P()
+}
+
 func emitCloneMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
 	g.P("\tfunc clone() -> ProtoMessage:")
 	g.P("\t\tvar msg := ", safeIdentifier(msg.GoIdent.GoName), ".new()")
@@ -838,6 +857,19 @@ func emitCloneField(g *protogen.GeneratedFile, file *protogen.File, field *proto
 	}
 	g.P("\t\tmsg.", name, " = ", name)
 	return nil
+}
+
+func emitScriptStaticInit(g *protogen.GeneratedFile, file *protogen.File, messages []*protogen.Message) {
+	if !config.GapVariant || len(messages) <= 0 {
+		return
+	}
+	g.P("static func _static_init() -> void:")
+	if config.GapVariant {
+		for _, msg := range messages {
+			g.P("\tGAPVariants.register_custom_type(", makeTypeId(string(file.Desc.Package()), string(msg.Desc.Name())), ", func(): return ", safeIdentifier(msg.GoIdent.GoName), ".new())")
+		}
+	}
+	g.P()
 }
 
 func fieldTypeExpression(file *protogen.File, field *protogen.Field, importAliases map[string]string) (string, error) {
@@ -1248,6 +1280,19 @@ func defaultMapValueExpression(file *protogen.File, field *protogen.Field, impor
 	}
 }
 
+func messageBaseType() string {
+	if config.GapVariant {
+		return "ProtoGAPVariant"
+	}
+	return "ProtoMessage"
+}
+
+func makeTypeId(pkgName, msgName string) variant.TypeId {
+	hash := fnv.New32a()
+	hash.Write([]byte(pkgName + "." + msgName))
+	return variant.TypeId(variant.TypeId_Customize + hash.Sum32())
+}
+
 func safeIdentifier(s string) string {
 	if s == "" {
 		return "_"
@@ -1306,6 +1351,7 @@ func isGDScriptKeyword(s string) bool {
 		return true
 
 	case "serialize", "deserialize", "size", "reset", "new", "clone", "hash_to", "equals",
+		"gap_variant_type_id",
 		"stream", "tag", "field_number", "wire_type", "value", "data_size",
 		"entry_size", "entry_stream", "entry_key", "entry_value", "entry_tag",
 		"entry_field_number", "entry_wire_type", "packed_size", "packed_stream",

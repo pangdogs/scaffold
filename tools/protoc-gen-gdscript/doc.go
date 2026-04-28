@@ -25,13 +25,19 @@ deserialization, cloning, hashing, and equality checks.
 
 The generated scripts are not self-contained. After generation, copy every
 script in `tools/protoc-gen-gdscript/libs` into your Godot project so classes
-such as `ProtoMessage`, `ProtoUtils`, `ProtoInputStream`, `ProtoOutputStream`,
-`ProtoInputFile`, and `ProtoOutputBuffer` are registered through `class_name`
-and can be resolved by generated code.
+such as `ProtoMessage`, `ProtoGAPVariant`, `ProtoUtils`, `ProtoInputStream`,
+`ProtoOutputStream`, `ProtoInputFile`, and `ProtoOutputBuffer` are registered
+through `class_name` and can be resolved by generated code.
 
 These runtime scripts do not need a fixed directory name. In real projects it
 is common to place them in one shared location such as `libs` or
 `addons/<name>`.
+
+When `gap_variant=true` is enabled, generated messages extend
+`ProtoGAPVariant` instead of `ProtoMessage` and expose a stable GAP custom
+variant type id through `gap_variant_type_id()`. Each generated script also
+emits top-level `_static_init()` code that registers its message factories through
+`GAPVariants.register_custom_type(...)`.
 
 Keep generated `*.pb.gd` files in the same relative layout as the source
 `.proto` files. Cross-file references are emitted as relative `preload(...)`
