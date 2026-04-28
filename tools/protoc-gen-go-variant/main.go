@@ -79,7 +79,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	for _, m := range file.Messages {
 		g.P("// Read implements io.Reader")
 		g.P("func (x *", m.GoIdent, ") Read(p []byte) (int, error) {")
-		g.P("\t_, err  := ", protoPackage.Ident("MarshalOptions"), "{Deterministic: ", strconv.FormatBool(config.Deterministic), "}.MarshalAppend(p[:0], x)")
+		g.P("\t_, err := ", protoPackage.Ident("MarshalOptions"), "{Deterministic: ", strconv.FormatBool(config.Deterministic), "}.MarshalAppend(p[:0], x)")
 		g.P("\tif err != nil {")
 		g.P("\t\treturn 0, err")
 		g.P("\t}")
@@ -96,19 +96,19 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 		g.P("}")
 		g.P()
 
-		g.P("// Size 大小")
+		g.P("// Size returns the serialized size")
 		g.P("func (x *", m.GoIdent, ") Size() int {")
 		g.P("\treturn ", protoPackage.Ident("MarshalOptions"), "{Deterministic: ", strconv.FormatBool(config.Deterministic), "}.Size(x)")
 		g.P("}")
 		g.P()
 
-		g.P("// TypeId 类型")
+		g.P("// TypeId returns the variant type id")
 		g.P("func (x *", m.GoIdent, ") TypeId() ", variantPackage.Ident("TypeId"), " {")
 		g.P("\treturn ", makeTypeId(string(file.Desc.Package()), string(m.Desc.Name())), "")
 		g.P("}")
 		g.P()
 
-		g.P("// Indirect 原始值")
+		g.P("// Indirect returns the original value")
 		g.P("func (x *", m.GoIdent, ") Indirect() any {")
 		g.P("\treturn x")
 		g.P("}")
