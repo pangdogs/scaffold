@@ -50,40 +50,41 @@ func init() {
 		"VariantCreator":        reflect.ValueOf(variant.VariantCreator),
 
 		// type definitions
-		"Array":           reflect.ValueOf((*variant.Array)(nil)),
-		"Bool":            reflect.ValueOf((*variant.Bool)(nil)),
-		"Byte":            reflect.ValueOf((*variant.Byte)(nil)),
-		"Bytes":           reflect.ValueOf((*variant.Bytes)(nil)),
-		"Call":            reflect.ValueOf((*variant.Call)(nil)),
-		"CallChain":       reflect.ValueOf((*variant.CallChain)(nil)),
-		"Double":          reflect.ValueOf((*variant.Double)(nil)),
-		"Error":           reflect.ValueOf((*variant.Error)(nil)),
-		"Float":           reflect.ValueOf((*variant.Float)(nil)),
-		"IVariantCreator": reflect.ValueOf((*variant.IVariantCreator)(nil)),
-		"Int":             reflect.ValueOf((*variant.Int)(nil)),
-		"Int16":           reflect.ValueOf((*variant.Int16)(nil)),
-		"Int32":           reflect.ValueOf((*variant.Int32)(nil)),
-		"Int64":           reflect.ValueOf((*variant.Int64)(nil)),
-		"Int8":            reflect.ValueOf((*variant.Int8)(nil)),
-		"Map":             reflect.ValueOf((*variant.Map)(nil)),
-		"Null":            reflect.ValueOf((*variant.Null)(nil)),
-		"ReadableValue":   reflect.ValueOf((*variant.ReadableValue)(nil)),
-		"Releasable":      reflect.ValueOf((*variant.Releasable)(nil)),
-		"SerializedValue": reflect.ValueOf((*variant.SerializedValue)(nil)),
-		"String":          reflect.ValueOf((*variant.String)(nil)),
-		"TypeId":          reflect.ValueOf((*variant.TypeId)(nil)),
-		"Uint":            reflect.ValueOf((*variant.Uint)(nil)),
-		"Uint16":          reflect.ValueOf((*variant.Uint16)(nil)),
-		"Uint32":          reflect.ValueOf((*variant.Uint32)(nil)),
-		"Uint64":          reflect.ValueOf((*variant.Uint64)(nil)),
-		"Uint8":           reflect.ValueOf((*variant.Uint8)(nil)),
-		"Value":           reflect.ValueOf((*variant.Value)(nil)),
-		"Variant":         reflect.ValueOf((*variant.Variant)(nil)),
+		"Array":             reflect.ValueOf((*variant.Array)(nil)),
+		"Bool":              reflect.ValueOf((*variant.Bool)(nil)),
+		"Byte":              reflect.ValueOf((*variant.Byte)(nil)),
+		"Bytes":             reflect.ValueOf((*variant.Bytes)(nil)),
+		"Call":              reflect.ValueOf((*variant.Call)(nil)),
+		"CallChain":         reflect.ValueOf((*variant.CallChain)(nil)),
+		"Double":            reflect.ValueOf((*variant.Double)(nil)),
+		"Error":             reflect.ValueOf((*variant.Error)(nil)),
+		"Float":             reflect.ValueOf((*variant.Float)(nil)),
+		"IVariantCreator":   reflect.ValueOf((*variant.IVariantCreator)(nil)),
+		"Int":               reflect.ValueOf((*variant.Int)(nil)),
+		"Int16":             reflect.ValueOf((*variant.Int16)(nil)),
+		"Int32":             reflect.ValueOf((*variant.Int32)(nil)),
+		"Int64":             reflect.ValueOf((*variant.Int64)(nil)),
+		"Int8":              reflect.ValueOf((*variant.Int8)(nil)),
+		"Map":               reflect.ValueOf((*variant.Map)(nil)),
+		"Null":              reflect.ValueOf((*variant.Null)(nil)),
+		"ReadableValue":     reflect.ValueOf((*variant.ReadableValue)(nil)),
+		"SerializedArray":   reflect.ValueOf((*variant.SerializedArray)(nil)),
+		"SerializedMap":     reflect.ValueOf((*variant.SerializedMap)(nil)),
+		"SerializedValue":   reflect.ValueOf((*variant.SerializedValue)(nil)),
+		"SerializedVariant": reflect.ValueOf((*variant.SerializedVariant)(nil)),
+		"String":            reflect.ValueOf((*variant.String)(nil)),
+		"TypeId":            reflect.ValueOf((*variant.TypeId)(nil)),
+		"Uint":              reflect.ValueOf((*variant.Uint)(nil)),
+		"Uint16":            reflect.ValueOf((*variant.Uint16)(nil)),
+		"Uint32":            reflect.ValueOf((*variant.Uint32)(nil)),
+		"Uint64":            reflect.ValueOf((*variant.Uint64)(nil)),
+		"Uint8":             reflect.ValueOf((*variant.Uint8)(nil)),
+		"Value":             reflect.ValueOf((*variant.Value)(nil)),
+		"Variant":           reflect.ValueOf((*variant.Variant)(nil)),
 
 		// interface wrapper definitions
 		"_IVariantCreator": reflect.ValueOf((*_git_golaxy_org_framework_net_gap_variant_IVariantCreator)(nil)),
 		"_ReadableValue":   reflect.ValueOf((*_git_golaxy_org_framework_net_gap_variant_ReadableValue)(nil)),
-		"_Releasable":      reflect.ValueOf((*_git_golaxy_org_framework_net_gap_variant_Releasable)(nil)),
 		"_Value":           reflect.ValueOf((*_git_golaxy_org_framework_net_gap_variant_Value)(nil)),
 	}
 }
@@ -123,14 +124,6 @@ func (W _git_golaxy_org_framework_net_gap_variant_ReadableValue) Size() int { re
 func (W _git_golaxy_org_framework_net_gap_variant_ReadableValue) TypeId() variant.TypeId {
 	return W.WTypeId()
 }
-
-// _git_golaxy_org_framework_net_gap_variant_Releasable is an interface wrapper for Releasable type
-type _git_golaxy_org_framework_net_gap_variant_Releasable struct {
-	IValue   interface{}
-	WRelease func()
-}
-
-func (W _git_golaxy_org_framework_net_gap_variant_Releasable) Release() { W.WRelease() }
 
 // _git_golaxy_org_framework_net_gap_variant_Value is an interface wrapper for Value type
 type _git_golaxy_org_framework_net_gap_variant_Value struct {

@@ -18,6 +18,7 @@ func init() {
 		"ErrEncode":             reflect.ValueOf(&codec.ErrEncode).Elem(),
 		"ErrEncrypt":            reflect.ValueOf(&codec.ErrEncrypt).Elem(),
 		"ErrInvalidMAC":         reflect.ValueOf(&codec.ErrInvalidMAC).Elem(),
+		"ErrPacketTooLarge":     reflect.ValueOf(&codec.ErrPacketTooLarge).Elem(),
 		"ErrUnableToPeekLength": reflect.ValueOf(&codec.ErrUnableToPeekLength).Elem(),
 		"NewAuthentication":     reflect.ValueOf(codec.NewAuthentication),
 		"NewCompression":        reflect.ValueOf(codec.NewCompression),
