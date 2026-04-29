@@ -38,7 +38,7 @@ func _set_error(err: int, message: String = "") -> void:
 @abstract
 # Writes the least significant byte of value to the stream.
 func write_byte(value: int) -> bool
-	
+
 @abstract
 # Writes the raw byte array to the stream without a length prefix.
 func write_bytes(value: PackedByteArray) -> bool

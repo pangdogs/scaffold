@@ -20,7 +20,7 @@ class_name ProtoFieldDescriptor
 extends RefCounted
 
 # Canonical protobuf field type identifiers.
-enum FieldType {	
+enum FieldType {
 	TYPE_DOUBLE = 1,        # double
 	TYPE_FLOAT = 2,         # float
 	TYPE_INT64 = 3,         # int64
@@ -43,17 +43,17 @@ enum FieldType {
 }
 
 # Low-level protobuf wire encodings.
-enum WireType {	
+enum WireType {
 	WIRETYPE_VARINT = 0,           # int32, int64, uint32, uint64, sint32, sint64, bool, enum
 	WIRETYPE_FIXED64 = 1,          # fixed64, sfixed64, double
 	WIRETYPE_LENGTH_DELIMITED = 2,  # string, bytes, embedded messages, packed repeated fields
 	WIRETYPE_START_GROUP = 3,       # groups (deprecated)
 	WIRETYPE_END_GROUP = 4,         # groups (deprecated)
-	WIRETYPE_FIXED32 = 5,          # fixed32, sfixed32, float	
+	WIRETYPE_FIXED32 = 5,          # fixed32, sfixed32, float
 }
 
 # Protobuf field cardinality markers.
-enum FieldLabel {	
+enum FieldLabel {
 	LABEL_OPTIONAL = 1,  # optional
 	LABEL_REQUIRED = 2,  # required (proto2 only, deprecated)
 	LABEL_REPEATED = 3,  # repeated

@@ -141,7 +141,7 @@ static func decode_string_name(stream: ProtoInputStream) -> StringName:
 
 #region Bytes
 # Encodes a byte array as a length-delimited protobuf field payload.
-static func encode_bytes(stream: ProtoOutputStream, value: PackedByteArray) -> bool:	
+static func encode_bytes(stream: ProtoOutputStream, value: PackedByteArray) -> bool:
 	return encode_varint(stream, value.size()) and stream.write_bytes(value)
 
 # Decodes a byte array from a length-delimited protobuf field payload.

@@ -74,7 +74,7 @@ func read_varint() -> int:
 			return 0
 	_set_error(OK)
 	return value
-	
+
 @abstract
 # Reads a 32-bit floating-point value encoded in little-endian order.
 func read_float() -> float

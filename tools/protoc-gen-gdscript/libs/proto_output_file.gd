@@ -144,7 +144,7 @@ func _notification(what: int) -> void:
 	if _init_failed:
 		return
 	if what == NOTIFICATION_PREDELETE:
-		if !_flush_buffer():			
+		if !_flush_buffer():
 			push_error(
 				"failed to flush on predelete, path=%s, err=%d, message=%s" % [
 					_file.get_path_absolute(),
@@ -177,13 +177,13 @@ func _flush_buffer() -> bool:
 	if _position <= 0:
 		_set_error(OK)
 		return true
-	if !_file.store_buffer(_buffer.slice(0, _position)):		
+	if !_file.store_buffer(_buffer.slice(0, _position)):
 		return _sync_file_error("Failed to write file buffer.")
 	_position = 0
 	return true
 
 func _sync_file_error(message: String) -> bool:
-	var err := _file.get_error()	
+	var err := _file.get_error()
 	if err != OK:
 		_set_error(err, message)
 		return false

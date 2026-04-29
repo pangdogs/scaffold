@@ -34,7 +34,7 @@ func _init(file: FileAccess, chunk_size: int = DEFAULT_CHUNK_SIZE) -> void:
 		_set_error(ERR_INVALID_PARAMETER, "file cannot be null")
 		return
 	_file = file
-	_file.big_endian = false	
+	_file.big_endian = false
 	_chunk_size = max(chunk_size, 256)
 	_set_error(OK)
 
@@ -160,12 +160,12 @@ func _compact_buffer(force: bool = false) -> void:
 
 # Pulls the next chunk into the unread window.
 func _fill_buffer(set_error: bool = true) -> void:
-	var err := _file.get_error()  
+	var err := _file.get_error()
 	if err != OK:
 		if set_error:
 			if err != ERR_FILE_EOF:
 				_set_error(err, "Failed to read file buffer.")
-			else:	
+			else:
 				_set_error(OK)
 		return
 	_compact_buffer(true)
@@ -174,8 +174,8 @@ func _fill_buffer(set_error: bool = true) -> void:
 	if err == OK or err == ERR_FILE_EOF:
 		if !chunk.is_empty():
 			_buffer.append_array(chunk)
-	if set_error:			
-		if err != OK and err != ERR_FILE_EOF:					
+	if set_error:
+		if err != OK and err != ERR_FILE_EOF:
 			_set_error(err, "Failed to read file buffer.")
 		else:
-			_set_error(OK)	
+			_set_error(OK)
