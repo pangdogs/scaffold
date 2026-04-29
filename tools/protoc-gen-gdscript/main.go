@@ -292,7 +292,6 @@ func emitMessage(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.M
 	if err := emitResetMethod(g, file, msg, importAliases); err != nil {
 		return err
 	}
-	emitNewMethod(g, msgName)
 	if err := emitCloneMethod(g, file, msg, importAliases); err != nil {
 		return err
 	}
@@ -357,9 +356,6 @@ func emitEmptyMessageMethods(g *protogen.GeneratedFile, file *protogen.File, msg
 	g.P()
 	g.P("\tfunc reset() -> void:")
 	g.P("\t\tpass")
-	g.P()
-	g.P("\tfunc new() -> ProtoMessage:")
-	g.P("\t\treturn ", msgName, ".new()")
 	g.P()
 	g.P("\tfunc clone() -> ProtoMessage:")
 	g.P("\t\treturn ", msgName, ".new()")
@@ -698,12 +694,6 @@ func emitResetMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protog
 	}
 	g.P()
 	return nil
-}
-
-func emitNewMethod(g *protogen.GeneratedFile, msgName string) {
-	g.P("\tfunc new() -> ProtoMessage:")
-	g.P("\t\treturn ", msgName, ".new()")
-	g.P()
 }
 
 func emitTypeIDMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message) {

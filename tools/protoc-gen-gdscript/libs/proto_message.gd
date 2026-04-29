@@ -39,10 +39,6 @@ func size() -> int
 func reset() -> void
 
 @abstract
-# Allocates a new empty message instance of the same concrete type.
-func new() -> ProtoMessage
-
-@abstract
 # Creates a deep copy of the current message instance.
 func clone() -> ProtoMessage
 
