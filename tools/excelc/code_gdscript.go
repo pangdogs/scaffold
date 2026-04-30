@@ -171,7 +171,7 @@ var {{.Name}}: {{.ExcelType}}
 const DEFAULT_DATA_DIR := "{{.DefaultDataDir}}"
 var _data_dir := DEFAULT_DATA_DIR
 
-func init(data_dir: String = DEFAULT_DATA_DIR) -> void:
+func _init(data_dir: String = DEFAULT_DATA_DIR) -> void:
 	_data_dir = data_dir
 
 func _ready() -> void:
