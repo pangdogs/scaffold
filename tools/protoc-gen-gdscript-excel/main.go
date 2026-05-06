@@ -782,13 +782,13 @@ func emitIndexHashMethod(g *protogen.GeneratedFile, method IndexMethodDecl, prot
 		return err
 	}
 	g.P("\tfunc ", indexHashMethodName(method), "(", argList, ") -> int:")
-	g.P("\t\tvar hasher := ProtoFnv64a.new()")
+	g.P("\t\tvar pb_hasher := ProtoFnv64a.new()")
 	for _, field := range method.IndexFields {
-		if err := emitHashStatements(g, "\t\t", "hasher", gdscriptArgumentName(field), field, protoImportAlias, messageTypeNames); err != nil {
+		if err := emitHashStatements(g, "\t\t", "pb_hasher", gdscriptArgumentName(field), field, protoImportAlias, messageTypeNames); err != nil {
 			return err
 		}
 	}
-	g.P("\t\treturn hasher.sum64()")
+	g.P("\t\treturn pb_hasher.sum64()")
 	g.P()
 	return nil
 }
@@ -820,24 +820,24 @@ func emitHashStatements(g *protogen.GeneratedFile, indent, hasherName, valueExpr
 			return fmt.Errorf("map field %s has invalid entry descriptor", field.Desc.FullName())
 		}
 		keyField := field.Message.Fields[0]
-		keyHasher, err := hashCallExpression(hasherName, "key", keyField, protoImportAlias, messageTypeNames)
+		keyHasher, err := hashCallExpression(hasherName, "pb_key", keyField, protoImportAlias, messageTypeNames)
 		if err != nil {
 			return err
 		}
-		valueHasher, err := hashCallExpression(hasherName, "value", field.Message.Fields[1], protoImportAlias, messageTypeNames)
+		valueHasher, err := hashCallExpression(hasherName, "pb_value", field.Message.Fields[1], protoImportAlias, messageTypeNames)
 		if err != nil {
 			return err
 		}
-		g.P(indent, "ProtoUtils.hash_dictionary(", hasherName, ", ", valueExpr, ", func(key): ", keyHasher, ", func(value): ", valueHasher, dictionaryKeyOrderSuffix(keyField), ")")
+		g.P(indent, "ProtoUtils.hash_dictionary(", hasherName, ", ", valueExpr, ", func(pb_key): ", keyHasher, ", func(pb_value): ", valueHasher, dictionaryKeyOrderSuffix(keyField), ")")
 		return nil
 	}
 
 	if field.Desc.IsList() {
-		valueHasher, err := hashCallExpression(hasherName, "value", field, protoImportAlias, messageTypeNames)
+		valueHasher, err := hashCallExpression(hasherName, "pb_value", field, protoImportAlias, messageTypeNames)
 		if err != nil {
 			return err
 		}
-		g.P(indent, "ProtoUtils.hash_array(", hasherName, ", ", valueExpr, ", func(value): ", valueHasher, ")")
+		g.P(indent, "ProtoUtils.hash_array(", hasherName, ", ", valueExpr, ", func(pb_value): ", valueHasher, ")")
 		return nil
 	}
 
@@ -854,21 +854,21 @@ func emitEqualityStatements(g *protogen.GeneratedFile, indent, leftExpr, rightEx
 		if field.Message == nil || len(field.Message.Fields) < 2 {
 			return fmt.Errorf("map field %s has invalid entry descriptor", field.Desc.FullName())
 		}
-		valueEqualExpr, err := equalCallExpression("a", "b", field.Message.Fields[1], protoImportAlias, messageTypeNames)
+		valueEqualExpr, err := equalCallExpression("pb_a", "pb_b", field.Message.Fields[1], protoImportAlias, messageTypeNames)
 		if err != nil {
 			return err
 		}
-		g.P(indent, "if !ProtoUtils.equal_dictionary(", leftExpr, ", ", rightExpr, ", func(a, b): return ", valueEqualExpr, "):")
+		g.P(indent, "if !ProtoUtils.equal_dictionary(", leftExpr, ", ", rightExpr, ", func(pb_a, pb_b): return ", valueEqualExpr, "):")
 		g.P(indent, "\treturn false")
 		return nil
 	}
 
 	if field.Desc.IsList() {
-		valueEqualExpr, err := equalCallExpression("a", "b", field, protoImportAlias, messageTypeNames)
+		valueEqualExpr, err := equalCallExpression("pb_a", "pb_b", field, protoImportAlias, messageTypeNames)
 		if err != nil {
 			return err
 		}
-		g.P(indent, "if !ProtoUtils.equal_array(", leftExpr, ", ", rightExpr, ", func(a, b): return ", valueEqualExpr, "):")
+		g.P(indent, "if !ProtoUtils.equal_array(", leftExpr, ", ", rightExpr, ", func(pb_a, pb_b): return ", valueEqualExpr, "):")
 		g.P(indent, "\treturn false")
 		return nil
 	}
@@ -1195,17 +1195,19 @@ func isGDScriptKeyword(s string) bool {
 		"tool", "true", "var", "while", "yield":
 		return true
 
-	case "serialize", "deserialize", "size", "reset", "new", "clone", "hash_to", "equals",
-		"stream", "tag", "field_number", "wire_type", "value", "data_size",
-		"entry_size", "entry_stream", "entry_key", "entry_value", "entry_tag",
-		"entry_field_number", "entry_wire_type", "packed_size", "packed_stream",
-		"msg_size", "msg", "hasher", "other", "other_msg", "key", "a", "b":
+	case "serialize", "deserialize", "to_dict", "from_dict", "size", "reset", "new", "clone",
+		"hash_to", "equals", "type_id",
+		"json_dict", "json_emit_default", "json_enum_as_string",
+		"pb_stream", "pb_tag", "pb_field_number", "pb_wire_type", "pb_key", "pb_value",
+		"pb_data_size", "pb_entry_size", "pb_entry_stream", "pb_entry_key", "pb_entry_value",
+		"pb_entry_tag", "pb_entry_field_number", "pb_entry_wire_type", "pb_packed_size",
+		"pb_packed_stream", "pb_msg_size", "pb_msg", "pb_hasher", "pb_other",
+		"pb_other_msg", "pb_a", "pb_b", "pb_array", "pb_dict", "pb_field":
 		return true
 
 	case "idx", "idx_offset", "offset", "row", "bucket", "conflict_offset",
-		"chunks", "last_chunk", "chunk_index", "chunk_rows", "row_offset", "rows",
-		"low", "high", "mid", "ok", "chunk_base_path",
-		"lookup", "lookup_async", "row_count", "row_at", "row_at_async":
+		"rows", "rows_async", "row_count", "row_at", "row_at_async",
+		"lookup", "lookup_async":
 		return true
 
 	default:
