@@ -256,6 +256,7 @@ func emitEnum(g *protogen.GeneratedFile, enum *protogen.Enum) {
 	}
 	g.P("}")
 	g.P()
+	emitEnumJSONHelper(g, enum, 0, enumName)
 }
 
 func emitMessage(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
@@ -284,6 +285,12 @@ func emitMessage(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.M
 		return err
 	}
 	if err := emitDeserializeMethod(g, file, msg, importAliases); err != nil {
+		return err
+	}
+	if err := emitToDictMethod(g, file, msg, importAliases); err != nil {
+		return err
+	}
+	if err := emitFromDictMethod(g, file, msg, importAliases); err != nil {
 		return err
 	}
 	if err := emitSizeMethod(g, file, msg, importAliases); err != nil {
@@ -317,9 +324,14 @@ func emitIndentedEnum(g *protogen.GeneratedFile, enum *protogen.Enum, indentLeve
 		g.P(indent, "\t", safeIdentifier(string(value.Desc.Name())), " = ", value.Desc.Number(), ",")
 	}
 	g.P(indent, "}")
+	g.P()
+	emitEnumJSONHelper(g, enum, indentLevel, enumName)
 }
 
 func emitMessageFields(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
+	if len(msg.Fields) <= 0 {
+		return nil
+	}
 	for _, field := range msg.Fields {
 		typeExpr, err := fieldTypeExpression(file, field, importAliases)
 		if err != nil {
@@ -337,18 +349,26 @@ func emitMessageFields(g *protogen.GeneratedFile, file *protogen.File, msg *prot
 
 func emitEmptyMessageMethods(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, msgName string) {
 	g.P("\t@warning_ignore(\"unused_parameter\")")
-	g.P("\tfunc serialize(stream: ProtoOutputStream) -> bool:")
-	g.P("\t\tif stream.get_error() != OK:")
+	g.P("\tfunc serialize(pb_stream: ProtoOutputStream) -> bool:")
+	g.P("\t\tif pb_stream.get_error() != OK:")
 	g.P("\t\t\treturn false")
 	g.P("\t\treturn true")
 	g.P()
-	g.P("\tfunc deserialize(stream: ProtoInputStream) -> bool:")
-	g.P("\t\twhile !stream.eof():")
-	g.P("\t\t\tvar tag := ProtoUtils.decode_tag(stream)")
-	g.P("\t\t\tif stream.get_error() != OK:")
+	g.P("\tfunc deserialize(pb_stream: ProtoInputStream) -> bool:")
+	g.P("\t\twhile !pb_stream.eof():")
+	g.P("\t\t\tvar pb_tag := ProtoUtils.decode_tag(pb_stream)")
+	g.P("\t\t\tif pb_stream.get_error() != OK:")
 	g.P("\t\t\t\treturn false")
-	g.P("\t\t\tif !ProtoUtils.skip_field(stream, ProtoUtils.get_tag_wire_type(tag)):")
+	g.P("\t\t\tif !ProtoUtils.skip_field(pb_stream, ProtoUtils.get_tag_wire_type(pb_tag)):")
 	g.P("\t\t\t\treturn false")
+	g.P("\t\treturn true")
+	g.P()
+	g.P("\tfunc to_dict(json_emit_default: bool = false, json_enum_as_string: bool = true) -> Dictionary:")
+	g.P("\t\treturn {}")
+	g.P()
+	g.P("\t@warning_ignore(\"unused_parameter\")")
+	g.P("\tfunc from_dict(json_dict: Dictionary) -> bool:")
+	g.P("\t\treset()")
 	g.P("\t\treturn true")
 	g.P()
 	g.P("\tfunc size() -> int:")
@@ -361,11 +381,11 @@ func emitEmptyMessageMethods(g *protogen.GeneratedFile, file *protogen.File, msg
 	g.P("\t\treturn ", msgName, ".new()")
 	g.P()
 	g.P("\t@warning_ignore(\"unused_parameter\")")
-	g.P("\tfunc hash_to(hasher: ProtoHasher) -> void:")
+	g.P("\tfunc hash_to(pb_hasher: ProtoHasher) -> void:")
 	g.P("\t\tpass")
 	g.P()
-	g.P("\tfunc equals(other: ProtoMessage) -> bool:")
-	g.P("\t\treturn other is ", msgName)
+	g.P("\tfunc equals(pb_other: ProtoMessage) -> bool:")
+	g.P("\t\treturn pb_other is ", msgName)
 	g.P()
 	emitTypeIDMethod(g, file, msg)
 }
@@ -374,8 +394,8 @@ func emitSerializeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *pr
 	if len(msg.Fields) <= 0 {
 		g.P("\t@warning_ignore(\"unused_parameter\")")
 	}
-	g.P("\tfunc serialize(stream: ProtoOutputStream) -> bool:")
-	g.P("\t\tif stream.get_error() != OK:")
+	g.P("\tfunc serialize(pb_stream: ProtoOutputStream) -> bool:")
+	g.P("\t\tif pb_stream.get_error() != OK:")
 	g.P("\t\t\treturn false")
 	if len(msg.Fields) <= 0 {
 		g.P("\t\treturn true")
@@ -403,33 +423,33 @@ func emitSerializeField(g *protogen.GeneratedFile, file *protogen.File, field *p
 		if config.Deterministic {
 			iterExpr = "ProtoUtils.sorted_dictionary_keys(" + name + dictionaryKeyOrderSuffix(keyField) + ")"
 		}
-		g.P("\t\tfor key in ", iterExpr, ":")
-		g.P("\t\t\tvar value := ", name, "[key]")
-		g.P("\t\t\tif !ProtoUtils.encode_tag(stream, ", fieldNumber, ", ProtoFieldDescriptor.FieldType.TYPE_MAP):")
+		g.P("\t\tfor pb_key in ", iterExpr, ":")
+		g.P("\t\t\tvar pb_value := ", name, "[pb_key]")
+		g.P("\t\t\tif !ProtoUtils.encode_tag(pb_stream, ", fieldNumber, ", ProtoFieldDescriptor.FieldType.TYPE_MAP):")
 		g.P("\t\t\t\treturn false")
 		g.P("\t\t\t@warning_ignore(\"confusable_local_declaration\")")
 		g.P(
-			"\t\t\tvar entry_size := ProtoUtils.sizeof_dictionary_entry(key, value, ",
+			"\t\t\tvar pb_entry_size := ProtoUtils.sizeof_dictionary_entry(pb_key, pb_value, ",
 			tagSizeLiteral(1, fieldTypeConst(keyField)),
-			", func(key): return ",
-			scalarSizeExpression("key", keyField, file, importAliases),
+			", func(pb_key): return ",
+			scalarSizeExpression("pb_key", keyField, file, importAliases),
 			", ",
 			tagSizeLiteral(2, fieldTypeConst(valueField)),
-			", func(value): return ",
-			valueSizeExpression("value", valueField, file, importAliases),
-			", func(value): return ",
-			shouldSerializeExpression("value", valueField),
+			", func(pb_value): return ",
+			valueSizeExpression("pb_value", valueField, file, importAliases),
+			", func(pb_value): return ",
+			shouldSerializeExpression("pb_value", valueField),
 			")",
 		)
-		g.P("\t\t\tif !ProtoUtils.encode_varint(stream, entry_size):")
+		g.P("\t\t\tif !ProtoUtils.encode_varint(pb_stream, pb_entry_size):")
 		g.P("\t\t\t\treturn false")
-		g.P("\t\t\tif !ProtoUtils.encode_tag(stream, 1, ", fieldTypeConst(keyField), "):")
+		g.P("\t\t\tif !ProtoUtils.encode_tag(pb_stream, 1, ", fieldTypeConst(keyField), "):")
 		g.P("\t\t\t\treturn false")
-		emitEncodeValue(g, "\t\t\t", "key", keyField, file, importAliases)
-		g.P("\t\t\tif ", shouldSerializeExpression("value", valueField), ":")
-		g.P("\t\t\t\tif !ProtoUtils.encode_tag(stream, 2, ", fieldTypeConst(valueField), "):")
+		emitEncodeValue(g, "\t\t\t", "pb_key", keyField, file, importAliases)
+		g.P("\t\t\tif ", shouldSerializeExpression("pb_value", valueField), ":")
+		g.P("\t\t\t\tif !ProtoUtils.encode_tag(pb_stream, 2, ", fieldTypeConst(valueField), "):")
 		g.P("\t\t\t\t\treturn false")
-		if err := emitEncodeValue(g, "\t\t\t\t", "value", valueField, file, importAliases); err != nil {
+		if err := emitEncodeValue(g, "\t\t\t\t", "pb_value", valueField, file, importAliases); err != nil {
 			return err
 		}
 		return nil
@@ -437,27 +457,27 @@ func emitSerializeField(g *protogen.GeneratedFile, file *protogen.File, field *p
 	if field.Desc.IsList() {
 		if isPackedField(field) {
 			g.P("\t\tif !", name, ".is_empty():")
-			g.P("\t\t\tif !ProtoUtils.encode_tag(stream, ", fieldNumber, ", ", fieldType, "):")
+			g.P("\t\t\tif !ProtoUtils.encode_tag(pb_stream, ", fieldNumber, ", ", fieldType, "):")
 			g.P("\t\t\t\treturn false")
-			g.P("\t\t\tvar data_size := ProtoUtils.sizeof_array_payload(", name, ", func(value): return ", scalarSizeExpression("value", field, file, importAliases), ")")
-			g.P("\t\t\tif !ProtoUtils.encode_varint(stream, data_size):")
+			g.P("\t\t\tvar pb_data_size := ProtoUtils.sizeof_array_payload(", name, ", func(pb_value): return ", scalarSizeExpression("pb_value", field, file, importAliases), ")")
+			g.P("\t\t\tif !ProtoUtils.encode_varint(pb_stream, pb_data_size):")
 			g.P("\t\t\t\treturn false")
-			g.P("\t\t\tfor value in ", name, ":")
-			if err := emitEncodeValue(g, "\t\t\t\t", "value", field, file, importAliases); err != nil {
+			g.P("\t\t\tfor pb_value in ", name, ":")
+			if err := emitEncodeValue(g, "\t\t\t\t", "pb_value", field, file, importAliases); err != nil {
 				return err
 			}
 			return nil
 		}
-		g.P("\t\tfor value in ", name, ":")
-		g.P("\t\t\tif !ProtoUtils.encode_tag(stream, ", fieldNumber, ", ", fieldType, "):")
+		g.P("\t\tfor pb_value in ", name, ":")
+		g.P("\t\t\tif !ProtoUtils.encode_tag(pb_stream, ", fieldNumber, ", ", fieldType, "):")
 		g.P("\t\t\t\treturn false")
-		if err := emitEncodeValue(g, "\t\t\t", "value", field, file, importAliases); err != nil {
+		if err := emitEncodeValue(g, "\t\t\t", "pb_value", field, file, importAliases); err != nil {
 			return err
 		}
 		return nil
 	}
 	g.P("\t\tif ", shouldSerializeExpression(name, field), ":")
-	g.P("\t\t\tif !ProtoUtils.encode_tag(stream, ", fieldNumber, ", ", fieldType, "):")
+	g.P("\t\t\tif !ProtoUtils.encode_tag(pb_stream, ", fieldNumber, ", ", fieldType, "):")
 	g.P("\t\t\t\treturn false")
 	if err := emitEncodeValue(g, "\t\t\t", name, field, file, importAliases); err != nil {
 		return err
@@ -467,7 +487,7 @@ func emitSerializeField(g *protogen.GeneratedFile, file *protogen.File, field *p
 
 func emitEncodeValue(g *protogen.GeneratedFile, indent, valueExpr string, field *protogen.Field, file *protogen.File, importAliases map[string]string) error {
 	if field.Message != nil && !field.Desc.IsMap() {
-		g.P(indent, "if !ProtoUtils.encode_message(stream, ", valueExpr, "):")
+		g.P(indent, "if !ProtoUtils.encode_message(pb_stream, ", valueExpr, "):")
 		g.P(indent, "\treturn false")
 		return nil
 	}
@@ -477,21 +497,21 @@ func emitEncodeValue(g *protogen.GeneratedFile, indent, valueExpr string, field 
 }
 
 func emitDeserializeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
-	g.P("\tfunc deserialize(stream: ProtoInputStream) -> bool:")
-	g.P("\t\twhile !stream.eof():")
-	g.P("\t\t\tvar tag := ProtoUtils.decode_tag(stream)")
-	g.P("\t\t\tif stream.get_error() != OK:")
+	g.P("\tfunc deserialize(pb_stream: ProtoInputStream) -> bool:")
+	g.P("\t\twhile !pb_stream.eof():")
+	g.P("\t\t\tvar pb_tag := ProtoUtils.decode_tag(pb_stream)")
+	g.P("\t\t\tif pb_stream.get_error() != OK:")
 	g.P("\t\t\t\treturn false")
-	g.P("\t\t\tvar field_number := ProtoUtils.get_tag_field_number(tag)")
-	g.P("\t\t\tvar wire_type := ProtoUtils.get_tag_wire_type(tag)")
-	g.P("\t\t\tmatch field_number:")
+	g.P("\t\t\tvar pb_field_number := ProtoUtils.get_tag_field_number(pb_tag)")
+	g.P("\t\t\tvar pb_wire_type := ProtoUtils.get_tag_wire_type(pb_tag)")
+	g.P("\t\t\tmatch pb_field_number:")
 	for _, field := range msg.Fields {
 		if err := emitDeserializeField(g, file, field, importAliases); err != nil {
 			return err
 		}
 	}
 	g.P("\t\t\t\t_:")
-	g.P("\t\t\t\t\tif !ProtoUtils.skip_field(stream, wire_type):")
+	g.P("\t\t\t\t\tif !ProtoUtils.skip_field(pb_stream, pb_wire_type):")
 	g.P("\t\t\t\t\t\treturn false")
 	g.P("\t\treturn true")
 	g.P()
@@ -505,13 +525,13 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 	if field.Desc.IsMap() {
 		keyField := field.Message.Fields[0]
 		valueField := field.Message.Fields[1]
-		g.P("\t\t\t\t\tif wire_type != ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:")
+		g.P("\t\t\t\t\tif pb_wire_type != ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:")
 		g.P("\t\t\t\t\t\treturn false")
-		g.P("\t\t\t\t\tvar entry_size := ProtoUtils.decode_varint(stream)")
-		g.P("\t\t\t\t\tif stream.get_error() != OK or entry_size < 0:")
+		g.P("\t\t\t\t\tvar pb_entry_size := ProtoUtils.decode_varint(pb_stream)")
+		g.P("\t\t\t\t\tif pb_stream.get_error() != OK or pb_entry_size < 0:")
 		g.P("\t\t\t\t\t\treturn false")
-		g.P("\t\t\t\t\tvar entry_stream := ProtoLimitedInputStream.new(stream, entry_size)")
-		g.P("\t\t\t\t\tvar entry_key := ", defaultMapKeyExpression(keyField))
+		g.P("\t\t\t\t\tvar pb_entry_stream := ProtoLimitedInputStream.new(pb_stream, pb_entry_size)")
+		g.P("\t\t\t\t\tvar pb_entry_key := ", defaultMapKeyExpression(keyField))
 		entryValueExpr, err := defaultMapValueExpression(file, valueField, importAliases)
 		if err != nil {
 			return err
@@ -520,57 +540,57 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 		if err != nil {
 			return err
 		}
-		g.P("\t\t\t\t\tvar entry_value: ", entryValueType, " = ", entryValueExpr)
-		g.P("\t\t\t\t\twhile !entry_stream.eof():")
-		g.P("\t\t\t\t\t\tvar entry_tag := ProtoUtils.decode_tag(entry_stream)")
-		g.P("\t\t\t\t\t\tif entry_stream.get_error() != OK:")
+		g.P("\t\t\t\t\tvar pb_entry_value: ", entryValueType, " = ", entryValueExpr)
+		g.P("\t\t\t\t\twhile !pb_entry_stream.eof():")
+		g.P("\t\t\t\t\t\tvar pb_entry_tag := ProtoUtils.decode_tag(pb_entry_stream)")
+		g.P("\t\t\t\t\t\tif pb_entry_stream.get_error() != OK:")
 		g.P("\t\t\t\t\t\t\treturn false")
-		g.P("\t\t\t\t\t\tvar entry_field_number := ProtoUtils.get_tag_field_number(entry_tag)")
-		g.P("\t\t\t\t\t\tvar entry_wire_type := ProtoUtils.get_tag_wire_type(entry_tag)")
-		g.P("\t\t\t\t\t\tmatch entry_field_number:")
+		g.P("\t\t\t\t\t\tvar pb_entry_field_number := ProtoUtils.get_tag_field_number(pb_entry_tag)")
+		g.P("\t\t\t\t\t\tvar pb_entry_wire_type := ProtoUtils.get_tag_wire_type(pb_entry_tag)")
+		g.P("\t\t\t\t\t\tmatch pb_entry_field_number:")
 		g.P("\t\t\t\t\t\t\t1:")
-		if err := emitCheckedDecodedAssignment(g, "\t\t\t\t\t\t\t\t", "entry_key", keyField, file, importAliases, "entry_stream", "entry_wire_type"); err != nil {
+		if err := emitCheckedDecodedAssignment(g, "\t\t\t\t\t\t\t\t", "pb_entry_key", keyField, file, importAliases, "pb_entry_stream", "pb_entry_wire_type"); err != nil {
 			return err
 		}
 		g.P("\t\t\t\t\t\t\t2:")
-		if err := emitCheckedDecodedAssignment(g, "\t\t\t\t\t\t\t\t", "entry_value", valueField, file, importAliases, "entry_stream", "entry_wire_type"); err != nil {
+		if err := emitCheckedDecodedAssignment(g, "\t\t\t\t\t\t\t\t", "pb_entry_value", valueField, file, importAliases, "pb_entry_stream", "pb_entry_wire_type"); err != nil {
 			return err
 		}
 		g.P("\t\t\t\t\t\t\t_:")
-		g.P("\t\t\t\t\t\t\t\tif !ProtoUtils.skip_field(entry_stream, entry_wire_type):")
+		g.P("\t\t\t\t\t\t\t\tif !ProtoUtils.skip_field(pb_entry_stream, pb_entry_wire_type):")
 		g.P("\t\t\t\t\t\t\t\t\treturn false")
-		g.P("\t\t\t\t\t", name, "[entry_key] = entry_value")
+		g.P("\t\t\t\t\t", name, "[pb_entry_key] = pb_entry_value")
 		return nil
 	}
 	if field.Desc.IsList() {
 		if isPackedField(field) {
-			g.P("\t\t\t\t\tif wire_type == ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:")
-			g.P("\t\t\t\t\t\tvar packed_size := ProtoUtils.decode_varint(stream)")
-			g.P("\t\t\t\t\t\tif stream.get_error() != OK or packed_size < 0:")
+			g.P("\t\t\t\t\tif pb_wire_type == ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:")
+			g.P("\t\t\t\t\t\tvar pb_packed_size := ProtoUtils.decode_varint(pb_stream)")
+			g.P("\t\t\t\t\t\tif pb_stream.get_error() != OK or pb_packed_size < 0:")
 			g.P("\t\t\t\t\t\t\treturn false")
-			g.P("\t\t\t\t\t\tvar packed_stream := ProtoLimitedInputStream.new(stream, packed_size)")
-			g.P("\t\t\t\t\t\twhile !packed_stream.eof():")
-			if err := emitDecodedAppend(g, "\t\t\t\t\t\t\t", name, field, file, importAliases, "packed_stream"); err != nil {
+			g.P("\t\t\t\t\t\tvar pb_packed_stream := ProtoLimitedInputStream.new(pb_stream, pb_packed_size)")
+			g.P("\t\t\t\t\t\twhile !pb_packed_stream.eof():")
+			if err := emitDecodedAppend(g, "\t\t\t\t\t\t\t", name, field, file, importAliases, "pb_packed_stream"); err != nil {
 				return err
 			}
-			g.P("\t\t\t\t\telif wire_type == ", wireTypeConst(field), ":")
-			if err := emitDecodedAppend(g, "\t\t\t\t\t\t", name, field, file, importAliases, "stream"); err != nil {
+			g.P("\t\t\t\t\telif pb_wire_type == ", wireTypeConst(field), ":")
+			if err := emitDecodedAppend(g, "\t\t\t\t\t\t", name, field, file, importAliases, "pb_stream"); err != nil {
 				return err
 			}
 			g.P("\t\t\t\t\telse:")
 			g.P("\t\t\t\t\t\treturn false")
 			return nil
 		}
-		g.P("\t\t\t\t\tif wire_type != ", wireTypeConst(field), ":")
+		g.P("\t\t\t\t\tif pb_wire_type != ", wireTypeConst(field), ":")
 		g.P("\t\t\t\t\t\treturn false")
-		if err := emitDecodedAppend(g, "\t\t\t\t\t", name, field, file, importAliases, "stream"); err != nil {
+		if err := emitDecodedAppend(g, "\t\t\t\t\t", name, field, file, importAliases, "pb_stream"); err != nil {
 			return err
 		}
 		return nil
 	}
-	g.P("\t\t\t\t\tif wire_type != ", wireTypeConst(field), ":")
+	g.P("\t\t\t\t\tif pb_wire_type != ", wireTypeConst(field), ":")
 	g.P("\t\t\t\t\t\treturn false")
-	if err := emitDecodedAssignment(g, "\t\t\t\t\t", name, field, file, importAliases, "stream"); err != nil {
+	if err := emitDecodedAssignment(g, "\t\t\t\t\t", name, field, file, importAliases, "pb_stream"); err != nil {
 		return err
 	}
 	return nil
@@ -582,19 +602,19 @@ func emitDecodedAppend(g *protogen.GeneratedFile, indent, target string, field *
 		if err != nil {
 			return err
 		}
-		g.P(indent, "var value := ", msgType, ".new()")
-		g.P(indent, "if !ProtoUtils.decode_message(", streamName, ", value):")
+		g.P(indent, "var pb_value := ", msgType, ".new()")
+		g.P(indent, "if !ProtoUtils.decode_message(", streamName, ", pb_value):")
 		g.P(indent, "\treturn false")
-		g.P(indent, target, ".append(value)")
+		g.P(indent, target, ".append(pb_value)")
 		return nil
 	}
 	if field.Enum != nil {
 		g.P(indent, `@warning_ignore("int_as_enum_without_cast")`)
 	}
-	g.P(indent, "var value := ", decodeValueExpression(field, streamName))
+	g.P(indent, "var pb_value := ", decodeValueExpression(field, streamName))
 	g.P(indent, "if ", streamName, ".get_error() != OK:")
 	g.P(indent, "\treturn false")
-	g.P(indent, target, ".append(value)")
+	g.P(indent, target, ".append(pb_value)")
 	return nil
 }
 
@@ -604,37 +624,241 @@ func emitDecodedAssignment(g *protogen.GeneratedFile, indent, target string, fie
 		if err != nil {
 			return err
 		}
-		g.P(indent, "var value := ", msgType, ".new()")
-		g.P(indent, "if !ProtoUtils.decode_message(", streamName, ", value):")
+		g.P(indent, "var pb_value := ", msgType, ".new()")
+		g.P(indent, "if !ProtoUtils.decode_message(", streamName, ", pb_value):")
 		g.P(indent, "\treturn false")
-		g.P(indent, target, " = value")
+		g.P(indent, target, " = pb_value")
 		return nil
 	}
-	g.P(indent, "var value := ", decodeValueExpression(field, streamName))
+	g.P(indent, "var pb_value := ", decodeValueExpression(field, streamName))
 	g.P(indent, "if ", streamName, ".get_error() != OK:")
 	g.P(indent, "\treturn false")
 	if field.Enum != nil {
 		g.P(indent, `@warning_ignore("int_as_enum_without_cast")`)
 	}
-	g.P(indent, target, " = value")
+	g.P(indent, target, " = pb_value")
 	return nil
 }
 
 func emitCheckedDecodedAssignment(g *protogen.GeneratedFile, indent, target string, field *protogen.Field, file *protogen.File, importAliases map[string]string, streamName, wireTypeExpr string) error {
 	g.P(indent, "if ", wireTypeExpr, " != ", wireTypeConst(field), ":")
 	g.P(indent, "\treturn false")
-	return emitDecodedAssignment(g, indent, target, field, file, importAliases, streamName)
+	if field.Message != nil && !field.Desc.IsMap() {
+		g.P(indent, "if !ProtoUtils.decode_message(", streamName, ", ", target, "):")
+		g.P(indent, "\treturn false")
+		return nil
+	}
+	if field.Enum != nil {
+		g.P(indent, `@warning_ignore("int_as_enum_without_cast")`)
+	}
+	g.P(indent, target, " = ", decodeValueExpression(field, streamName))
+	g.P(indent, "if ", streamName, ".get_error() != OK:")
+	g.P(indent, "\treturn false")
+	return nil
+}
+
+func emitEnumJSONHelper(g *protogen.GeneratedFile, enum *protogen.Enum, indentLevel int, typeRef string) {
+	if len(enum.Values) <= 0 {
+		return
+	}
+	indent := strings.Repeat("\t", indentLevel)
+	toStringName, fromStringName := enumStringHelperNames(enum)
+	g.P(indent, "static func ", toStringName, "(value: int) -> String:")
+	g.P(indent, "\tmatch value:")
+	for _, value := range enum.Values {
+		valueName := safeIdentifier(string(value.Desc.Name()))
+		g.P(indent, "\t\t", typeRef, ".", valueName, ":")
+		g.P(indent, "\t\t\treturn ", strconv.Quote(string(value.Desc.Name())))
+	}
+	g.P(indent, "\treturn str(value)")
+	g.P()
+	g.P(indent, "static func ", fromStringName, "(value) -> int:")
+	g.P(indent, "\tmatch value:")
+	for _, value := range enum.Values {
+		valueName := safeIdentifier(string(value.Desc.Name()))
+		g.P(indent, "\t\t", strconv.Quote(string(value.Desc.Name())), ":")
+		g.P(indent, "\t\t\treturn ", typeRef, ".", valueName)
+	}
+	g.P(indent, "\treturn int(value)")
+	g.P()
+}
+
+func emitToDictMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
+	g.P("\tfunc to_dict(json_emit_default: bool = false, json_enum_as_string: bool = true) -> Dictionary:")
+	g.P("\t\tvar json_dict := {}")
+	for _, field := range msg.Fields {
+		if err := emitToDictField(g, file, field, importAliases); err != nil {
+			return err
+		}
+	}
+	g.P("\t\treturn json_dict")
+	g.P()
+	return nil
+}
+
+func emitToDictField(g *protogen.GeneratedFile, file *protogen.File, field *protogen.Field, importAliases map[string]string) error {
+	name := safeIdentifier(field.GoName)
+	jsonName := strconv.Quote(field.Desc.JSONName())
+	if field.Desc.IsMap() {
+		keyField := field.Message.Fields[0]
+		valueField := field.Message.Fields[1]
+		g.P("\t\tif json_emit_default or !", name, ".is_empty():")
+		g.P("\t\t\tvar pb_dict := {}")
+		g.P("\t\t\tfor pb_key in ", name, ":")
+		g.P("\t\t\t\tvar pb_value := ", name, "[pb_key]")
+		if shouldIgnoreIncompatibleTernaryInToDict(valueField) {
+			g.P("\t\t\t\t@warning_ignore(\"incompatible_ternary\")")
+		}
+		valueExpr, err := jsonToDictValueExpression("pb_value", valueField, file, importAliases, "json_emit_default", "json_enum_as_string")
+		if err != nil {
+			return err
+		}
+		g.P("\t\t\t\tpb_dict[", jsonMapKeyToDictExpression("pb_key", keyField), "] = ", valueExpr)
+		g.P("\t\t\tjson_dict[", jsonName, "] = pb_dict")
+		return nil
+	}
+	if field.Desc.IsList() {
+		g.P("\t\tif json_emit_default or !", name, ".is_empty():")
+		g.P("\t\t\tvar pb_array := []")
+		g.P("\t\t\tfor pb_value in ", name, ":")
+		if shouldIgnoreIncompatibleTernaryInToDict(field) {
+			g.P("\t\t\t\t@warning_ignore(\"incompatible_ternary\")")
+		}
+		valueExpr, err := jsonToDictValueExpression("pb_value", field, file, importAliases, "json_emit_default", "json_enum_as_string")
+		if err != nil {
+			return err
+		}
+		g.P("\t\t\t\tpb_array.append(", valueExpr, ")")
+		g.P("\t\t\tjson_dict[", jsonName, "] = pb_array")
+		return nil
+	}
+	g.P("\t\tif json_emit_default or ", shouldSerializeExpression(name, field), ":")
+	if shouldIgnoreIncompatibleTernaryInToDict(field) {
+		g.P("\t\t\t@warning_ignore(\"incompatible_ternary\")")
+	}
+	valueExpr, err := jsonToDictValueExpression(name, field, file, importAliases, "json_emit_default", "json_enum_as_string")
+	if err != nil {
+		return err
+	}
+	g.P("\t\t\tjson_dict[", jsonName, "] = ", valueExpr)
+	return nil
+}
+
+func emitFromDictMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
+	g.P("\tfunc from_dict(json_dict: Dictionary) -> bool:")
+	for _, field := range msg.Fields {
+		if err := emitFromDictField(g, file, field, importAliases); err != nil {
+			return err
+		}
+	}
+	g.P("\t\treturn true")
+	g.P()
+	return nil
+}
+
+func emitFromDictField(g *protogen.GeneratedFile, file *protogen.File, field *protogen.Field, importAliases map[string]string) error {
+	name := safeIdentifier(field.GoName)
+	jsonName := strconv.Quote(field.Desc.JSONName())
+	fieldValueName := "pb_field"
+	g.P("\t\tif json_dict.has(", jsonName, "):")
+	g.P("\t\t\tvar ", fieldValueName, " = json_dict[", jsonName, "]")
+	if field.Desc.IsMap() {
+		keyField := field.Message.Fields[0]
+		valueField := field.Message.Fields[1]
+		g.P("\t\t\tif !(", fieldValueName, " is Dictionary):")
+		g.P("\t\t\t\treturn false")
+		g.P("\t\t\t", name, " = {}")
+		g.P("\t\t\tfor pb_key in ", fieldValueName, ":")
+		g.P("\t\t\t\tvar pb_entry_key := ", jsonMapKeyFromDictExpression("pb_key", keyField))
+		if valueField.Message != nil && !valueField.Desc.IsMap() {
+			msgType, err := fieldMessageTypeReference(file, valueField.Message, importAliases)
+			if err != nil {
+				return err
+			}
+			g.P("\t\t\t\tvar pb_entry_value = ", fieldValueName, "[pb_key]")
+			g.P("\t\t\t\tif pb_entry_value == null:")
+			g.P("\t\t\t\t\t", name, "[pb_entry_key] = null")
+			g.P("\t\t\t\telse:")
+			g.P("\t\t\t\t\tif !(pb_entry_value is Dictionary):")
+			g.P("\t\t\t\t\t\treturn false")
+			g.P("\t\t\t\t\tvar pb_msg := ", msgType, ".new()")
+			g.P("\t\t\t\t\tif !pb_msg.from_dict(pb_entry_value):")
+			g.P("\t\t\t\t\t\treturn false")
+			g.P("\t\t\t\t\t", name, "[pb_entry_key] = pb_msg")
+			return nil
+		}
+		g.P("\t\t\t\tvar pb_entry_value = ", fieldValueName, "[pb_key]")
+		valueExpr, err := jsonFromDictValueExpression("pb_entry_value", valueField, file, importAliases)
+		if err != nil {
+			return err
+		}
+		g.P("\t\t\t\t", name, "[pb_entry_key] = ", valueExpr)
+		return nil
+	}
+	if field.Desc.IsList() {
+		g.P("\t\t\tif !(", fieldValueName, " is Array):")
+		g.P("\t\t\t\treturn false")
+		g.P("\t\t\t", name, " = []")
+		g.P("\t\t\tfor pb_value in ", fieldValueName, ":")
+		if field.Message != nil && !field.Desc.IsMap() {
+			msgType, err := fieldMessageTypeReference(file, field.Message, importAliases)
+			if err != nil {
+				return err
+			}
+			g.P("\t\t\t\tif pb_value == null:")
+			g.P("\t\t\t\t\t", name, ".append(null)")
+			g.P("\t\t\t\telse:")
+			g.P("\t\t\t\t\tif !(pb_value is Dictionary):")
+			g.P("\t\t\t\t\t\treturn false")
+			g.P("\t\t\t\t\tvar pb_msg := ", msgType, ".new()")
+			g.P("\t\t\t\t\tif !pb_msg.from_dict(pb_value):")
+			g.P("\t\t\t\t\t\treturn false")
+			g.P("\t\t\t\t\t", name, ".append(pb_msg)")
+			return nil
+		}
+		valueExpr, err := jsonFromDictValueExpression("pb_value", field, file, importAliases)
+		if err != nil {
+			return err
+		}
+		g.P("\t\t\t\t", name, ".append(", valueExpr, ")")
+		return nil
+	}
+	if field.Message != nil && !field.Desc.IsMap() {
+		msgType, err := fieldMessageTypeReference(file, field.Message, importAliases)
+		if err != nil {
+			return err
+		}
+		g.P("\t\t\tif ", fieldValueName, " == null:")
+		g.P("\t\t\t\t", name, " = null")
+		g.P("\t\t\telse:")
+		g.P("\t\t\t\tif !(", fieldValueName, " is Dictionary):")
+		g.P("\t\t\t\t\treturn false")
+		g.P("\t\t\t\tvar pb_msg := ", msgType, ".new()")
+		g.P("\t\t\t\tif !pb_msg.from_dict(", fieldValueName, "):")
+		g.P("\t\t\t\t\treturn false")
+		g.P("\t\t\t\t", name, " = pb_msg")
+		return nil
+	}
+	valueExpr, err := jsonFromDictValueExpression(fieldValueName, field, file, importAliases)
+	if err != nil {
+		return err
+	}
+	if field.Enum != nil {
+		g.P("\t\t\t@warning_ignore(\"int_as_enum_without_cast\")")
+	}
+	g.P("\t\t\t", name, " = ", valueExpr)
+	return nil
 }
 
 func emitSizeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
 	g.P("\tfunc size() -> int:")
-	g.P("\t\tvar msg_size := 0")
+	g.P("\t\tvar pb_msg_size := 0")
 	for _, field := range msg.Fields {
 		if err := emitSizeField(g, file, field, importAliases); err != nil {
 			return err
 		}
 	}
-	g.P("\t\treturn msg_size")
+	g.P("\t\treturn pb_msg_size")
 	g.P()
 	return nil
 }
@@ -646,34 +870,34 @@ func emitSizeField(g *protogen.GeneratedFile, file *protogen.File, field *protog
 		keyField := field.Message.Fields[0]
 		valueField := field.Message.Fields[1]
 		g.P(
-			"\t\tmsg_size += ProtoUtils.sizeof_dictionary(",
+			"\t\tpb_msg_size += ProtoUtils.sizeof_dictionary(",
 			name,
 			", ",
 			tagSizeLiteral(fieldNumber, "ProtoFieldDescriptor.FieldType.TYPE_MAP"),
 			", ",
 			tagSizeLiteral(1, fieldTypeConst(keyField)),
-			", func(key): return ",
-			scalarSizeExpression("key", keyField, file, importAliases),
+			", func(pb_key): return ",
+			scalarSizeExpression("pb_key", keyField, file, importAliases),
 			", ",
 			tagSizeLiteral(2, fieldTypeConst(valueField)),
-			", func(value): return ",
-			valueSizeExpression("value", valueField, file, importAliases),
-			", func(value): return ",
-			shouldSerializeExpression("value", valueField),
+			", func(pb_value): return ",
+			valueSizeExpression("pb_value", valueField, file, importAliases),
+			", func(pb_value): return ",
+			shouldSerializeExpression("pb_value", valueField),
 			")",
 		)
 		return nil
 	}
 	if field.Desc.IsList() {
 		if isPackedField(field) {
-			g.P("\t\tmsg_size += ProtoUtils.sizeof_packed_array(", name, ", ", tagSizeLiteral(fieldNumber, fieldTypeConst(field)), ", func(value): return ", scalarSizeExpression("value", field, file, importAliases), ")")
+			g.P("\t\tpb_msg_size += ProtoUtils.sizeof_packed_array(", name, ", ", tagSizeLiteral(fieldNumber, fieldTypeConst(field)), ", func(pb_value): return ", scalarSizeExpression("pb_value", field, file, importAliases), ")")
 			return nil
 		}
-		g.P("\t\tmsg_size += ProtoUtils.sizeof_array(", name, ", ", tagSizeLiteral(fieldNumber, fieldTypeConst(field)), ", func(value): return ", valueSizeExpression("value", field, file, importAliases), ")")
+		g.P("\t\tpb_msg_size += ProtoUtils.sizeof_array(", name, ", ", tagSizeLiteral(fieldNumber, fieldTypeConst(field)), ", func(pb_value): return ", valueSizeExpression("pb_value", field, file, importAliases), ")")
 		return nil
 	}
 	g.P("\t\tif ", shouldSerializeExpression(name, field), ":")
-	g.P("\t\t\tmsg_size += ", tagSizeLiteral(fieldNumber, fieldTypeConst(field)), " + ", valueSizeExpression(name, field, file, importAliases))
+	g.P("\t\t\tpb_msg_size += ", tagSizeLiteral(fieldNumber, fieldTypeConst(field)), " + ", valueSizeExpression(name, field, file, importAliases))
 	return nil
 }
 
@@ -707,20 +931,20 @@ func emitTypeIDMethod(g *protogen.GeneratedFile, file *protogen.File, msg *proto
 
 func emitCloneMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
 	g.P("\tfunc clone() -> ProtoMessage:")
-	g.P("\t\tvar msg := ", safeIdentifier(msg.GoIdent.GoName), ".new()")
+	g.P("\t\tvar pb_msg := ", safeIdentifier(msg.GoIdent.GoName), ".new()")
 	for _, field := range msg.Fields {
 		if err := emitCloneField(g, file, field, importAliases); err != nil {
 			return err
 		}
 	}
-	g.P("\t\treturn msg")
+	g.P("\t\treturn pb_msg")
 	g.P()
 	return nil
 }
 
 func emitHashToMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
-	g.P("\tfunc hash_to(hasher: ProtoHasher) -> void:")
-	g.P("\t\tProtoUtils.hash_message_fields(hasher, ", len(msg.Fields), ")")
+	g.P("\tfunc hash_to(pb_hasher: ProtoHasher) -> void:")
+	g.P("\t\tProtoUtils.hash_message_fields(pb_hasher, ", len(msg.Fields), ")")
 	if len(msg.Fields) <= 0 {
 		g.P()
 		return nil
@@ -738,26 +962,26 @@ func emitHashToField(g *protogen.GeneratedFile, file *protogen.File, field *prot
 	name := safeIdentifier(field.GoName)
 	if field.Desc.IsMap() {
 		keyField := field.Message.Fields[0]
-		keyHasher, err := hashCallableExpression("hasher", "key", file, keyField, importAliases)
+		keyHasher, err := hashCallableExpression("pb_hasher", "pb_key", file, keyField, importAliases)
 		if err != nil {
 			return err
 		}
-		valueHasher, err := hashCallableExpression("hasher", "value", file, field.Message.Fields[1], importAliases)
+		valueHasher, err := hashCallableExpression("pb_hasher", "pb_value", file, field.Message.Fields[1], importAliases)
 		if err != nil {
 			return err
 		}
-		g.P("\t\tProtoUtils.hash_dictionary(hasher, ", name, ", func(key): ", keyHasher, ", func(value): ", valueHasher, dictionaryKeyOrderSuffix(keyField), ")")
+		g.P("\t\tProtoUtils.hash_dictionary(pb_hasher, ", name, ", func(pb_key): ", keyHasher, ", func(pb_value): ", valueHasher, dictionaryKeyOrderSuffix(keyField), ")")
 		return nil
 	}
 	if field.Desc.IsList() {
-		valueHasher, err := hashCallableExpression("hasher", "value", file, field, importAliases)
+		valueHasher, err := hashCallableExpression("pb_hasher", "pb_value", file, field, importAliases)
 		if err != nil {
 			return err
 		}
-		g.P("\t\tProtoUtils.hash_array(hasher, ", name, ", func(value): ", valueHasher, ")")
+		g.P("\t\tProtoUtils.hash_array(pb_hasher, ", name, ", func(pb_value): ", valueHasher, ")")
 		return nil
 	}
-	callExpr, err := hashCallExpression("hasher", name, file, field, importAliases)
+	callExpr, err := hashCallExpression("pb_hasher", name, file, field, importAliases)
 	if err != nil {
 		return err
 	}
@@ -767,9 +991,9 @@ func emitHashToField(g *protogen.GeneratedFile, file *protogen.File, field *prot
 
 func emitEqualsMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
 	msgName := safeIdentifier(msg.GoIdent.GoName)
-	g.P("\tfunc equals(other: ProtoMessage) -> bool:")
-	g.P("\t\tvar other_msg := other as ", msgName)
-	g.P("\t\tif other_msg == null:")
+	g.P("\tfunc equals(pb_other: ProtoMessage) -> bool:")
+	g.P("\t\tvar pb_other_msg := pb_other as ", msgName)
+	g.P("\t\tif pb_other_msg == null:")
 	g.P("\t\t\treturn false")
 	for _, field := range msg.Fields {
 		if err := emitEqualsField(g, file, field, importAliases); err != nil {
@@ -785,24 +1009,24 @@ func emitEqualsField(g *protogen.GeneratedFile, file *protogen.File, field *prot
 	name := safeIdentifier(field.GoName)
 	if field.Desc.IsMap() {
 		valueField := field.Message.Fields[1]
-		valueEqualExpr, err := equalCallExpression("a", "b", valueField, file, importAliases)
+		valueEqualExpr, err := equalCallExpression("pb_a", "pb_b", valueField, file, importAliases)
 		if err != nil {
 			return err
 		}
-		g.P("\t\tif !ProtoUtils.equal_dictionary(", name, ", other_msg.", name, ", func(a, b): return ", valueEqualExpr, "):")
+		g.P("\t\tif !ProtoUtils.equal_dictionary(", name, ", pb_other_msg.", name, ", func(pb_a, pb_b): return ", valueEqualExpr, "):")
 		g.P("\t\t\treturn false")
 		return nil
 	}
 	if field.Desc.IsList() {
-		valueEqualExpr, err := equalCallExpression("a", "b", field, file, importAliases)
+		valueEqualExpr, err := equalCallExpression("pb_a", "pb_b", field, file, importAliases)
 		if err != nil {
 			return err
 		}
-		g.P("\t\tif !ProtoUtils.equal_array(", name, ", other_msg.", name, ", func(a, b): return ", valueEqualExpr, "):")
+		g.P("\t\tif !ProtoUtils.equal_array(", name, ", pb_other_msg.", name, ", func(pb_a, pb_b): return ", valueEqualExpr, "):")
 		g.P("\t\t\treturn false")
 		return nil
 	}
-	return emitEqualsValueComparison(g, "\t\t", name, "other_msg."+name, field, file, importAliases)
+	return emitEqualsValueComparison(g, "\t\t", name, "pb_other_msg."+name, field, file, importAliases)
 }
 
 func emitEqualsValueComparison(g *protogen.GeneratedFile, indent, leftExpr, rightExpr string, field *protogen.Field, file *protogen.File, importAliases map[string]string) error {
@@ -819,33 +1043,33 @@ func emitCloneField(g *protogen.GeneratedFile, file *protogen.File, field *proto
 	name := safeIdentifier(field.GoName)
 	if field.Desc.IsMap() {
 		valueField := field.Message.Fields[1]
-		g.P("\t\tfor key in ", name, ":")
+		g.P("\t\tfor pb_key in ", name, ":")
 		if valueField.Message != nil && !valueField.Desc.IsMap() {
-			g.P("\t\t\tvar value := ", name, "[key]")
-			g.P("\t\t\tmsg.", name, "[key] = value.clone() if value != null else null")
+			g.P("\t\t\tvar pb_value := ", name, "[pb_key]")
+			g.P("\t\t\tpb_msg.", name, "[pb_key] = pb_value.clone() if pb_value != null else null")
 		} else {
-			g.P("\t\t\tmsg.", name, "[key] = ", name, "[key]")
+			g.P("\t\t\tpb_msg.", name, "[pb_key] = ", name, "[pb_key]")
 		}
 		return nil
 	}
 	if field.Desc.IsList() {
 		if field.Message != nil && !field.Desc.IsMap() {
-			g.P("\t\tfor value in ", name, ":")
-			g.P("\t\t\tmsg.", name, ".append(value.clone() if value != null else null)")
+			g.P("\t\tfor pb_value in ", name, ":")
+			g.P("\t\t\tpb_msg.", name, ".append(pb_value.clone() if pb_value != null else null)")
 			return nil
 		}
-		g.P("\t\tmsg.", name, " = ", name, ".duplicate()")
+		g.P("\t\tpb_msg.", name, " = ", name, ".duplicate()")
 		return nil
 	}
 	if field.Desc.Kind() == protoreflect.BytesKind {
-		g.P("\t\tmsg.", name, " = ", name, ".duplicate()")
+		g.P("\t\tpb_msg.", name, " = ", name, ".duplicate()")
 		return nil
 	}
 	if field.Message != nil && !field.Desc.IsMap() {
-		g.P("\t\tmsg.", name, " = ", name, ".clone() if ", name, " != null else null")
+		g.P("\t\tpb_msg.", name, " = ", name, ".clone() if ", name, " != null else null")
 		return nil
 	}
-	g.P("\t\tmsg.", name, " = ", name)
+	g.P("\t\tpb_msg.", name, " = ", name)
 	return nil
 }
 
@@ -942,6 +1166,133 @@ func fieldDefaultValueExpression(file *protogen.File, field *protogen.Field, imp
 		return "null", nil
 	default:
 		return "0", nil
+	}
+}
+
+func enumStringHelperNames(enum *protogen.Enum) (string, string) {
+	enumName := safeIdentifier(string(enum.Desc.Name()))
+	return enumName + "_to_string", enumName + "_from_string"
+}
+
+func enumJSONHelperReference(file *protogen.File, enum *protogen.Enum, importAliases map[string]string) (string, error) {
+	helperName, _ := enumStringHelperNames(enum)
+	var parts []string
+	if enum.Desc.ParentFile().Path() != file.Desc.Path() {
+		alias, ok := importAliases[enum.Desc.ParentFile().Path()]
+		if !ok {
+			return "", fmt.Errorf("missing import alias for enum %q from dependency %q", enum.Desc.FullName(), enum.Desc.ParentFile().Path())
+		}
+		parts = append(parts, alias)
+	}
+	if parentClass, ok := enumContainingMessageClassName(enum); ok {
+		parts = append(parts, parentClass)
+	}
+	parts = append(parts, helperName)
+	return strings.Join(parts, "."), nil
+}
+
+func enumJSONHelperFromReference(file *protogen.File, enum *protogen.Enum, importAliases map[string]string) (string, error) {
+	_, helperName := enumStringHelperNames(enum)
+	var parts []string
+	if enum.Desc.ParentFile().Path() != file.Desc.Path() {
+		alias, ok := importAliases[enum.Desc.ParentFile().Path()]
+		if !ok {
+			return "", fmt.Errorf("missing import alias for enum %q from dependency %q", enum.Desc.FullName(), enum.Desc.ParentFile().Path())
+		}
+		parts = append(parts, alias)
+	}
+	if parentClass, ok := enumContainingMessageClassName(enum); ok {
+		parts = append(parts, parentClass)
+	}
+	parts = append(parts, helperName)
+	return strings.Join(parts, "."), nil
+}
+
+func enumContainingMessageClassName(enum *protogen.Enum) (string, bool) {
+	parent := enum.Desc.Parent()
+	var names []string
+	for parent != nil {
+		msg, ok := parent.(protoreflect.MessageDescriptor)
+		if !ok {
+			break
+		}
+		names = append([]string{safeIdentifier(string(msg.Name()))}, names...)
+		parent = msg.Parent()
+	}
+	if len(names) <= 0 {
+		return "", false
+	}
+	return strings.Join(names, "_"), true
+}
+
+func jsonToDictValueExpression(valueExpr string, field *protogen.Field, file *protogen.File, importAliases map[string]string, emitDefaultExpr, enumAsStringExpr string) (string, error) {
+	if field.Enum != nil {
+		helperRef, err := enumJSONHelperReference(file, field.Enum, importAliases)
+		if err != nil {
+			return "", err
+		}
+		return helperRef + "(" + valueExpr + ") if " + enumAsStringExpr + " else " + valueExpr, nil
+	}
+	if field.Message != nil && !field.Desc.IsMap() {
+		return valueExpr + ".to_dict(" + emitDefaultExpr + ", " + enumAsStringExpr + ") if " + valueExpr + " != null else null", nil
+	}
+	switch field.Desc.Kind() {
+	case protoreflect.BytesKind:
+		return "Marshalls.raw_to_base64(" + valueExpr + ")", nil
+	default:
+		return valueExpr, nil
+	}
+}
+
+func shouldIgnoreIncompatibleTernaryInToDict(field *protogen.Field) bool {
+	return field.Enum != nil || (field.Message != nil && !field.Desc.IsMap())
+}
+
+func jsonFromDictValueExpression(valueExpr string, field *protogen.Field, file *protogen.File, importAliases map[string]string) (string, error) {
+	if field.Enum != nil {
+		helperRef, err := enumJSONHelperFromReference(file, field.Enum, importAliases)
+		if err != nil {
+			return "", err
+		}
+		return helperRef + "(" + valueExpr + ")", nil
+	}
+	if field.Message != nil && !field.Desc.IsMap() {
+		return "", fmt.Errorf("message field %q requires statement-based JSON decoding", field.Desc.FullName())
+	}
+	switch field.Desc.Kind() {
+	case protoreflect.BoolKind:
+		return "bool(" + valueExpr + ")", nil
+	case protoreflect.StringKind:
+		return "str(" + valueExpr + ")", nil
+	case protoreflect.BytesKind:
+		return "Marshalls.base64_to_raw(str(" + valueExpr + "))", nil
+	case protoreflect.FloatKind, protoreflect.DoubleKind:
+		return "float(" + valueExpr + ")", nil
+	default:
+		return "int(" + valueExpr + ")", nil
+	}
+}
+
+func jsonMapKeyToDictExpression(keyExpr string, field *protogen.Field) string {
+	switch field.Desc.Kind() {
+	case protoreflect.BoolKind:
+		return `"true" if ` + keyExpr + ` else "false"`
+	default:
+		return "str(" + keyExpr + ")"
+	}
+}
+
+func jsonMapKeyFromDictExpression(keyExpr string, field *protogen.Field) string {
+	switch field.Desc.Kind() {
+	case protoreflect.BoolKind:
+		return `str(` + keyExpr + `).to_lower() == "true"`
+	case protoreflect.StringKind:
+		if config.StringAsStringName {
+			return "StringName(str(" + keyExpr + "))"
+		}
+		return "str(" + keyExpr + ")"
+	default:
+		return "int(" + keyExpr + ")"
 	}
 }
 
@@ -1079,28 +1430,28 @@ func shouldSerializeExpression(valueExpr string, field *protogen.Field) string {
 func encodeValueCall(valueExpr string, field *protogen.Field) string {
 	switch field.Desc.Kind() {
 	case protoreflect.BoolKind:
-		return "ProtoUtils.encode_bool(stream, " + valueExpr + ")"
+		return "ProtoUtils.encode_bool(pb_stream, " + valueExpr + ")"
 	case protoreflect.StringKind:
 		if config.StringAsStringName {
-			return "ProtoUtils.encode_string_name(stream, " + valueExpr + ")"
+			return "ProtoUtils.encode_string_name(pb_stream, " + valueExpr + ")"
 		}
-		return "ProtoUtils.encode_string(stream, " + valueExpr + ")"
+		return "ProtoUtils.encode_string(pb_stream, " + valueExpr + ")"
 	case protoreflect.BytesKind:
-		return "ProtoUtils.encode_bytes(stream, " + valueExpr + ")"
+		return "ProtoUtils.encode_bytes(pb_stream, " + valueExpr + ")"
 	case protoreflect.FloatKind:
-		return "ProtoUtils.encode_float(stream, " + valueExpr + ")"
+		return "ProtoUtils.encode_float(pb_stream, " + valueExpr + ")"
 	case protoreflect.DoubleKind:
-		return "ProtoUtils.encode_double(stream, " + valueExpr + ")"
+		return "ProtoUtils.encode_double(pb_stream, " + valueExpr + ")"
 	case protoreflect.Sint32Kind:
-		return "ProtoUtils.encode_zigzag32(stream, " + valueExpr + ")"
+		return "ProtoUtils.encode_zigzag32(pb_stream, " + valueExpr + ")"
 	case protoreflect.Sint64Kind:
-		return "ProtoUtils.encode_zigzag64(stream, " + valueExpr + ")"
+		return "ProtoUtils.encode_zigzag64(pb_stream, " + valueExpr + ")"
 	case protoreflect.Fixed32Kind, protoreflect.Sfixed32Kind:
-		return "ProtoUtils.encode_fixed32(stream, " + valueExpr + ")"
+		return "ProtoUtils.encode_fixed32(pb_stream, " + valueExpr + ")"
 	case protoreflect.Fixed64Kind, protoreflect.Sfixed64Kind:
-		return "ProtoUtils.encode_fixed64(stream, " + valueExpr + ")"
+		return "ProtoUtils.encode_fixed64(pb_stream, " + valueExpr + ")"
 	default:
-		return "ProtoUtils.encode_varint(stream, " + valueExpr + ")"
+		return "ProtoUtils.encode_varint(pb_stream, " + valueExpr + ")"
 	}
 }
 
@@ -1248,7 +1599,11 @@ func defaultMapKeyExpression(field *protogen.Field) string {
 
 func defaultMapValueExpression(file *protogen.File, field *protogen.Field, importAliases map[string]string) (string, error) {
 	if field.Message != nil && !field.Desc.IsMap() {
-		return "null", nil
+		msgType, err := fieldMessageTypeReference(file, field.Message, importAliases)
+		if err != nil {
+			return "", err
+		}
+		return msgType + ".new()", nil
 	}
 	if field.Enum != nil {
 		return fieldEnumValueReference(file, field, importAliases)
@@ -1340,12 +1695,14 @@ func isGDScriptKeyword(s string) bool {
 		"tool", "true", "var", "while", "yield":
 		return true
 
-	case "serialize", "deserialize", "size", "reset", "new", "clone", "hash_to", "equals",
-		"type_id",
-		"stream", "tag", "field_number", "wire_type", "value", "data_size",
-		"entry_size", "entry_stream", "entry_key", "entry_value", "entry_tag",
-		"entry_field_number", "entry_wire_type", "packed_size", "packed_stream",
-		"msg_size", "msg", "hasher", "other", "other_msg", "key", "a", "b":
+	case "serialize", "deserialize", "to_dict", "from_dict", "size", "reset", "new", "clone",
+		"hash_to", "equals", "type_id",
+		"json_dict", "json_emit_default", "json_enum_as_string",
+		"pb_stream", "pb_tag", "pb_field_number", "pb_wire_type", "pb_key", "pb_value",
+		"pb_data_size", "pb_entry_size", "pb_entry_stream", "pb_entry_key", "pb_entry_value",
+		"pb_entry_tag", "pb_entry_field_number", "pb_entry_wire_type", "pb_packed_size",
+		"pb_packed_stream", "pb_msg_size", "pb_msg", "pb_hasher", "pb_other",
+		"pb_other_msg", "pb_a", "pb_b", "pb_array", "pb_dict", "pb_field":
 		return true
 
 	default:

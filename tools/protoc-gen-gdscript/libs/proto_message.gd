@@ -31,6 +31,14 @@ func serialize(stream: ProtoOutputStream) -> bool
 func deserialize(stream: ProtoInputStream) -> bool
 
 @abstract
+# Converts the current message into a JSON-compatible dictionary.
+func to_dict(emit_default: bool = false, enum_as_string: bool = true) -> Dictionary
+
+@abstract
+# Populates the current message from a JSON-compatible dictionary.
+func from_dict(dict: Dictionary) -> bool
+
+@abstract
 # Returns the encoded protobuf payload size in bytes.
 func size() -> int
 
