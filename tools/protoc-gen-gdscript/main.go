@@ -273,11 +273,6 @@ func emitMessage(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.M
 		emitIndentedEnum(g, enum, 1)
 	}
 
-	if len(msg.Fields) <= 0 && len(msg.Enums) <= 0 {
-		emitEmptyMessageMethods(g, file, msg, msgName)
-		return nil
-	}
-
 	if err := emitMessageFields(g, file, msg, importAliases); err != nil {
 		return err
 	}
@@ -345,46 +340,6 @@ func emitMessageFields(g *protogen.GeneratedFile, file *protogen.File, msg *prot
 	}
 	g.P()
 	return nil
-}
-
-func emitEmptyMessageMethods(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, msgName string) {
-	g.P("\tfunc serialize(pb_stream: ProtoOutputStream) -> bool:")
-	g.P("\t\tif pb_stream.get_error() != OK:")
-	g.P("\t\t\treturn false")
-	g.P("\t\treturn true")
-	g.P()
-	g.P("\tfunc deserialize(pb_stream: ProtoInputStream) -> bool:")
-	g.P("\t\twhile !pb_stream.eof():")
-	g.P("\t\t\tvar pb_tag := ProtoUtils.decode_tag(pb_stream)")
-	g.P("\t\t\tif pb_stream.get_error() != OK:")
-	g.P("\t\t\t\treturn false")
-	g.P("\t\t\tif !ProtoUtils.skip_field(pb_stream, ProtoUtils.get_tag_wire_type(pb_tag)):")
-	g.P("\t\t\t\treturn false")
-	g.P("\t\treturn true")
-	g.P()
-	g.P("\tfunc to_dict(json_emit_default: bool = false, json_enum_as_string: bool = true) -> Dictionary:")
-	g.P("\t\treturn {}")
-	g.P()
-	g.P("\t@warning_ignore(\"unused_parameter\")")
-	g.P("\tfunc from_dict(json_dict: Dictionary) -> bool:")
-	g.P("\t\treturn true")
-	g.P()
-	g.P("\tfunc size() -> int:")
-	g.P("\t\treturn 0")
-	g.P()
-	g.P("\tfunc reset() -> void:")
-	g.P("\t\tpass")
-	g.P()
-	g.P("\tfunc clone() -> ProtoMessage:")
-	g.P("\t\treturn ", msgName, ".new()")
-	g.P()
-	g.P("\tfunc hash_to(pb_hasher: ProtoHasher) -> void:")
-	g.P("\t\tProtoUtils.hash_message_fields(pb_hasher, 0)")
-	g.P()
-	g.P("\tfunc equals(pb_other: ProtoMessage) -> bool:")
-	g.P("\t\treturn pb_other is ", msgName)
-	g.P()
-	emitTypeIDMethod(g, file, msg)
 }
 
 func emitSerializeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
@@ -678,6 +633,9 @@ func emitEnumJSONHelper(g *protogen.GeneratedFile, enum *protogen.Enum, indentLe
 }
 
 func emitToDictMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
+	if len(msg.Fields) <= 0 {
+		g.P(`	@warning_ignore("unused_parameter")`)
+	}
 	g.P("\tfunc to_dict(json_emit_default: bool = false, json_enum_as_string: bool = true) -> Dictionary:")
 	g.P("\t\tvar json_dict := {}")
 	for _, field := range msg.Fields {
@@ -739,6 +697,9 @@ func emitToDictField(g *protogen.GeneratedFile, file *protogen.File, field *prot
 }
 
 func emitFromDictMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
+	if len(msg.Fields) <= 0 {
+		g.P(`	@warning_ignore("unused_parameter")`)
+	}
 	g.P("\tfunc from_dict(json_dict: Dictionary) -> bool:")
 	for _, field := range msg.Fields {
 		if err := emitFromDictField(g, file, field, importAliases); err != nil {
