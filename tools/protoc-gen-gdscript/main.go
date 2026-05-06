@@ -348,7 +348,6 @@ func emitMessageFields(g *protogen.GeneratedFile, file *protogen.File, msg *prot
 }
 
 func emitEmptyMessageMethods(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, msgName string) {
-	g.P("\t@warning_ignore(\"unused_parameter\")")
 	g.P("\tfunc serialize(pb_stream: ProtoOutputStream) -> bool:")
 	g.P("\t\tif pb_stream.get_error() != OK:")
 	g.P("\t\t\treturn false")
@@ -368,7 +367,6 @@ func emitEmptyMessageMethods(g *protogen.GeneratedFile, file *protogen.File, msg
 	g.P()
 	g.P("\t@warning_ignore(\"unused_parameter\")")
 	g.P("\tfunc from_dict(json_dict: Dictionary) -> bool:")
-	g.P("\t\treset()")
 	g.P("\t\treturn true")
 	g.P()
 	g.P("\tfunc size() -> int:")
@@ -391,9 +389,6 @@ func emitEmptyMessageMethods(g *protogen.GeneratedFile, file *protogen.File, msg
 }
 
 func emitSerializeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
-	if len(msg.Fields) <= 0 {
-		g.P("\t@warning_ignore(\"unused_parameter\")")
-	}
 	g.P("\tfunc serialize(pb_stream: ProtoOutputStream) -> bool:")
 	g.P("\t\tif pb_stream.get_error() != OK:")
 	g.P("\t\t\treturn false")
@@ -672,7 +667,7 @@ func emitEnumJSONHelper(g *protogen.GeneratedFile, enum *protogen.Enum, indentLe
 	}
 	g.P(indent, "\treturn str(value)")
 	g.P()
-	g.P(indent, "static func ", fromStringName, "(value) -> int:")
+	g.P(indent, "static func ", fromStringName, "(value: Variant) -> int:")
 	g.P(indent, "\tmatch value:")
 	for _, value := range enum.Values {
 		valueName := safeIdentifier(string(value.Desc.Name()))
@@ -1263,7 +1258,7 @@ func jsonFromDictValueExpression(valueExpr string, field *protogen.Field, file *
 	case protoreflect.BoolKind:
 		return "bool(" + valueExpr + ")", nil
 	case protoreflect.StringKind:
-		return "str(" + valueExpr + ")", nil
+		return valueExpr, nil
 	case protoreflect.BytesKind:
 		return "Marshalls.base64_to_raw(str(" + valueExpr + "))", nil
 	case protoreflect.FloatKind, protoreflect.DoubleKind:
@@ -1277,6 +1272,8 @@ func jsonMapKeyToDictExpression(keyExpr string, field *protogen.Field) string {
 	switch field.Desc.Kind() {
 	case protoreflect.BoolKind:
 		return `"true" if ` + keyExpr + ` else "false"`
+	case protoreflect.StringKind:
+		return keyExpr
 	default:
 		return "str(" + keyExpr + ")"
 	}
@@ -1287,10 +1284,7 @@ func jsonMapKeyFromDictExpression(keyExpr string, field *protogen.Field) string 
 	case protoreflect.BoolKind:
 		return `str(` + keyExpr + `).to_lower() == "true"`
 	case protoreflect.StringKind:
-		if config.StringAsStringName {
-			return "StringName(str(" + keyExpr + "))"
-		}
-		return "str(" + keyExpr + ")"
+		return keyExpr
 	default:
 		return "int(" + keyExpr + ")"
 	}
