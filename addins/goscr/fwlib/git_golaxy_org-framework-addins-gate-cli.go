@@ -29,7 +29,7 @@ func init() {
 		"IEventIO":      reflect.ValueOf((*cli.IEventIO)(nil)),
 		"NetAddr":       reflect.ValueOf((*cli.NetAddr)(nil)),
 		"NetProtocol":   reflect.ValueOf((*cli.NetProtocol)(nil)),
-		"ResponseTime":  reflect.ValueOf((*cli.ResponseTime)(nil)),
+		"TimeSample":    reflect.ValueOf((*cli.TimeSample)(nil)),
 
 		// interface wrapper definitions
 		"_IDataIO":  reflect.ValueOf((*_git_golaxy_org_framework_addins_gate_cli_IDataIO)(nil)),
