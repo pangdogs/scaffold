@@ -450,6 +450,7 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 	g.P("\t\treturn _msg.", rowFieldName, ".duplicate()")
 	g.P()
 	g.P("\tfunc rows_async() -> Array[", rowType, "]:")
+	emitAsyncYield(g)
 	g.P("\t\treturn rows()")
 	g.P()
 	g.P("\tfunc row_count() -> int:")
@@ -461,6 +462,7 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 	g.P("\t\treturn _msg.", rowFieldName, "[offset]")
 	g.P()
 	g.P("\tfunc row_at_async(offset: int) -> ", rowType, ":")
+	emitAsyncYield(g)
 	g.P("\t\treturn row_at(offset)")
 	g.P()
 
@@ -546,6 +548,7 @@ func emitDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, 
 	g.P("\t\treturn ", method.LookupMethodName, "(", argNames, ")")
 	g.P()
 	g.P("\tfunc lookup_async(", argList, ") -> ", rowType, ":")
+	emitAsyncYield(g)
 	g.P("\t\treturn lookup(", argNames, ")")
 	g.P()
 	return nil
@@ -598,6 +601,7 @@ func emitLookupMethod(g *protogen.GeneratedFile, table TableDecl, method IndexMe
 	g.P("\t\treturn row")
 	g.P()
 	g.P("\tfunc ", method.LookupMethodName, "_async(", argList, ") -> ", rowType, ":")
+	emitAsyncYield(g)
 	g.P("\t\treturn ", method.LookupMethodName, "(", argNames, ")")
 	g.P()
 	return nil
@@ -755,6 +759,10 @@ func emitChunkLoaderInternalMethods(g *protogen.GeneratedFile, protoTableType, r
 	g.P("\t\t\t\trows[chunks[chunk_index].", chunkOffsetFieldName, " + row_offset] = chunk_rows[row_offset]")
 	g.P("\t\treturn rows")
 	g.P()
+}
+
+func emitAsyncYield(g *protogen.GeneratedFile) {
+	g.P("\t\tawait Engine.get_main_loop().process_frame")
 }
 
 func emitLookupOffset(g *protogen.GeneratedFile, method IndexMethodDecl, indexFieldName string) error {
