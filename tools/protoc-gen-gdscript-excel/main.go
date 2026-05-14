@@ -775,7 +775,7 @@ func emitLookupOffset(g *protogen.GeneratedFile, method IndexMethodDecl, indexFi
 		g.P("\t\tif _msg.", indexFieldName, " == null:")
 		g.P("\t\t\treturn null")
 		g.P("\t\tvar idx_offset := ExcelUtils.binary_search_u64(_msg.", indexFieldName, ".Values, idx)")
-		g.P("\t\tif idx_offset < 0:")
+		g.P("\t\tif idx_offset < 0 or idx_offset >= _msg.", indexFieldName, ".Offsets.size():")
 		g.P("\t\t\treturn null")
 		g.P("\t\tvar offset := _msg.", indexFieldName, ".Offsets[idx_offset]")
 	default:
