@@ -27,3 +27,7 @@ extends ProtoMessage
 @abstract
 # Returns the Golaxy GAP custom variant type id for this message type.
 func type_id() -> int
+
+# Returns a compact JSON representation prefixed with the GAP custom type id.
+func _to_string() -> String:
+	return "ProtoGAPVariant(type_id=%d)%s" % [type_id(), JSON.stringify(to_dict(), "", false)]
