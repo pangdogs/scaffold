@@ -88,7 +88,7 @@ serialization, storage, snapshots, or other tooling beyond table lookup.
   pattern is to place them under `libs` or `addons/<name>` and let Godot
   register them through `class_name`.
 - Generated `*.pb.gd` files are anonymous scripts by default. Pass
-  `--gdscript_opt=export_class_name=true` to emit a top-level `class_name` for
+  `--gdscript_opt=class_name=true` to emit a top-level `class_name` for
   each generated file script, using names such as `LoginPB`.
 - Keep generated `*.pb.gd` files in the same relative layout as the source
   `.proto` files. Cross-file protobuf references are emitted as relative

@@ -62,7 +62,7 @@ Excel 流水线是建立在 protobuf 之上的。生成出来的表结构 schema
 
 ### 布局约束
 - 这些运行时脚本不要求放在固定目录。实际项目里更常见的做法是统一放到 `libs` 或 `addons/<name>` 一类目录下，通过 `class_name` 注册给 Godot。
-- 生成的 `*.pb.gd` 文件默认是不导出文件脚本类名的。传入 `--gdscript_opt=export_class_name=true` 后，会为每个生成文件写入顶层 `class_name`，类名形如 `LoginPB`。
+- 生成的 `*.pb.gd` 文件默认是不导出文件脚本类名的。传入 `--gdscript_opt=class_name=true` 后，会为每个生成文件写入顶层 `class_name`，类名形如 `LoginPB`。
 - 生成后的 `*.pb.gd` 文件应尽量保持与源 `.proto` 文件相同的相对目录结构，因为跨文件 protobuf 引用会生成相对 `preload(...)` 调用。
 - 普通业务 protobuf 输出与 Excel 派生 protobuf 输出通常应放在不同的根目录下维护。通信 / 存储协议和表格协议一般不是同一套产物，不建议混在一个输出目录里。
 - 每个 `*.excel.gd` 文件都应和对应的 `*.pb.gd` 放在同一输出目录下。生成的 Excel 包装器会从同目录预加载 `./<name>.pb.gd`，而 `excelc code --gdscript_out=...` 也通常会在该目录中生成 `tables.gd` 之类的聚合加载脚本。

@@ -39,7 +39,7 @@ type GeneratorConfig struct {
 	StringAsStringName bool
 	Deterministic      bool
 	GapVariant         bool
-	ExportClassName    bool
+	ClassName          bool
 }
 
 var config GeneratorConfig
@@ -49,14 +49,14 @@ func main() {
 	stringAsStringName := flags.Bool("string_as_string_name", false, "map proto string fields to GDScript StringName")
 	deterministic := flags.Bool("deterministic", false, "serialize map fields in deterministic key order")
 	gapVariant := flags.Bool("gap_variant", false, "generate messages as ProtoGAPVariant implementations")
-	exportClassName := flags.Bool("export_class_name", false, "export generated file script through GDScript class_name")
+	className := flags.Bool("class_name", false, "export generated file script through GDScript class_name")
 
 	protogen.Options{ParamFunc: flags.Set}.Run(func(gen *protogen.Plugin) error {
 		config = GeneratorConfig{
 			StringAsStringName: *stringAsStringName,
 			Deterministic:      *deterministic,
 			GapVariant:         *gapVariant,
-			ExportClassName:    *exportClassName,
+			ClassName:          *className,
 		}
 		generatedPrefixes := map[string]string{}
 		for _, f := range gen.Files {
@@ -200,7 +200,7 @@ func emitGeneratedHeader(gen *protogen.Plugin, file *protogen.File, g *protogen.
 	}
 	g.P("# source: ", file.Desc.Path())
 	g.P()
-	if config.ExportClassName {
+	if config.ClassName {
 		emitFileClassName(g, file)
 	}
 	g.P("extends RefCounted")
