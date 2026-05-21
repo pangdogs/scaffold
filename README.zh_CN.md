@@ -66,6 +66,7 @@ Excel 流水线是建立在 protobuf 之上的。生成出来的表结构 schema
 - 生成后的 `*.pb.gd` 文件应尽量保持与源 `.proto` 文件相同的相对目录结构，因为跨文件 protobuf 引用会生成相对 `preload(...)` 调用。
 - 普通业务 protobuf 输出与 Excel 派生 protobuf 输出通常应放在不同的根目录下维护。通信 / 存储协议和表格协议一般不是同一套产物，不建议混在一个输出目录里。
 - 每个 `*.excel.gd` 文件都应和对应的 `*.pb.gd` 放在同一输出目录下。生成的 Excel 包装器会从同目录预加载 `./<name>.pb.gd`，而 `excelc code --gdscript_out=...` 也通常会在该目录中生成 `tables.gd` 之类的聚合加载脚本。
+- 聚合脚本 `tables.gd` 默认导出 `class_name Tables`。可以通过 `excelc code --gdscript_class_name=<Name>` 指定其他 Godot 全局类名，也可以传空值来省略 `class_name`。
 
 ## Godot 项目布局示例
 ### Protobuf 流水线
@@ -88,9 +89,9 @@ res://script/gen/excel/excelc.pb.gd
 res://script/gen/excel/example.pb.gd
 res://script/gen/excel/example.excel.gd
 res://script/gen/excel/tables.gd
-res://res/excel/             # 导出的 Excel 数据文件
-res://res/excel/ExampleTable.bin.idx
-res://res/excel/ExampleTable.bin.chk_0
+res://excel/                 # 导出的 Excel 数据文件
+res://excel/ExampleTable.bin.idx
+res://excel/ExampleTable.bin.chk_0
 ```
 
 对于前后端分离的 Excel 项目，一种比较顺手的目录层级可以是：

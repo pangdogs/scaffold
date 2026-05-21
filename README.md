@@ -100,6 +100,9 @@ serialization, storage, snapshots, or other tooling beyond table lookup.
   Generated Excel wrappers preload `./<name>.pb.gd` from the same output
   directory, and `excelc code --gdscript_out=...` typically emits an aggregate
   loader such as `tables.gd` into that directory as well.
+- The aggregate `tables.gd` script exports `class_name Tables` by default. Use
+  `excelc code --gdscript_class_name=<Name>` to choose a different Godot global
+  class name, or pass an empty value to omit `class_name`.
 
 ## Example Godot Layout
 ### Protobuf Pipeline
@@ -123,9 +126,9 @@ res://script/gen/excel/excelc.pb.gd
 res://script/gen/excel/example.pb.gd
 res://script/gen/excel/example.excel.gd
 res://script/gen/excel/tables.gd
-res://res/excel/             # exported excel data files
-res://res/excel/ExampleTable.bin.idx
-res://res/excel/ExampleTable.bin.chk_0
+res://excel/                 # exported excel data files
+res://excel/ExampleTable.bin.idx
+res://excel/ExampleTable.bin.chk_0
 ```
 
 For a split client/server project, one practical directory layout is:
