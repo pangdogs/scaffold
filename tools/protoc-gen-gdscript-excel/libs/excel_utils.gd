@@ -38,6 +38,12 @@ class ChunkLoader:
 		var rows: Array = []
 		var task_id := READY
 
+		func is_loaded() -> bool:
+			mutex.lock()
+			var loaded := task_id == LOADED
+			mutex.unlock()
+			return loaded
+
 	var _chunk_base_path := ""
 	var _chunk_states: Array[ChunkState] = []
 	var _message_factory: Callable
@@ -67,12 +73,7 @@ class ChunkLoader:
 		var task_id := _ensure_task_started(state, chunk_index)
 		match task_id:
 			ChunkState.LOADING:
-				state.mutex.lock()
-				task_id = state.task_id
-				state.mutex.unlock()
-				if task_id == ChunkState.LOADED:
-					return true
-				while !WorkerThreadPool.is_task_completed(task_id):
+				while !state.is_loaded():
 					OS.delay_usec(100)
 			ChunkState.LOADED:
 				return true
@@ -89,21 +90,23 @@ class ChunkLoader:
 		var task_id := _ensure_task_started(state, chunk_index)
 		match task_id:
 			ChunkState.LOADING:
-				state.mutex.lock()
-				task_id = state.task_id
-				state.mutex.unlock()
-				if task_id == ChunkState.LOADED:
-					return true
 				if Thread.is_main_thread():
 					var tree := Engine.get_main_loop() as SceneTree
-					while !WorkerThreadPool.is_task_completed(task_id):
+					while !state.is_loaded():
 						await tree.process_frame
 				else:
-					while !WorkerThreadPool.is_task_completed(task_id):
+					while !state.is_loaded():
 						OS.delay_usec(100)
 			ChunkState.LOADED:
 				return true
 			_:
+				if Thread.is_main_thread():
+					var main_loop := Engine.get_main_loop() as SceneTree
+					while !WorkerThreadPool.is_task_completed(task_id):
+						await main_loop.process_frame
+				else:
+					while !WorkerThreadPool.is_task_completed(task_id):
+						OS.delay_usec(100)
 				WorkerThreadPool.wait_for_task_completion(task_id)
 		return true
 
