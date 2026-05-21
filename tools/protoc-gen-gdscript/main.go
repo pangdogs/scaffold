@@ -39,6 +39,7 @@ type GeneratorConfig struct {
 	StringAsStringName bool
 	Deterministic      bool
 	GapVariant         bool
+	ExportClassName    bool
 }
 
 var config GeneratorConfig
@@ -48,12 +49,14 @@ func main() {
 	stringAsStringName := flags.Bool("string_as_string_name", false, "map proto string fields to GDScript StringName")
 	deterministic := flags.Bool("deterministic", false, "serialize map fields in deterministic key order")
 	gapVariant := flags.Bool("gap_variant", false, "generate messages as ProtoGAPVariant implementations")
+	exportClassName := flags.Bool("export_class_name", false, "export generated file script through GDScript class_name")
 
 	protogen.Options{ParamFunc: flags.Set}.Run(func(gen *protogen.Plugin) error {
 		config = GeneratorConfig{
 			StringAsStringName: *stringAsStringName,
 			Deterministic:      *deterministic,
 			GapVariant:         *gapVariant,
+			ExportClassName:    *exportClassName,
 		}
 		generatedPrefixes := map[string]string{}
 		for _, f := range gen.Files {
@@ -197,8 +200,16 @@ func emitGeneratedHeader(gen *protogen.Plugin, file *protogen.File, g *protogen.
 	}
 	g.P("# source: ", file.Desc.Path())
 	g.P()
+	if config.ExportClassName {
+		emitFileClassName(g, file)
+	}
 	g.P("extends RefCounted")
 	g.P()
+}
+
+func emitFileClassName(g *protogen.GeneratedFile, file *protogen.File) {
+	base := path.Base(strings.TrimSuffix(file.Desc.Path(), path.Ext(file.Desc.Path())))
+	g.P("class_name ", importAliasIdentifier(base))
 }
 
 func emitImportAliasConstants(g *protogen.GeneratedFile, file *protogen.File, usedDeps map[string]struct{}, importAliases map[string]string, generatedPrefixes map[string]string) error {

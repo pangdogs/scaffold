@@ -33,6 +33,11 @@ These runtime scripts do not need a fixed directory name. In real projects it
 is common to place them in one shared location such as `libs` or
 `addons/<name>`.
 
+Generated `*.pb.gd` file scripts are anonymous by default. Pass
+`export_class_name=true` to emit a top-level GDScript `class_name` for each
+generated file script, using the same naming style as dependency preload
+aliases such as `LoginPB`.
+
 When `gap_variant=true` is enabled, generated messages extend
 `ProtoGAPVariant` instead of `ProtoMessage` and expose a stable GAP custom
 variant type id through `type_id()`. Each generated script also
@@ -55,6 +60,10 @@ Package main 实现 protoc-gen-gdscript 插件，把 protobuf 定义转换为 Go
 
 这些运行时脚本不要求放在固定目录名下。实际项目里通常会把它们统一放到
 `libs` 或 `addons/<name>` 之类的共享目录中。
+
+生成的 `*.pb.gd` 文件脚本默认是不导出文件脚本类名的。传入
+`export_class_name=true` 后，会为每个生成文件写入顶层 GDScript
+`class_name`，类名沿用依赖预加载别名风格，例如 `LoginPB`。
 
 生成的 `*.pb.gd` 文件应尽量保持与源 `.proto` 相同的相对目录结构。跨文件
 类型引用会被生成为相对 `preload(...)`，单独移动某个生成文件可能导致导入
