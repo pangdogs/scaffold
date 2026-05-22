@@ -210,7 +210,7 @@ static func _load_table_file(msg: ProtoMessage, path: String) -> bool:
 	print("excel table file loaded, file_path=%s, elapsed_ms=%.3f" % [path, elapsed_ms])
 	return true
 
-static func _load_table_index_file(msg, base_path: String) -> bool:
+static func _load_table_index_file(msg: ProtoMessage, base_path: String) -> bool:
 	return _load_table_file(msg, base_path + ".idx")
 `
 
