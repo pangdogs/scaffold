@@ -34,6 +34,8 @@ The repository is organized around two layers:
   types and serialization logic for Godot-side integration.
 - `tools/protoc-gen-gdscript-excel`: a protobuf plugin that emits GDScript
   table wrappers and lookup helpers for Excel-generated schemas.
+- `godot/rpcli`: a Godot-side RPC client runtime for Golaxy GAP/GTP
+  connections, reconnects, RPC calls, callbacks, and GAP variant transport.
 
 ## Typical Workflows
 ### Protobuf schema pipeline
@@ -71,22 +73,32 @@ serialization, storage, snapshots, or other tooling beyond table lookup.
 
 ## Godot Runtime Libraries
 ### Protobuf Runtime
-- `tools/protoc-gen-gdscript/libs` is the runtime required by every generated
+- `tools/protoc-gen-gdscript/godot` is the runtime required by every generated
   `*.pb.gd` file. Copy this directory into your Godot project so global
   classes such as `ProtoMessage`, `ProtoUtils`, `ProtoInputFile`, and
   `ProtoOutputBuffer` are available to generated protobuf code.
 
 ### Excel Table Runtime
-- `tools/protoc-gen-gdscript-excel/libs` is the additional runtime directory
+- `tools/protoc-gen-gdscript-excel/godot` is the additional runtime directory
   used by generated `*.excel.gd` wrappers.
 - Excel wrappers still depend on the protobuf runtime above, so when using
   `protoc-gen-gdscript-excel`, both runtime directories must be present in the
   Godot project.
 
+### RPC Client Runtime
+- `godot/rpcli` is the Godot-side Golaxy RPC client runtime. Copy it into the
+  Godot project when the client connects to Golaxy services through GAP/GTP, or
+  when generated protobuf code is emitted with `--gdscript_opt=gap_variant=true`.
+- In Godot projects, the usual target path is `res://addons/rpcli/`. Register
+  `res://addons/rpcli/golaxy_rpcli.gd` as an autoload, commonly named `RPCli`.
+
 ### Layout Rules
 - These runtime scripts do not need to live in a fixed directory. A common
-  pattern is to place them under `libs` or `addons/<name>` and let Godot
+  pattern is to place them under `addons/<name>` and let Godot
   register them through `class_name`.
+- Generated protobuf scripts that use `gap_variant=true` depend on
+  `GAPVariants` from `godot/rpcli`, so `res://addons/rpcli/` must be installed
+  before those generated files can load.
 - Generated `*.pb.gd` files are anonymous scripts by default. Pass
   `--gdscript_opt=class_name=true` to emit a top-level `class_name` for
   each generated file script, using names such as `LoginPB`.
@@ -109,7 +121,7 @@ serialization, storage, snapshots, or other tooling beyond table lookup.
 One common layout for regular protobuf output inside a Godot project:
 
 ```text
-res://addons/proto/          # files copied from tools/protoc-gen-gdscript/libs
+res://addons/proto/          # files copied from tools/protoc-gen-gdscript/godot
 res://script/gen/proto/      # regular protobuf-generated client messages
 res://script/gen/proto/login.pb.gd
 ```
@@ -119,8 +131,8 @@ One common layout for Excel table output inside a Godot project.
 This section only lists the Excel table side of the layout:
 
 ```text
-res://addons/proto/          # files copied from tools/protoc-gen-gdscript/libs
-res://addons/excel/          # files copied from tools/protoc-gen-gdscript-excel/libs
+res://addons/proto/          # files copied from tools/protoc-gen-gdscript/godot
+res://addons/excel/          # files copied from tools/protoc-gen-gdscript-excel/godot
 res://script/gen/excel/      # excel protobuf + wrapper output
 res://script/gen/excel/excelc.pb.gd
 res://script/gen/excel/example.pb.gd
@@ -131,6 +143,44 @@ res://excel/ExampleTable.bin.idx
 res://excel/ExampleTable.bin.chk_0
 ```
 
+### RPC Client Pipeline
+One common layout for a Godot client that uses the RPC runtime:
+
+```text
+res://addons/rpcli/          # files copied from godot/rpcli
+res://addons/proto/          # required when RPC payloads use generated protobuf
+res://script/gen/proto/      # optional generated RPC/application messages
+```
+
+Register the RPC runtime as a Godot autoload:
+
+```ini
+[autoload]
+
+RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
+```
+
+Then connect from GDScript:
+
+```gdscript
+var ok := await RPCli.connect_to_async(
+    "ws://127.0.0.1:8080",
+    GolaxyClient.PROTOCOL_WEBSOCKET,
+    "user_id",
+    "token"
+)
+```
+
+If the project also uses generated Excel table wrappers, register the aggregate
+table script as an autoload too:
+
+```ini
+[autoload]
+
+Excel="*res://script/gen/excel/tables.gd"
+RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
+```
+
 For a split client/server project, one practical directory layout is:
 
 ```text
@@ -139,8 +189,11 @@ For a split client/server project, one practical directory layout is:
 ./excelc/client/proto/       # client-facing excel proto schema
 ./server/src/gen/            # generated Go protobuf/plugin output
 ./server/res/excel/          # exported server table data
+./client/addons/proto/       # copied from tools/protoc-gen-gdscript/godot
+./client/addons/excel/       # copied from tools/protoc-gen-gdscript-excel/godot
+./client/addons/rpcli/       # copied from godot/rpcli when GAP/RPC is used
 ./client/script/gen/         # generated GDScript protobuf/plugin output
-./client/res/excel/          # exported client table data
+./client/excel/              # exported client table data
 ```
 
 With a layout like that, the Excel pipeline usually looks like this:
@@ -184,6 +237,7 @@ protoc -I./excelc/client/proto -I./protobuf/include \
   --retain_options \
   --gdscript_out=./client/script/gen \
   --gdscript_opt=string_as_string_name=true \
+  --gdscript_opt=gap_variant=true \
   --gdscript-excel_out=./client/script/gen \
   ./excelc/client/proto/*.proto
 excelc code --pb_dir=./excelc/client/proto --pb_package=excel --gdscript_out=./client/script/gen/excel
@@ -205,7 +259,7 @@ excelc data \
   --pb_dir=./excelc/client/proto \
   --pb_package=excel \
   --targets=c \
-  --binary_out=./client/res/excel \
+  --binary_out=./client/excel \
   --binary_chunked=true
 ```
 
@@ -331,9 +385,10 @@ Excel column parameters:
 | [`./tools/protoc-gen-go-structure`](./tools/protoc-gen-go-structure) | Go protobuf plugin for clone helpers |
 | [`./tools/protoc-gen-go-variant`](./tools/protoc-gen-go-variant) | Go protobuf plugin for GAP variant integration |
 | [`./tools/protoc-gen-gdscript`](./tools/protoc-gen-gdscript) | GDScript protobuf plugin for message types and serialization |
-| [`./tools/protoc-gen-gdscript/libs`](./tools/protoc-gen-gdscript/libs) | Godot protobuf runtime scripts required by generated `*.pb.gd` files |
+| [`./tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) | Godot protobuf runtime scripts required by generated `*.pb.gd` files |
 | [`./tools/protoc-gen-gdscript-excel`](./tools/protoc-gen-gdscript-excel) | GDScript protobuf plugin for Excel table wrappers |
-| [`./tools/protoc-gen-gdscript-excel/libs`](./tools/protoc-gen-gdscript-excel/libs) | Godot Excel runtime scripts required by generated `*.excel.gd` wrappers |
+| [`./tools/protoc-gen-gdscript-excel/godot`](./tools/protoc-gen-gdscript-excel/godot) | Godot Excel runtime scripts required by generated `*.excel.gd` wrappers |
+| [`./godot/rpcli`](./godot/rpcli) | Godot Golaxy RPC client runtime for GAP/GTP connections and callbacks |
 
 ## Toolchain Notes
 - `tools/excelc` uses Cobra/Viper and is split into three subcommands:

@@ -26,6 +26,7 @@
 - `tools/protoc-gen-go-variant`：让生成的 Protobuf 消息可以作为 Golaxy GAP / RPC 栈中的 variant 值使用。
 - `tools/protoc-gen-gdscript`：生成 Godot 侧可用的 GDScript Protobuf 消息类型与序列化逻辑。
 - `tools/protoc-gen-gdscript-excel`：为 Excel 生成的表结构补充 GDScript 表包装器和索引查询函数。
+- `godot/rpcli`：Godot 侧 Golaxy RPC 客户端运行时，提供 GAP / GTP 连接、重连、RPC 调用、回调绑定和 GAP variant 传输能力。
 
 ## 典型工作流
 ### Protobuf Schema 流水线
@@ -54,14 +55,19 @@ Excel 流水线是建立在 protobuf 之上的。生成出来的表结构 schema
 
 ## Godot 运行时库
 ### Protobuf 运行时
-- `tools/protoc-gen-gdscript/libs` 是所有生成的 `*.pb.gd` 文件都依赖的 protobuf 运行时库。需要把这个目录拷贝到 Godot 项目中一次，让 `ProtoMessage`、`ProtoUtils`、`ProtoInputFile`、`ProtoOutputBuffer` 等全局类可被生成代码直接使用。
+- `tools/protoc-gen-gdscript/godot` 是所有生成的 `*.pb.gd` 文件都依赖的 protobuf 运行时库。需要把这个目录拷贝到 Godot 项目中一次，让 `ProtoMessage`、`ProtoUtils`、`ProtoInputFile`、`ProtoOutputBuffer` 等全局类可被生成代码直接使用。
 
 ### Excel 表格运行时
-- `tools/protoc-gen-gdscript-excel/libs` 是生成 `*.excel.gd` 包装器时额外需要的运行时目录。
+- `tools/protoc-gen-gdscript-excel/godot` 是生成 `*.excel.gd` 包装器时额外需要的运行时目录。
 - Excel 表格包装器仍然依赖上面的 protobuf 运行时，因此只要使用 `protoc-gen-gdscript-excel`，这两套运行时目录都需要同时放进 Godot 项目。
 
+### RPC 客户端运行时
+- `godot/rpcli` 是 Godot 侧的 Golaxy RPC 客户端运行时。Godot 客户端需要通过 GAP / GTP 连接 Golaxy 服务，或生成 protobuf 时启用了 `--gdscript_opt=gap_variant=true`，都需要把它拷贝进 Godot 项目。
+- 在 Godot 项目里，通常放到 `res://addons/rpcli/`。再把 `res://addons/rpcli/golaxy_rpcli.gd` 注册为 autoload，常用名称是 `RPCli`。
+
 ### 布局约束
-- 这些运行时脚本不要求放在固定目录。实际项目里更常见的做法是统一放到 `libs` 或 `addons/<name>` 一类目录下，通过 `class_name` 注册给 Godot。
+- 这些运行时脚本不要求放在固定目录。实际项目里更常见的做法是统一放到 `addons/<name>` 一类目录下，通过 `class_name` 注册给 Godot。
+- 启用 `gap_variant=true` 的生成 protobuf 脚本依赖 `godot/rpcli` 里的 `GAPVariants`，因此加载这些生成文件前，Godot 项目里必须已经有 `res://addons/rpcli/`。
 - 生成的 `*.pb.gd` 文件默认是不导出文件脚本类名的。传入 `--gdscript_opt=class_name=true` 后，会为每个生成文件写入顶层 `class_name`，类名形如 `LoginPB`。
 - 生成后的 `*.pb.gd` 文件应尽量保持与源 `.proto` 文件相同的相对目录结构，因为跨文件 protobuf 引用会生成相对 `preload(...)` 调用。
 - 普通业务 protobuf 输出与 Excel 派生 protobuf 输出通常应放在不同的根目录下维护。通信 / 存储协议和表格协议一般不是同一套产物，不建议混在一个输出目录里。
@@ -73,7 +79,7 @@ Excel 流水线是建立在 protobuf 之上的。生成出来的表结构 schema
 Godot 项目中，普通 protobuf 产物一种常见布局如下：
 
 ```text
-res://addons/proto/          # 从 tools/protoc-gen-gdscript/libs 拷贝的运行时文件
+res://addons/proto/          # 从 tools/protoc-gen-gdscript/godot 拷贝的运行时文件
 res://script/gen/proto/      # 普通 protobuf 生成的客户端消息
 res://script/gen/proto/login.pb.gd
 ```
@@ -82,8 +88,8 @@ res://script/gen/proto/login.pb.gd
 Godot 项目中，Excel 配表产物一种常见布局如下。这里仅列出 Excel 配表这一侧的目录：
 
 ```text
-res://addons/proto/          # 从 tools/protoc-gen-gdscript/libs 拷贝的运行时文件
-res://addons/excel/          # 从 tools/protoc-gen-gdscript-excel/libs 拷贝的运行时文件
+res://addons/proto/          # 从 tools/protoc-gen-gdscript/godot 拷贝的运行时文件
+res://addons/excel/          # 从 tools/protoc-gen-gdscript-excel/godot 拷贝的运行时文件
 res://script/gen/excel/      # Excel protobuf 与包装器输出
 res://script/gen/excel/excelc.pb.gd
 res://script/gen/excel/example.pb.gd
@@ -94,6 +100,43 @@ res://excel/ExampleTable.bin.idx
 res://excel/ExampleTable.bin.chk_0
 ```
 
+### RPC 客户端流水线
+Godot 客户端使用 RPC 运行时时，一种常见布局如下：
+
+```text
+res://addons/rpcli/          # 从 godot/rpcli 拷贝的运行时文件
+res://addons/proto/          # RPC 载荷使用生成 protobuf 时需要
+res://script/gen/proto/      # 可选的 RPC / 业务 protobuf 生成消息
+```
+
+在 Godot 里把 RPC 运行时注册成 autoload：
+
+```ini
+[autoload]
+
+RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
+```
+
+然后可以在 GDScript 中连接服务：
+
+```gdscript
+var ok := await RPCli.connect_to_async(
+    "ws://127.0.0.1:8080",
+    GolaxyClient.PROTOCOL_WEBSOCKET,
+    "user_id",
+    "token"
+)
+```
+
+如果项目同时使用生成的 Excel 表格包装器，也可以把聚合表脚本注册为 autoload：
+
+```ini
+[autoload]
+
+Excel="*res://script/gen/excel/tables.gd"
+RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
+```
+
 对于前后端分离的 Excel 项目，一种比较顺手的目录层级可以是：
 
 ```text
@@ -102,8 +145,11 @@ res://excel/ExampleTable.bin.chk_0
 ./excelc/client/proto/       # 客户端使用的 Excel proto
 ./server/src/gen/            # 服务端生成代码
 ./server/res/excel/          # 服务端导出的表数据
+./client/addons/proto/       # 从 tools/protoc-gen-gdscript/godot 拷贝
+./client/addons/excel/       # 从 tools/protoc-gen-gdscript-excel/godot 拷贝
+./client/addons/rpcli/       # 使用 GAP / RPC 时从 godot/rpcli 拷贝
 ./client/script/gen/         # 客户端生成代码
-./client/res/excel/          # 客户端导出的表数据
+./client/excel/              # 客户端导出的表数据
 ```
 
 按这种结构，编译 Excel proto、生成访问代码、导出表数据的流程可以写成：
@@ -147,6 +193,7 @@ protoc -I./excelc/client/proto -I./protobuf/include \
   --retain_options \
   --gdscript_out=./client/script/gen \
   --gdscript_opt=string_as_string_name=true \
+  --gdscript_opt=gap_variant=true \
   --gdscript-excel_out=./client/script/gen \
   ./excelc/client/proto/*.proto
 excelc code --pb_dir=./excelc/client/proto --pb_package=excel --gdscript_out=./client/script/gen/excel
@@ -168,7 +215,7 @@ excelc data \
   --pb_dir=./excelc/client/proto \
   --pb_package=excel \
   --targets=c \
-  --binary_out=./client/res/excel \
+  --binary_out=./client/excel \
   --binary_chunked=true
 ```
 
@@ -227,9 +274,10 @@ Excel 列参数：
 | [`./tools/protoc-gen-go-structure`](./tools/protoc-gen-go-structure) | 面向深拷贝辅助的 Go Protobuf 插件 |
 | [`./tools/protoc-gen-go-variant`](./tools/protoc-gen-go-variant) | 面向 GAP variant 集成的 Go Protobuf 插件 |
 | [`./tools/protoc-gen-gdscript`](./tools/protoc-gen-gdscript) | 面向消息类型与序列化逻辑的 GDScript Protobuf 插件 |
-| [`./tools/protoc-gen-gdscript/libs`](./tools/protoc-gen-gdscript/libs) | 生成 `*.pb.gd` 文件所依赖的 Godot protobuf 运行时脚本目录 |
+| [`./tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) | 生成 `*.pb.gd` 文件所依赖的 Godot protobuf 运行时脚本目录 |
 | [`./tools/protoc-gen-gdscript-excel`](./tools/protoc-gen-gdscript-excel) | 面向 Excel 表包装器的 GDScript Protobuf 插件 |
-| [`./tools/protoc-gen-gdscript-excel/libs`](./tools/protoc-gen-gdscript-excel/libs) | 生成 `*.excel.gd` 包装器所依赖的 Godot Excel 运行时脚本目录 |
+| [`./tools/protoc-gen-gdscript-excel/godot`](./tools/protoc-gen-gdscript-excel/godot) | 生成 `*.excel.gd` 包装器所依赖的 Godot Excel 运行时脚本目录 |
+| [`./godot/rpcli`](./godot/rpcli) | Godot 侧 Golaxy RPC 客户端运行时，用于 GAP / GTP 连接与回调 |
 
 ## 工具链说明
 - `tools/excelc` 基于 Cobra / Viper，拆分为 `proto`、`code`、`data` 三个子命令。

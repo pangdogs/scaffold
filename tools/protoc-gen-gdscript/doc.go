@@ -24,14 +24,13 @@ Godot-facing `*.pb.gd` files for protobuf enums, messages, serialization,
 deserialization, cloning, hashing, and equality checks.
 
 The generated scripts are not self-contained. After generation, copy every
-script in `tools/protoc-gen-gdscript/libs` into your Godot project so classes
+script in `tools/protoc-gen-gdscript/godot` into your Godot project so classes
 such as `ProtoMessage`, `ProtoGAPVariant`, `ProtoUtils`, `ProtoInputStream`,
 `ProtoOutputStream`, `ProtoInputFile`, and `ProtoOutputBuffer` are registered
 through `class_name` and can be resolved by generated code.
 
 These runtime scripts do not need a fixed directory name. In real projects it
-is common to place them in one shared location such as `libs` or
-`addons/<name>`.
+is common to place them in one shared location such as `addons/<name>`.
 
 Generated `*.pb.gd` file scripts are anonymous by default. Pass
 `class_name=true` to emit a top-level GDScript `class_name` for each
@@ -53,13 +52,13 @@ Package main 实现 protoc-gen-gdscript 插件，把 protobuf 定义转换为 Go
 与值比较逻辑。
 
 生成结果并不是自包含的。生成后需要把
-`tools/protoc-gen-gdscript/libs` 里的脚本一并拷贝到 Godot 项目中，让
+`tools/protoc-gen-gdscript/godot` 里的脚本一并拷贝到 Godot 项目中，让
 `ProtoMessage`、`ProtoUtils`、`ProtoInputStream`、
 `ProtoOutputStream`、`ProtoInputFile`、`ProtoOutputBuffer` 等通过
 `class_name` 注册的运行时类型可被生成代码直接解析。
 
 这些运行时脚本不要求放在固定目录名下。实际项目里通常会把它们统一放到
-`libs` 或 `addons/<name>` 之类的共享目录中。
+`addons/<name>` 之类的共享目录中。
 
 生成的 `*.pb.gd` 文件脚本默认是不导出文件脚本类名的。传入
 `class_name=true` 后，会为每个生成文件写入顶层 GDScript
