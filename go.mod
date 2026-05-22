@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	git.golaxy.org/core v0.4.27-0.20260417051732-1668d2b8bea1
-	git.golaxy.org/framework v0.3.68-0.20260515073259-bd61b93aa3a5
+	git.golaxy.org/framework 78aa3ad869a7603a66f4abe89c28fa8ed273b7c7
 	github.com/elliotchance/pie/v2 v2.9.1
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/glebarez/sqlite v1.11.0
