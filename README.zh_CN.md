@@ -23,6 +23,7 @@
 | `tools/protoc-gen-gdscript` | 生成 Godot 侧可用的 GDScript Protobuf 消息类型、序列化和反序列化逻辑。 |
 | `tools/protoc-gen-gdscript-excel` | 为 Excel 生成的表结构补充 GDScript 表包装器和索引查询函数。 |
 | `godot/rpcli` | Godot 侧 Golaxy RPC 客户端运行时，提供 GAP / GTP 连接、重连、RPC 调用、回调绑定和 GAP variant 传输能力。 |
+| `godot/resty` | Godot 侧 Resty 风格 HTTP 运行时，支持链式 HTTP 请求、JSON / 表单 / 原始请求体、文件下载、并发请求和 Server-Sent Events。 |
 
 ## 安装
 如果需要在业务代码中直接引用 add-in 包，安装整个模块：
@@ -202,6 +203,7 @@ excelc data \
 - `tools/protoc-gen-gdscript/godot` 是所有生成的 `*.pb.gd` 文件都依赖的 Protobuf 运行时库。需要把这个目录拷贝到 Godot 项目中，让 `ProtoMessage`、`ProtoUtils`、`ProtoInputFile`、`ProtoOutputBuffer` 等全局类可被生成代码直接使用。
 - `tools/protoc-gen-gdscript-excel/godot` 是生成 `*.excel.gd` 包装器时额外需要的运行时目录。Excel 表格包装器仍然依赖 Protobuf 运行时，因此只要使用 `protoc-gen-gdscript-excel`，这两套运行时目录都需要同时放进 Godot 项目。
 - `godot/rpcli` 是 Godot 侧 Golaxy RPC 客户端运行时。Godot 客户端需要通过 GAP / GTP 连接 Golaxy 服务，或生成 protobuf 时启用了 `--gdscript_opt=gap_variant=true`，都需要把它拷贝进 Godot 项目。
+- `godot/resty` 是面向 Godot 4 的轻量 HTTP 辅助运行时。客户端需要在 GAP / GTP RPC 通道之外访问普通 HTTP API、下载文件或读取 SSE 流时，可以把它拷贝进 Godot 项目。
 
 ### 布局规则
 - 这些运行时脚本不要求放在固定目录。实际项目里更常见的做法是统一放到 `addons/<name>` 一类目录下，通过 `class_name` 注册给 Godot。
@@ -211,6 +213,7 @@ excelc data \
 - 普通业务 Protobuf 输出与 Excel 派生 Protobuf 输出通常应放在不同的根目录下维护。通信 / 存储协议和表格协议一般不是同一套产物，不建议混在一个输出目录里。
 - 每个 `*.excel.gd` 文件都应和对应的 `*.pb.gd` 放在同一输出目录下。生成的 Excel 包装器会从同目录预加载 `./<name>.pb.gd`，而 `excelc code --gdscript_out=...` 也通常会在该目录中生成 `tables.gd` 之类的聚合加载脚本。
 - 聚合脚本 `tables.gd` 默认导出 `class_name Tables`。可以通过 `excelc code --gdscript_class_name=<Name>` 指定其他 Godot 全局类名，也可以传空值来省略 `class_name`。
+- `godot/resty` 不依赖生成的 Protobuf 或 Excel 运行时。需要项目级 HTTP 客户端时，可以把 `resty_client.gd` 注册成 autoload；如果某个场景需要独立默认配置，也可以手动实例化 `RestyClient`。
 
 ### 布局示例
 普通 Protobuf 产物一种常见布局如下：
@@ -244,12 +247,46 @@ res://addons/proto/          # RPC 载荷使用生成 protobuf 时需要
 res://script/gen/proto/      # 可选的 RPC / 业务 protobuf 生成消息
 ```
 
+Godot 客户端同时使用普通 HTTP API 时，一种常见布局如下：
+
+```text
+res://addons/resty/          # 从 godot/resty 拷贝的运行时文件
+res://addons/rpcli/          # 可选，从 godot/rpcli 拷贝的运行时文件
+res://addons/proto/          # 可选，生成 protobuf 消息需要
+res://script/gen/proto/      # 可选的 RPC / 业务 protobuf 生成消息
+```
+
 在 Godot 里把 RPC 运行时注册成 autoload：
 
 ```ini
 [autoload]
 
 RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
+```
+
+在 Godot 里把 HTTP 运行时注册成 autoload：
+
+```ini
+[autoload]
+
+Resty="*res://addons/resty/resty_client.gd"
+```
+
+然后可以在 GDScript 中调用 HTTP API：
+
+```gdscript
+var res := await (
+    Resty.set_base_url("https://api.example.com")
+    .r()
+    .set_bearer_auth("token")
+    .set_query_param("page", 1)
+    .get_async("/users")
+)
+
+if res.is_success():
+    print(res.json)
+else:
+    push_error(res.error_message)
 ```
 
 然后可以在 GDScript 中连接服务：
@@ -270,7 +307,12 @@ var ok := await RPCli.connect_to_async(
 
 Excel="*res://script/gen/excel/tables.gd"
 RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
+Resty="*res://addons/resty/resty_client.gd"
 ```
+
+`Resty.r()` 会基于当前客户端默认配置创建一个独立请求快照，包括 base URL、请求头、查询参数、超时、gzip、重定向、请求体大小、下载块大小、JSON 解析和线程设置。请求支持 JSON 请求体、表单请求体、原始字节、路径参数、输出文件、`GET` / `POST` / `PUT` / `PATCH` / `DELETE` / `HEAD`，并同时提供 `*_async` 和 `*_start` 两种风格，便于并发请求。
+
+`Resty.sse(url)` 会创建一个长连接 Server-Sent Events 流。它使用 `GET`，在缺失时自动补充 `Accept: text/event-stream` 和 `Cache-Control: no-cache`，并发出 `opened`、`event_received`、`closed` 信号；需要停止时调用 `close()`。
 
 ## 工具参数参考
 | 命令 | 关键参数 | 说明 |
@@ -301,6 +343,7 @@ RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
 | [`./tools/protoc-gen-gdscript-excel`](./tools/protoc-gen-gdscript-excel) | 面向 Excel 表包装器的 GDScript Protobuf 插件。 |
 | [`./tools/protoc-gen-gdscript-excel/godot`](./tools/protoc-gen-gdscript-excel/godot) | 生成 `*.excel.gd` 包装器所依赖的 Godot Excel 运行时脚本目录。 |
 | [`./godot/rpcli`](./godot/rpcli) | Godot 侧 Golaxy RPC 客户端运行时，用于 GAP / GTP 连接与回调。 |
+| [`./godot/resty`](./godot/resty) | Godot 侧 Resty 风格 HTTP 客户端运行时，用于 HTTP 请求、文件下载、并发请求句柄和 SSE 流。 |
 
 ## 相关仓库
 - [Golaxy Distributed Service Development Framework Core](https://github.com/pangdogs/core)

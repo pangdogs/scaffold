@@ -23,6 +23,7 @@ This repository is not a complete application framework. It packages the build-t
 | `tools/protoc-gen-gdscript` | Protobuf plugin that emits Godot-facing GDScript message types, serialization, and deserialization logic. |
 | `tools/protoc-gen-gdscript-excel` | Protobuf plugin that emits GDScript table wrappers and index lookup helpers for Excel-generated schemas. |
 | `godot/rpcli` | Godot-side Golaxy RPC client runtime for GAP/GTP connections, reconnects, RPC calls, callbacks, and GAP variant transport. |
+| `godot/resty` | Godot-side Resty-style HTTP runtime for fluent HTTP requests, JSON/form/raw bodies, downloads, concurrent requests, and Server-Sent Events. |
 
 ## Installation
 Install the module itself when importing the add-in packages:
@@ -202,6 +203,7 @@ excelc data \
 - `tools/protoc-gen-gdscript/godot` is the Protobuf runtime required by every generated `*.pb.gd` file. Copy this directory into the Godot project so global classes such as `ProtoMessage`, `ProtoUtils`, `ProtoInputFile`, and `ProtoOutputBuffer` are available to generated code.
 - `tools/protoc-gen-gdscript-excel/godot` is the additional runtime directory used by generated `*.excel.gd` wrappers. Excel wrappers still depend on the Protobuf runtime above, so when using `protoc-gen-gdscript-excel`, both runtime directories must be present in the Godot project.
 - `godot/rpcli` is the Godot-side Golaxy RPC client runtime. Copy it into the Godot project when the client connects to Golaxy services through GAP/GTP, or when generated Protobuf code is emitted with `--gdscript_opt=gap_variant=true`.
+- `godot/resty` is a lightweight HTTP helper for Godot 4. Copy it into the Godot project when the client needs regular HTTP APIs, file downloads, or SSE streams outside the GAP/GTP RPC channel.
 
 ### Layout Rules
 - These runtime scripts do not need to live in a fixed directory. A common pattern is to place them under `addons/<name>` and let Godot register them through `class_name`.
@@ -211,6 +213,7 @@ excelc data \
 - Keep application Protobuf output and Excel-derived Protobuf output in different root directories. In practice, communication/storage schemas and table schemas are usually generated and maintained separately.
 - Keep each generated `*.excel.gd` file next to its matching `*.pb.gd` file. Generated Excel wrappers preload `./<name>.pb.gd` from the same output directory, and `excelc code --gdscript_out=...` typically emits an aggregate loader such as `tables.gd` into that directory as well.
 - The aggregate `tables.gd` script exports `class_name Tables` by default. Use `excelc code --gdscript_class_name=<Name>` to choose a different Godot global class name, or pass an empty value to omit `class_name`.
+- `godot/resty` does not depend on the generated Protobuf or Excel runtimes. Register `resty_client.gd` as an autoload when you want a project-wide HTTP client, or instantiate `RestyClient` manually when a scene needs isolated defaults.
 
 ### Layout Examples
 One common layout for regular Protobuf output:
@@ -244,12 +247,46 @@ res://addons/proto/          # required when RPC payloads use generated protobuf
 res://script/gen/proto/      # optional generated RPC/application messages
 ```
 
+One common layout for a Godot client that also uses regular HTTP APIs:
+
+```text
+res://addons/resty/          # files copied from godot/resty
+res://addons/rpcli/          # optional, files copied from godot/rpcli
+res://addons/proto/          # optional, required by generated protobuf messages
+res://script/gen/proto/      # optional generated RPC/application messages
+```
+
 Register the RPC runtime as a Godot autoload:
 
 ```ini
 [autoload]
 
 RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
+```
+
+Register the HTTP runtime as a Godot autoload:
+
+```ini
+[autoload]
+
+Resty="*res://addons/resty/resty_client.gd"
+```
+
+Then call HTTP APIs from GDScript:
+
+```gdscript
+var res := await (
+    Resty.set_base_url("https://api.example.com")
+    .r()
+    .set_bearer_auth("token")
+    .set_query_param("page", 1)
+    .get_async("/users")
+)
+
+if res.is_success():
+    print(res.json)
+else:
+    push_error(res.error_message)
 ```
 
 Then connect from GDScript:
@@ -270,7 +307,12 @@ If the project also uses generated Excel table wrappers, register the aggregate 
 
 Excel="*res://script/gen/excel/tables.gd"
 RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
+Resty="*res://addons/resty/resty_client.gd"
 ```
+
+`Resty.r()` creates an independent request snapshot from the current client defaults, including base URL, headers, query parameters, timeout, gzip, redirect, body-size, download-chunk, JSON parsing, and thread settings. Requests support JSON bodies, form bodies, raw bytes, path parameters, output files, `GET` / `POST` / `PUT` / `PATCH` / `DELETE` / `HEAD`, and both `*_async` and `*_start` styles for concurrent work.
+
+`Resty.sse(url)` creates a long-lived Server-Sent Events stream. It sends `GET`, adds `Accept: text/event-stream` and `Cache-Control: no-cache` when missing, emits `opened`, `event_received`, and `closed`, and can be stopped with `close()`.
 
 ## Tool Reference
 | Command | Key Options | Notes |
@@ -301,6 +343,7 @@ RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
 | [`./tools/protoc-gen-gdscript-excel`](./tools/protoc-gen-gdscript-excel) | GDScript Protobuf plugin for Excel table wrappers. |
 | [`./tools/protoc-gen-gdscript-excel/godot`](./tools/protoc-gen-gdscript-excel/godot) | Godot Excel runtime scripts required by generated `*.excel.gd` wrappers. |
 | [`./godot/rpcli`](./godot/rpcli) | Godot Golaxy RPC client runtime for GAP/GTP connections and callbacks. |
+| [`./godot/resty`](./godot/resty) | Godot Resty-style HTTP client runtime for HTTP requests, downloads, concurrent handles, and SSE streams. |
 
 ## Related Repositories
 - [Golaxy Distributed Service Development Framework Core](https://github.com/pangdogs/core)
