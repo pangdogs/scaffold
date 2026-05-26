@@ -224,39 +224,32 @@ func _handle_body() -> void:
 
 func _parse_pending_events() -> void:
 	while true:
-		var boundary := _find_event_boundary(_pending)
-		if boundary.is_empty():
+		var event_bytes: Variant = _pop_pending_event()
+		if event_bytes == null:
 			return
-
-		var event_bytes := _pending.slice(0, int(boundary["start"]))
-		_pending = _pending.slice(int(boundary["end"]))
 		_parse_event(event_bytes.get_string_from_utf8())
 
-func _find_event_boundary(values: PackedByteArray) -> Dictionary:
-	for index in range(values.size()):
-		if values[index] == 10:
-			if index + 1 < values.size() and values[index + 1] == 10:
-				return {
-					"start": index,
-					"end": index + 2,
-				}
-			if index + 2 < values.size() and values[index + 1] == 13 and values[index + 2] == 10:
-				return {
-					"start": index,
-					"end": index + 3,
-				}
-		elif values[index] == 13:
-			if index + 1 < values.size() and values[index + 1] == 13:
-				return {
-					"start": index,
-					"end": index + 2,
-				}
-			if index + 3 < values.size() and values[index + 1] == 10 and values[index + 2] == 13 and values[index + 3] == 10:
-				return {
-					"start": index,
-					"end": index + 4,
-				}
-	return {}
+func _pop_pending_event() -> Variant:
+	for index in range(_pending.size()):
+		if _pending[index] == 10:
+			if index + 1 < _pending.size() and _pending[index + 1] == 10:
+				var event_bytes := _pending.slice(0, index)
+				_pending = _pending.slice(index + 2)
+				return event_bytes
+			if index + 2 < _pending.size() and _pending[index + 1] == 13 and _pending[index + 2] == 10:
+				var event_bytes := _pending.slice(0, index)
+				_pending = _pending.slice(index + 3)
+				return event_bytes
+		elif _pending[index] == 13:
+			if index + 1 < _pending.size() and _pending[index + 1] == 13:
+				var event_bytes := _pending.slice(0, index)
+				_pending = _pending.slice(index + 2)
+				return event_bytes
+			if index + 3 < _pending.size() and _pending[index + 1] == 10 and _pending[index + 2] == 13 and _pending[index + 3] == 10:
+				var event_bytes := _pending.slice(0, index)
+				_pending = _pending.slice(index + 4)
+				return event_bytes
+	return null
 
 func _parse_event(text: String) -> void:
 	var event_name := ""
