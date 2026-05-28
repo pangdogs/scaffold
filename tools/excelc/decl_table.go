@@ -189,13 +189,13 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 
 			meta, err := parseMeta(columnDesc.Meta)
 			if err != nil {
-				log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, SheetTypes, columnDesc.Name, columnDesc.Meta, err)
+				log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, sheet, columnDesc.Meta, columnDesc.Name, err)
 			}
 
 			columnField := &Field{
 				Decl:     columnDecl,
 				IsColumn: true,
-				Number:   tableDecl.Fields.Len() + 1,
+				Number:   tableDecl.ResolvePbFieldNumber(meta),
 				Name:     columnDesc.Name,
 				Meta:     meta,
 				Comment:  columnDesc.Comment,
@@ -227,7 +227,7 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 
 		meta, err := parseMeta(columnDesc.Meta)
 		if err != nil {
-			log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, SheetTypes, columnDesc.Name, columnDesc.Meta, err)
+			log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, sheet, columnDesc.Meta, columnDesc.Name, err)
 		}
 
 		columnField := &Field{
@@ -236,15 +236,13 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 		}
 
 		if repeated {
-			fieldNumber := tableDecl.Fields.Len() + 1
-
 			parent := &Field{
 				Decl: &Decl{
 					Type:       columnType.Repeated(),
 					IsRepeated: true,
 					Child:      columnField,
 				},
-				Number:   fieldNumber,
+				Number:   tableDecl.ResolvePbFieldNumber(meta),
 				IsColumn: true,
 				Name:     columnDesc.Name,
 				Meta:     meta,
@@ -255,7 +253,7 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 
 		} else {
 			columnField.IsColumn = true
-			columnField.Number = tableDecl.Fields.Len() + 1
+			columnField.Number = tableDecl.ResolvePbFieldNumber(meta)
 			columnField.Name = columnDesc.Name
 			columnField.Meta = meta
 			columnField.Comment = columnDesc.Comment

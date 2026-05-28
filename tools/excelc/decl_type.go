@@ -52,6 +52,12 @@ const (
 	Bytes    Type = "bytes"
 )
 
+const (
+	maxPbFieldNumber       = 536870911
+	reservedFieldNumberMin = 19000
+	reservedFieldNumberMax = 19999
+)
+
 type Type string
 
 func (ty Type) IsBuiltin() bool {
@@ -119,6 +125,28 @@ type Meta struct {
 	UniqueIndex       []int32  `form:"unique_index"`
 	HashUniqueIndex   []int32  `form:"hash_unique_index"`
 	SortedUniqueIndex []int32  `form:"sorted_unique_index"`
+	PbFieldNumber     *int32   `form:"pb_field_number"`
+}
+
+func (m *Meta) MatchTargets() bool {
+	targets := pie.Of(viper.GetStringSlice("targets")).Map(func(target string) string {
+		return strings.TrimSpace(target)
+	}).Filter(func(target string) bool {
+		return target != ""
+	}).Result
+
+	if len(targets) <= 0 || len(m.Scope) <= 0 {
+		return true
+	}
+	if len(m.UniqueIndex) > 0 || len(m.HashUniqueIndex) > 0 || len(m.SortedUniqueIndex) > 0 {
+		return true
+	}
+
+	return pie.Any(targets, func(target string) bool {
+		return pie.Any(m.Scope, func(scope string) bool {
+			return strings.EqualFold(scope, target)
+		})
+	})
 }
 
 var defaultMeta = &Meta{
@@ -127,6 +155,7 @@ var defaultMeta = &Meta{
 	UniqueIndex:       nil,
 	HashUniqueIndex:   nil,
 	SortedUniqueIndex: nil,
+	PbFieldNumber:     nil,
 }
 
 func parseMeta(str string) (*Meta, error) {
@@ -173,7 +202,26 @@ func parseMeta(str string) (*Meta, error) {
 		return nil, fmt.Errorf("hash_unique_index tags %v conflict with sorted_unique_index", conflicted)
 	}
 
+	if meta.PbFieldNumber != nil {
+		if err := checkPbFieldNumber(*meta.PbFieldNumber); err != nil {
+			return nil, err
+		}
+	}
+
 	return &meta, nil
+}
+
+func checkPbFieldNumber(number int32) error {
+	if number <= 0 {
+		return fmt.Errorf("pb_field_number %d must be positive", number)
+	}
+	if number > maxPbFieldNumber {
+		return fmt.Errorf("pb_field_number %d exceeds maximum %d", number, maxPbFieldNumber)
+	}
+	if number >= reservedFieldNumberMin && number <= reservedFieldNumberMax {
+		return fmt.Errorf("pb_field_number %d is in protobuf reserved range %d-%d", number, reservedFieldNumberMin, reservedFieldNumberMax)
+	}
+	return nil
 }
 
 func normalizeIndexTags(tags []int32) []int32 {
@@ -218,24 +266,7 @@ type Field struct {
 }
 
 func (f *Field) MatchTargets() bool {
-	targets := pie.Of(viper.GetStringSlice("targets")).Map(func(target string) string {
-		return strings.TrimSpace(target)
-	}).Filter(func(target string) bool {
-		return target != ""
-	}).Result
-
-	if len(targets) <= 0 || len(f.Meta.Scope) <= 0 {
-		return true
-	}
-	if len(f.Meta.HashUniqueIndex) > 0 || len(f.Meta.SortedUniqueIndex) > 0 {
-		return true
-	}
-
-	return pie.Any(targets, func(target string) bool {
-		return pie.Any(f.Meta.Scope, func(scope string) bool {
-			return strings.EqualFold(scope, target)
-		})
-	})
+	return f.Meta.MatchTargets()
 }
 
 func (f *Field) ProtobufMeta() string {
@@ -338,6 +369,31 @@ func (d *Decl) StructFields() generic.UnorderedSliceMap[string, *Field] {
 	})
 
 	return fields
+}
+
+func (d *Decl) ResolvePbFieldNumber(meta *Meta) int {
+	if meta != nil && meta.PbFieldNumber != nil {
+		return int(*meta.PbFieldNumber)
+	}
+	return d.Fields.Len() + 1
+}
+
+func (d *Decl) CheckPbNumbers() error {
+	if d.IsEnum {
+		return nil
+	}
+
+	seen := map[int]string{}
+	for _, field := range d.StructFields() {
+		if err := checkPbFieldNumber(int32(field.V.Number)); err != nil {
+			return fmt.Errorf("message %s field %s has invalid field number: %w", d.Type, field.K, err)
+		}
+		if previous, ok := seen[field.V.Number]; ok {
+			return fmt.Errorf("message %s field %s pb_field_number %d conflicts with %s", d.Type, field.K, field.V.Number, previous)
+		}
+		seen[field.V.Number] = field.K
+	}
+	return nil
 }
 
 func (d *Decl) StructHashUniqueIndexes() generic.UnorderedSliceMap[string, string] {
@@ -625,15 +681,13 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 		}
 
 		if repeated {
-			fieldNumber := typeDecl.Fields.Len() + 1
-
 			parent := &Field{
 				Decl: &Decl{
 					Type:       fieldType.Repeated(),
 					IsRepeated: true,
 					Child:      field,
 				},
-				Number:  fieldNumber,
+				Number:  typeDecl.ResolvePbFieldNumber(meta),
 				Name:    fieldName,
 				Alias:   fieldAlias,
 				Meta:    meta,
@@ -646,7 +700,7 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 			}
 
 		} else {
-			field.Number = typeDecl.Fields.Len() + 1
+			field.Number = typeDecl.ResolvePbFieldNumber(meta)
 			field.Name = fieldName
 			field.Alias = fieldAlias
 			field.Meta = meta

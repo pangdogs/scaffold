@@ -70,6 +70,7 @@ func genProtoMessage(file *excelize.File) proto.Message {
 	type Column struct {
 		Name  string
 		Index int
+		Meta  string
 	}
 
 	type OffsetLine struct {
@@ -88,6 +89,7 @@ func genProtoMessage(file *excelize.File) proto.Message {
 			defer rows.Close()
 
 			var columns []*Column
+			var columnsByFieldNumber map[protoreflect.FieldNumber]*Column
 
 			for i := 1; rows.Next(); i++ {
 				if i < SheetTableHeader+SheetTableHeaderSize {
@@ -98,10 +100,10 @@ func genProtoMessage(file *excelize.File) proto.Message {
 							log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, sheet, i, err)
 						}
 
-						for i, cell := range row {
+						for j, cell := range row {
 							columns = append(columns, &Column{
 								Name:  snake2Camel(cell),
-								Index: i,
+								Index: j,
 							})
 						}
 
@@ -122,6 +124,23 @@ func genProtoMessage(file *excelize.File) proto.Message {
 
 						if len(columns) <= 0 {
 							return
+						}
+
+					case SheetTableColumnMeta:
+						row, err := rows.Columns()
+						if err != nil {
+							log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, sheet, i, err)
+						}
+
+						for j, cell := range row {
+							row[j] = strings.NewReplacer("\r", "", "\n", "\\n").Replace(strings.TrimSpace(cell))
+						}
+
+						for _, column := range columns {
+							if column.Index < 0 || column.Index >= len(row) {
+								continue
+							}
+							column.Meta = row[column.Index]
 						}
 					}
 					continue
@@ -188,16 +207,43 @@ func genProtoMessage(file *excelize.File) proto.Message {
 					tableMsg = tableType.New()
 				}
 
+				if columnsByFieldNumber == nil {
+					columnsByFieldNumber = make(map[protoreflect.FieldNumber]*Column, len(columns))
+					for columnIdx, column := range columns {
+						meta, err := parseMeta(column.Meta)
+						if err != nil {
+							log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, sheet, column.Meta, column.Name, err)
+						}
+						if !meta.MatchTargets() {
+							continue
+						}
+
+						fieldNumber := protoreflect.FieldNumber(columnIdx + 1)
+						if meta.PbFieldNumber != nil {
+							fieldNumber = protoreflect.FieldNumber(*meta.PbFieldNumber)
+						}
+
+						if previous := columnsByFieldNumber[fieldNumber]; previous != nil {
+							log.Panicf("read excel file %q sheet %q failed: column %q field number %d conflicts with column %q", file.Path, sheet, column.Name, fieldNumber, previous.Name)
+						}
+						columnsByFieldNumber[fieldNumber] = column
+					}
+				}
+
 				_row, err := rows.Columns()
 				if err != nil {
 					log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, sheet, i, err)
 				}
-				if len(_row) > len(columns) {
-					_row = _row[:len(columns)]
-				}
 				row := Row(_row)
 
-				if row.Empty() {
+				if func() bool {
+					for _, column := range columns {
+						if row.Get(column.Index) != "" {
+							return false
+						}
+					}
+					return true
+				}() {
 					continue
 				}
 
@@ -205,12 +251,12 @@ func genProtoMessage(file *excelize.File) proto.Message {
 
 				for j := 0; j < rowMsg.Descriptor().Fields().Len(); j++ {
 					field := rowMsg.Descriptor().Fields().Get(j)
-					columnIdx := int(field.Number()) - 1
-					if columnIdx < 0 || columnIdx >= len(columns) {
-						log.Panicf("read excel file %q sheet %q row %d column %q failed: field number %d is out of range", file.Path, sheet, i, field.Name(), field.Number())
+					column := columnsByFieldNumber[field.Number()]
+					if column == nil {
+						log.Panicf("read excel file %q sheet %q row %d column %q failed: field number %d not found in excel header", file.Path, sheet, i, field.Name(), field.Number())
 					}
 
-					if err := setFieldFromString(rowMsg, field, row.Get(columns[columnIdx].Index), extensions); err != nil {
+					if err := setFieldFromString(rowMsg, field, row.Get(column.Index), extensions); err != nil {
 						log.Panicf("read excel file %q sheet %q row %d column %q failed, %s", file.Path, sheet, i, field.Name(), err)
 					}
 				}

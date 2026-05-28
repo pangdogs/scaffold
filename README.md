@@ -172,7 +172,7 @@ excelc data \
 ## Excel Workbook Specification
 ### Workbook Structure
 - The optional `@types` sheet is used to declare reusable struct and enum types for the workbook. Table sheets can reference those custom types in field definitions instead of being limited to built-in scalar types only.
-- In the `@types` sheet, `Meta` effectively supports `separator` and `scope`. Index-related keys such as `unique_index`, `hash_unique_index`, and `sorted_unique_index` are only meaningful on table columns, not on `@types` struct or enum declarations.
+- In the `@types` sheet, `Meta` supports `separator`, `scope`, and `pb_field_number`. Index-related keys such as `unique_index`, `hash_unique_index`, and `sorted_unique_index` are only meaningful on table columns, not on `@types` struct or enum declarations.
 - Any table column whose header name does not start with a letter is ignored by `excelc`. In practice, columns starting with `#` are commonly used as comment columns for notes, examples, or editor-only annotations, and they will not participate in generated schema or exported data.
 
 ### Table Sheet Layout
@@ -192,6 +192,7 @@ excelc data \
 - `unique_index`: repeatable integer index tag. It defines unique-index groups, and the actual exported representation follows `--pb_unique_index_as`.
 - `hash_unique_index`: repeatable integer index tag. It forces the tagged unique index groups to use hash-based representation.
 - `sorted_unique_index`: repeatable integer index tag. It forces the tagged unique index groups to use sorted-array representation.
+- `pb_field_number`: optional Protobuf field number override. It must be positive, outside Protobuf's reserved field-number range, and unique within the generated message.
 - A single-column unique index is configured by assigning one tag on one field, for example `unique_index=1` or `hash_unique_index=1`.
 - A composite unique index is configured by reusing the same tag on multiple fields. For example, `role_id` with `hash_unique_index=1` and `level` with `hash_unique_index=1` together form one composite unique index on `(role_id, level)`.
 - One table can define multiple unique indexes at the same time by using different tags, for example `id -> hash_unique_index=1`, `name -> sorted_unique_index=2`, and `type + sub_type -> sorted_unique_index=3`.

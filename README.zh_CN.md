@@ -172,7 +172,7 @@ excelc data \
 ## Excel 工作簿规范
 ### 工作簿结构
 - 可选的 `@types` 页签用于声明当前工作簿里可复用的结构和枚举类型。各个表页在定义字段类型时，可以直接引用这些自定义类型，而不只是内置标量类型。
-- `@types` 页签里的 `Meta` 实际有效的主要是 `separator` 和 `scope`。`unique_index`、`hash_unique_index`、`sorted_unique_index` 这类索引参数只对表页字段列有意义，不用于 `@types` 里的结构或枚举声明。
+- `@types` 页签里的 `Meta` 支持 `separator`、`scope` 和 `pb_field_number`。`unique_index`、`hash_unique_index`、`sorted_unique_index` 这类索引参数只对表页字段列有意义，不用于 `@types` 里的结构或枚举声明。
 - 表页里凡是列名首字符不是字母的列，`excelc` 都会忽略。实际使用时，通常会把 `#` 开头的列当作注释列，用来写说明、示例或仅供编辑查看的辅助信息，这些列不会进入生成的 schema，也不会进入导出的表数据。
 
 ### 表页数据布局
@@ -192,6 +192,7 @@ excelc data \
 - `unique_index`：可重复的整数索引 tag，用来声明唯一索引分组，最终导出成哈希索引还是有序索引取决于 `--pb_unique_index_as`。
 - `hash_unique_index`：可重复的整数索引 tag，强制对应唯一索引分组使用哈希索引结构。
 - `sorted_unique_index`：可重复的整数索引 tag，强制对应唯一索引分组使用有序索引结构。
+- `pb_field_number`：可选的 Protobuf field number 覆盖值。必须为正数，不能落入 Protobuf 保留字段编号范围，并且在生成的同一个 message 内不能重复。
 - 单列唯一索引的配置方式就是把一个 tag 配到一个字段上，例如 `unique_index=1` 或 `hash_unique_index=1`。
 - 复合唯一索引的配置方式是让多个字段复用同一个 tag。例如 `role_id` 写 `hash_unique_index=1`，`level` 也写 `hash_unique_index=1`，那么这两个字段会共同组成 `(role_id, level)` 这个复合唯一索引。
 - 同一张表可以同时配置多个唯一索引，只要使用不同的 tag 分组即可。例如 `id -> hash_unique_index=1`，`name -> sorted_unique_index=2`，`type + sub_type -> sorted_unique_index=3`。

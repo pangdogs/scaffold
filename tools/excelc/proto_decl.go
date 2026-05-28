@@ -163,6 +163,17 @@ func genProtoFile(file *excelize.File, globalDecls *generic.SliceMap[Type, *Decl
 		return
 	}
 
+	typeDecls.Each(func(_ Type, decl *Decl) {
+		if err := decl.CheckPbNumbers(); err != nil {
+			log.Panicf("read excel file %q failed: %s", file.Path, err)
+		}
+	})
+	columnDecls.Each(func(_ Type, decl *Decl) {
+		if err := decl.CheckPbNumbers(); err != nil {
+			log.Panicf("read excel file %q failed: %s", file.Path, err)
+		}
+	})
+
 	const tmpl = `{{.Comment}}
 syntax = 'proto3';
 
