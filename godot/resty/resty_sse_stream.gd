@@ -33,14 +33,19 @@ enum State {
 var _client: RestyClient = null
 var _http := HTTPClient.new()
 var _url := ""
+var _method: int = HTTPClient.METHOD_GET
 var _base_url := ""
 var _http_options: RestyHttpOptions = null
 var _headers := {}
 var _query_params := {}
 var _path_params := {}
+var _body: Variant = null
+var _body_format := RestyRequest.BodyFormat.AUTO
+var _body_content_type := ""
 var _state := State.IDLE
 var _started_at := 0
 var _request_header_lines: PackedStringArray = PackedStringArray()
+var _request_body: Variant = ""
 var _request_path := "/"
 var _status_code := 0
 var _response_headers := {}
@@ -69,9 +74,8 @@ var error_message: String:
 	get:
 		return _error_message
 
-func _init(client: RestyClient, url: String, base_url: String, http_options: RestyHttpOptions, headers: Dictionary, query_params: Dictionary) -> void:
+func _init(client: RestyClient, base_url: String, http_options: RestyHttpOptions, headers: Dictionary, query_params: Dictionary) -> void:
 	_client = client
-	_url = url
 	_base_url = base_url
 	_http_options = http_options.duplicate()
 	_headers = headers.duplicate(true)
@@ -164,19 +168,60 @@ func set_path_params(values: Dictionary) -> RestySSEStream:
 		set_path_param(str(key), values[key])
 	return self
 
-func start() -> bool:
+func set_content_type(value: String) -> RestySSEStream:
+	return set_header("Content-Type", value)
+
+func set_body(value: Variant) -> RestySSEStream:
+	if _state != State.IDLE:
+		return self
+	_body = value
+	_body_format = RestyRequest.BodyFormat.AUTO
+	_body_content_type = ""
+	return self
+
+func set_raw_body(value: PackedByteArray, content_type: String = "application/octet-stream") -> RestySSEStream:
+	if _state != State.IDLE:
+		return self
+	_body = value
+	_body_format = RestyRequest.BodyFormat.RAW
+	_body_content_type = content_type
+	return self
+
+func set_json(value: Variant, content_type: String = "application/json") -> RestySSEStream:
+	if _state != State.IDLE:
+		return self
+	_body = value
+	_body_format = RestyRequest.BodyFormat.JSON
+	_body_content_type = content_type
+	return self
+
+func set_form(values: Dictionary, content_type: String = "application/x-www-form-urlencoded") -> RestySSEStream:
+	if _state != State.IDLE:
+		return self
+	_body = values
+	_body_format = RestyRequest.BodyFormat.FORM
+	_body_content_type = content_type
+	return self
+
+func start(method: int, url: String) -> bool:
 	if _state != State.IDLE:
 		return false
+	_method = method
+	_url = url
 	_state = State.CONNECTING
 	_started_at = Time.get_ticks_msec()
 
-	var parsed := _parse_url(_build_url())
+	var parsed := _parse_url(RestyClient._build_url(self))
 	if parsed.is_empty():
 		_fail("invalid url: %s" % _url)
 		return false
 
 	_request_path = parsed["path"]
-	_request_header_lines = _build_headers()
+	var headers := _headers.duplicate()
+	RestyClient._set_header_if_missing(headers, "Accept", "text/event-stream")
+	RestyClient._set_header_if_missing(headers, "Cache-Control", "no-cache")
+	_request_body = RestyClient._build_body(self, headers)
+	_request_header_lines = RestyClient._build_headers(headers)
 
 	var tls_options = TLSOptions.client() if bool(parsed["tls"]) else null
 	var err := _http.connect_to_host(parsed["host"], int(parsed["port"]), tls_options)
@@ -199,7 +244,11 @@ func get_response_header(name: String) -> String:
 	return str(_response_headers.get(RestyClient._canonical_header_name(name), ""))
 
 func _send_request() -> void:
-	var err := _http.request(HTTPClient.METHOD_GET, _request_path, _request_header_lines)
+	var err := OK
+	if _request_body is PackedByteArray:
+		err = _http.request_raw(_method, _request_path, _request_header_lines, _request_body)
+	else:
+		err = _http.request(_method, _request_path, _request_header_lines, str(_request_body))
 	if err != OK:
 		_fail("sse request failed: %s" % error_string(err))
 		return
@@ -296,28 +345,6 @@ func _emit_event(event: RestySSEEvent) -> void:
 	if not event.id.is_empty():
 		_last_event_id = event.id
 	event_received.emit(event)
-
-func _build_url() -> String:
-	var endpoint := _url
-	for key in _path_params:
-		var value := str(_path_params[key]).uri_encode()
-		endpoint = endpoint.replace("{%s}" % str(key), value)
-
-	var url := endpoint
-	if not RestyClient._is_absolute_url(url):
-		url = RestyClient._join_url(_base_url, endpoint)
-
-	var query := RestyClient._encode_query(_query_params)
-	if query.is_empty():
-		return url
-
-	return "%s&%s" % [url, query] if url.contains("?") else "%s?%s" % [url, query]
-
-func _build_headers() -> PackedStringArray:
-	var headers := _headers.duplicate()
-	RestyClient._set_header_if_missing(headers, "Accept", "text/event-stream")
-	RestyClient._set_header_if_missing(headers, "Cache-Control", "no-cache")
-	return RestyClient._build_headers(headers)
 
 func _parse_url(url: String) -> Dictionary:
 	var scheme_end := url.find("://")

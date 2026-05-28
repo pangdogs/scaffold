@@ -130,7 +130,7 @@ var items: RestyResponse = await item_handle.completed
 
 ```gdscript
 var stream := (
-	Resty.sse("/chat/stream")
+	Resty.sse()
 	.set_bearer_auth("token")
 )
 
@@ -144,7 +144,7 @@ stream.closed.connect(func(error_message: String) -> void:
 		push_error(error_message)
 )
 
-if not stream.start():
+if not stream.start(HTTPClient.METHOD_GET, "/chat/stream"):
 	push_error(stream.error_message)
 ```
 
@@ -158,7 +158,20 @@ while true:
 	print(event.data)
 ```
 
-SSE uses `GET` and automatically adds `Accept: text/event-stream` and `Cache-Control: no-cache` if they are not already set. The returned `RestySSEStream` is a long-lived stream; call `close()` to stop it.
+SSE defaults to the standard `GET` usage when started with `HTTPClient.METHOD_GET`, and automatically adds `Accept: text/event-stream` and `Cache-Control: no-cache` if they are not already set. For non-standard SSE-style streaming endpoints, set a body before `start()` and pass another HTTP method:
+
+```gdscript
+var stream := (
+	Resty.sse()
+	.set_json({
+		"prompt": "hello",
+	})
+)
+
+stream.start(HTTPClient.METHOD_POST, "/chat/stream")
+```
+
+The returned `RestySSEStream` is a long-lived stream; call `close()` to stop it.
 
 Like `Resty.r()`, `Resty.sse()` snapshots the current client settings when the stream is created.
 
@@ -199,7 +212,7 @@ res.get_header("Content-Type")
 
 ```gdscript
 Resty.r() -> RestyRequest
-Resty.sse(url: String) -> RestySSEStream
+Resty.sse() -> RestySSEStream
 
 Resty.set_base_url(value: String) -> RestyClient
 Resty.set_header(name: String, value: Variant) -> RestyClient
@@ -288,8 +301,13 @@ stream.set_query_param(name: String, value: Variant) -> RestySSEStream
 stream.set_query_params(values: Dictionary) -> RestySSEStream
 stream.set_path_param(name: String, value: Variant) -> RestySSEStream
 stream.set_path_params(values: Dictionary) -> RestySSEStream
+stream.set_content_type(value: String) -> RestySSEStream
+stream.set_body(value: Variant) -> RestySSEStream
+stream.set_raw_body(value: PackedByteArray, content_type: String = "application/octet-stream") -> RestySSEStream
+stream.set_json(value: Variant, content_type: String = "application/json") -> RestySSEStream
+stream.set_form(values: Dictionary, content_type: String = "application/x-www-form-urlencoded") -> RestySSEStream
 
-stream.start() -> bool
+stream.start(method: int, url: String) -> bool
 stream.close() -> void
 stream.get_response_header(name: String) -> String
 

@@ -26,8 +26,8 @@ var _default_query_params := {}
 func r() -> RestyRequest:
 	return RestyRequest.new(self, _base_url, _http_options, _default_headers, _default_query_params)
 
-func sse(url: String) -> RestySSEStream:
-	var stream := RestySSEStream.new(self, url, _base_url, _http_options, _default_headers, _default_query_params)
+func sse() -> RestySSEStream:
+	var stream := RestySSEStream.new(self, _base_url, _http_options, _default_headers, _default_query_params)
 	add_child(stream)
 	return stream
 
@@ -152,7 +152,7 @@ func _request_start(request: RestyRequest) -> RestyRequestHandle:
 	var http := HTTPRequest.new()
 	add_child(http)
 
-	var headers := _merged_headers(request)
+	var headers := request._headers.duplicate()
 	var request_body: Variant = _build_body(request, headers)
 	var url := _build_url(request)
 	var header_lines := _build_headers(headers)
@@ -199,8 +199,8 @@ func _request_start(request: RestyRequest) -> RestyRequestHandle:
 
 	return handle
 
-static func _build_url(request: RestyRequest) -> String:
-	var endpoint := request._url
+static func _build_url(request: Variant) -> String:
+	var endpoint: String = request._url
 	for key in request._path_params:
 		var value := str(request._path_params[key]).uri_encode()
 		endpoint = endpoint.replace("{%s}" % str(key), value)
@@ -215,7 +215,7 @@ static func _build_url(request: RestyRequest) -> String:
 
 	return "%s&%s" % [url, query] if url.contains("?") else "%s?%s" % [url, query]
 
-static func _build_body(request: RestyRequest, headers: Dictionary) -> Variant:
+static func _build_body(request: Variant, headers: Dictionary) -> Variant:
 	match request._body_format:
 		RestyRequest.BodyFormat.RAW:
 			if not request._body_content_type.is_empty():
@@ -243,9 +243,6 @@ static func _build_body(request: RestyRequest, headers: Dictionary) -> Variant:
 				return JSON.stringify(request._body)
 			_set_header_if_missing(headers, "Content-Type", "text/plain")
 			return str(request._body)
-
-static func _merged_headers(request: RestyRequest) -> Dictionary:
-	return request._headers.duplicate()
 
 static func _build_headers(headers: Dictionary) -> PackedStringArray:
 	var header_lines := PackedStringArray()
