@@ -380,9 +380,8 @@ func (d *Decl) ResolvePbFieldNumber(meta *Meta) int {
 
 func (d *Decl) CheckPbNumbers() error {
 	if d.IsEnum {
-		return nil
+		return d.CheckPbEnumNumbers()
 	}
-
 	seen := map[int]string{}
 	for _, field := range d.StructFields() {
 		if err := checkPbFieldNumber(int32(field.V.Number)); err != nil {
@@ -392,6 +391,24 @@ func (d *Decl) CheckPbNumbers() error {
 			return fmt.Errorf("message %s field %s pb_field_number %d conflicts with %s", d.Type, field.K, field.V.Number, previous)
 		}
 		seen[field.V.Number] = field.K
+	}
+	return nil
+}
+
+func (d *Decl) CheckPbEnumNumbers() error {
+	if !d.IsEnum {
+		return nil
+	}
+	seen := map[int]string{}
+	for _, field := range d.Fields {
+		enumValue, err := strconv.Atoi(field.V.EnumValue)
+		if err != nil {
+			return fmt.Errorf("enum %s value %s has invalid number %q: %w", d.Type, field.K, field.V.EnumValue, err)
+		}
+		if previous, ok := seen[enumValue]; ok {
+			return fmt.Errorf("enum %s value %s number %d conflicts with %s", d.Type, field.K, enumValue, previous)
+		}
+		seen[enumValue] = field.K
 	}
 	return nil
 }
