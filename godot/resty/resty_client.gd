@@ -88,58 +88,58 @@ func set_query_params(values: Dictionary) -> RestyClient:
 		set_query_param(str(key), values[key])
 	return self
 
-func get_async(url: String) -> RestyResponse:
+func get_async(url: String = "") -> RestyResponse:
 	return await r().get_async(url)
 
-func get_start(url: String) -> RestyRequestHandle:
+func get_start(url: String = "") -> RestyRequestHandle:
 	return r().get_start(url)
 
-func post_async(url: String, body: Variant = null) -> RestyResponse:
+func post_async(url: String = "", body: Variant = null) -> RestyResponse:
 	var request := r()
 	if body != null:
 		request.set_body(body)
 	return await request.post_async(url)
 
-func post_start(url: String, body: Variant = null) -> RestyRequestHandle:
+func post_start(url: String = "", body: Variant = null) -> RestyRequestHandle:
 	var request := r()
 	if body != null:
 		request.set_body(body)
 	return request.post_start(url)
 
-func put_async(url: String, body: Variant = null) -> RestyResponse:
+func put_async(url: String = "", body: Variant = null) -> RestyResponse:
 	var request := r()
 	if body != null:
 		request.set_body(body)
 	return await request.put_async(url)
 
-func put_start(url: String, body: Variant = null) -> RestyRequestHandle:
+func put_start(url: String = "", body: Variant = null) -> RestyRequestHandle:
 	var request := r()
 	if body != null:
 		request.set_body(body)
 	return request.put_start(url)
 
-func patch_async(url: String, body: Variant = null) -> RestyResponse:
+func patch_async(url: String = "", body: Variant = null) -> RestyResponse:
 	var request := r()
 	if body != null:
 		request.set_body(body)
 	return await request.patch_async(url)
 
-func patch_start(url: String, body: Variant = null) -> RestyRequestHandle:
+func patch_start(url: String = "", body: Variant = null) -> RestyRequestHandle:
 	var request := r()
 	if body != null:
 		request.set_body(body)
 	return request.patch_start(url)
 
-func delete_async(url: String) -> RestyResponse:
+func delete_async(url: String = "") -> RestyResponse:
 	return await r().delete_async(url)
 
-func delete_start(url: String) -> RestyRequestHandle:
+func delete_start(url: String = "") -> RestyRequestHandle:
 	return r().delete_start(url)
 
-func head_async(url: String) -> RestyResponse:
+func head_async(url: String = "") -> RestyResponse:
 	return await r().head_async(url)
 
-func head_start(url: String) -> RestyRequestHandle:
+func head_start(url: String = "") -> RestyRequestHandle:
 	return r().head_start(url)
 
 func _request_async(request: RestyRequest) -> RestyResponse:

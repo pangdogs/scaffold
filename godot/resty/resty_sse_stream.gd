@@ -31,11 +31,11 @@ enum State {
 }
 
 var _client: RestyClient = null
-var _http := HTTPClient.new()
-var _url := ""
-var _method: int = HTTPClient.METHOD_GET
 var _base_url := ""
 var _http_options: RestyHttpOptions = null
+var _http := HTTPClient.new()
+var _method: int = HTTPClient.METHOD_GET
+var _url := ""
 var _headers := {}
 var _query_params := {}
 var _path_params := {}
@@ -203,7 +203,7 @@ func set_form(values: Dictionary, content_type: String = "application/x-www-form
 	_body_content_type = content_type
 	return self
 
-func start(method: int, url: String) -> bool:
+func start(method: int = HTTPClient.METHOD_GET, url: String = "") -> bool:
 	if _state != State.IDLE:
 		return false
 	_method = method

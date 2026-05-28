@@ -28,14 +28,14 @@ enum BodyFormat {
 var _client: RestyClient = null
 var _base_url := ""
 var _http_options: RestyHttpOptions = null
+var _method: int = HTTPClient.METHOD_GET
+var _url: String = ""
 var _headers := {}
 var _query_params := {}
 var _path_params := {}
 var _body: Variant = null
 var _body_format := BodyFormat.AUTO
 var _body_content_type := ""
-var _method: int = HTTPClient.METHOD_GET
-var _url: String = ""
 var _output_file := ""
 
 func _init(client: RestyClient, base_url: String, http_options: RestyHttpOptions, headers: Dictionary, query_params: Dictionary) -> void:
@@ -138,48 +138,48 @@ func set_form(values: Dictionary, content_type: String = "application/x-www-form
 	_body_content_type = content_type
 	return self
 
-func request_async(method: int, url: String) -> RestyResponse:
+func request_async(method: int = HTTPClient.METHOD_GET, url: String = "") -> RestyResponse:
 	_method = method
 	_url = url
 	return await _client._request_async(self)
 
-func request_start(method: int, url: String) -> RestyRequestHandle:
+func request_start(method: int = HTTPClient.METHOD_GET, url: String = "") -> RestyRequestHandle:
 	_method = method
 	_url = url
 	return _client._request_start(self)
 
-func get_async(url: String) -> RestyResponse:
+func get_async(url: String = "") -> RestyResponse:
 	return await request_async(HTTPClient.METHOD_GET, url)
 
-func get_start(url: String) -> RestyRequestHandle:
+func get_start(url: String = "") -> RestyRequestHandle:
 	return request_start(HTTPClient.METHOD_GET, url)
 
-func post_async(url: String) -> RestyResponse:
+func post_async(url: String = "") -> RestyResponse:
 	return await request_async(HTTPClient.METHOD_POST, url)
 
-func post_start(url: String) -> RestyRequestHandle:
+func post_start(url: String = "") -> RestyRequestHandle:
 	return request_start(HTTPClient.METHOD_POST, url)
 
-func put_async(url: String) -> RestyResponse:
+func put_async(url: String = "") -> RestyResponse:
 	return await request_async(HTTPClient.METHOD_PUT, url)
 
-func put_start(url: String) -> RestyRequestHandle:
+func put_start(url: String = "") -> RestyRequestHandle:
 	return request_start(HTTPClient.METHOD_PUT, url)
 
-func patch_async(url: String) -> RestyResponse:
+func patch_async(url: String = "") -> RestyResponse:
 	return await request_async(HTTPClient.METHOD_PATCH, url)
 
-func patch_start(url: String) -> RestyRequestHandle:
+func patch_start(url: String = "") -> RestyRequestHandle:
 	return request_start(HTTPClient.METHOD_PATCH, url)
 
-func delete_async(url: String) -> RestyResponse:
+func delete_async(url: String = "") -> RestyResponse:
 	return await request_async(HTTPClient.METHOD_DELETE, url)
 
-func delete_start(url: String) -> RestyRequestHandle:
+func delete_start(url: String = "") -> RestyRequestHandle:
 	return request_start(HTTPClient.METHOD_DELETE, url)
 
-func head_async(url: String) -> RestyResponse:
+func head_async(url: String = "") -> RestyResponse:
 	return await request_async(HTTPClient.METHOD_HEAD, url)
 
-func head_start(url: String) -> RestyRequestHandle:
+func head_start(url: String = "") -> RestyRequestHandle:
 	return request_start(HTTPClient.METHOD_HEAD, url)
