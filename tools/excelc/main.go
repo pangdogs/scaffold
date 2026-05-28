@@ -143,6 +143,7 @@ func main() {
 	codeCmd.Flags().String("gdscript_out", "", "Output directory for GDScript code.")
 	codeCmd.Flags().String("gdscript_class_name", "Tables", "Class name exported by generated GDScript aggregate code.")
 	codeCmd.Flags().String("gdscript_default_data_dir", "res://excel/", "Default data loading directory in generated GDScript code.")
+	codeCmd.Flags().Bool("gdscript_autoload", true, "Whether generated GDScript aggregate code should auto-load data in _ready().")
 
 	dataCmd := &cobra.Command{
 		Use:   "data",

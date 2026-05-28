@@ -213,7 +213,7 @@ excelc data \
 - 生成后的 `*.pb.gd` 文件应尽量保持与源 `.proto` 文件相同的相对目录结构，因为跨文件 Protobuf 引用会生成相对 `preload(...)` 调用。
 - 普通业务 Protobuf 输出与 Excel 派生 Protobuf 输出通常应放在不同的根目录下维护。通信 / 存储协议和表格协议一般不是同一套产物，不建议混在一个输出目录里。
 - 每个 `*.excel.gd` 文件都应和对应的 `*.pb.gd` 放在同一输出目录下。生成的 Excel 包装器会从同目录预加载 `./<name>.pb.gd`，而 `excelc code --gdscript_out=...` 也通常会在该目录中生成 `tables.gd` 之类的聚合加载脚本。
-- 聚合脚本 `tables.gd` 默认导出 `class_name Tables`。可以通过 `excelc code --gdscript_class_name=<Name>` 指定其他 Godot 全局类名，也可以传空值来省略 `class_name`。
+- 聚合脚本 `tables.gd` 默认导出 `class_name Tables`。可以通过 `excelc code --gdscript_class_name=<Name>` 指定其他 Godot 全局类名，也可以传空值来省略 `class_name`。默认还会在 `_ready()` 中自动加载表数据；如果希望调用方手动执行 `load_data()`，可以传 `--gdscript_autoload=false`。
 - `godot/resty` 不依赖生成的 Protobuf 或 Excel 运行时。需要项目级 HTTP 客户端时，可以把 `resty_client.gd` 注册成 autoload；如果某个场景需要独立默认配置，也可以手动实例化 `RestyClient`。
 
 ### 布局示例
@@ -319,7 +319,7 @@ Resty="*res://addons/resty/resty_client.gd"
 | 命令 | 关键参数 | 说明 |
 | --- | --- | --- |
 | `excelc proto` | `--excel_files`、`--excel_dir`、`--pb_out`、`--pb_package`、`--pb_imports`、`--pb_options`、`--pb_unique_index_as`、`--targets` | 从 Excel 工作簿生成表结构 `.proto` 与配套 `*.protoset`。`--excel_files` 优先用于显式指定输入文件。 |
-| `excelc code` | `--pb_dir`、`--pb_package`、`--go_out`、`--gdscript_out`、`--gdscript_class_name`、`--gdscript_default_data_dir` | 基于 Excel proto 生成 Go 或 GDScript 表访问代码。 |
+| `excelc code` | `--pb_dir`、`--pb_package`、`--go_out`、`--gdscript_out`、`--gdscript_class_name`、`--gdscript_default_data_dir`、`--gdscript_autoload` | 基于 Excel proto 生成 Go 或 GDScript 表访问代码。 |
 | `excelc data` | `--excel_files`、`--excel_dir`、`--pb_dir`、`--pb_package`、`--targets`、`--binary_out`、`--binary_chunked`、`--binary_chunk_size`、`--json_out`、`--json_multiline`、`--json_indent` | 基于 Excel proto 导出二进制或 JSON 表数据。 |
 | `propc` | `--decl_file` | 读取属性声明文件并生成相邻的 `*.sync.gen.go`。默认值来自 `GOFILE`，便于配合 `go generate` 使用。 |
 | `protoc-gen-gdscript` | `string_as_string_name`、`gap_variant`、`class_name` | 通过 `--gdscript_opt=<name>=<value>` 传入，控制字符串映射、GAP variant 集成和 Godot `class_name` 导出。 |

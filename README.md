@@ -213,7 +213,7 @@ excelc data \
 - Keep generated `*.pb.gd` files in the same relative layout as the source `.proto` files. Cross-file Protobuf references are emitted as relative `preload(...)` calls.
 - Keep application Protobuf output and Excel-derived Protobuf output in different root directories. In practice, communication/storage schemas and table schemas are usually generated and maintained separately.
 - Keep each generated `*.excel.gd` file next to its matching `*.pb.gd` file. Generated Excel wrappers preload `./<name>.pb.gd` from the same output directory, and `excelc code --gdscript_out=...` typically emits an aggregate loader such as `tables.gd` into that directory as well.
-- The aggregate `tables.gd` script exports `class_name Tables` by default. Use `excelc code --gdscript_class_name=<Name>` to choose a different Godot global class name, or pass an empty value to omit `class_name`.
+- The aggregate `tables.gd` script exports `class_name Tables` by default. Use `excelc code --gdscript_class_name=<Name>` to choose a different Godot global class name, or pass an empty value to omit `class_name`. It also auto-loads table data from `_ready()` by default; pass `--gdscript_autoload=false` when the caller should invoke `load_data()` manually.
 - `godot/resty` does not depend on the generated Protobuf or Excel runtimes. Register `resty_client.gd` as an autoload when you want a project-wide HTTP client, or instantiate `RestyClient` manually when a scene needs isolated defaults.
 
 ### Layout Examples
@@ -319,7 +319,7 @@ Resty="*res://addons/resty/resty_client.gd"
 | Command | Key Options | Notes |
 | --- | --- | --- |
 | `excelc proto` | `--excel_files`, `--excel_dir`, `--pb_out`, `--pb_package`, `--pb_imports`, `--pb_options`, `--pb_unique_index_as`, `--targets` | Generates table `.proto` files and matching `*.protoset` files from Excel workbooks. Prefer `--excel_files` for explicit inputs. |
-| `excelc code` | `--pb_dir`, `--pb_package`, `--go_out`, `--gdscript_out`, `--gdscript_class_name`, `--gdscript_default_data_dir` | Generates Go or GDScript table access code from Excel proto files. |
+| `excelc code` | `--pb_dir`, `--pb_package`, `--go_out`, `--gdscript_out`, `--gdscript_class_name`, `--gdscript_default_data_dir`, `--gdscript_autoload` | Generates Go or GDScript table access code from Excel proto files. |
 | `excelc data` | `--excel_files`, `--excel_dir`, `--pb_dir`, `--pb_package`, `--targets`, `--binary_out`, `--binary_chunked`, `--binary_chunk_size`, `--json_out`, `--json_multiline`, `--json_indent` | Exports binary or JSON table data from Excel workbooks using the generated proto descriptors. |
 | `propc` | `--decl_file` | Reads a property declaration file and writes the sibling `*.sync.gen.go`. The default comes from `GOFILE`, which makes it convenient for `go generate`. |
 | `protoc-gen-gdscript` | `string_as_string_name`, `gap_variant`, `class_name` | Passed as `--gdscript_opt=<name>=<value>` to control string mapping, GAP variant integration, and Godot `class_name` export. |
