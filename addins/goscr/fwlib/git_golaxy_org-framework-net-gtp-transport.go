@@ -12,7 +12,6 @@ import (
 func init() {
 	Symbols["git.golaxy.org/framework/net/gtp/transport/transport"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"CastRstErr":                 reflect.ValueOf(transport.CastRstErr),
 		"EOF":                        reflect.ValueOf(&transport.EOF).Elem(),
 		"ErrClosed":                  reflect.ValueOf(&transport.ErrClosed).Elem(),
 		"ErrDeadlineExceeded":        reflect.ValueOf(&transport.ErrDeadlineExceeded).Elem(),
@@ -31,6 +30,7 @@ func init() {
 		"ErrUnexpectedSeq":           reflect.ValueOf(&transport.ErrUnexpectedSeq).Elem(),
 		"NewSequencedSynchronizer":   reflect.ValueOf(transport.NewSequencedSynchronizer),
 		"NewUnsequencedSynchronizer": reflect.ValueOf(transport.NewUnsequencedSynchronizer),
+		"ToRstError":                 reflect.ValueOf(transport.ToRstError),
 
 		// type definitions
 		"AuthAccept":                reflect.ValueOf((*transport.AuthAccept)(nil)),

@@ -381,7 +381,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 			goto retry
 		}
 
-		argRV, err := argsRV[i].Interface().(variant.Variant).Convert(paramRT)
+		argRV, err := argsRV[i].Interface().(variant.Variant).ToNative(paramRT)
 		if err != nil {
 			log.L(m.rt).Error("do sync op failed",
 				zap.String("entity_id", entityId.String()),
