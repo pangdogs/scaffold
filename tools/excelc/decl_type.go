@@ -497,6 +497,96 @@ const (
 	SheetTypesHeader = 1
 )
 
+func predeclareTypeDecls(file *excelize.File) *generic.SliceMap[Type, *Decl] {
+	var decls generic.SliceMap[Type, *Decl]
+
+	rows, err := file.Rows(SheetTypes)
+	if err != nil {
+		if _, ok := err.(excelize.ErrSheetNotExist); ok {
+			return &decls
+		}
+		log.Panicf("read excel file %q sheet %q failed, %s", file.Path, SheetTypes, err)
+	}
+	defer rows.Close()
+
+	type Columns struct {
+		Type      int
+		EnumValue int
+	}
+
+	columns := Columns{
+		Type:      -1,
+		EnumValue: -1,
+	}
+
+	for i := 1; rows.Next(); i++ {
+		if i <= SheetTypesHeader {
+			row, err := rows.Columns()
+			if err != nil {
+				log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, SheetTypes, i, err)
+			}
+
+			for j, cell := range row {
+				row[j] = strings.NewReplacer("\r", "", "\n", "\\n").Replace(strings.TrimSpace(cell))
+			}
+
+			for j, cell := range row {
+				switch cell {
+				case "对象类型", "类型", "ObjectType", "Type":
+					columns.Type = j
+				case "值", "枚举值", "Value", "EnumValue":
+					columns.EnumValue = j
+				}
+			}
+			continue
+		}
+
+		_row, err := rows.Columns()
+		if err != nil {
+			log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, SheetTypes, i, err)
+		}
+		row := Row(_row)
+
+		ty := Type(row.Get(columns.Type))
+		if ty == "" {
+			continue
+		}
+
+		if ty.IsBuiltin() {
+			log.Panicf("read excel file %q sheet %q row %d failed: built-in types cannot be defined", file.Path, SheetTypes, i)
+		}
+
+		ty = Type(snake2Camel(string(ty)))
+
+		if ty.IsRepeated() {
+			log.Panicf("read excel file %q sheet %q row %d failed: array types cannot be defined", file.Path, SheetTypes, i)
+		}
+
+		isEnum := row.Get(columns.EnumValue) != ""
+		isStruct := !isEnum
+
+		typeDecl, ok := decls.Get(ty)
+		if !ok {
+			typeDecl = &Decl{
+				File:     file.Path,
+				Sheet:    SheetTypes,
+				Line:     i,
+				Type:     ty,
+				IsStruct: isStruct,
+				IsEnum:   isEnum,
+			}
+			decls.Add(ty, typeDecl)
+			continue
+		}
+
+		if typeDecl.Type != ty || typeDecl.IsStruct != isStruct || typeDecl.IsEnum != isEnum {
+			log.Panicf("read excel file %q sheet %q row %d failed: does not match previously defined type %q", file.Path, SheetTypes, i, typeDecl.Type)
+		}
+	}
+
+	return &decls
+}
+
 func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *Decl]) *generic.SliceMap[Type, *Decl] {
 	var decls generic.SliceMap[Type, *Decl]
 

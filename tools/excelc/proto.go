@@ -35,28 +35,40 @@ func cmdGenProto(cmd *cobra.Command, args []string) {
 	genDependencyProto()
 
 	var globalDecls generic.SliceMap[Type, *Decl]
+	excelPaths := collectProtoExcelPaths()
+
+	for _, path := range excelPaths {
+		predeclareProto(path, &globalDecls)
+	}
+
+	for _, path := range excelPaths {
+		genProto(path, &globalDecls)
+	}
+}
+
+func collectProtoExcelPaths() []string {
+	var excelPaths []string
 	skipped := map[string]struct{}{}
 
-	skip := func(p string) bool {
+	add := func(p string) bool {
 		p, _ = filepath.Abs(p)
 		_, ok := skipped[p]
 		if !ok {
 			skipped[p] = struct{}{}
 		}
-		return ok
+		return !ok
 	}
 
 	for _, path := range viper.GetStringSlice("excel_files") {
-		if skip(path) {
-			continue
+		if add(path) {
+			excelPaths = append(excelPaths, path)
 		}
-		genProto(path, &globalDecls)
 	}
 
 	excelDir := viper.GetString("excel_dir")
 	if excelDir != "" {
 		filepath.Walk(excelDir, func(path string, info fs.FileInfo, err error) error {
-			if err != nil || info.IsDir() || skip(path) {
+			if err != nil || info.IsDir() {
 				return nil
 			}
 
@@ -66,16 +78,30 @@ func cmdGenProto(cmd *cobra.Command, args []string) {
 				return nil
 			}
 
-			genProto(path, &globalDecls)
+			if add(path) {
+				excelPaths = append(excelPaths, path)
+			}
 			return nil
 		})
 	}
+
+	return excelPaths
 }
 
 func genDependencyProto() {
 	if outDir := viper.GetString("pb_out"); outDir != "" {
 		genDependencyProtoFile(outDir)
 	}
+}
+
+func predeclareProto(excelPath string, globalDecls *generic.SliceMap[Type, *Decl]) {
+	excelFile, err := excelize.OpenFile(excelPath)
+	if err != nil {
+		log.Panicf("open excel file %q failed, %s", excelPath, err)
+	}
+	defer excelFile.Close()
+
+	predeclareProtoFile(excelFile, globalDecls)
 }
 
 func genProto(excelPath string, globalDecls *generic.SliceMap[Type, *Decl]) {

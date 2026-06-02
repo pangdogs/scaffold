@@ -40,6 +40,58 @@ const (
 	SheetTableColumnComment = 4
 )
 
+func predeclareTableDecls(file *excelize.File) *generic.SliceMap[Type, *Decl] {
+	var decls generic.SliceMap[Type, *Decl]
+
+	sheets := slices.DeleteFunc(file.GetSheetList(), func(sheet string) bool {
+		return sheet == "" || !unicode.IsLetter(rune(sheet[0]))
+	})
+	if len(sheets) <= 0 {
+		return &decls
+	}
+
+	sheet := sheets[0]
+
+	rows, err := file.Rows(sheet)
+	if err != nil {
+		log.Panicf("read excel file %q sheet %q failed, %s", file.Path, sheet, err)
+	}
+	defer rows.Close()
+
+	for i := 1; rows.Next(); i++ {
+		if i > SheetTableColumnName {
+			break
+		}
+
+		row, err := rows.Columns()
+		if err != nil {
+			log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, sheet, i, err)
+		}
+
+		for _, cell := range row {
+			name := snake2Camel(strings.NewReplacer("\r", "", "\n", "\\n").Replace(strings.TrimSpace(cell)))
+			if name == "" {
+				break
+			}
+			if !unicode.IsLetter(rune(name[0])) {
+				continue
+			}
+
+			tableDecl := &Decl{
+				File:    file.Path,
+				Sheet:   sheet,
+				Line:    SheetTableHeader,
+				Type:    Type(snake2Camel(strings.TrimSuffix(filepath.Base(file.Path), filepath.Ext(file.Path))) + "Columns"),
+				IsTable: true,
+			}
+			decls.Add(tableDecl.Type, tableDecl)
+			return &decls
+		}
+	}
+
+	return &decls
+}
+
 func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *Decl]) *generic.SliceMap[Type, *Decl] {
 	var decls generic.SliceMap[Type, *Decl]
 
