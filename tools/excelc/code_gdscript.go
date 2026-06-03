@@ -143,7 +143,7 @@ func genGDScriptCode(outDir string) {
 		enumName := gdscriptTypeIdentifier(string(desc.Name()))
 		exportMembers = append(exportMembers, GDScriptExportMemberDecl{
 			Name: enumName,
-			Ref:  importDecl.ProtoAlias + "." + enumName,
+			Ref:  importDecl.ProtoAlias + "." + enumName + ".Enum",
 		})
 		return true
 	})
