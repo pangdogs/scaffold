@@ -1051,7 +1051,7 @@ func parseStructValue(value string) (*yaml.Node, error) {
 }
 
 type Extensions struct {
-	IsColumns, IsTable,
+	IsColumns, IsTable, IsEnum,
 	Separator, FieldAlias, Scope, IndexType, IndexFields, HashUniqueIndex, SortedUniqueIndex,
 	EnumValueAlias protoreflect.ExtensionType
 }
@@ -1068,6 +1068,12 @@ func parseExtensions(pbTypes *protoregistry.Types) (*Extensions, error) {
 
 	extName = protoreflect.FullName(fmt.Sprintf("%s.IsTable", viper.GetString("pb_package")))
 	extensions.IsTable, err = pbTypes.FindExtensionByName(extName)
+	if err != nil {
+		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
+	}
+
+	extName = protoreflect.FullName(fmt.Sprintf("%s.IsEnum", viper.GetString("pb_package")))
+	extensions.IsEnum, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}

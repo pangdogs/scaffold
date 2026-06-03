@@ -83,6 +83,7 @@ message ChunkManifest {
 extend google.protobuf.MessageOptions {
 	optional bool IsColumns = {{Add .CustomOptions 101}};
 	optional bool IsTable = {{Add .CustomOptions 102}};
+	optional bool IsEnum = {{Add .CustomOptions 103}};
 }
 
 extend google.protobuf.FieldOptions {
@@ -184,6 +185,7 @@ syntax = 'proto3';
 
 // package
 package {{.Package}};
+{{- $package := .Package}}
 
 // imports
 {{- range .Imports}}
@@ -198,6 +200,7 @@ package {{.Package}};
 // enums
 {{- range .Enums}}
 message {{.Type}} {
+	option ({{$package}}.IsEnum) = true;
 	enum Enum {
 		{{- range .EnumFields}}
 		{{.K}} = {{.V.EnumValue}}{{- .V.ProtobufMeta -}}; // {{.V.Alias}} - {{.V.Comment}}
@@ -216,7 +219,6 @@ message {{.Type}} {
 {{end}}
 
 // table and columns
-{{- $package := .Package -}}
 {{- range .Columns}}
 message {{.ProtoType}} {
 	option ({{$package}}.IsColumns) = true;
