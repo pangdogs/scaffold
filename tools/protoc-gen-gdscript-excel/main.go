@@ -440,7 +440,7 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 	chunkOffsetFieldName := safeIdentifier(table.ChunkOffsetField.GoName)
 	chunkCountFieldName := safeIdentifier(table.ChunkCountField.GoName)
 
-	g.P("class ", tableName, ":")
+	g.P("class ", tableName, " extends RefCounted:")
 	g.P("\tvar _msg: ", protoTableType)
 	g.P()
 	g.P("\tfunc _init(msg: ", protoTableType, " = null) -> void:")
