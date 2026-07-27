@@ -332,7 +332,7 @@ class CustomTypeRegistry:
 
 	func _load_script(path: String) -> bool:
 		var normalized_path := path.simplify_path()
-		var script := ResourceLoader.load(normalized_path, "GDScript") as GDScript
+		var script := ResourceLoader.load(normalized_path, "GDScript", ResourceLoader.CACHE_MODE_REPLACE) as GDScript
 		if script == null:
 			push_error("Failed to load protobuf script: %s" % normalized_path)
 			return false
