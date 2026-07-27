@@ -124,6 +124,10 @@ func genGDScriptCode(outDir string) {
 		ref := importDecl.ProtoAlias + "." + typeName
 		isEnum := proto.GetExtension(desc.Options(), extensions.IsEnum).(bool)
 		if isEnum {
+			exportMembers = append(exportMembers, GDScriptExportMemberDecl{
+				Name: typeName + "Helper",
+				Ref:  ref,
+			})
 			ref += ".Enum"
 		}
 		exportMembers = append(exportMembers, GDScriptExportMemberDecl{
