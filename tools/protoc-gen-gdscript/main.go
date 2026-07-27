@@ -32,7 +32,11 @@ import (
 	"git.golaxy.org/framework/net/gap/variant"
 	"github.com/elliotchance/pie/v2"
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type GeneratorConfig struct {
@@ -268,6 +272,7 @@ func emitEnum(g *protogen.GeneratedFile, enum *protogen.Enum) {
 	g.P("}")
 	g.P()
 	emitEnumJSONHelper(g, enum, 0, enumName)
+	emitEnumAliasHelper(g, enum, 0, enumName)
 }
 
 func emitMessage(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
@@ -332,6 +337,7 @@ func emitIndentedEnum(g *protogen.GeneratedFile, enum *protogen.Enum, indentLeve
 	g.P(indent, "}")
 	g.P()
 	emitEnumJSONHelper(g, enum, indentLevel, enumName)
+	emitEnumAliasHelper(g, enum, indentLevel, enumName)
 }
 
 func emitMessageFields(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
@@ -638,6 +644,44 @@ func emitEnumJSONHelper(g *protogen.GeneratedFile, enum *protogen.Enum, indentLe
 		valueName := safeIdentifier(string(value.Desc.Name()))
 		g.P(indent, "\t\t", strconv.Quote(string(value.Desc.Name())), ":")
 		g.P(indent, "\t\t\treturn ", typeRef, ".", valueName)
+	}
+	g.P(indent, "\treturn int(value)")
+	g.P()
+}
+
+func emitEnumAliasHelper(g *protogen.GeneratedFile, enum *protogen.Enum, indentLevel int, typeRef string) {
+	if len(enum.Values) <= 0 {
+		return
+	}
+	indent := strings.Repeat("\t", indentLevel)
+	aliases := enumValueAliases(enum)
+	hasAliases := pie.Any(aliases, func(alias string) bool { return alias != "" })
+	toAliasName, fromAliasName := enumAliasHelperNames(enum)
+	g.P(indent, "static func ", toAliasName, "(value: int) -> String:")
+	if hasAliases {
+		g.P(indent, "\tmatch value:")
+		for i, value := range enum.Values {
+			if aliases[i] == "" {
+				continue
+			}
+			valueName := safeIdentifier(string(value.Desc.Name()))
+			g.P(indent, "\t\t", typeRef, ".", valueName, ":")
+			g.P(indent, "\t\t\treturn ", strconv.Quote(aliases[i]))
+		}
+	}
+	g.P(indent, "\treturn str(value)")
+	g.P()
+	g.P(indent, "static func ", fromAliasName, "(value: Variant) -> int:")
+	if hasAliases {
+		g.P(indent, "\tmatch value:")
+		for i, value := range enum.Values {
+			if aliases[i] == "" {
+				continue
+			}
+			valueName := safeIdentifier(string(value.Desc.Name()))
+			g.P(indent, "\t\t", strconv.Quote(aliases[i]), ":")
+			g.P(indent, "\t\t\treturn ", typeRef, ".", valueName)
+		}
 	}
 	g.P(indent, "\treturn int(value)")
 	g.P()
@@ -1132,6 +1176,51 @@ func fieldDefaultValueExpression(file *protogen.File, field *protogen.Field, imp
 func enumStringHelperNames(enum *protogen.Enum) (string, string) {
 	enumName := safeIdentifier(string(enum.Desc.Name()))
 	return enumName + "_to_string", enumName + "_from_string"
+}
+
+func enumAliasHelperNames(enum *protogen.Enum) (string, string) {
+	enumName := safeIdentifier(string(enum.Desc.Name()))
+	return enumName + "_to_alias", enumName + "_from_alias"
+}
+
+func enumValueAliases(enum *protogen.Enum) []string {
+	aliases := make([]string, len(enum.Values))
+	ext := findEnumValueAliasExtension(enum.Desc.ParentFile())
+	if ext == nil {
+		return aliases
+	}
+	types := &protoregistry.Types{}
+	if err := types.RegisterExtension(ext); err != nil {
+		return aliases
+	}
+	for i, value := range enum.Values {
+		data := value.Desc.Options().ProtoReflect().GetUnknown()
+		if len(data) <= 0 {
+			continue
+		}
+		options := &descriptorpb.EnumValueOptions{}
+		if err := (proto.UnmarshalOptions{Resolver: types}).Unmarshal(data, options); err != nil {
+			continue
+		}
+		aliases[i], _ = proto.GetExtension(options, ext).(string)
+	}
+	return aliases
+}
+
+func findEnumValueAliasExtension(file protoreflect.FileDescriptor) protoreflect.ExtensionType {
+	files := []protoreflect.FileDescriptor{file}
+	for i := 0; i < file.Imports().Len(); i++ {
+		files = append(files, file.Imports().Get(i).FileDescriptor)
+	}
+	for _, candidate := range files {
+		for i := 0; i < candidate.Extensions().Len(); i++ {
+			ext := candidate.Extensions().Get(i)
+			if ext.Name() == "EnumValueAlias" && ext.ContainingMessage().FullName() == "google.protobuf.EnumValueOptions" {
+				return dynamicpb.NewExtensionType(ext)
+			}
+		}
+	}
+	return nil
 }
 
 func enumJSONHelperReference(file *protogen.File, enum *protogen.Enum, importAliases map[string]string) (string, error) {
