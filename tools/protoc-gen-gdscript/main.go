@@ -46,6 +46,8 @@ type GeneratorConfig struct {
 	ClassName          bool
 }
 
+const gapVariantRegisterMethod = "_register_gap_variant_types"
+
 var config GeneratorConfig
 
 func main() {
@@ -1082,10 +1084,11 @@ func emitScriptStaticInit(g *protogen.GeneratedFile, file *protogen.File, messag
 		return
 	}
 	g.P("static func _static_init() -> void:")
-	if config.GapVariant {
-		for _, msg := range messages {
-			g.P("\tGAPVariants.custom_type_registry.register(", makeTypeId(string(file.Desc.Package()), string(msg.Desc.Name())), ", ", safeIdentifier(msg.GoIdent.GoName), ")")
-		}
+	g.P("\t", gapVariantRegisterMethod, "()")
+	g.P()
+	g.P("static func ", gapVariantRegisterMethod, "() -> void:")
+	for _, msg := range messages {
+		g.P("\tGAPVariants.custom_type_registry.register(", makeTypeId(string(file.Desc.Package()), string(msg.Desc.Name())), ", ", safeIdentifier(msg.GoIdent.GoName), ")")
 	}
 	g.P()
 }

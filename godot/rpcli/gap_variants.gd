@@ -295,7 +295,51 @@ class GAPCallChain:
 		return "GAPCallChain%s" % [str(items)]
 
 class CustomTypeRegistry:
+	const PROTO_SCRIPT_SUFFIX := ".pb.gd"
+	const REGISTER_METHOD := &"_register_gap_variant_types"
+
 	var _types: Dictionary[int, Variant] = {}
+
+	# Recursively reloads generated protobuf scripts and invokes their generated
+	# registration methods before custom GAP variants are decoded.
+	func load_directory(path: String, recursive: bool = true) -> bool:
+		var normalized_path := path.simplify_path()
+		if !_resource_directory_exists(normalized_path):
+			push_error("Failed to open protobuf script directory: %s" % normalized_path)
+			return false
+
+		var entries := ResourceLoader.list_directory(normalized_path)
+		entries.sort()
+		var success := true
+		for entry in entries:
+			if entry.begins_with("."):
+				continue
+			if entry.ends_with("/"):
+				if recursive and !load_directory(normalized_path.path_join(entry.trim_suffix("/")), true):
+					success = false
+			elif entry.ends_with(PROTO_SCRIPT_SUFFIX):
+				if !_load_script(normalized_path.path_join(entry)):
+					success = false
+		return success
+
+	func _resource_directory_exists(path: String) -> bool:
+		if path == "res://" or path == "user://":
+			return true
+		var directory_name := path.get_file()
+		if directory_name.is_empty():
+			return false
+		return ResourceLoader.list_directory(path.get_base_dir()).has(directory_name + "/")
+
+	func _load_script(path: String) -> bool:
+		var normalized_path := path.simplify_path()
+		# CACHE_MODE_IGNORE makes the GDScript loader refresh source from a mounted patch pack.
+		var script := ResourceLoader.load(normalized_path, "GDScript", ResourceLoader.CACHE_MODE_IGNORE) as GDScript
+		if script == null:
+			push_error("Failed to load protobuf script: %s" % normalized_path)
+			return false
+		if script.has_method(REGISTER_METHOD):
+			script.call(REGISTER_METHOD)
+		return true
 
 	func register(type_id: int, type_cls: Variant) -> void:
 		if type_id < TYPE_ID_CUSTOMIZE:
@@ -310,7 +354,7 @@ class CustomTypeRegistry:
 		return _types.has(type_id)
 
 	func new_value(type_id: int) -> Object:
-		var type_cls := _types.get(type_id)
+		var type_cls: Variant = _types.get(type_id)
 		if type_cls == null:
 			return null
 		return type_cls.new()
