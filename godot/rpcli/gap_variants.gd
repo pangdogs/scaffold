@@ -332,8 +332,7 @@ class CustomTypeRegistry:
 
 	func _load_script(path: String) -> bool:
 		var normalized_path := path.simplify_path()
-		# CACHE_MODE_IGNORE makes the GDScript loader refresh source from a mounted patch pack.
-		var script := ResourceLoader.load(normalized_path, "GDScript", ResourceLoader.CACHE_MODE_IGNORE) as GDScript
+		var script := ResourceLoader.load(normalized_path, "GDScript") as GDScript
 		if script == null:
 			push_error("Failed to load protobuf script: %s" % normalized_path)
 			return false
