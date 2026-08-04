@@ -29,6 +29,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+type gdscriptIndexArray string
+
+const (
+	gdscriptIndexArrayArray       gdscriptIndexArray = "array"
+	gdscriptIndexArrayPackedInt64 gdscriptIndexArray = "packed_int64"
+)
+
 func main() {
 	cmd := &cobra.Command{
 		Short: "Excel table processing tool for generating schema code and exporting data files.",
@@ -105,6 +112,16 @@ func main() {
 					log.Panicf("[--pb_index_as] value must be hash_index or sorted_index, but got %q", indexAs)
 				}
 			}
+
+			{
+				indexArray := gdscriptIndexArray(viper.GetString("gdscript_index_array"))
+				switch indexArray {
+				case gdscriptIndexArrayArray, gdscriptIndexArrayPackedInt64:
+					break
+				default:
+					log.Panicf("[--gdscript_index_array] value must be array or packed_int64, but got %q", indexArray)
+				}
+			}
 		},
 		Run: cmdGenProto,
 	}
@@ -117,6 +134,7 @@ func main() {
 	protoCmd.Flags().StringToString("pb_options", map[string]string{"go_package": "./excel"}, "Specify output proto file options.")
 	protoCmd.Flags().String("pb_unique_index_as", "hash_unique_index", "Specify how `unique_index` is emitted in proto file (hash_unique_index/sorted_unique_index).")
 	protoCmd.Flags().String("pb_index_as", "sorted_index", "Specify how `index` is emitted in proto file (hash_index/sorted_index).")
+	protoCmd.Flags().String("gdscript_index_array", string(gdscriptIndexArrayPackedInt64), "Specify the GDScript container for internal index vectors (packed_int64/array).")
 	protoCmd.Flags().StringSlice("targets", nil, "Specify output target platforms and control access by platform.")
 
 	codeCmd := &cobra.Command{

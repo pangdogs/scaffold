@@ -40,11 +40,13 @@ const (
 	mathPackage       = protogen.GoImportPath("math")
 )
 
+type indexType string
+
 const (
-	indexTypeHashUnique   = "HashUniqueIndex"
-	indexTypeSortedUnique = "SortedUniqueIndex"
-	indexTypeHash         = "HashIndex"
-	indexTypeSorted       = "SortedIndex"
+	indexTypeHashUnique   indexType = "HashUniqueIndex"
+	indexTypeSortedUnique indexType = "SortedUniqueIndex"
+	indexTypeHash         indexType = "HashIndex"
+	indexTypeSorted       indexType = "SortedIndex"
 )
 
 type FieldDecl struct {
@@ -97,12 +99,6 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 		return err
 	}
 
-	indexTypeName := protoFullName(file, "IndexType.Enum")
-	indexType, err := protoregistry.GlobalTypes.FindEnumByName(indexTypeName)
-	if err != nil {
-		return fmt.Errorf("parse proto type %q failed, %s", indexTypeName, err)
-	}
-
 	for i, m := range file.Messages {
 		pbMsg := file.Proto.MessageType[i]
 
@@ -121,14 +117,16 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 		defaultMethodsEmitted := false
 
 		for j, f := range m.Fields {
-			indexTypeValue, ok := proto.GetExtension(pbMsg.Field[j].Options, ext.IndexType).(protoreflect.EnumNumber)
-			if !ok || indexTypeValue <= 0 {
+			indexTypeValue, ok := proto.GetExtension(pbMsg.Field[j].Options, ext.IndexType).(string)
+			if !ok || indexTypeValue == "" {
 				continue
 			}
+			indexKind := indexType(indexTypeValue)
 
-			indexTypeValueDesc := indexType.Descriptor().Values().ByNumber(indexTypeValue)
-			if indexTypeValueDesc == nil {
-				continue
+			switch indexKind {
+			case indexTypeHashUnique, indexTypeSortedUnique, indexTypeHash, indexTypeSorted:
+			default:
+				return fmt.Errorf("field %q has unsupported index type %q", f.Desc.FullName(), indexKind)
 			}
 
 			indexFields := proto.GetExtension(pbMsg.Field[j].Options, ext.IndexFields).(string)
@@ -182,24 +180,24 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 			})
 
 			indexShorten := f.GoName
-			switch indexTypeValueDesc.Name() {
+			switch indexKind {
 			case indexTypeHashUnique:
-				indexShorten = indexTypeHashUnique + strings.TrimPrefix(indexShorten, indexTypeHashUnique)
+				indexShorten = string(indexTypeHashUnique) + strings.TrimPrefix(indexShorten, string(indexTypeHashUnique))
 			case indexTypeSortedUnique:
-				indexShorten = indexTypeSortedUnique + strings.TrimPrefix(indexShorten, indexTypeSortedUnique)
+				indexShorten = string(indexTypeSortedUnique) + strings.TrimPrefix(indexShorten, string(indexTypeSortedUnique))
 			case indexTypeHash:
-				indexShorten = indexTypeHash + strings.TrimPrefix(indexShorten, indexTypeHash)
+				indexShorten = string(indexTypeHash) + strings.TrimPrefix(indexShorten, string(indexTypeHash))
 			case indexTypeSorted:
-				indexShorten = indexTypeSorted + strings.TrimPrefix(indexShorten, indexTypeSorted)
+				indexShorten = string(indexTypeSorted) + strings.TrimPrefix(indexShorten, string(indexTypeSorted))
 			}
 
-			if !isUniqueIndexType(string(indexTypeValueDesc.Name())) {
+			if !isUniqueIndexType(indexKind) {
 				if err := emitNonUniqueLookupMethod(
 					g,
 					m,
 					fieldRows,
 					f,
-					string(indexTypeValueDesc.Name()),
+					indexKind,
 					indexShorten,
 					indexArgs.String(),
 					indexFieldDecls,
@@ -229,7 +227,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 			g.P("}")
 			g.P()
 
-			switch indexTypeValueDesc.Name() {
+			switch indexKind {
 			case indexTypeHashUnique:
 				g.P()
 
@@ -318,7 +316,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 			g.P("}")
 			g.P()
 
-			switch indexTypeValueDesc.Name() {
+			switch indexKind {
 			case indexTypeHashUnique:
 				g.P()
 
@@ -406,8 +404,8 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 	return nil
 }
 
-func isUniqueIndexType(indexType string) bool {
-	switch indexType {
+func isUniqueIndexType(typ indexType) bool {
+	switch typ {
 	case indexTypeHashUnique, indexTypeSortedUnique:
 		return true
 	default:
@@ -420,7 +418,7 @@ func emitNonUniqueLookupMethod(
 	table *protogen.Message,
 	rowsField *protogen.Field,
 	indexField *protogen.Field,
-	indexType string,
+	typ indexType,
 	indexShorten string,
 	indexArgs string,
 	indexFieldDecls generic.UnorderedSliceMap[string, *FieldDecl],
@@ -433,7 +431,7 @@ func emitNonUniqueLookupMethod(
 
 	hashVerification := fieldsToIndex(g, indexFieldDecls, false, "", "return nil")
 
-	switch indexType {
+	switch typ {
 	case indexTypeHash:
 		g.P("bucket, ok := x.", indexField.GoName, "[idx]")
 		g.P("if !ok || bucket == nil {")
@@ -461,7 +459,7 @@ func emitNonUniqueLookupMethod(
 		g.P("offsets := x.", indexField.GoName, ".Offsets[start:end]")
 
 	default:
-		return fmt.Errorf("unsupported non-unique index type %q", indexType)
+		return fmt.Errorf("unsupported non-unique index type %q", typ)
 	}
 	g.P()
 
@@ -600,7 +598,7 @@ func parseExtensions(file *protogen.File) (*Extensions, error) {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoFullName(file, "IndexType_")
+	extName = protoFullName(file, "IndexType")
 	extensions.IndexType, err = protoregistry.GlobalTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)

@@ -307,25 +307,25 @@ func (f *Field) ProtobufMeta() string {
 			if sb.Len() > 0 {
 				sb.WriteString(", ")
 			}
-			sb.WriteString(fmt.Sprintf("(%s.HashIndex) = %d", viper.GetString("pb_package"), tag))
+			sb.WriteString(fmt.Sprintf("(%s.HashIndexTag) = %d", viper.GetString("pb_package"), tag))
 		}
 		for _, tag := range f.Meta.SortedIndex {
 			if sb.Len() > 0 {
 				sb.WriteString(", ")
 			}
-			sb.WriteString(fmt.Sprintf("(%s.SortedIndex_) = %d", viper.GetString("pb_package"), tag))
+			sb.WriteString(fmt.Sprintf("(%s.SortedIndexTag) = %d", viper.GetString("pb_package"), tag))
 		}
 		for _, tag := range f.Meta.HashUniqueIndex {
 			if sb.Len() > 0 {
 				sb.WriteString(", ")
 			}
-			sb.WriteString(fmt.Sprintf("(%s.HashUniqueIndex) = %d", viper.GetString("pb_package"), tag))
+			sb.WriteString(fmt.Sprintf("(%s.HashUniqueIndexTag) = %d", viper.GetString("pb_package"), tag))
 		}
 		for _, tag := range f.Meta.SortedUniqueIndex {
 			if sb.Len() > 0 {
 				sb.WriteString(", ")
 			}
-			sb.WriteString(fmt.Sprintf("(%s.SortedUniqueIndex_) = %d", viper.GetString("pb_package"), tag))
+			sb.WriteString(fmt.Sprintf("(%s.SortedUniqueIndexTag) = %d", viper.GetString("pb_package"), tag))
 		}
 	}
 

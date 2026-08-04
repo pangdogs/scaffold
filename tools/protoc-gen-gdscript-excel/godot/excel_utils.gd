@@ -183,6 +183,22 @@ static func binary_search_u64(items: Array[int], value: int) -> int:
 			return mid
 	return -1
 
+# Performs a binary search over packed unsigned 64-bit values and returns the matching position.
+static func binary_search_u64_packed(items: PackedInt64Array, value: int) -> int:
+	var low := 0
+	var high := items.size() - 1
+	while low <= high:
+		@warning_ignore("integer_division")
+		var mid := (low + high) / 2
+		var cmp := _compare_u64(items[mid], value)
+		if cmp < 0:
+			low = mid + 1
+		elif cmp > 0:
+			high = mid - 1
+		else:
+			return mid
+	return -1
+
 # Returns the IEEE 754 bit pattern of a 32-bit float.
 static func _float32_bits(value: float) -> int:
 	var buffer := PackedByteArray()

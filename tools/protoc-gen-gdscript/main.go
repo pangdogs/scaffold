@@ -46,7 +46,17 @@ type GeneratorConfig struct {
 	ClassName          bool
 }
 
-const gapVariantRegisterMethod = "_register_gap_variant_types"
+type gdscriptIndexArray string
+
+const (
+	gdscriptIndexArrayArray       gdscriptIndexArray = "array"
+	gdscriptIndexArrayPackedInt64 gdscriptIndexArray = "packed_int64"
+)
+
+const (
+	gapVariantRegisterMethod     = "_register_gap_variant_types"
+	gdscriptIndexArrayOptionName = "GDScriptIndexArray"
+)
 
 var config GeneratorConfig
 
@@ -424,10 +434,14 @@ func emitSerializeField(g *protogen.GeneratedFile, file *protogen.File, field *p
 	}
 	if field.Desc.IsList() {
 		if isPackedField(field) {
+			payloadSizer := "sizeof_array_payload"
+			if usesPackedInt64Array(field) {
+				payloadSizer = "sizeof_packed_int64_array_payload"
+			}
 			g.P("\t\tif !", name, ".is_empty():")
-			g.P("\t\t\tif !ProtoUtils.encode_tag(pb_stream, ", fieldNumber, ", ", fieldType, "):")
+			g.P("\t\t\tif !ProtoUtils.encode_varint(pb_stream, ", packedTagLiteral(fieldNumber), "):")
 			g.P("\t\t\t\treturn false")
-			g.P("\t\t\tvar pb_data_size := ProtoUtils.sizeof_array_payload(", name, ", func(pb_value): return ", scalarSizeExpression("pb_value", field, file, importAliases), ")")
+			g.P("\t\t\tvar pb_data_size := ProtoUtils.", payloadSizer, "(", name, ", func(pb_value): return ", scalarSizeExpression("pb_value", field, file, importAliases), ")")
 			g.P("\t\t\tif !ProtoUtils.encode_varint(pb_stream, pb_data_size):")
 			g.P("\t\t\t\treturn false")
 			g.P("\t\t\tfor pb_value in ", name, ":")
@@ -804,6 +818,18 @@ func emitFromDictField(g *protogen.GeneratedFile, file *protogen.File, field *pr
 	if field.Desc.IsList() {
 		g.P("\t\t\tif !(", fieldValueName, " is Array):")
 		g.P("\t\t\t\treturn false")
+		if usesPackedInt64Array(field) {
+			g.P("\t\t\t", name, " = PackedInt64Array()")
+			g.P("\t\t\t", name, ".resize(", fieldValueName, ".size())")
+			g.P("\t\t\tfor pb_index in range(", fieldValueName, ".size()):")
+			g.P("\t\t\t\tvar pb_value = ", fieldValueName, "[pb_index]")
+			valueExpr, err := jsonFromDictValueExpression("pb_value", field, file, importAliases)
+			if err != nil {
+				return err
+			}
+			g.P("\t\t\t\t", name, "[pb_index] = ", valueExpr)
+			return nil
+		}
 		g.P("\t\t\t", name, " = []")
 		g.P("\t\t\tfor pb_value in ", fieldValueName, ":")
 		if field.Message != nil && !field.Desc.IsMap() {
@@ -896,7 +922,11 @@ func emitSizeField(g *protogen.GeneratedFile, file *protogen.File, field *protog
 	}
 	if field.Desc.IsList() {
 		if isPackedField(field) {
-			g.P("\t\tpb_msg_size += ProtoUtils.sizeof_packed_array(", name, ", ", tagSizeLiteral(fieldNumber, fieldTypeConst(field)), ", func(pb_value): return ", scalarSizeExpression("pb_value", field, file, importAliases), ")")
+			sizeHelper := "sizeof_packed_array"
+			if usesPackedInt64Array(field) {
+				sizeHelper = "sizeof_packed_int64_array"
+			}
+			g.P("\t\tpb_msg_size += ProtoUtils.", sizeHelper, "(", name, ", ", packedTagSizeLiteral(fieldNumber), ", func(pb_value): return ", scalarSizeExpression("pb_value", field, file, importAliases), ")")
 			return nil
 		}
 		g.P("\t\tpb_msg_size += ProtoUtils.sizeof_array(", name, ", ", tagSizeLiteral(fieldNumber, fieldTypeConst(field)), ", func(pb_value): return ", valueSizeExpression("pb_value", field, file, importAliases), ")")
@@ -984,7 +1014,11 @@ func emitHashToField(g *protogen.GeneratedFile, file *protogen.File, field *prot
 		if err != nil {
 			return err
 		}
-		g.P("\t\tProtoUtils.hash_array(pb_hasher, ", name, ", func(pb_value): ", valueHasher, ")")
+		hashHelper := "hash_array"
+		if usesPackedInt64Array(field) {
+			hashHelper = "hash_packed_int64_array"
+		}
+		g.P("\t\tProtoUtils.", hashHelper, "(pb_hasher, ", name, ", func(pb_value): ", valueHasher, ")")
 		return nil
 	}
 	callExpr, err := hashCallExpression("pb_hasher", name, file, field, importAliases)
@@ -1024,6 +1058,11 @@ func emitEqualsField(g *protogen.GeneratedFile, file *protogen.File, field *prot
 		return nil
 	}
 	if field.Desc.IsList() {
+		if usesPackedInt64Array(field) {
+			g.P("\t\tif !ProtoUtils.equal_packed_int64_array(", name, ", pb_other_msg.", name, "):")
+			g.P("\t\t\treturn false")
+			return nil
+		}
 		valueEqualExpr, err := equalCallExpression("pb_a", "pb_b", field, file, importAliases)
 		if err != nil {
 			return err
@@ -1108,6 +1147,9 @@ func fieldTypeExpression(file *protogen.File, field *protogen.Field, importAlias
 		return "Dictionary[" + keyType + ", " + valueType + "]", nil
 	}
 	if field.Desc.IsList() {
+		if usesPackedInt64Array(field) {
+			return "PackedInt64Array", nil
+		}
 		itemType, err := fieldSingularTypeExpression(file, field, importAliases)
 		if err != nil {
 			return "", err
@@ -1152,6 +1194,9 @@ func fieldDefaultValueExpression(file *protogen.File, field *protogen.Field, imp
 		return "{}", nil
 	}
 	if field.Desc.IsList() {
+		if usesPackedInt64Array(field) {
+			return "PackedInt64Array()", nil
+		}
 		return "[]", nil
 	}
 	if field.Enum != nil {
@@ -1188,7 +1233,7 @@ func enumAliasHelperNames(enum *protogen.Enum) (string, string) {
 
 func enumValueAliases(enum *protogen.Enum) []string {
 	aliases := make([]string, len(enum.Values))
-	ext := findEnumValueAliasExtension(enum.Desc.ParentFile())
+	ext := findOptionExtension(enum.Desc.ParentFile(), "EnumValueAlias", "google.protobuf.EnumValueOptions")
 	if ext == nil {
 		return aliases
 	}
@@ -1210,7 +1255,59 @@ func enumValueAliases(enum *protogen.Enum) []string {
 	return aliases
 }
 
-func findEnumValueAliasExtension(file protoreflect.FileDescriptor) protoreflect.ExtensionType {
+func usesPackedInt64Array(field *protogen.Field) bool {
+	if !isPackedInt64ArrayCompatible(field) {
+		return false
+	}
+
+	indexArrayExt := findOptionExtension(field.Desc.ParentFile(), gdscriptIndexArrayOptionName, "google.protobuf.MessageOptions")
+	return gdscriptIndexArray(stringMessageOption(field.Desc.ContainingMessage().Options(), indexArrayExt)) == gdscriptIndexArrayPackedInt64
+}
+
+func isPackedInt64ArrayCompatible(field *protogen.Field) bool {
+	if !field.Desc.IsList() || field.Desc.IsMap() {
+		return false
+	}
+	switch field.Desc.Kind() {
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind,
+		protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind,
+		protoreflect.Uint32Kind, protoreflect.Fixed32Kind,
+		protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+		return true
+	default:
+		return false
+	}
+}
+
+func stringMessageOption(options protoreflect.ProtoMessage, ext protoreflect.ExtensionType) string {
+	if options == nil || ext == nil {
+		return ""
+	}
+	if proto.HasExtension(options, ext) {
+		value, _ := proto.GetExtension(options, ext).(string)
+		return value
+	}
+
+	data := options.ProtoReflect().GetUnknown()
+	if len(data) <= 0 {
+		return ""
+	}
+	types := &protoregistry.Types{}
+	if err := types.RegisterExtension(ext); err != nil {
+		return ""
+	}
+	decoded := dynamicpb.NewMessage(ext.TypeDescriptor().ContainingMessage())
+	if err := (proto.UnmarshalOptions{Resolver: types}).Unmarshal(data, decoded); err != nil {
+		return ""
+	}
+	if !proto.HasExtension(decoded, ext) {
+		return ""
+	}
+	value, _ := proto.GetExtension(decoded, ext).(string)
+	return value
+}
+
+func findOptionExtension(file protoreflect.FileDescriptor, name protoreflect.Name, optionsName protoreflect.FullName) protoreflect.ExtensionType {
 	files := []protoreflect.FileDescriptor{file}
 	for i := 0; i < file.Imports().Len(); i++ {
 		files = append(files, file.Imports().Get(i).FileDescriptor)
@@ -1218,7 +1315,7 @@ func findEnumValueAliasExtension(file protoreflect.FileDescriptor) protoreflect.
 	for _, candidate := range files {
 		for i := 0; i < candidate.Extensions().Len(); i++ {
 			ext := candidate.Extensions().Get(i)
-			if ext.Name() == "EnumValueAlias" && ext.ContainingMessage().FullName() == "google.protobuf.EnumValueOptions" {
+			if ext.Name() == name && ext.ContainingMessage().FullName() == optionsName {
 				return dynamicpb.NewExtensionType(ext)
 			}
 		}
@@ -1774,6 +1871,14 @@ func tagSizeLiteral(fieldNumber int, fieldType string) string {
 		wireType = 0
 	}
 	return strconv.Itoa(varintSize((fieldNumber << 3) | wireType))
+}
+
+func packedTagSizeLiteral(fieldNumber int) string {
+	return strconv.Itoa(varintSize((fieldNumber << 3) | 2))
+}
+
+func packedTagLiteral(fieldNumber int) string {
+	return strconv.Itoa((fieldNumber << 3) | 2)
 }
 
 func varintSize(value int) int {

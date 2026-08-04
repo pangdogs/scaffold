@@ -302,6 +302,15 @@ static func sizeof_array_payload(values: Array, value_sizer: Callable) -> int:
 		total += int(value_sizer.call(value))
 	return total
 
+# Returns the encoded payload size of a packed 64-bit integer array.
+static func sizeof_packed_int64_array_payload(values: PackedInt64Array, value_sizer: Callable) -> int:
+	if values.is_empty() or !value_sizer.is_valid():
+		return 0
+	var total := 0
+	for value in values:
+		total += int(value_sizer.call(value))
+	return total
+
 # Returns the encoded field size of a non-packed repeated field.
 static func sizeof_array(values: Array, tag_size: int, value_sizer: Callable) -> int:
 	if values.is_empty() or !value_sizer.is_valid():
@@ -316,6 +325,13 @@ static func sizeof_packed_array(values: Array, tag_size: int, value_sizer: Calla
 	if values.is_empty() or !value_sizer.is_valid():
 		return 0
 	var payload_size := sizeof_array_payload(values, value_sizer)
+	return tag_size + sizeof_varint(payload_size) + payload_size
+
+# Returns the encoded field size of a packed repeated field stored in a PackedInt64Array.
+static func sizeof_packed_int64_array(values: PackedInt64Array, tag_size: int, value_sizer: Callable) -> int:
+	if values.is_empty() or !value_sizer.is_valid():
+		return 0
+	var payload_size := sizeof_packed_int64_array_payload(values, value_sizer)
 	return tag_size + sizeof_varint(payload_size) + payload_size
 
 # Returns the encoded payload size of a single dictionary entry.
@@ -450,6 +466,15 @@ static func hash_array(hasher: ProtoHasher, values: Array, value_hasher: Callabl
 	for value in values:
 		value_hasher.call(value)
 
+# Hashes a packed 64-bit integer array in declaration order with an element-count prefix.
+static func hash_packed_int64_array(hasher: ProtoHasher, values: PackedInt64Array, value_hasher: Callable) -> void:
+	hasher.write_byte(HASH_TAG_ARRAY)
+	hasher.write_uint64(values.size())
+	if values.is_empty() or !value_hasher.is_valid():
+		return
+	for value in values:
+		value_hasher.call(value)
+
 # Hashes a dictionary in sorted-key order with an entry-count prefix.
 static func hash_dictionary(
 	hasher: ProtoHasher,
@@ -499,6 +524,10 @@ static func equal_array(a: Array, b: Array, value_equal: Callable) -> bool:
 		if !bool(value_equal.call(a[i], b[i])):
 			return false
 	return true
+
+# Compares two packed 64-bit integer arrays using Godot's native implementation.
+static func equal_packed_int64_array(a: PackedInt64Array, b: PackedInt64Array) -> bool:
+	return a == b
 
 # Compares two dictionaries by key membership and value equality.
 static func equal_dictionary(a: Dictionary, b: Dictionary, value_equal: Callable) -> bool:

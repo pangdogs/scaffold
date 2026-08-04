@@ -164,27 +164,17 @@ func genProtoMessage(file *excelize.File) proto.Message {
 						log.Panicf("parse proto type %q failed, %s", tableName, err)
 					}
 
-					indexTypeName := protoreflect.FullName(fmt.Sprintf("%s.IndexType.Enum", viper.GetString("pb_package")))
-					indexType, err := pbTypes.FindEnumByName(indexTypeName)
-					if err != nil {
-						log.Panicf("parse proto type %q failed, %s", indexTypeName, err)
-					}
-
 					for j := range tableType.Descriptor().Fields().Len() {
 						field := tableType.Descriptor().Fields().Get(j)
 
-						indexTypeValue, ok := proto.GetExtension(field.Options(), extensions.IndexType).(protoreflect.EnumNumber)
-						if !ok || indexTypeValue <= 0 {
+						indexTypeValue, ok := proto.GetExtension(field.Options(), extensions.IndexType).(string)
+						if !ok || indexTypeValue == "" {
 							continue
 						}
+						indexKind := indexType(indexTypeValue)
 
 						indexFields := proto.GetExtension(field.Options(), extensions.IndexFields).(string)
 						if indexFields == "" {
-							continue
-						}
-
-						indexTypeValueDesc := indexType.Descriptor().Values().ByNumber(indexTypeValue)
-						if indexTypeValueDesc == nil {
 							continue
 						}
 
@@ -197,15 +187,17 @@ func genProtoMessage(file *excelize.File) proto.Message {
 							fieldDescs = append(fieldDescs, fieldDesc)
 						}
 
-						switch indexTypeValueDesc.Name() {
-						case "HashUniqueIndex":
+						switch indexKind {
+						case indexTypeHashUnique:
 							tableHashUniqueIndexes.Add(string(field.Name()), fieldDescs)
-						case "SortedUniqueIndex":
+						case indexTypeSortedUnique:
 							tableSortedUniqueIndexes.Add(string(field.Name()), fieldDescs)
-						case "HashIndex":
+						case indexTypeHash:
 							tableHashIndexes.Add(string(field.Name()), fieldDescs)
-						case "SortedIndex":
+						case indexTypeSorted:
 							tableSortedIndexes.Add(string(field.Name()), fieldDescs)
+						default:
+							log.Panicf("parse proto field %q failed, unsupported index type %q", field.FullName(), indexKind)
 						}
 					}
 
@@ -1141,7 +1133,7 @@ func parseStructValue(value string) (*yaml.Node, error) {
 type Extensions struct {
 	IsColumns, IsTable, IsEnum,
 	Separator, FieldAlias, Scope, IndexType, IndexFields,
-	HashUniqueIndex, SortedUniqueIndex, HashIndex, SortedIndex,
+	HashUniqueIndexTag, SortedUniqueIndexTag, HashIndexTag, SortedIndexTag,
 	EnumValueAlias protoreflect.ExtensionType
 }
 
@@ -1185,7 +1177,7 @@ func parseExtensions(pbTypes *protoregistry.Types) (*Extensions, error) {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.IndexType_", viper.GetString("pb_package")))
+	extName = protoreflect.FullName(fmt.Sprintf("%s.IndexType", viper.GetString("pb_package")))
 	extensions.IndexType, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
@@ -1197,26 +1189,26 @@ func parseExtensions(pbTypes *protoregistry.Types) (*Extensions, error) {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.HashUniqueIndex", viper.GetString("pb_package")))
-	extensions.HashUniqueIndex, err = pbTypes.FindExtensionByName(extName)
+	extName = protoreflect.FullName(fmt.Sprintf("%s.HashUniqueIndexTag", viper.GetString("pb_package")))
+	extensions.HashUniqueIndexTag, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.SortedUniqueIndex_", viper.GetString("pb_package")))
-	extensions.SortedUniqueIndex, err = pbTypes.FindExtensionByName(extName)
+	extName = protoreflect.FullName(fmt.Sprintf("%s.SortedUniqueIndexTag", viper.GetString("pb_package")))
+	extensions.SortedUniqueIndexTag, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.HashIndex", viper.GetString("pb_package")))
-	extensions.HashIndex, err = pbTypes.FindExtensionByName(extName)
+	extName = protoreflect.FullName(fmt.Sprintf("%s.HashIndexTag", viper.GetString("pb_package")))
+	extensions.HashIndexTag, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
-	extName = protoreflect.FullName(fmt.Sprintf("%s.SortedIndex_", viper.GetString("pb_package")))
-	extensions.SortedIndex, err = pbTypes.FindExtensionByName(extName)
+	extName = protoreflect.FullName(fmt.Sprintf("%s.SortedIndexTag", viper.GetString("pb_package")))
+	extensions.SortedIndexTag, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
@@ -1236,19 +1228,19 @@ func matchTargets(field protoreflect.FieldDescriptor, extensions *Extensions) bo
 		return true
 	}
 
-	if field.Options().ProtoReflect().Get(extensions.HashUniqueIndex.TypeDescriptor()).List().Len() > 0 {
+	if field.Options().ProtoReflect().Get(extensions.HashUniqueIndexTag.TypeDescriptor()).List().Len() > 0 {
 		return true
 	}
 
-	if field.Options().ProtoReflect().Get(extensions.SortedUniqueIndex.TypeDescriptor()).List().Len() > 0 {
+	if field.Options().ProtoReflect().Get(extensions.SortedUniqueIndexTag.TypeDescriptor()).List().Len() > 0 {
 		return true
 	}
 
-	if field.Options().ProtoReflect().Get(extensions.HashIndex.TypeDescriptor()).List().Len() > 0 {
+	if field.Options().ProtoReflect().Get(extensions.HashIndexTag.TypeDescriptor()).List().Len() > 0 {
 		return true
 	}
 
-	if field.Options().ProtoReflect().Get(extensions.SortedIndex.TypeDescriptor()).List().Len() > 0 {
+	if field.Options().ProtoReflect().Get(extensions.SortedIndexTag.TypeDescriptor()).List().Len() > 0 {
 		return true
 	}
 

@@ -37,11 +37,24 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
+type indexType string
+
 const (
-	indexTypeHashUnique   = "HashUniqueIndex"
-	indexTypeSortedUnique = "SortedUniqueIndex"
-	indexTypeHash         = "HashIndex"
-	indexTypeSorted       = "SortedIndex"
+	indexTypeHash         indexType = "HashIndex"
+	indexTypeHashUnique   indexType = "HashUniqueIndex"
+	indexTypeSorted       indexType = "SortedIndex"
+	indexTypeSortedUnique indexType = "SortedUniqueIndex"
+)
+
+type gdscriptIndexArray string
+
+const (
+	gdscriptIndexArrayArray       gdscriptIndexArray = "array"
+	gdscriptIndexArrayPackedInt64 gdscriptIndexArray = "packed_int64"
+)
+
+const (
+	gdscriptIndexArrayOptionName = "GDScriptIndexArray"
 )
 
 type TableDecl struct {
@@ -56,11 +69,12 @@ type TableDecl struct {
 }
 
 type IndexMethodDecl struct {
-	Field            *protogen.Field
-	IndexTypeName    string
-	IndexFields      []*protogen.Field
-	LookupMethodName string
-	Unique           bool
+	Field             *protogen.Field
+	IndexTypeName     indexType
+	IndexFields       []*protogen.Field
+	LookupMethodName  string
+	Unique            bool
+	PackedIndexArrays bool
 }
 
 type ProtoDescriptors interface {
@@ -72,7 +86,8 @@ type ProtoDescriptors interface {
 type Extensions struct {
 	IsTable,
 	IndexType,
-	IndexFields protoreflect.ExtensionType
+	IndexFields,
+	GDScriptIndexArray protoreflect.ExtensionType
 }
 
 type GeneratorConfig struct {
@@ -184,7 +199,7 @@ func parseExtensions(file *protogen.File) (*Extensions, error) {
 	if err != nil {
 		return nil, err
 	}
-	result.IndexType, err = findExtension(file, "IndexType_")
+	result.IndexType, err = findExtension(file, "IndexType")
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +207,7 @@ func parseExtensions(file *protogen.File) (*Extensions, error) {
 	if err != nil {
 		return nil, err
 	}
+	result.GDScriptIndexArray, _ = findExtension(file, gdscriptIndexArrayOptionName)
 
 	return result, nil
 }
@@ -206,11 +222,6 @@ func findExtension(file *protogen.File, name string) (protoreflect.ExtensionType
 }
 
 func collectTables(file *protogen.File, ext *Extensions) ([]TableDecl, error) {
-	indexType, err := findIndexTypeEnum(file)
-	if err != nil {
-		return nil, err
-	}
-
 	var tables []TableDecl
 	for i, msg := range file.Messages {
 		pbMsg := file.Proto.MessageType[i]
@@ -267,7 +278,7 @@ func collectTables(file *protogen.File, ext *Extensions) ([]TableDecl, error) {
 			ChunkCountField:    chunkCountField,
 		}
 
-		indexMethods, err := collectIndexMethods(msg, pbMsg, table.RowsMessage, ext, indexType)
+		indexMethods, err := collectIndexMethods(msg, pbMsg, table.RowsMessage, ext)
 		if err != nil {
 			return nil, err
 		}
@@ -288,15 +299,6 @@ func fieldByName(fields []*protogen.Field, name protoreflect.Name) *protogen.Fie
 	return nil
 }
 
-func findIndexTypeEnum(file *protogen.File) (protoreflect.EnumType, error) {
-	indexTypeName := protoFullName(file, "IndexType.Enum")
-	indexType, err := protoregistry.GlobalTypes.FindEnumByName(indexTypeName)
-	if err != nil {
-		return nil, fmt.Errorf("find enum %q: %w", indexTypeName, err)
-	}
-	return indexType, nil
-}
-
 func protoFullName(file *protogen.File, suffix string) protoreflect.FullName {
 	if pkg := string(file.Desc.Package()); pkg != "" {
 		return protoreflect.FullName(pkg + "." + suffix)
@@ -304,11 +306,11 @@ func protoFullName(file *protogen.File, suffix string) protoreflect.FullName {
 	return protoreflect.FullName(suffix)
 }
 
-func collectIndexMethods(msg *protogen.Message, pbMsg *descriptorpb.DescriptorProto, rowsMessage *protogen.Message, ext *Extensions, indexType protoreflect.EnumType) ([]IndexMethodDecl, error) {
+func collectIndexMethods(msg *protogen.Message, pbMsg *descriptorpb.DescriptorProto, rowsMessage *protogen.Message, ext *Extensions) ([]IndexMethodDecl, error) {
 	var methods []IndexMethodDecl
 
 	for fieldIndex, field := range msg.Fields {
-		indexTypeName, err := resolveIndexTypeName(pbMsg.Field[fieldIndex], ext, indexType)
+		indexTypeName, err := resolveIndexTypeName(pbMsg.Field[fieldIndex], ext)
 		if err != nil {
 			return nil, err
 		}
@@ -328,29 +330,31 @@ func collectIndexMethods(msg *protogen.Message, pbMsg *descriptorpb.DescriptorPr
 		}
 
 		methods = append(methods, IndexMethodDecl{
-			Field:            field,
-			IndexTypeName:    indexTypeName,
-			IndexFields:      indexFields,
-			LookupMethodName: "lookup_by_" + methodSuffix,
-			Unique:           isUniqueIndexType(indexTypeName),
+			Field:             field,
+			IndexTypeName:     indexTypeName,
+			IndexFields:       indexFields,
+			LookupMethodName:  "lookup_by_" + methodSuffix,
+			Unique:            isUniqueIndexType(indexTypeName),
+			PackedIndexArrays: indexUsesPackedInt64Array(field, ext.GDScriptIndexArray),
 		})
 	}
 
 	return methods, nil
 }
 
-func resolveIndexTypeName(field *descriptorpb.FieldDescriptorProto, ext *Extensions, indexType protoreflect.EnumType) (string, error) {
-	indexTypeValue, ok := proto.GetExtension(field.Options, ext.IndexType).(protoreflect.EnumNumber)
-	if !ok || indexTypeValue <= 0 {
+func resolveIndexTypeName(field *descriptorpb.FieldDescriptorProto, ext *Extensions) (indexType, error) {
+	indexTypeValue, ok := proto.GetExtension(field.Options, ext.IndexType).(string)
+	if !ok || indexTypeValue == "" {
 		return "", nil
 	}
+	indexTypeName := indexType(indexTypeValue)
 
-	indexTypeValueDesc := indexType.Descriptor().Values().ByNumber(indexTypeValue)
-	if indexTypeValueDesc == nil {
-		return "", fmt.Errorf("field %q has unknown index type value %d", field.GetName(), indexTypeValue)
+	switch indexTypeName {
+	case indexTypeHashUnique, indexTypeSortedUnique, indexTypeHash, indexTypeSorted:
+		return indexTypeName, nil
+	default:
+		return "", fmt.Errorf("field %q has unsupported index type %q", field.GetName(), indexTypeName)
 	}
-
-	return string(indexTypeValueDesc.Name()), nil
 }
 
 func resolveIndexFields(rowsMessage *protogen.Message, indexFieldsValue string) ([]*protogen.Field, error) {
@@ -376,7 +380,7 @@ func resolveIndexFields(rowsMessage *protogen.Message, indexFieldsValue string) 
 	return fields, nil
 }
 
-func buildIndexMethodSuffix(indexTypeName string, indexFields []*protogen.Field) (string, error) {
+func buildIndexMethodSuffix(indexTypeName indexType, indexFields []*protogen.Field) (string, error) {
 	parts := make([]string, 0, len(indexFields))
 	for _, indexField := range indexFields {
 		name := snakeIdentifier(string(indexField.Desc.Name()))
@@ -404,13 +408,57 @@ func buildIndexMethodSuffix(indexTypeName string, indexFields []*protogen.Field)
 	}
 }
 
-func isUniqueIndexType(indexTypeName string) bool {
+func isUniqueIndexType(indexTypeName indexType) bool {
 	switch indexTypeName {
 	case indexTypeHashUnique, indexTypeSortedUnique:
 		return true
 	default:
 		return false
 	}
+}
+
+func indexUsesPackedInt64Array(field *protogen.Field, ext protoreflect.ExtensionType) bool {
+	if field.Message == nil {
+		return false
+	}
+
+	indexMessage := field.Message
+	if field.Desc.IsMap() {
+		if len(indexMessage.Fields) < 2 || indexMessage.Fields[1].Message == nil {
+			return false
+		}
+		indexMessage = indexMessage.Fields[1].Message
+	}
+
+	return gdscriptIndexArray(stringMessageOption(indexMessage.Desc.Options(), ext)) == gdscriptIndexArrayPackedInt64
+}
+
+func stringMessageOption(options protoreflect.ProtoMessage, ext protoreflect.ExtensionType) string {
+	if options == nil || ext == nil {
+		return ""
+	}
+	if proto.HasExtension(options, ext) {
+		value, _ := proto.GetExtension(options, ext).(string)
+		return value
+	}
+
+	data := options.ProtoReflect().GetUnknown()
+	if len(data) <= 0 {
+		return ""
+	}
+	types := &protoregistry.Types{}
+	if err := types.RegisterExtension(ext); err != nil {
+		return ""
+	}
+	decoded := dynamicpb.NewMessage(ext.TypeDescriptor().ContainingMessage())
+	if err := (proto.UnmarshalOptions{Resolver: types}).Unmarshal(data, decoded); err != nil {
+		return ""
+	}
+	if !proto.HasExtension(decoded, ext) {
+		return ""
+	}
+	value, _ := proto.GetExtension(decoded, ext).(string)
+	return value
 }
 
 func firstUniqueIndexMethod(methods []IndexMethodDecl) (IndexMethodDecl, bool) {
@@ -791,7 +839,13 @@ func emitChunkedAsyncNonUniqueLookupMethod(g *protogen.GeneratedFile, method Ind
 }
 
 func emitNonUniqueOffsets(g *protogen.GeneratedFile, method IndexMethodDecl, indexFieldName string) error {
-	g.P("\t\tvar offsets: Array[int] = []")
+	offsetsType := "Array[int]"
+	offsetsDefault := "[]"
+	if method.PackedIndexArrays {
+		offsetsType = "PackedInt64Array"
+		offsetsDefault = "PackedInt64Array()"
+	}
+	g.P("\t\tvar offsets: ", offsetsType, " = ", offsetsDefault)
 	g.P("\t\tvar offset_begin := 0")
 	g.P("\t\tvar offset_end := 0")
 
@@ -808,7 +862,7 @@ func emitNonUniqueOffsets(g *protogen.GeneratedFile, method IndexMethodDecl, ind
 		g.P("\t\t\treturn rows")
 		g.P("\t\tif _msg.", indexFieldName, ".Starts.size() != _msg.", indexFieldName, ".Values.size() + 1:")
 		g.P("\t\t\treturn rows")
-		g.P("\t\tvar idx_offset := ExcelUtils.binary_search_u64(_msg.", indexFieldName, ".Values, idx)")
+		g.P("\t\tvar idx_offset := ExcelUtils.", binarySearchU64Method(method), "(_msg.", indexFieldName, ".Values, idx)")
 		g.P("\t\tif idx_offset < 0:")
 		g.P("\t\t\treturn rows")
 		g.P("\t\toffsets = _msg.", indexFieldName, ".Offsets")
@@ -929,7 +983,7 @@ func emitLookupOffset(g *protogen.GeneratedFile, method IndexMethodDecl, indexFi
 	case indexTypeSortedUnique:
 		g.P("\t\tif _msg.", indexFieldName, " == null:")
 		g.P("\t\t\treturn null")
-		g.P("\t\tvar idx_offset := ExcelUtils.binary_search_u64(_msg.", indexFieldName, ".Values, idx)")
+		g.P("\t\tvar idx_offset := ExcelUtils.", binarySearchU64Method(method), "(_msg.", indexFieldName, ".Values, idx)")
 		g.P("\t\tif idx_offset < 0 or idx_offset >= _msg.", indexFieldName, ".Offsets.size():")
 		g.P("\t\t\treturn null")
 		g.P("\t\tvar offset := _msg.", indexFieldName, ".Offsets[idx_offset]")
@@ -937,6 +991,13 @@ func emitLookupOffset(g *protogen.GeneratedFile, method IndexMethodDecl, indexFi
 		return fmt.Errorf("unsupported index type %q", method.IndexTypeName)
 	}
 	return nil
+}
+
+func binarySearchU64Method(method IndexMethodDecl) string {
+	if method.PackedIndexArrays {
+		return "binary_search_u64_packed"
+	}
+	return "binary_search_u64"
 }
 
 func emitIndexHashMethod(g *protogen.GeneratedFile, method IndexMethodDecl, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {

@@ -111,6 +111,7 @@ excelc proto \
   --pb_options=[go_package=./excel] \
   --pb_imports=Consts.proto \
   --pb_unique_index_as=sorted_unique_index \
+  --gdscript_index_array=packed_int64 \
   --targets=c
 
 # 3. Generate server Go protobuf + Excel lookup code.
@@ -164,10 +165,13 @@ excelc data \
 
 `--pb_unique_index_as` controls the representation of `unique_index`, while `--pb_index_as` independently controls `index`, which allows one key to reference multiple rows. Different values produce different index message shapes and therefore different generated lookup code and runtime memory profiles. Servers can favor hash indexes for lookup speed, while memory-constrained clients can use sorted indexes to avoid large numbers of map and bucket objects. Generated GDScript wrappers query sorted `Values` with binary search and still work with `*.bin.idx` / `*.bin.chk_*` chunked table data.
 
+`--gdscript_index_array` only controls the GDScript container used by internal integer index vectors. The default, `packed_int64`, generates `Values`, `Starts`, and `Offsets` as `PackedInt64Array` to reduce resident client memory and improve cache locality during sequential access. Use `array` only when compatibility with an older client runtime that expects `Array[int]` is required. This option does not change the Protobuf wire format; generated Go code continues to use ordinary integer slices, and server data and lookup behavior are unaffected. When using `packed_int64`, update the runtimes from both `tools/protoc-gen-gdscript/godot` and `tools/protoc-gen-gdscript-excel/godot` as well.
+
 - `hash_unique_index` emits hash-based unique indexes. Generated lookup code can use these indexes for direct key-oriented queries, which is usually a good fit on the server where table data often stays resident in memory.
 - `sorted_unique_index` emits unique indexes as sorted arrays. Queries become binary search instead of direct hash lookup, but it usually has lower memory overhead than hash-based indexes, which makes it a better fit for memory-constrained clients.
 - `hash_index` emits non-unique indexes as `key -> offsets` buckets. Equality lookup is fast, but every distinct key adds map, bucket, and list overhead.
 - `sorted_index` stores non-unique indexes in flat `Values + Starts + Offsets` arrays. Lookup binary-searches `Values` and uses `Starts` to select the matching contiguous slice within `Offsets`, making this the default for client devices.
+- `--gdscript_index_array=packed_int64|array` selects the GDScript container for integer index vectors and defaults to `packed_int64`. Rerun `excelc proto` and regenerate both `*.pb.gd` and `*.excel.gd` after changing it.
 - `--binary_chunked` controls how binary table data is written during `excelc data`. When enabled, rows are split into `*.bin.chk_*` chunk files and paired with a `*.bin.idx` index file.
 - `--binary_chunk_size` controls the maximum row count per chunk. The default value is `10000`. It affects the exported binary layout but does not change the generated Protobuf schema.
 
@@ -325,7 +329,7 @@ Resty="*res://addons/resty/resty_client.gd"
 ## Tool Reference
 | Command | Key Options | Notes |
 | --- | --- | --- |
-| `excelc proto` | `--excel_files`, `--excel_dir`, `--pb_out`, `--pb_package`, `--pb_imports`, `--pb_options`, `--pb_unique_index_as`, `--pb_index_as`, `--targets` | Generates table `.proto` files and matching `*.protoset` files from Excel workbooks. Prefer `--excel_files` for explicit inputs. |
+| `excelc proto` | `--excel_files`, `--excel_dir`, `--pb_out`, `--pb_package`, `--pb_imports`, `--pb_options`, `--pb_unique_index_as`, `--pb_index_as`, `--gdscript_index_array`, `--targets` | Generates table `.proto` files and matching `*.protoset` files from Excel workbooks. Prefer `--excel_files` for explicit inputs. |
 | `excelc code` | `--pb_dir`, `--pb_package`, `--go_out`, `--gdscript_out`, `--gdscript_class_name`, `--gdscript_default_data_dir`, `--gdscript_autoload` | Generates Go or GDScript table access code from Excel proto files. |
 | `excelc data` | `--excel_files`, `--excel_dir`, `--pb_dir`, `--pb_package`, `--targets`, `--binary_out`, `--binary_chunked`, `--binary_chunk_size`, `--json_out`, `--json_multiline`, `--json_indent` | Exports binary or JSON table data from Excel workbooks using the generated proto descriptors. |
 | `propc` | `--decl_file` | Reads a property declaration file and writes the sibling `*.sync.gen.go`. The default comes from `GOFILE`, which makes it convenient for `go generate`. |

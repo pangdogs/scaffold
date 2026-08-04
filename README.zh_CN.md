@@ -111,6 +111,7 @@ excelc proto \
   --pb_options=[go_package=./excel] \
   --pb_imports=Consts.proto \
   --pb_unique_index_as=sorted_unique_index \
+  --gdscript_index_array=packed_int64 \
   --targets=c
 
 # 3. 生成服务端 Go protobuf 与 Excel 查询代码。
@@ -164,10 +165,13 @@ excelc data \
 
 `--pb_unique_index_as` 用来控制 `unique_index` 的存储结构，`--pb_index_as` 则独立控制允许同键多行的 `index`。不同取值会生成不同的索引消息结构，并进一步影响生成出来的查询代码以及表数据加载后的运行时内存特征。服务端通常可以使用哈希索引追求查询速度；内存受限的客户端可以使用有序索引降低 map 和 bucket 对象开销。生成的 GDScript Excel 包装器会对有序索引的 `Values` 做二分查找，并且仍可配合 `*.bin.idx` / `*.bin.chk_*` 读取分块数据。
 
+`--gdscript_index_array` 只控制 GDScript 中索引内部整数向量的容器。默认的 `packed_int64` 会把 `Values`、`Starts` 和 `Offsets` 生成为 `PackedInt64Array`，减少终端侧常驻内存并改善连续访问的缓存局部性；`array` 可用于兼容仍依赖 `Array[int]` 的旧客户端运行库。该选项不改变 Protobuf wire 格式，Go 生成代码仍使用普通整数切片，服务端数据与查询行为不受影响。使用 `packed_int64` 时也需要同步更新 `tools/protoc-gen-gdscript/godot` 和 `tools/protoc-gen-gdscript-excel/godot` 运行库。
+
 - `hash_unique_index` 会把唯一索引生成为哈希索引结构。生成的查询代码可以基于它做按 key 的查找，对服务端这类常驻内存的数据访问场景通常更合适。
 - `sorted_unique_index` 会把唯一索引生成为有序数组。查询时改为二分查找，虽然不是直接哈希访问，但通常比哈希索引占用更少内存，更适合内存受限的客户端。
 - `hash_index` 会把非唯一索引生成为 `key -> offsets` bucket；等值查询快，但每个 key 都会产生 map/bucket/list 开销。
 - `sorted_index` 使用扁平的 `Values + Starts + Offsets` 存储非唯一索引。查询先二分 `Values`，再通过 `Starts` 定位 `Offsets` 中对应的连续区间，默认更适合终端设备。
+- `--gdscript_index_array=packed_int64|array` 控制 GDScript 索引整数向量的容器，默认为 `packed_int64`。切换该选项后需要重新运行 `excelc proto`，并同时重新生成 `*.pb.gd` 和 `*.excel.gd`。
 - `--binary_chunked` 控制 `excelc data` 导出二进制表数据时的写出方式。开启后，表行数据会拆成 `*.bin.chk_*` 分块文件，并配套生成一个 `*.bin.idx` 索引文件。
 - `--binary_chunk_size` 控制每个 chunk 最多包含多少行，默认值是 `10000`。它只影响导出的二进制布局，不会改变生成出来的 Protobuf schema。
 
@@ -325,7 +329,7 @@ Resty="*res://addons/resty/resty_client.gd"
 ## 工具参数参考
 | 命令 | 关键参数 | 说明 |
 | --- | --- | --- |
-| `excelc proto` | `--excel_files`、`--excel_dir`、`--pb_out`、`--pb_package`、`--pb_imports`、`--pb_options`、`--pb_unique_index_as`、`--pb_index_as`、`--targets` | 从 Excel 工作簿生成表结构 `.proto` 与配套 `*.protoset`。`--excel_files` 优先用于显式指定输入文件。 |
+| `excelc proto` | `--excel_files`、`--excel_dir`、`--pb_out`、`--pb_package`、`--pb_imports`、`--pb_options`、`--pb_unique_index_as`、`--pb_index_as`、`--gdscript_index_array`、`--targets` | 从 Excel 工作簿生成表结构 `.proto` 与配套 `*.protoset`。`--excel_files` 优先用于显式指定输入文件。 |
 | `excelc code` | `--pb_dir`、`--pb_package`、`--go_out`、`--gdscript_out`、`--gdscript_class_name`、`--gdscript_default_data_dir`、`--gdscript_autoload` | 基于 Excel proto 生成 Go 或 GDScript 表访问代码。 |
 | `excelc data` | `--excel_files`、`--excel_dir`、`--pb_dir`、`--pb_package`、`--targets`、`--binary_out`、`--binary_chunked`、`--binary_chunk_size`、`--json_out`、`--json_multiline`、`--json_indent` | 基于 Excel proto 导出二进制或 JSON 表数据。 |
 | `propc` | `--decl_file` | 读取属性声明文件并生成相邻的 `*.sync.gen.go`。默认值来自 `GOFILE`，便于配合 `go generate` 使用。 |
