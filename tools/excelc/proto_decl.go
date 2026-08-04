@@ -62,11 +62,23 @@ message IndexConflict {
 	repeated uint32 Offsets = 1;
 }
 
+message IndexOffsets {
+	repeated uint32 Offsets = 1;
+}
+
+message SortedIndex {
+	repeated uint64 Values = 1;
+	repeated uint32 Starts = 2;
+	repeated uint32 Offsets = 3;
+}
+
 message IndexType {
 	enum Enum {
 		None = 0;
 		HashUniqueIndex = 1;
 		SortedUniqueIndex = 2;
+		HashIndex = 3;
+		SortedIndex = 4;
 	}
 }
 
@@ -94,6 +106,8 @@ extend google.protobuf.FieldOptions {
 	optional string IndexFields = {{Add .CustomOptions 205}};
 	repeated int32 HashUniqueIndex = {{Add .CustomOptions 206}};
 	repeated int32 SortedUniqueIndex_ = {{Add .CustomOptions 207}};
+	repeated int32 HashIndex = {{Add .CustomOptions 208}};
+	repeated int32 SortedIndex_ = {{Add .CustomOptions 209}};
 }
 
 extend google.protobuf.EnumValueOptions {
@@ -232,6 +246,7 @@ message {{TableName .ProtoType}} {
 	repeated {{.ProtoType}} Rows = 1;
 	{{- $StructHashUniqueIndexesCount := .StructHashUniqueIndexes.Len -}}
 	{{- $StructSortedUniqueIndexesCount := .StructSortedUniqueIndexes.Len -}}
+	{{- $StructHashIndexesCount := .StructHashIndexes.Len -}}
 	{{- range $i, $kv := .StructHashUniqueIndexes}}
 	map<uint64, uint32> HashUniqueIndex{{$kv.K}} = {{Add $i 2}} [({{$package}}.IndexType_) = HashUniqueIndex, ({{$package}}.IndexFields) = '{{$kv.V}}']; 
 	{{- end}}
@@ -244,7 +259,13 @@ message {{TableName .ProtoType}} {
 	{{- range $i, $kv := .StructSortedUniqueIndexes}}
 	map<uint64, IndexConflict> SortedUniqueIndex{{$kv.K}}Conflict = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount}};
 	{{- end}}
-	ChunkManifest ChunkManifest = {{Add 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}}; 
+	ChunkManifest ChunkManifest = {{Add 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}};
+	{{- range $i, $kv := .StructHashIndexes}}
+	map<uint64, IndexOffsets> HashIndex{{$kv.K}} = {{Add $i 3 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}} [({{$package}}.IndexType_) = HashIndex, ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- end}}
+	{{- range $i, $kv := .StructSortedIndexes}}
+	SortedIndex SortedIndex{{$kv.K}} = {{Add $i 3 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount $StructHashIndexesCount}} [({{$package}}.IndexType_) = SortedIndex, ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- end}}
 }
 {{end}}
 `

@@ -40,6 +40,8 @@ import (
 const (
 	indexTypeHashUnique   = "HashUniqueIndex"
 	indexTypeSortedUnique = "SortedUniqueIndex"
+	indexTypeHash         = "HashIndex"
+	indexTypeSorted       = "SortedIndex"
 )
 
 type TableDecl struct {
@@ -58,6 +60,7 @@ type IndexMethodDecl struct {
 	IndexTypeName    string
 	IndexFields      []*protogen.Field
 	LookupMethodName string
+	Unique           bool
 }
 
 type ProtoDescriptors interface {
@@ -329,6 +332,7 @@ func collectIndexMethods(msg *protogen.Message, pbMsg *descriptorpb.DescriptorPr
 			IndexTypeName:    indexTypeName,
 			IndexFields:      indexFields,
 			LookupMethodName: "lookup_by_" + methodSuffix,
+			Unique:           isUniqueIndexType(indexTypeName),
 		})
 	}
 
@@ -391,9 +395,31 @@ func buildIndexMethodSuffix(indexTypeName string, indexFields []*protogen.Field)
 		return "hash_unique_index_" + suffix, nil
 	case indexTypeSortedUnique:
 		return "sorted_unique_index_" + suffix, nil
+	case indexTypeHash:
+		return "hash_index_" + suffix, nil
+	case indexTypeSorted:
+		return "sorted_index_" + suffix, nil
 	default:
 		return "", fmt.Errorf("unsupported index type %q", indexTypeName)
 	}
+}
+
+func isUniqueIndexType(indexTypeName string) bool {
+	switch indexTypeName {
+	case indexTypeHashUnique, indexTypeSortedUnique:
+		return true
+	default:
+		return false
+	}
+}
+
+func firstUniqueIndexMethod(methods []IndexMethodDecl) (IndexMethodDecl, bool) {
+	for _, method := range methods {
+		if method.Unique {
+			return method, true
+		}
+	}
+	return IndexMethodDecl{}, false
 }
 
 func collectMessageTypeNames(file *protogen.File) map[protoreflect.FullName]string {
@@ -466,8 +492,9 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 	g.P("\t\treturn row_at(offset)")
 	g.P()
 
-	if len(table.IndexMethods) > 0 {
-		if err := emitDefaultLookupMethod(g, table.IndexMethods[0], rowType, protoImportAlias, messageTypeNames); err != nil {
+	defaultMethod, hasDefaultMethod := firstUniqueIndexMethod(table.IndexMethods)
+	if hasDefaultMethod {
+		if err := emitDefaultLookupMethod(g, defaultMethod, rowType, protoImportAlias, messageTypeNames); err != nil {
 			return err
 		}
 	}
@@ -505,8 +532,8 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 		chunkOffsetFieldName,
 		chunkCountFieldName,
 	)
-	if len(table.IndexMethods) > 0 {
-		if err := emitChunkedAsyncDefaultLookupMethod(g, table.IndexMethods[0], rowType, protoImportAlias, messageTypeNames); err != nil {
+	if hasDefaultMethod {
+		if err := emitChunkedAsyncDefaultLookupMethod(g, defaultMethod, rowType, protoImportAlias, messageTypeNames); err != nil {
 			return err
 		}
 	}
@@ -555,6 +582,10 @@ func emitDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, 
 }
 
 func emitLookupMethod(g *protogen.GeneratedFile, table TableDecl, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+	if !method.Unique {
+		return emitNonUniqueLookupMethod(g, method, rowType, protoImportAlias, messageTypeNames)
+	}
+
 	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
 	if err != nil {
 		return err
@@ -607,6 +638,51 @@ func emitLookupMethod(g *protogen.GeneratedFile, table TableDecl, method IndexMe
 	return nil
 }
 
+func emitNonUniqueLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+	if err != nil {
+		return err
+	}
+	argNames := gdscriptArgumentNames(method.IndexFields)
+	indexFieldName := safeIdentifier(method.Field.GoName)
+
+	g.P("\tfunc ", method.LookupMethodName, "(", argList, ") -> Array[", rowType, "]:")
+	g.P("\t\tvar rows: Array[", rowType, "] = []")
+	g.P("\t\tif row_count() <= 0:")
+	g.P("\t\t\treturn rows")
+
+	if len(method.IndexFields) == 1 && supportsDirectIndex(method.IndexFields[0]) {
+		idxExpr, err := directIndexExpression(gdscriptArgumentName(method.IndexFields[0]), method.IndexFields[0])
+		if err != nil {
+			return err
+		}
+		g.P("\t\tvar idx := ", idxExpr)
+	} else {
+		g.P("\t\tvar idx := ", indexHashMethodName(method), "(", argNames, ")")
+	}
+
+	if err := emitNonUniqueOffsets(g, method, indexFieldName); err != nil {
+		return err
+	}
+
+	g.P("\t\tfor offset_index in range(offset_begin, offset_end):")
+	g.P("\t\t\tvar row := row_at(offsets[offset_index])")
+	g.P("\t\t\tif row == null:")
+	g.P("\t\t\t\tcontinue")
+	if requiresHashIndex(method.IndexFields) {
+		g.P("\t\t\tif !", indexMatchMethodName(method), "(row, ", argNames, "):")
+		g.P("\t\t\t\tcontinue")
+	}
+	g.P("\t\t\trows.append(row)")
+	g.P("\t\treturn rows")
+	g.P()
+	g.P("\tfunc ", method.LookupMethodName, "_async(", argList, ") -> Array[", rowType, "]:")
+	emitAsyncYield(g)
+	g.P("\t\treturn ", method.LookupMethodName, "(", argNames, ")")
+	g.P()
+	return nil
+}
+
 func emitChunkedAsyncDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
 	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
 	if err != nil {
@@ -621,6 +697,10 @@ func emitChunkedAsyncDefaultLookupMethod(g *protogen.GeneratedFile, method Index
 }
 
 func emitChunkedAsyncLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+	if !method.Unique {
+		return emitChunkedAsyncNonUniqueLookupMethod(g, method, rowType, protoImportAlias, messageTypeNames)
+	}
+
 	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
 	if err != nil {
 		return err
@@ -666,6 +746,81 @@ func emitChunkedAsyncLookupMethod(g *protogen.GeneratedFile, method IndexMethodD
 	}
 	g.P("\t\treturn row")
 	g.P()
+	return nil
+}
+
+func emitChunkedAsyncNonUniqueLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+	if err != nil {
+		return err
+	}
+	argNames := gdscriptArgumentNames(method.IndexFields)
+	indexFieldName := safeIdentifier(method.Field.GoName)
+
+	g.P("\tfunc ", method.LookupMethodName, "_async(", argList, ") -> Array[", rowType, "]:")
+	g.P("\t\tvar rows: Array[", rowType, "] = []")
+	g.P("\t\tif row_count() <= 0:")
+	g.P("\t\t\treturn rows")
+
+	if len(method.IndexFields) == 1 && supportsDirectIndex(method.IndexFields[0]) {
+		idxExpr, err := directIndexExpression(gdscriptArgumentName(method.IndexFields[0]), method.IndexFields[0])
+		if err != nil {
+			return err
+		}
+		g.P("\t\tvar idx := ", idxExpr)
+	} else {
+		g.P("\t\tvar idx := ", indexHashMethodName(method), "(", argNames, ")")
+	}
+
+	if err := emitNonUniqueOffsets(g, method, indexFieldName); err != nil {
+		return err
+	}
+
+	g.P("\t\tfor offset_index in range(offset_begin, offset_end):")
+	g.P("\t\t\tvar row := await row_at_async(offsets[offset_index])")
+	g.P("\t\t\tif row == null:")
+	g.P("\t\t\t\tcontinue")
+	if requiresHashIndex(method.IndexFields) {
+		g.P("\t\t\tif !", indexMatchMethodName(method), "(row, ", argNames, "):")
+		g.P("\t\t\t\tcontinue")
+	}
+	g.P("\t\t\trows.append(row)")
+	g.P("\t\treturn rows")
+	g.P()
+	return nil
+}
+
+func emitNonUniqueOffsets(g *protogen.GeneratedFile, method IndexMethodDecl, indexFieldName string) error {
+	g.P("\t\tvar offsets: Array[int] = []")
+	g.P("\t\tvar offset_begin := 0")
+	g.P("\t\tvar offset_end := 0")
+
+	switch method.IndexTypeName {
+	case indexTypeHash:
+		g.P("\t\tvar bucket = _msg.", indexFieldName, ".get(idx)")
+		g.P("\t\tif bucket == null:")
+		g.P("\t\t\treturn rows")
+		g.P("\t\toffsets = bucket.Offsets")
+		g.P("\t\toffset_end = offsets.size()")
+
+	case indexTypeSorted:
+		g.P("\t\tif _msg.", indexFieldName, " == null:")
+		g.P("\t\t\treturn rows")
+		g.P("\t\tif _msg.", indexFieldName, ".Starts.size() != _msg.", indexFieldName, ".Values.size() + 1:")
+		g.P("\t\t\treturn rows")
+		g.P("\t\tvar idx_offset := ExcelUtils.binary_search_u64(_msg.", indexFieldName, ".Values, idx)")
+		g.P("\t\tif idx_offset < 0:")
+		g.P("\t\t\treturn rows")
+		g.P("\t\toffsets = _msg.", indexFieldName, ".Offsets")
+		g.P("\t\toffset_begin = _msg.", indexFieldName, ".Starts[idx_offset]")
+		g.P("\t\toffset_end = _msg.", indexFieldName, ".Starts[idx_offset + 1]")
+		g.P("\t\tif offset_begin < 0 or offset_begin > offset_end or offset_end > offsets.size():")
+		g.P("\t\t\treturn rows")
+
+	default:
+		return fmt.Errorf("unsupported non-unique index type %q", method.IndexTypeName)
+	}
+
 	return nil
 }
 

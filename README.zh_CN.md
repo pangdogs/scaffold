@@ -162,17 +162,19 @@ excelc data \
 
 `--targets` 不只是用来区分服务端 / 客户端输出，它还会控制 Excel 导出时的列可见性。只有标记给当前 target 的字段，才会进入生成出来的 `.proto`、查询代码和最终导出的表数据。也就是说，服务端专用列可以在客户端 schema 和客户端数据中直接裁掉，客户端专用列也可以同样不进入服务端产物。
 
-`--pb_unique_index_as` 用来控制 `unique_index` 在导出 Protobuf schema 中使用什么结构形式。不同取值会生成不同的索引消息结构，并进一步影响生成出来的查询代码以及表数据加载后的运行时内存特征。示例中服务端使用 `hash_unique_index`，让生成的 Go 查询代码走哈希索引；客户端使用 `sorted_unique_index`，主要是为了降低 Godot 侧索引内存占用。生成的 GDScript Excel 包装器会对 `SortedUniqueIndex.Values` 做二分查找，并且在需要时仍可配合 `*.bin.idx` / `*.bin.chk_*` 读取分块数据。
+`--pb_unique_index_as` 用来控制 `unique_index` 的存储结构，`--pb_index_as` 则独立控制允许同键多行的 `index`。不同取值会生成不同的索引消息结构，并进一步影响生成出来的查询代码以及表数据加载后的运行时内存特征。服务端通常可以使用哈希索引追求查询速度；内存受限的客户端可以使用有序索引降低 map 和 bucket 对象开销。生成的 GDScript Excel 包装器会对有序索引的 `Values` 做二分查找，并且仍可配合 `*.bin.idx` / `*.bin.chk_*` 读取分块数据。
 
 - `hash_unique_index` 会把唯一索引生成为哈希索引结构。生成的查询代码可以基于它做按 key 的查找，对服务端这类常驻内存的数据访问场景通常更合适。
 - `sorted_unique_index` 会把唯一索引生成为有序数组。查询时改为二分查找，虽然不是直接哈希访问，但通常比哈希索引占用更少内存，更适合内存受限的客户端。
+- `hash_index` 会把非唯一索引生成为 `key -> offsets` bucket；等值查询快，但每个 key 都会产生 map/bucket/list 开销。
+- `sorted_index` 使用扁平的 `Values + Starts + Offsets` 存储非唯一索引。查询先二分 `Values`，再通过 `Starts` 定位 `Offsets` 中对应的连续区间，默认更适合终端设备。
 - `--binary_chunked` 控制 `excelc data` 导出二进制表数据时的写出方式。开启后，表行数据会拆成 `*.bin.chk_*` 分块文件，并配套生成一个 `*.bin.idx` 索引文件。
 - `--binary_chunk_size` 控制每个 chunk 最多包含多少行，默认值是 `10000`。它只影响导出的二进制布局，不会改变生成出来的 Protobuf schema。
 
 ## Excel 工作簿规范
 ### 工作簿结构
 - 可选的 `@types` 页签用于声明当前工作簿里可复用的结构和枚举类型。各个表页在定义字段类型时，可以直接引用这些自定义类型，而不只是内置标量类型。
-- `@types` 页签里的 `Meta` 支持 `separator`、`scope` 和 `pb_field_number`。`unique_index`、`hash_unique_index`、`sorted_unique_index` 这类索引参数只对表页字段列有意义，不用于 `@types` 里的结构或枚举声明。
+- `@types` 页签里的 `Meta` 支持 `separator`、`scope` 和 `pb_field_number`。`index`、`hash_index`、`sorted_index`、`unique_index`、`hash_unique_index`、`sorted_unique_index` 这类索引参数只对表页字段列有意义，不用于 `@types` 里的结构或枚举声明。
 - 表页里凡是列名首字符不是字母的列，`excelc` 都会忽略。实际使用时，通常会把 `#` 开头的列当作注释列，用来写说明、示例或仅供编辑查看的辅助信息，这些列不会进入生成的 schema，也不会进入导出的表数据。
 
 ### 表页数据布局
@@ -189,6 +191,9 @@ excelc data \
 - 字段级参数写在表头里的 `Meta` 设置行中，表头名也兼容 `元数据` / `特性`。每个字段列都在这一行对应的单元格里填写自己的参数，格式使用 query-string 风格，例如 `scope=c&sorted_unique_index=1` 或 `separator=|`。
 - `scope`：可重复的 target 可见性标记。它和 `--targets` 一起生效；没有配置 `scope` 的列默认对所有 target 可见。需要同时命中多个 target 时，重复填写这个键即可，例如 `scope=c&scope=s` 或 `scope=client&scope=editor`。
 - `separator`：重复字段或 map 类单元格值的分隔符，默认是 `,`。
+- `index`：可重复的整数索引 tag，用来声明允许同键多行的索引分组，最终导出成哈希索引还是有序索引取决于 `--pb_index_as`；默认是 `sorted_index`。
+- `hash_index`：可重复的整数索引 tag，强制对应非唯一索引分组使用哈希 bucket 结构。
+- `sorted_index`：可重复的整数索引 tag，强制对应非唯一索引分组使用扁平有序结构。
 - `unique_index`：可重复的整数索引 tag，用来声明唯一索引分组，最终导出成哈希索引还是有序索引取决于 `--pb_unique_index_as`。
 - `hash_unique_index`：可重复的整数索引 tag，强制对应唯一索引分组使用哈希索引结构。
 - `sorted_unique_index`：可重复的整数索引 tag，强制对应唯一索引分组使用有序索引结构。
@@ -197,7 +202,9 @@ excelc data \
 - 复合唯一索引的配置方式是让多个字段复用同一个 tag。例如 `role_id` 写 `hash_unique_index=1`，`level` 也写 `hash_unique_index=1`，那么这两个字段会共同组成 `(role_id, level)` 这个复合唯一索引。
 - 同一张表可以同时配置多个唯一索引，只要使用不同的 tag 分组即可。例如 `id -> hash_unique_index=1`，`name -> sorted_unique_index=2`，`type + sub_type -> sorted_unique_index=3`。
 - 同一个字段也可以同时参与多个索引，只需要在自己的 meta 单元格里重复填写多个 tag，例如 `hash_unique_index=1&hash_unique_index=2`，这样这个字段就会同时进入两个索引分组。
-- 同一个 tag 不能同时出现在 `hash_unique_index` 和 `sorted_unique_index` 中。
+- `hash_unique_index` 与 `sorted_unique_index` 分别使用各自的 tag 分组，因此不同类型可以复用相同数字；但同一字段不能把同一个 tag 同时配置给两种类型。
+- 非唯一索引同样支持单列和复合列：单列填写一次 `index=1`；复合索引让多个字段填写相同 tag。生成的 Go 查询方法为 `LookupByHashIndex...` / `LookupBySortedIndex...`，GDScript 查询方法为 `lookup_by_hash_index_...` / `lookup_by_sorted_index_...`，未命中时返回空集合。
+- `hash_index` 与 `sorted_index` 分别使用各自的 tag 分组，因此不同类型可以复用相同数字；但同一字段不能把同一个 tag 同时配置给两种类型。
 
 ## Godot 集成
 ### 运行时目录
@@ -318,7 +325,7 @@ Resty="*res://addons/resty/resty_client.gd"
 ## 工具参数参考
 | 命令 | 关键参数 | 说明 |
 | --- | --- | --- |
-| `excelc proto` | `--excel_files`、`--excel_dir`、`--pb_out`、`--pb_package`、`--pb_imports`、`--pb_options`、`--pb_unique_index_as`、`--targets` | 从 Excel 工作簿生成表结构 `.proto` 与配套 `*.protoset`。`--excel_files` 优先用于显式指定输入文件。 |
+| `excelc proto` | `--excel_files`、`--excel_dir`、`--pb_out`、`--pb_package`、`--pb_imports`、`--pb_options`、`--pb_unique_index_as`、`--pb_index_as`、`--targets` | 从 Excel 工作簿生成表结构 `.proto` 与配套 `*.protoset`。`--excel_files` 优先用于显式指定输入文件。 |
 | `excelc code` | `--pb_dir`、`--pb_package`、`--go_out`、`--gdscript_out`、`--gdscript_class_name`、`--gdscript_default_data_dir`、`--gdscript_autoload` | 基于 Excel proto 生成 Go 或 GDScript 表访问代码。 |
 | `excelc data` | `--excel_files`、`--excel_dir`、`--pb_dir`、`--pb_package`、`--targets`、`--binary_out`、`--binary_chunked`、`--binary_chunk_size`、`--json_out`、`--json_multiline`、`--json_indent` | 基于 Excel proto 导出二进制或 JSON 表数据。 |
 | `propc` | `--decl_file` | 读取属性声明文件并生成相邻的 `*.sync.gen.go`。默认值来自 `GOFILE`，便于配合 `go generate` 使用。 |

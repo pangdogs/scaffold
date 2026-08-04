@@ -162,17 +162,19 @@ excelc data \
 
 `--targets` does more than choose server/client outputs. It also controls column visibility during Excel export: only fields marked for the selected target are kept in the generated `.proto`, lookup code, and exported table data. In practice, server-only columns can be excluded from client schemas and client data packages, and client-only columns can be omitted from server-side artifacts the same way.
 
-`--pb_unique_index_as` controls how `unique_index` is represented in the exported Protobuf schema. Different values produce different index message shapes, which then affect the generated lookup code and the runtime memory profile of loaded table data. In this example, the server uses `hash_unique_index` so generated Go lookup code can query hash-based indexes, while the client uses `sorted_unique_index` to reduce index memory usage on the Godot side. Generated GDScript wrappers then query `SortedUniqueIndex.Values` with binary search and can still work with `*.bin.idx` / `*.bin.chk_*` chunked table data when needed.
+`--pb_unique_index_as` controls the representation of `unique_index`, while `--pb_index_as` independently controls `index`, which allows one key to reference multiple rows. Different values produce different index message shapes and therefore different generated lookup code and runtime memory profiles. Servers can favor hash indexes for lookup speed, while memory-constrained clients can use sorted indexes to avoid large numbers of map and bucket objects. Generated GDScript wrappers query sorted `Values` with binary search and still work with `*.bin.idx` / `*.bin.chk_*` chunked table data.
 
 - `hash_unique_index` emits hash-based unique indexes. Generated lookup code can use these indexes for direct key-oriented queries, which is usually a good fit on the server where table data often stays resident in memory.
 - `sorted_unique_index` emits unique indexes as sorted arrays. Queries become binary search instead of direct hash lookup, but it usually has lower memory overhead than hash-based indexes, which makes it a better fit for memory-constrained clients.
+- `hash_index` emits non-unique indexes as `key -> offsets` buckets. Equality lookup is fast, but every distinct key adds map, bucket, and list overhead.
+- `sorted_index` stores non-unique indexes in flat `Values + Starts + Offsets` arrays. Lookup binary-searches `Values` and uses `Starts` to select the matching contiguous slice within `Offsets`, making this the default for client devices.
 - `--binary_chunked` controls how binary table data is written during `excelc data`. When enabled, rows are split into `*.bin.chk_*` chunk files and paired with a `*.bin.idx` index file.
 - `--binary_chunk_size` controls the maximum row count per chunk. The default value is `10000`. It affects the exported binary layout but does not change the generated Protobuf schema.
 
 ## Excel Workbook Specification
 ### Workbook Structure
 - The optional `@types` sheet is used to declare reusable struct and enum types for the workbook. Table sheets can reference those custom types in field definitions instead of being limited to built-in scalar types only.
-- In the `@types` sheet, `Meta` supports `separator`, `scope`, and `pb_field_number`. Index-related keys such as `unique_index`, `hash_unique_index`, and `sorted_unique_index` are only meaningful on table columns, not on `@types` struct or enum declarations.
+- In the `@types` sheet, `Meta` supports `separator`, `scope`, and `pb_field_number`. Index-related keys such as `index`, `hash_index`, `sorted_index`, `unique_index`, `hash_unique_index`, and `sorted_unique_index` are only meaningful on table columns, not on `@types` struct or enum declarations.
 - Any table column whose header name does not start with a letter is ignored by `excelc`. In practice, columns starting with `#` are commonly used as comment columns for notes, examples, or editor-only annotations, and they will not participate in generated schema or exported data.
 
 ### Table Sheet Layout
@@ -189,6 +191,9 @@ excelc data \
 - Field-level options are configured in the table header's `Meta` setting row, also accepted as `元数据` / `特性`. Each field column fills its own meta cell in query-string syntax, such as `scope=c&sorted_unique_index=1` or `separator=|`.
 - `scope`: repeatable target visibility tag. It works together with `--targets`; columns without `scope` are visible to all targets. To match multiple targets, repeat the key, for example `scope=c&scope=s` or `scope=client&scope=editor`.
 - `separator`: delimiter used when parsing repeated or map-like cell values. The default is `,`.
+- `index`: repeatable integer tag defining a non-unique index group. Its representation follows `--pb_index_as`, which defaults to `sorted_index`.
+- `hash_index`: repeatable integer tag forcing the corresponding non-unique index group to use hash buckets.
+- `sorted_index`: repeatable integer tag forcing the corresponding non-unique index group to use flat sorted arrays.
 - `unique_index`: repeatable integer index tag. It defines unique-index groups, and the actual exported representation follows `--pb_unique_index_as`.
 - `hash_unique_index`: repeatable integer index tag. It forces the tagged unique index groups to use hash-based representation.
 - `sorted_unique_index`: repeatable integer index tag. It forces the tagged unique index groups to use sorted-array representation.
@@ -197,7 +202,9 @@ excelc data \
 - A composite unique index is configured by reusing the same tag on multiple fields. For example, `role_id` with `hash_unique_index=1` and `level` with `hash_unique_index=1` together form one composite unique index on `(role_id, level)`.
 - One table can define multiple unique indexes at the same time by using different tags, for example `id -> hash_unique_index=1`, `name -> sorted_unique_index=2`, and `type + sub_type -> sorted_unique_index=3`.
 - One field can participate in multiple indexes by repeating tags in its meta cell, for example `hash_unique_index=1&hash_unique_index=2`. That field will be included in both index groups.
-- The same tag cannot appear in both `hash_unique_index` and `sorted_unique_index`.
+- `hash_unique_index` and `sorted_unique_index` group tags independently, so the same number may be reused across the two types; a single field cannot assign the same tag to both types.
+- Non-unique indexes support both single and composite columns: put `index=1` on one column, or reuse the same tag on multiple columns. Generated Go methods use `LookupByHashIndex...` / `LookupBySortedIndex...`; GDScript methods use `lookup_by_hash_index_...` / `lookup_by_sorted_index_...`; misses return an empty collection.
+- `hash_index` and `sorted_index` group tags independently, so the same number may be reused across the two types; a single field cannot assign the same tag to both types.
 
 ## Godot Integration
 ### Runtime Directories
@@ -318,7 +325,7 @@ Resty="*res://addons/resty/resty_client.gd"
 ## Tool Reference
 | Command | Key Options | Notes |
 | --- | --- | --- |
-| `excelc proto` | `--excel_files`, `--excel_dir`, `--pb_out`, `--pb_package`, `--pb_imports`, `--pb_options`, `--pb_unique_index_as`, `--targets` | Generates table `.proto` files and matching `*.protoset` files from Excel workbooks. Prefer `--excel_files` for explicit inputs. |
+| `excelc proto` | `--excel_files`, `--excel_dir`, `--pb_out`, `--pb_package`, `--pb_imports`, `--pb_options`, `--pb_unique_index_as`, `--pb_index_as`, `--targets` | Generates table `.proto` files and matching `*.protoset` files from Excel workbooks. Prefer `--excel_files` for explicit inputs. |
 | `excelc code` | `--pb_dir`, `--pb_package`, `--go_out`, `--gdscript_out`, `--gdscript_class_name`, `--gdscript_default_data_dir`, `--gdscript_autoload` | Generates Go or GDScript table access code from Excel proto files. |
 | `excelc data` | `--excel_files`, `--excel_dir`, `--pb_dir`, `--pb_package`, `--targets`, `--binary_out`, `--binary_chunked`, `--binary_chunk_size`, `--json_out`, `--json_multiline`, `--json_indent` | Exports binary or JSON table data from Excel workbooks using the generated proto descriptors. |
 | `propc` | `--decl_file` | Reads a property declaration file and writes the sibling `*.sync.gen.go`. The default comes from `GOFILE`, which makes it convenient for `go generate`. |

@@ -122,6 +122,9 @@ func (ty Type) Repeated() Type {
 type Meta struct {
 	Separator         string   `form:"separator"`
 	Scope             []string `form:"scope"`
+	Index             []int32  `form:"index"`
+	HashIndex         []int32  `form:"hash_index"`
+	SortedIndex       []int32  `form:"sorted_index"`
 	UniqueIndex       []int32  `form:"unique_index"`
 	HashUniqueIndex   []int32  `form:"hash_unique_index"`
 	SortedUniqueIndex []int32  `form:"sorted_unique_index"`
@@ -138,7 +141,8 @@ func (m *Meta) MatchTargets() bool {
 	if len(targets) <= 0 || len(m.Scope) <= 0 {
 		return true
 	}
-	if len(m.UniqueIndex) > 0 || len(m.HashUniqueIndex) > 0 || len(m.SortedUniqueIndex) > 0 {
+	if len(m.Index) > 0 || len(m.HashIndex) > 0 || len(m.SortedIndex) > 0 ||
+		len(m.UniqueIndex) > 0 || len(m.HashUniqueIndex) > 0 || len(m.SortedUniqueIndex) > 0 {
 		return true
 	}
 
@@ -152,6 +156,9 @@ func (m *Meta) MatchTargets() bool {
 var defaultMeta = &Meta{
 	Separator:         ",",
 	Scope:             nil,
+	Index:             nil,
+	HashIndex:         nil,
+	SortedIndex:       nil,
 	UniqueIndex:       nil,
 	HashUniqueIndex:   nil,
 	SortedUniqueIndex: nil,
@@ -182,6 +189,25 @@ func parseMeta(str string) (*Meta, error) {
 	}).Filter(func(s string) bool {
 		return s != ""
 	}).Result
+
+	meta.Index = normalizeIndexTags(meta.Index)
+	if len(meta.Index) > 0 {
+		switch viper.GetString("pb_index_as") {
+		case "hash_index":
+			meta.HashIndex = append(meta.HashIndex, meta.Index...)
+		case "sorted_index":
+			meta.SortedIndex = append(meta.SortedIndex, meta.Index...)
+		}
+	}
+
+	meta.HashIndex = normalizeIndexTags(meta.HashIndex)
+	meta.SortedIndex = normalizeIndexTags(meta.SortedIndex)
+
+	if conflicted := pie.Of(meta.HashIndex).Filter(func(tag int32) bool {
+		return pie.Contains(meta.SortedIndex, tag)
+	}).Result; len(conflicted) > 0 {
+		return nil, fmt.Errorf("hash_index tags %v conflict with sorted_index", conflicted)
+	}
 
 	meta.UniqueIndex = normalizeIndexTags(meta.UniqueIndex)
 	if len(meta.UniqueIndex) > 0 {
@@ -277,6 +303,18 @@ func (f *Field) ProtobufMeta() string {
 	}
 
 	if f.IsColumn {
+		for _, tag := range f.Meta.HashIndex {
+			if sb.Len() > 0 {
+				sb.WriteString(", ")
+			}
+			sb.WriteString(fmt.Sprintf("(%s.HashIndex) = %d", viper.GetString("pb_package"), tag))
+		}
+		for _, tag := range f.Meta.SortedIndex {
+			if sb.Len() > 0 {
+				sb.WriteString(", ")
+			}
+			sb.WriteString(fmt.Sprintf("(%s.SortedIndex_) = %d", viper.GetString("pb_package"), tag))
+		}
 		for _, tag := range f.Meta.HashUniqueIndex {
 			if sb.Len() > 0 {
 				sb.WriteString(", ")
@@ -414,18 +452,30 @@ func (d *Decl) CheckPbEnumNumbers() error {
 }
 
 func (d *Decl) StructHashUniqueIndexes() generic.UnorderedSliceMap[string, string] {
-	return d.structUniqueIndexes(func(field *Field) []int32 {
+	return d.structIndexes(func(field *Field) []int32 {
 		return field.Meta.HashUniqueIndex
 	})
 }
 
 func (d *Decl) StructSortedUniqueIndexes() generic.UnorderedSliceMap[string, string] {
-	return d.structUniqueIndexes(func(field *Field) []int32 {
+	return d.structIndexes(func(field *Field) []int32 {
 		return field.Meta.SortedUniqueIndex
 	})
 }
 
-func (d *Decl) structUniqueIndexes(tagsOf func(field *Field) []int32) generic.UnorderedSliceMap[string, string] {
+func (d *Decl) StructHashIndexes() generic.UnorderedSliceMap[string, string] {
+	return d.structIndexes(func(field *Field) []int32 {
+		return field.Meta.HashIndex
+	})
+}
+
+func (d *Decl) StructSortedIndexes() generic.UnorderedSliceMap[string, string] {
+	return d.structIndexes(func(field *Field) []int32 {
+		return field.Meta.SortedIndex
+	})
+}
+
+func (d *Decl) structIndexes(tagsOf func(field *Field) []int32) generic.UnorderedSliceMap[string, string] {
 	var tagFields generic.SliceMap[int32, []*Field]
 
 	d.Fields.Each(func(name string, decl *Field) {

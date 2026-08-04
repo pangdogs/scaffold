@@ -43,6 +43,8 @@ const (
 const (
 	indexTypeHashUnique   = "HashUniqueIndex"
 	indexTypeSortedUnique = "SortedUniqueIndex"
+	indexTypeHash         = "HashIndex"
+	indexTypeSorted       = "SortedIndex"
 )
 
 type FieldDecl struct {
@@ -185,6 +187,26 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 				indexShorten = indexTypeHashUnique + strings.TrimPrefix(indexShorten, indexTypeHashUnique)
 			case indexTypeSortedUnique:
 				indexShorten = indexTypeSortedUnique + strings.TrimPrefix(indexShorten, indexTypeSortedUnique)
+			case indexTypeHash:
+				indexShorten = indexTypeHash + strings.TrimPrefix(indexShorten, indexTypeHash)
+			case indexTypeSorted:
+				indexShorten = indexTypeSorted + strings.TrimPrefix(indexShorten, indexTypeSorted)
+			}
+
+			if !isUniqueIndexType(string(indexTypeValueDesc.Name())) {
+				if err := emitNonUniqueLookupMethod(
+					g,
+					m,
+					fieldRows,
+					f,
+					string(indexTypeValueDesc.Name()),
+					indexShorten,
+					indexArgs.String(),
+					indexFieldDecls,
+				); err != nil {
+					return err
+				}
+				continue
 			}
 
 			if !defaultMethodsEmitted {
@@ -211,7 +233,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 			case indexTypeHashUnique:
 				g.P()
 
-				hv := fieldsToIndex(g, indexFieldDecls, false, notFoundArgs.String())
+				hv := fieldsToIndex(g, indexFieldDecls, false, notFoundArgs.String(), "return nil, false")
 
 				g.P("offset, ok := x.", f.GoName, "[idx]")
 				g.P("if !ok {")
@@ -248,7 +270,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 			case indexTypeSortedUnique:
 				g.P()
 
-				hv := fieldsToIndex(g, indexFieldDecls, false, notFoundArgs.String())
+				hv := fieldsToIndex(g, indexFieldDecls, false, notFoundArgs.String(), "return nil, false")
 
 				g.P("if x.", f.GoName, " == nil {")
 				g.P("\treturn nil, false")
@@ -300,7 +322,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 			case indexTypeHashUnique:
 				g.P()
 
-				hv := fieldsToIndex(g, indexFieldDecls, true, notFoundArgs.String())
+				hv := fieldsToIndex(g, indexFieldDecls, true, notFoundArgs.String(), "")
 
 				g.P("offset, ok := x.", f.GoName, "[idx]")
 				g.P("if !ok {")
@@ -337,7 +359,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 			case indexTypeSortedUnique:
 				g.P()
 
-				hv := fieldsToIndex(g, indexFieldDecls, true, notFoundArgs.String())
+				hv := fieldsToIndex(g, indexFieldDecls, true, notFoundArgs.String(), "")
 
 				g.P("if x.", f.GoName, " == nil {")
 				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs.String(), "))")
@@ -380,6 +402,92 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 			g.P()
 		}
 	}
+
+	return nil
+}
+
+func isUniqueIndexType(indexType string) bool {
+	switch indexType {
+	case indexTypeHashUnique, indexTypeSortedUnique:
+		return true
+	default:
+		return false
+	}
+}
+
+func emitNonUniqueLookupMethod(
+	g *protogen.GeneratedFile,
+	table *protogen.Message,
+	rowsField *protogen.Field,
+	indexField *protogen.Field,
+	indexType string,
+	indexShorten string,
+	indexArgs string,
+	indexFieldDecls generic.UnorderedSliceMap[string, *FieldDecl],
+) error {
+	g.P("func (x *", table.GoIdent, ") LookupBy", indexShorten, "(", indexArgs, ") []*", rowsField.Message.GoIdent, " {")
+	g.P("if len(x.", rowsField.GoName, ") <= 0 {")
+	g.P("\treturn nil")
+	g.P("}")
+	g.P()
+
+	hashVerification := fieldsToIndex(g, indexFieldDecls, false, "", "return nil")
+
+	switch indexType {
+	case indexTypeHash:
+		g.P("bucket, ok := x.", indexField.GoName, "[idx]")
+		g.P("if !ok || bucket == nil {")
+		g.P("\treturn nil")
+		g.P("}")
+		g.P()
+		g.P("offsets := bucket.Offsets")
+
+	case indexTypeSorted:
+		g.P("if x.", indexField.GoName, " == nil || len(x.", indexField.GoName, ".Starts) != len(x.", indexField.GoName, ".Values)+1 {")
+		g.P("\treturn nil")
+		g.P("}")
+		g.P()
+		g.P("itemOffset, ok := ", slicesPackage.Ident("BinarySearch"), "(x.", indexField.GoName, ".Values, idx)")
+		g.P("if !ok {")
+		g.P("\treturn nil")
+		g.P("}")
+		g.P()
+		g.P("start := int(x.", indexField.GoName, ".Starts[itemOffset])")
+		g.P("end := int(x.", indexField.GoName, ".Starts[itemOffset+1])")
+		g.P("if start < 0 || start > end || end > len(x.", indexField.GoName, ".Offsets) {")
+		g.P("\treturn nil")
+		g.P("}")
+		g.P()
+		g.P("offsets := x.", indexField.GoName, ".Offsets[start:end]")
+
+	default:
+		return fmt.Errorf("unsupported non-unique index type %q", indexType)
+	}
+	g.P()
+
+	if hashVerification {
+		emitRowMatchesFunc(g, rowsField.Message.GoIdent, indexFieldDecls)
+	}
+
+	g.P("rows := make([]*", rowsField.Message.GoIdent, ", 0, len(offsets))")
+	g.P("for _, offset := range offsets {")
+	g.P("\tif int(offset) >= len(x.", rowsField.GoName, ") {")
+	g.P("\t\tcontinue")
+	g.P("\t}")
+	g.P("\trow := x.", rowsField.GoName, "[offset]")
+	g.P("\tif row == nil {")
+	g.P("\t\tcontinue")
+	g.P("\t}")
+	if hashVerification {
+		g.P("\tif !matchesRow(row) {")
+		g.P("\t\tcontinue")
+		g.P("\t}")
+	}
+	g.P("\trows = append(rows, row)")
+	g.P("}")
+	g.P("return rows")
+	g.P("}")
+	g.P()
 
 	return nil
 }
@@ -557,7 +665,7 @@ func fieldGoType(g *protogen.GeneratedFile, field *protogen.Field) (goType strin
 	return goType, pointer
 }
 
-func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl, panicForNotFound bool, notFoundArgs string) (hashVerification bool) {
+func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl, panicForNotFound bool, notFoundArgs, notFoundReturn string) (hashVerification bool) {
 	defer g.P()
 
 	if decl.Field.Desc.IsMap() {
@@ -566,7 +674,7 @@ func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl,
 		if panicForNotFound {
 			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
 		} else {
-			g.P("\treturn nil, false")
+			g.P("\t", notFoundReturn)
 		}
 		g.P("}")
 		return true
@@ -578,7 +686,7 @@ func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl,
 		if panicForNotFound {
 			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
 		} else {
-			g.P("\treturn nil, false")
+			g.P("\t", notFoundReturn)
 		}
 		g.P("}")
 		return true
@@ -602,7 +710,7 @@ func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl,
 		if panicForNotFound {
 			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
 		} else {
-			g.P("\treturn nil, false")
+			g.P("\t", notFoundReturn)
 		}
 		g.P("}")
 		return true
@@ -612,7 +720,7 @@ func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl,
 		if panicForNotFound {
 			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
 		} else {
-			g.P("\treturn nil, false")
+			g.P("\t", notFoundReturn)
 		}
 		g.P("}")
 		return true
@@ -624,7 +732,7 @@ func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl,
 		if panicForNotFound {
 			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
 		} else {
-			g.P("\treturn nil, false")
+			g.P("\t", notFoundReturn)
 		}
 		g.P("}")
 		return true
@@ -633,9 +741,9 @@ func singleFieldToIndex(g *protogen.GeneratedFile, name string, decl *FieldDecl,
 	return false
 }
 
-func fieldsToIndex(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceMap[string, *FieldDecl], panicForNotFound bool, notFoundArgs string) (hashVerification bool) {
+func fieldsToIndex(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceMap[string, *FieldDecl], panicForNotFound bool, notFoundArgs, notFoundReturn string) (hashVerification bool) {
 	if fieldDecls.Len() <= 1 {
-		return singleFieldToIndex(g, fieldDecls[0].K, fieldDecls[0].V, panicForNotFound, notFoundArgs)
+		return singleFieldToIndex(g, fieldDecls[0].K, fieldDecls[0].V, panicForNotFound, notFoundArgs, notFoundReturn)
 	}
 
 	g.P("h := ", excelutilsPackage.Ident("NewHash"), "()")
@@ -646,7 +754,7 @@ func fieldsToIndex(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceM
 			if panicForNotFound {
 				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
 			} else {
-				g.P("\treturn nil, false")
+				g.P("\t", notFoundReturn)
 			}
 			g.P("}")
 			return
@@ -657,7 +765,7 @@ func fieldsToIndex(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceM
 			if panicForNotFound {
 				g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
 			} else {
-				g.P("\treturn nil, false")
+				g.P("\t", notFoundReturn)
 			}
 			g.P("}")
 			return
@@ -667,7 +775,7 @@ func fieldsToIndex(g *protogen.GeneratedFile, fieldDecls generic.UnorderedSliceM
 		if panicForNotFound {
 			g.P("\tpanic(", excelutilsPackage.Ident("NewErrNotFound("), notFoundArgs, "))")
 		} else {
-			g.P("\treturn nil, false")
+			g.P("\t", notFoundReturn)
 		}
 		g.P("}")
 	})

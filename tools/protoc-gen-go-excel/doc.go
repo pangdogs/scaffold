@@ -20,6 +20,6 @@
 // Package main implements the protoc-gen-go-excel protobuf plugin.
 /*
 Package main 实现 protoc-gen-go-excel 插件，为 Excel 配表导出的 Go protobuf
-结构补充 Lookup、Get 和按唯一索引查询的访问方法。
+结构补充 Lookup、Get 以及按唯一或非唯一索引查询的访问方法。
 */
 package main

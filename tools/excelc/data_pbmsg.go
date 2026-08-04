@@ -26,6 +26,7 @@ import (
 	"log"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -59,13 +60,13 @@ func genProtoMessage(file *excelize.File) proto.Message {
 	var columnsType, tableType protoreflect.MessageType
 	var tableMsg protoreflect.Message
 	var tableHashUniqueIndexes, tableSortedUniqueIndexes generic.UnorderedSliceMap[string, []protoreflect.FieldDescriptor]
+	var tableHashIndexes, tableSortedIndexes generic.UnorderedSliceMap[string, []protoreflect.FieldDescriptor]
 	tableSortedUniqueIndexesData := map[string]*generic.SliceMap[uint64, uint32]{}
-
-	indexConflictTypeName := protoreflect.FullName(fmt.Sprintf("%s.IndexConflict", viper.GetString("pb_package")))
-	indexConflictType, err := pbTypes.FindMessageByName(indexConflictTypeName)
-	if err != nil {
-		log.Panicf("parse proto type %q failed, %s", indexConflictTypeName, err)
+	type sortedIndexEntry struct {
+		Value  uint64
+		Offset uint32
 	}
+	tableSortedIndexesData := map[string][]sortedIndexEntry{}
 
 	type Column struct {
 		Name  string
@@ -201,6 +202,10 @@ func genProtoMessage(file *excelize.File) proto.Message {
 							tableHashUniqueIndexes.Add(string(field.Name()), fieldDescs)
 						case "SortedUniqueIndex":
 							tableSortedUniqueIndexes.Add(string(field.Name()), fieldDescs)
+						case "HashIndex":
+							tableHashIndexes.Add(string(field.Name()), fieldDescs)
+						case "SortedIndex":
+							tableSortedIndexes.Add(string(field.Name()), fieldDescs)
 						}
 					}
 
@@ -293,7 +298,7 @@ func genProtoMessage(file *excelize.File) proto.Message {
 							}
 
 							log.Printf("read excel file %q sheet %q row %d warning: index %q value %d collides with sheet %q row %d; stored in conflict bucket", file.Path, sheet, i, indexName, h.Sum64(), offsetLines[existed.Uint()].Sheet, offsetLines[existed.Uint()].Line)
-							appendIndexConflictOffset(tableMsg, indexConflictType, indexName, key, offset)
+							appendIndexOffset(tableMsg, indexName+"Conflict", key, offset)
 							return
 						}
 
@@ -344,7 +349,7 @@ func genProtoMessage(file *excelize.File) proto.Message {
 							}
 
 							log.Printf("read excel file %q sheet %q row %d warning: index %q value %d collides with sheet %q row %d; stored in conflict bucket", file.Path, sheet, i, indexName, h.Sum64(), offsetLines[existed].Sheet, offsetLines[existed].Line)
-							appendIndexConflictOffset(tableMsg, indexConflictType, indexName, key, offset)
+							appendIndexOffset(tableMsg, indexName+"Conflict", key, offset)
 							return
 						}
 
@@ -363,6 +368,32 @@ func genProtoMessage(file *excelize.File) proto.Message {
 
 						indexData.Add(indexValue, offset)
 					}
+				})
+
+				tableHashIndexes.Each(func(indexName string, fields []protoreflect.FieldDescriptor) {
+					indexValue, err := computeIndexValue(rowMsg, fields)
+					if err != nil {
+						log.Panicf("read excel file %q sheet %q row %d failed: compute index %q value failed, %s", file.Path, sheet, i, indexName, err)
+					}
+
+					appendIndexOffset(
+						tableMsg,
+						indexName,
+						protoreflect.ValueOfUint64(indexValue).MapKey(),
+						offset,
+					)
+				})
+
+				tableSortedIndexes.Each(func(indexName string, fields []protoreflect.FieldDescriptor) {
+					indexValue, err := computeIndexValue(rowMsg, fields)
+					if err != nil {
+						log.Panicf("read excel file %q sheet %q row %d failed: compute index %q value failed, %s", file.Path, sheet, i, indexName, err)
+					}
+
+					tableSortedIndexesData[indexName] = append(tableSortedIndexesData[indexName], sortedIndexEntry{
+						Value:  indexValue,
+						Offset: offset,
+					})
 				})
 			}
 		}()
@@ -399,21 +430,78 @@ func genProtoMessage(file *excelize.File) proto.Message {
 		})
 	})
 
+	tableSortedIndexes.Each(func(indexName string, _ []protoreflect.FieldDescriptor) {
+		tableIndexField := tableMsg.Descriptor().Fields().ByName(protoreflect.Name(indexName))
+		if tableIndexField == nil {
+			log.Panicf("parse proto type %q failed: index field %q not found", tableMsg.Descriptor().FullName(), indexName)
+		}
+
+		tableIndex := tableMsg.Mutable(tableIndexField).Message()
+		valuesField := tableIndex.Descriptor().Fields().ByName("Values")
+		if valuesField == nil {
+			log.Panicf("parse proto type %q failed: field %q not found", tableIndex.Descriptor().FullName(), "Values")
+		}
+		startsField := tableIndex.Descriptor().Fields().ByName("Starts")
+		if startsField == nil {
+			log.Panicf("parse proto type %q failed: field %q not found", tableIndex.Descriptor().FullName(), "Starts")
+		}
+		offsetsField := tableIndex.Descriptor().Fields().ByName("Offsets")
+		if offsetsField == nil {
+			log.Panicf("parse proto type %q failed: field %q not found", tableIndex.Descriptor().FullName(), "Offsets")
+		}
+
+		entries := tableSortedIndexesData[indexName]
+		sort.SliceStable(entries, func(i, j int) bool {
+			return entries[i].Value < entries[j].Value
+		})
+
+		values := tableIndex.Mutable(valuesField).List()
+		starts := tableIndex.Mutable(startsField).List()
+		offsets := tableIndex.Mutable(offsetsField).List()
+		starts.Append(protoreflect.ValueOfUint32(0))
+
+		for i, entry := range entries {
+			if i == 0 || entry.Value != entries[i-1].Value {
+				if i > 0 {
+					starts.Append(protoreflect.ValueOfUint32(uint32(i)))
+				}
+				values.Append(protoreflect.ValueOfUint64(entry.Value))
+			}
+			offsets.Append(protoreflect.ValueOfUint32(entry.Offset))
+		}
+		if len(entries) > 0 {
+			starts.Append(protoreflect.ValueOfUint32(uint32(len(entries))))
+		}
+	})
+
 	return tableMsg.Interface()
 }
 
-func appendIndexConflictOffset(tableMsg protoreflect.Message, indexConflictType protoreflect.MessageType, indexName string, key protoreflect.MapKey, offset uint32) {
-	conflictField := tableMsg.Descriptor().Fields().ByName(protoreflect.Name(indexName + "Conflict"))
-	if conflictField == nil {
-		log.Panicf("parse proto type %q failed: conflict field %q not found", tableMsg.Descriptor().FullName(), indexName+"Conflict")
+func computeIndexValue(rowMsg protoreflect.Message, fields []protoreflect.FieldDescriptor) (uint64, error) {
+	if len(fields) <= 0 {
+		return 0, errors.New("index fields cannot be empty")
 	}
 
-	conflictIndex := tableMsg.Mutable(conflictField)
-	bucket := conflictIndex.Map().Mutable(key).Message()
-	if !bucket.IsValid() {
-		bucket = indexConflictType.New()
-		conflictIndex.Map().Set(key, protoreflect.ValueOfMessage(bucket))
+	if len(fields) == 1 && !excelutils.ProtoMessageFieldNeedHashIndex(fields[0]) {
+		return excelutils.ProtoMessageFieldToIndex(rowMsg, fields[0])
 	}
+
+	h := excelutils.NewHash()
+	for _, field := range fields {
+		if err := excelutils.AnyToHash(h, rowMsg.Get(field)); err != nil {
+			return 0, err
+		}
+	}
+	return h.Sum64(), nil
+}
+
+func appendIndexOffset(tableMsg protoreflect.Message, indexName string, key protoreflect.MapKey, offset uint32) {
+	indexField := tableMsg.Descriptor().Fields().ByName(protoreflect.Name(indexName))
+	if indexField == nil {
+		log.Panicf("parse proto type %q failed: index field %q not found", tableMsg.Descriptor().FullName(), indexName)
+	}
+
+	bucket := tableMsg.Mutable(indexField).Map().Mutable(key).Message()
 
 	offsetsField := bucket.Descriptor().Fields().ByName("Offsets")
 	if offsetsField == nil {
@@ -1052,7 +1140,8 @@ func parseStructValue(value string) (*yaml.Node, error) {
 
 type Extensions struct {
 	IsColumns, IsTable, IsEnum,
-	Separator, FieldAlias, Scope, IndexType, IndexFields, HashUniqueIndex, SortedUniqueIndex,
+	Separator, FieldAlias, Scope, IndexType, IndexFields,
+	HashUniqueIndex, SortedUniqueIndex, HashIndex, SortedIndex,
 	EnumValueAlias protoreflect.ExtensionType
 }
 
@@ -1120,6 +1209,18 @@ func parseExtensions(pbTypes *protoregistry.Types) (*Extensions, error) {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}
 
+	extName = protoreflect.FullName(fmt.Sprintf("%s.HashIndex", viper.GetString("pb_package")))
+	extensions.HashIndex, err = pbTypes.FindExtensionByName(extName)
+	if err != nil {
+		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
+	}
+
+	extName = protoreflect.FullName(fmt.Sprintf("%s.SortedIndex_", viper.GetString("pb_package")))
+	extensions.SortedIndex, err = pbTypes.FindExtensionByName(extName)
+	if err != nil {
+		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
+	}
+
 	extName = protoreflect.FullName(fmt.Sprintf("%s.EnumValueAlias", viper.GetString("pb_package")))
 	extensions.EnumValueAlias, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
@@ -1140,6 +1241,14 @@ func matchTargets(field protoreflect.FieldDescriptor, extensions *Extensions) bo
 	}
 
 	if field.Options().ProtoReflect().Get(extensions.SortedUniqueIndex.TypeDescriptor()).List().Len() > 0 {
+		return true
+	}
+
+	if field.Options().ProtoReflect().Get(extensions.HashIndex.TypeDescriptor()).List().Len() > 0 {
+		return true
+	}
+
+	if field.Options().ProtoReflect().Get(extensions.SortedIndex.TypeDescriptor()).List().Len() > 0 {
 		return true
 	}
 

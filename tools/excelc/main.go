@@ -95,6 +95,16 @@ func main() {
 					log.Panicf("[--pb_unique_index_as] value must be hash_unique_index or sorted_unique_index, but got %q", uniqueIndexAs)
 				}
 			}
+
+			{
+				indexAs := viper.GetString("pb_index_as")
+				switch indexAs {
+				case "hash_index", "sorted_index":
+					break
+				default:
+					log.Panicf("[--pb_index_as] value must be hash_index or sorted_index, but got %q", indexAs)
+				}
+			}
 		},
 		Run: cmdGenProto,
 	}
@@ -106,6 +116,7 @@ func main() {
 	protoCmd.Flags().Int("pb_custom_options", 10000, "Specify the custom proto option base number.")
 	protoCmd.Flags().StringToString("pb_options", map[string]string{"go_package": "./excel"}, "Specify output proto file options.")
 	protoCmd.Flags().String("pb_unique_index_as", "hash_unique_index", "Specify how `unique_index` is emitted in proto file (hash_unique_index/sorted_unique_index).")
+	protoCmd.Flags().String("pb_index_as", "sorted_index", "Specify how `index` is emitted in proto file (hash_index/sorted_index).")
 	protoCmd.Flags().StringSlice("targets", nil, "Specify output target platforms and control access by platform.")
 
 	codeCmd := &cobra.Command{
