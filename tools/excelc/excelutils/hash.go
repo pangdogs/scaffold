@@ -147,11 +147,10 @@ func AnyToHash(h hash.Hash64, v any) error {
 			mv = mv.Type().Zero()
 		}
 		return messageToHash(h, mv)
+	case protoreflect.Enum:
+		return enumToHash(h, iv.Number())
 	case protoreflect.EnumNumber:
-		if err := writeHashTag(h, protoreflect.EnumKind); err != nil {
-			return err
-		}
-		return binary.Write(h, binary.BigEndian, int32(iv))
+		return enumToHash(h, iv)
 	case protoreflect.Message:
 		return messageToHash(h, iv)
 	case protoreflect.List:
@@ -163,6 +162,13 @@ func AnyToHash(h hash.Hash64, v any) error {
 	default:
 		return errors.New("value not supported for hashing")
 	}
+}
+
+func enumToHash(h hash.Hash64, value protoreflect.EnumNumber) error {
+	if err := writeHashTag(h, protoreflect.EnumKind); err != nil {
+		return err
+	}
+	return binary.Write(h, binary.BigEndian, int32(value))
 }
 
 func messageToHash(h hash.Hash64, msg protoreflect.Message) error {

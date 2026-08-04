@@ -801,7 +801,12 @@ func compareFunc(fd *FieldDecl) []any {
 	}
 
 	switch compareField.Desc.Kind() {
-	case protoreflect.BoolKind, protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Uint32Kind, protoreflect.Uint64Kind, protoreflect.StringKind, protoreflect.EnumKind:
+	case protoreflect.BoolKind,
+		protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind,
+		protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind,
+		protoreflect.Uint32Kind, protoreflect.Fixed32Kind,
+		protoreflect.Uint64Kind, protoreflect.Fixed64Kind,
+		protoreflect.StringKind, protoreflect.EnumKind:
 		return []any{fmt.Sprintf("func(a, b %s) bool { return a == b }", ty)}
 	case protoreflect.FloatKind:
 		return []any{"func(a, b ", ty, ") bool { return ", mathPackage.Ident("Float32bits"), "(a) == ", mathPackage.Ident("Float32bits"), "(b) }"}
@@ -839,7 +844,12 @@ func emitRowMatchesFunc(g *protogen.GeneratedFile, rowType protogen.GoIdent, fie
 		}
 
 		switch decl.Field.Desc.Kind() {
-		case protoreflect.BoolKind, protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Uint32Kind, protoreflect.Uint64Kind, protoreflect.StringKind, protoreflect.EnumKind:
+		case protoreflect.BoolKind,
+			protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind,
+			protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind,
+			protoreflect.Uint32Kind, protoreflect.Fixed32Kind,
+			protoreflect.Uint64Kind, protoreflect.Fixed64Kind,
+			protoreflect.StringKind, protoreflect.EnumKind:
 			g.P("\tif ", name, " != row.", name, " {")
 			g.P("\t\treturn false")
 			g.P("\t}")

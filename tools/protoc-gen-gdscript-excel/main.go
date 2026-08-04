@@ -1368,7 +1368,8 @@ func isGDScriptKeyword(s string) bool {
 		"pb_other_msg", "pb_a", "pb_b", "pb_array", "pb_dict", "pb_field":
 		return true
 
-	case "idx", "idx_offset", "offset", "row", "bucket", "conflict_offset",
+	case "idx", "idx_offset", "offset", "offsets", "offset_begin", "offset_end", "offset_index",
+		"row", "bucket", "conflict_offset",
 		"rows", "rows_async", "row_count", "row_at", "row_at_async",
 		"lookup", "lookup_async":
 		return true
