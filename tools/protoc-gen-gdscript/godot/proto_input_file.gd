@@ -66,13 +66,13 @@ func read_varint() -> int:
 			return 0
 		var b := _buffer[_position]
 		_position += 1
+		if shift == 63 and b > 1:
+			_set_error(ERR_INVALID_DATA, "Varint exceeds 64 bits.")
+			return 0
 		value |= (b & 0x7F) << shift
 		if (b & 0x80) == 0:
 			break
 		shift += 7
-		if shift >= 70:
-			_set_error(ERR_INVALID_DATA, "Varint is too long.")
-			return 0
 	_set_error(OK)
 	return value
 

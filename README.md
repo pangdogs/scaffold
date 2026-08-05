@@ -1,40 +1,64 @@
 # Scaffold
+
 [English](./README.md) | [简体中文](./README.zh_CN.md)
 
 ## Overview
-`scaffold` is the tooling and add-in companion to the [**Golaxy Distributed Service Development Framework**](https://github.com/pangdogs/framework). It fills the engineering pieces around the main runtime for Go services, Godot clients, and Excel table pipelines: protocol code generation, table data export, script hotfixing, and entity property synchronization.
 
-This repository is not a complete application framework. It packages the build-time and runtime helpers commonly needed by Golaxy projects into reusable components:
+`scaffold` is the companion tools and add-ins repository for the [Golaxy Distributed Service Development Framework](https://github.com/pangdogs/framework). It provides code generation, data export, runtime integration, property synchronization, and script hot-reloading for Go servers, Godot clients, and Excel-based configuration pipelines.
 
-- `addins`: service/runtime extensions that plug into `git.golaxy.org/framework`.
-- `tools`: command-line generators and Protobuf plugins used during build-time generation.
-- `godot`: runtime scripts that can be copied into a Godot project.
+This repository is not a standalone application framework. It contains three kinds of components:
 
-## Capabilities
-| Module | Responsibility |
-| --- | --- |
-| `addins/goscr` | Service-level Go scripting add-in built on Yaegi for script-backed entities/components, script project loading, and local or remote hot reloading. |
-| `addins/propview` | Runtime property view add-in for managed entity properties, load/save flows, revision advancement, and service/client synchronization. |
-| `tools/propc` | Property-sync generator that scans annotated Go declarations and emits `propview`-based `*.sync.gen.go` wrappers. |
-| `tools/excelc` | Excel table toolchain that turns `.xlsx` workbooks into table proto schemas, access code, and binary/JSON data files. |
-| `tools/protoc-gen-go-excel` | Go Protobuf plugin that adds table lookup, index access, and loading helpers for Excel-generated structs. |
-| `tools/protoc-gen-go-structure` | Go Protobuf plugin that adds deep-clone helpers for messages, slices, maps, bytes, and nested messages. |
-| `tools/protoc-gen-go-variant` | Go Protobuf plugin that makes generated messages usable as GAP variant values in the Golaxy RPC stack. |
-| `tools/protoc-gen-gdscript` | Protobuf plugin that emits Godot-facing GDScript message types, serialization, and deserialization logic. |
-| `tools/protoc-gen-gdscript-excel` | Protobuf plugin that emits GDScript table wrappers and index lookup helpers for Excel-generated schemas. |
-| `godot/rpcli` | Godot-side Golaxy RPC client runtime for GAP/GTP connections, reconnects, RPC calls, callbacks, and GAP variant transport. |
-| `godot/resty` | Godot-side Resty-style HTTP runtime for fluent HTTP requests, JSON/form/raw bodies, downloads, concurrent requests, and Server-Sent Events. |
+- `tools`: build-time CLIs and `protoc` plugins.
+- `addins`: Go runtime extensions for `git.golaxy.org/framework`.
+- `godot`: client runtime scripts that can be copied into a Godot 4 project.
 
-## Installation
-Install the module itself when importing the add-in packages:
+## Documentation Map
+
+- [Components](#components)
+- [Requirements and Installation](#requirements-and-installation)
+- [Protobuf Code Generation](#protobuf-code-generation)
+- [Excel Table Pipeline](#excel-table-pipeline)
+- [Property Synchronization Generation](#property-synchronization-generation)
+- [Runtime Components](#runtime-components)
+- [Repository Layout](#repository-layout)
+
+## Components
+
+| Kind          | Component                               | Responsibility                                                                                                                   |
+|---------------|-----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| Go add-in     | `addins/goscr`                          | Loads Yaegi-based Go script projects and supports scripted entities/components, local or remote source updates, and hot reloads. |
+| Go add-in     | `addins/propview`                       | Manages entity property loading, persistence, revisions, and replication across services or clients.                             |
+| CLI           | `tools/propc`                           | Scans annotated Go property declarations and generates `*.sync.gen.go`.                                                          |
+| CLI           | `tools/excelc`                          | Generates table proto schemas, aggregate access code, and JSON/binary data from `.xlsx` files.                                   |
+| protoc plugin | `tools/protoc-gen-go-structure`         | Generates deep-copy helpers for Go Protobuf messages.                                                                            |
+| protoc plugin | `tools/protoc-gen-go-variant`           | Makes Go Protobuf messages implement the Golaxy GAP variant contract.                                                            |
+| protoc plugin | `tools/protoc-gen-go-excel`             | Generates Go table lookup and index methods for Excel schemas.                                                                   |
+| protoc plugin | `tools/protoc-gen-gdscript`             | Generates Godot-facing `*.pb.gd` Protobuf messages.                                                                              |
+| protoc plugin | `tools/protoc-gen-gdscript-excel`       | Generates Godot-facing `*.excel.gd` table wrappers and index queries.                                                            |
+| Godot runtime | `tools/protoc-gen-gdscript/godot`       | Protobuf codecs, streams, hashing, and base message classes used by `*.pb.gd`.                                                   |
+| Godot runtime | `tools/protoc-gen-gdscript-excel/godot` | Index lookup, chunk-file, and binary-search helpers used by `*.excel.gd`.                                                        |
+| Godot runtime | `godot/rpcli`                           | GAP/GTP connections, reconnects, RPC calls, callbacks, and variant transport.                                                    |
+| Godot runtime | `godot/resty`                           | Resty-style HTTP requests, downloads, concurrent requests, and Server-Sent Events.                                               |
+
+## Requirements and Installation
+
+### Prerequisites
+
+- Go `1.25.0`, or a version compatible with the current `go.mod`.
+- `protoc` and an include directory containing `google/protobuf/descriptor.proto`.
+- The official `protoc-gen-go` when generating Go Protobuf bindings.
+- Godot 4 when using generated GDScript and its runtime scripts.
+
+Add the complete Go module when application code imports the add-ins or generated runtime helpers:
 
 ```bash
 go get git.golaxy.org/scaffold@latest
 ```
 
-Install only the command-line tools you need:
+Install the official Go plugin and all generators in this repository:
 
 ```bash
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install git.golaxy.org/scaffold/tools/excelc@latest
 go install git.golaxy.org/scaffold/tools/propc@latest
 go install git.golaxy.org/scaffold/tools/protoc-gen-go-excel@latest
@@ -44,319 +68,598 @@ go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript@latest
 go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript-excel@latest
 ```
 
-When using the Protobuf plugins, make sure `protoc` is available and the installed `protoc-gen-*` binaries are on `PATH`. This module currently declares `go 1.25.0`.
+Make sure `$GOBIN`, or `$(go env GOPATH)/bin`, is on `PATH`. `protoc` maps `protoc-gen-<name>` to `--<name>_out`; pass plugin options with `--<name>_opt`.
 
-## Typical Workflows
-### Protobuf Schema Pipeline
-1. Author shared `.proto` schemas for RPC, persistence, snapshots, config, or other cross-process data contracts.
-2. Run `protoc` and generate the bindings needed by each runtime, such as Go server code, clone helpers, GAP variant integration, or Godot GDScript client code.
-3. Keep generated outputs in per-runtime directories, for example `./server/src/gen` and `./client/script/gen`.
+The Protobuf plugins in this repository use Go `protogen`. Even for GDScript-only output, every input `.proto` needs a valid `option go_package`, or an `M<file>=<go-import-path>` plugin parameter that supplies its Go import path.
 
-### Excel Table Pipeline
-1. Author `.xlsx` workbooks.
-2. Run `excelc proto` to generate table-oriented `.proto` files.
-3. Run the regular Protobuf generation flow on those generated schemas.
-4. Run `excelc code` to generate Go or GDScript table access code.
-5. Run `excelc data` to export binary and/or JSON table data.
+## Protobuf Code Generation
 
-The Excel pipeline is layered on top of Protobuf. Generated table schemas are still ordinary Protobuf messages, so they can also be used for transport, serialization, storage, snapshots, or other tooling beyond table lookup.
+### Minimal Schema
 
-### Property Synchronization
-1. Define property state types and synchronized methods in Go.
-2. Mark declarations for `tools/propc` and generate `*.sync.gen.go`.
-3. Declare properties through `addins/propview` so they can load, save, replicate by revision, and synchronize across endpoints.
+This example demonstrates regular application Protobuf generation. See the [complete Excel workflow](#complete-workflow) for schemas emitted by `excelc`.
 
-### Script Hotfixing
-1. Install `addins/goscr` on the service side.
-2. Point it at one or more local or remote script projects through `goscr.With.Projects(...)`.
-3. Build entity prototypes with `goscr.BuildEntityPT(...)` and script metadata.
-4. Let the add-in reload script solutions on local file changes or remote source changes.
+```proto
+syntax = "proto3";
 
-## Excel End-to-End Example
-For a split client/server project, one practical directory layout is:
+package example;
+option go_package = "example.com/project/server/gen/pb;pb";
 
-```text
-./config/excel/              # source .xlsx files
-./excelc/server/proto/       # server-facing Excel proto schema
-./excelc/client/proto/       # client-facing Excel proto schema
-./server/src/gen/            # generated server code
-./server/res/excel/          # exported server table data
-./client/addons/proto/       # copied from tools/protoc-gen-gdscript/godot
-./client/addons/excel/       # copied from tools/protoc-gen-gdscript-excel/godot
-./client/addons/rpcli/       # copied from godot/rpcli when GAP/RPC is used
-./client/script/gen/         # generated client code
-./client/excel/              # exported client table data
+message Profile {
+  int64 id = 1;
+  string name = 2;
+  repeated int32 tags = 3;
+}
 ```
 
-With that layout, the Excel pipeline usually looks like this:
+Assume it is stored at `proto/example/profile.proto`.
+
+### Generate Go Code
 
 ```bash
-# 1. Export server-facing proto schema with hash-based unique indexes.
-excelc proto \
-  --excel_files=./config/excel/Consts.xlsx \
-  --excel_dir=./config/excel \
-  --pb_out=./excelc/server/proto \
-  --pb_package=excel \
-  --pb_options=[go_package=./excel] \
-  --pb_imports=Consts.proto \
-  --pb_unique_index_as=hash_unique_index \
-  --targets=s
+protoc \
+  -I./proto \
+  --go_out=./server/gen/pb \
+  --go_opt=paths=source_relative \
+  --go-structure_out=./server/gen/pb \
+  --go-structure_opt=paths=source_relative \
+  --go-variant_out=./server/gen/pb \
+  --go-variant_opt=paths=source_relative \
+  --go-variant_opt=deterministic=true \
+  ./proto/example/profile.proto
+```
 
-# 2. Export client-facing proto schema with sorted unique indexes.
-excelc proto \
-  --excel_files=./config/excel/Consts.xlsx \
-  --excel_dir=./config/excel \
-  --pb_out=./excelc/client/proto \
-  --pb_package=excel \
-  --pb_options=[go_package=./excel] \
-  --pb_imports=Consts.proto \
-  --pb_unique_index_as=sorted_unique_index \
-  --gdscript_index_array=packed_int64 \
-  --targets=c
+The command produces:
 
-# 3. Generate server Go protobuf + Excel lookup code.
-protoc -I./excelc/server/proto -I./protobuf/include \
-  --include_imports \
-  --retain_options \
-  --go_out=./server/src/gen \
-  --go-structure_out=./server/src/gen \
-  --go-excel_out=./server/src/gen \
-  ./excelc/server/proto/*.proto
-excelc code --pb_dir=./excelc/server/proto --pb_package=excel --go_out=./server/src/gen/excel
+| File                   | Generator                 | Contents                                            |
+|------------------------|---------------------------|-----------------------------------------------------|
+| `profile.pb.go`        | `protoc-gen-go`           | Official Go Protobuf message.                       |
+| `profile.structure.go` | `protoc-gen-go-structure` | Message- and field-level deep-copy helpers.         |
+| `profile.variant.go`   | `protoc-gen-go-variant`   | GAP variant registration, type id, and I/O methods. |
 
-# 4. Generate client GDScript protobuf + Excel wrapper code.
-protoc -I./excelc/client/proto -I./protobuf/include \
-  --include_imports \
-  --retain_options \
+### `protoc-gen-go-structure`
+
+Run this plugin against the same schemas and Go package as `protoc-gen-go`. It does not define messages; for every top-level message in a file, it adds:
+
+- A `Clone()` deep copy.
+- Field-level `Clone<Field>()` helpers.
+- Appropriate cloning for messages, lists, maps, `bytes`, and scalar fields.
+
+The plugin has no custom options. It accepts standard `protogen` parameters such as `paths`, `module`, and `M<file>=<import>`.
+
+### `protoc-gen-go-variant`
+
+This plugin makes every top-level Go message in a file participate in the Golaxy GAP variant system and emits `*.variant.go` with:
+
+- Message registration in `init()`.
+- `Read`, `Write`, `Size`, `TypeId`, and `Indirect` methods.
+- A stable custom variant type id derived from the Protobuf package and message name.
+
+| Option          | Default | Description                                                                                                     |
+|-----------------|---------|-----------------------------------------------------------------------------------------------------------------|
+| `deterministic` | `false` | Uses deterministic Protobuf serialization. Enable it when stable bytes or hashes are required across processes. |
+
+Generated code depends on `git.golaxy.org/framework/net/gap/variant`.
+
+Go and GDScript variants use compatible 32-bit FNV-1a type ids. The id is stable for the same `package.message`, but the generators do not detect hash collisions across the complete schema set. Large protocols should validate type-id uniqueness during builds or tests.
+
+### Generate GDScript Code
+
+```bash
+protoc \
+  -I./proto \
   --gdscript_out=./client/script/gen \
+  --gdscript_opt=paths=source_relative \
   --gdscript_opt=string_as_string_name=true \
-  --gdscript_opt=gap_variant=true \
-  --gdscript-excel_out=./client/script/gen \
-  ./excelc/client/proto/*.proto
+  --gdscript_opt=deterministic=true \
+  ./proto/example/profile.proto
+```
+
+This emits `profile.pb.gd`. Generated scripts are not self-contained: copy every file from [`tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) into the Godot project, for example under `res://addons/proto/`.
+
+### `protoc-gen-gdscript`
+
+For proto3 enums and messages, this plugin generates:
+
+- GDScript fields, nested messages, and enums.
+- Binary serialization, deserialization, and size calculation.
+- `reset`, `clone`, `equals`, `hash`, `to_dict`, and `from_dict`.
+- Repeated fields, maps, packed/unpacked numeric fields, and cross-file preloads.
+
+| Option                  | Default | Description                                                                                                 |
+|-------------------------|---------|-------------------------------------------------------------------------------------------------------------|
+| `string_as_string_name` | `false` | Maps proto `string` to `StringName`. This is useful for repeated identifiers, not arbitrary long text.      |
+| `deterministic`         | `false` | Sorts map keys before serialization so equivalent messages produce stable bytes.                            |
+| `gap_variant`           | `false` | Makes messages extend `ProtoGAPVariant` and registers them with `GAPVariants`; also requires `godot/rpcli`. |
+| `class_name`            | `false` | Exports a top-level `class_name` from generated file scripts; scripts use `preload` by default.             |
+
+Cross-file references use relative `preload(...)`, so the output should preserve the relative source `.proto` layout. When `gap_variant=true` is enabled, also install [`godot/rpcli`](./godot/rpcli) so `GAPVariants` is available.
+
+#### Protobuf Support Scope
+
+`protoc-gen-gdscript` only targets `syntax = "proto3"`; proto2 and Protobuf Editions are unsupported. Ordinary scalars, enums, messages, `repeated`, `map`, and packed/unpacked arrays work, with these boundaries:
+
+| Feature               | Current behavior and limitations                                                                                                                                                                                          |
+|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Unknown fields        | Unknown varint, fixed32, fixed64, and length-delimited fields can be skipped but are not retained, so they disappear after reserialization. Unknown group fields cannot be skipped.                                       |
+| `oneof`               | No case/discriminator, mutual exclusion, or automatic clearing is generated. Members are treated as independent fields and should not be used for GDScript targets.                                                       |
+| `optional` / presence | Proto3 scalar `optional` fields have no `has_*` / `clear_*` state; absent and explicitly assigned default values cannot be distinguished. Message absence can still be represented by `null`.                             |
+| Services              | No RPC client/server stubs are generated from `service` declarations.                                                                                                                                                     |
+| ProtoJSON             | `to_dict` / `from_dict` are convenience conversions, not a complete ProtoJSON implementation. Special mappings for `Any`, `Timestamp`, `Duration`, `FieldMask`, `Struct`, and other well-known types are not implemented. |
+| `uint64` / `fixed64`  | Wire encoding preserves all 64 bits, but Godot `int` is signed 64-bit. Values above `9223372036854775807` appear negative; keep business values in the positive int64 range when practical.                               |
+
+## Excel Table Pipeline
+
+### Tool and Artifact Flow
+
+The Excel pipeline combines three stages and three generators:
+
+```text
+.xlsx
+  │
+  ├─ excelc proto ───────────────> .proto
+  │                                  │
+  │                                  └─ protoc
+  │                                      ├─ *.pb.go / *.structure.go / *.excel.go
+  │                                      ├─ *.pb.gd / *.excel.gd
+  │                                      └─ *.protoset
+  │
+  ├─ excelc code + *.protoset ───> tables.go / tables.gd
+  │
+  └─ excelc data + *.protoset ───> *.json / *.bin / *.bin.idx + *.bin.chk_*
+```
+
+The easily missed artifact is `*.protoset`: `excelc proto` only emits `.proto`. Afterwards, run `protoc --descriptor_set_out` separately for `excelc.proto` and every workbook proto, creating a matching `.protoset`. Both `excelc code` and `excelc data` reconstruct dynamic messages and custom options from those descriptor sets.
+
+### Recommended Layout
+
+This generic layout keeps server and client artifacts separate:
+
+```text
+config/excel/                    # .xlsx sources
+build/excel/server/proto/        # server .proto + .protoset
+build/excel/client/proto/        # client .proto + .protoset
+server/gen/excel/                # Go protobuf, lookup, and aggregate loader code
+server/res/excel/                # server JSON / binary data
+client/addons/proto/             # GDScript Protobuf runtime
+client/addons/excel/             # GDScript Excel runtime
+client/script/gen/excel/         # *.pb.gd, *.excel.gd, tables.gd
+client/excel/                    # client table data
+```
+
+Use separate proto directories for server and client targets. `--targets` can remove fields, while the chosen index representation and GDScript array storage may also differ.
+
+### Workbook Format
+
+[`tools/excelc/examples/ExampleCN.xlsx`](./tools/excelc/examples/ExampleCN.xlsx) and [`ExampleEN.xlsx`](./tools/excelc/examples/ExampleEN.xlsx) are complete samples.
+
+#### Workbook Structure
+
+- An optional `@types` sheet defines reusable structs and enums within the workbook.
+- Ordinary sheets define tables. Columns whose first character is not a letter are ignored; `#`-prefixed columns are convenient for comments.
+- `@types` metadata supports `separator`, `scope`, and `pb_field_number`. Index options only apply to ordinary table fields.
+
+#### Table Header Rows
+
+| Row      | Contents                                                                   |
+|----------|----------------------------------------------------------------------------|
+| 1        | Field name.                                                                |
+| 2        | Field type.                                                                |
+| 3        | Field `Meta`; localized headers such as “元数据” or “特性” are also recognized. |
+| 4        | Comment.                                                                   |
+| 5 onward | Table data.                                                                |
+
+#### Cell Syntax
+
+| Type            | Example and behavior                                                                                   |
+|-----------------|--------------------------------------------------------------------------------------------------------|
+| Scalar          | `1`, `3.14`, `true`, or `HelloWorld`.                                                                  |
+| `bytes`         | Base64 text such as `SGVsbG9Xb3JsZA==`.                                                                |
+| Enum            | Numeric value, enum name, or configured alias.                                                         |
+| Repeated scalar | Comma-separated by default, such as `1,2,3`; use `separator=\|` for `1\|2\|3`.                         |
+| Object          | YAML-style mapping such as `id: 1, name: Example, tags: [1, 2]`; field names and aliases are accepted. |
+| Repeated object | YAML array such as `[{id: 1}, {id: 2}]`, or multiple mappings with a custom separator.                 |
+| Map             | YAML-style mapping such as `1: Alpha, 2: Beta` or `1: {id: 1, name: Alpha}`.                           |
+
+#### Field Metadata
+
+Metadata uses query-string syntax, for example `scope=client&sorted_unique_index=1`:
+
+| Parameter             | Description                                                                                                          |
+|-----------------------|----------------------------------------------------------------------------------------------------------------------|
+| `scope`               | Repeatable target label used with `--targets`; fields without a scope are visible to every target.                   |
+| `separator`           | Custom repeated/map cell separator; defaults to `,`.                                                                 |
+| `pb_field_number`     | Overrides the Protobuf field number. It must be positive, outside the reserved range, and unique within its message. |
+| `unique_index`        | Logical unique-index group whose representation is selected by `--pb_unique_index_as`.                               |
+| `hash_unique_index`   | Forces a hash-based unique index.                                                                                    |
+| `sorted_unique_index` | Forces a sorted unique index.                                                                                        |
+| `index`               | Logical non-unique group whose representation is selected by `--pb_index_as`.                                        |
+| `hash_index`          | Forces a hash-based non-unique index.                                                                                |
+| `sorted_index`        | Forces a sorted non-unique index.                                                                                    |
+
+### Index Model
+
+| Index                 | Main representation                           | Lookup behavior                                        | Typical use                               |
+|-----------------------|-----------------------------------------------|--------------------------------------------------------|-------------------------------------------|
+| `hash_unique_index`   | `hash -> row offset`, plus a collision bucket | Average constant-time lookup, one matching row         | Query-heavy servers with enough memory.   |
+| `sorted_unique_index` | `Values + Offsets`                            | Binary search over `Values`                            | Clients that want to avoid map objects.   |
+| `hash_index`          | `hash -> Offsets` bucket                      | Average constant-time lookup, multiple rows per key    | Query speed over bucket/list memory cost. |
+| `sorted_index`        | `Values + Starts + Offsets`                   | Binary-search key, then read a contiguous offset range | Memory-sensitive client devices.          |
+
+Index configuration rules:
+
+- A single-column index assigns a tag to one field; a composite index reuses the same tag on multiple fields.
+- One field may participate in multiple indexes, for example `hash_unique_index=1&hash_unique_index=2`.
+- The four physical index types keep independent tag groups and may reuse numbers. Do not assign the same field and tag to multiple index types.
+- Unique lookups return one row; non-unique lookups return rows in original row-offset order.
+- Lookup results reference objects in the table message's `Rows`; they are not cloned.
+- `unique_index` defaults to `hash_unique_index`, while `index` defaults to `sorted_index`; command-line options can override both defaults.
+
+### Complete Workflow
+
+The following POSIX shell commands use neutral paths and names. They emit hash indexes for the server and sorted indexes for the client. The `server` / `client` target labels are conventions and can be replaced. Use equivalent line continuations and per-file loops in Windows batch or PowerShell.
+
+#### 1. Generate Server and Client Schemas
+
+```bash
+excelc proto \
+  --excel_files=./config/excel/Config.xlsx \
+  --pb_out=./build/excel/server/proto \
+  --pb_package=excel \
+  --pb_options='[go_package=./excel]' \
+  --pb_unique_index_as=hash_unique_index \
+  --pb_index_as=hash_index \
+  --targets=server
+
+excelc proto \
+  --excel_files=./config/excel/Config.xlsx \
+  --pb_out=./build/excel/client/proto \
+  --pb_package=excel \
+  --pb_options='[go_package=./excel]' \
+  --pb_unique_index_as=sorted_unique_index \
+  --pb_index_as=sorted_index \
+  --gdscript_index_array=packed_int64 \
+  --targets=client
+```
+
+To process every workbook in a directory, replace `--excel_files` with `--excel_dir=./config/excel`.
+
+#### 2. Generate Server Code and Descriptor Sets
+
+This is a POSIX shell example. `PROTOBUF_INCLUDE` must point to the include root containing `google/protobuf/descriptor.proto`.
+
+```bash
+SERVER_PROTO_DIR=./build/excel/server/proto
+PROTOBUF_INCLUDE=./third_party/protobuf/include
+
+for proto in "$SERVER_PROTO_DIR"/*.proto; do
+  protoc \
+    -I"$SERVER_PROTO_DIR" \
+    -I"$PROTOBUF_INCLUDE" \
+    --include_imports \
+    --retain_options \
+    --descriptor_set_out="${proto}set" \
+    --go_out=./server/gen \
+    --go-structure_out=./server/gen \
+    --go-excel_out=./server/gen \
+    "$proto" || exit 1
+done
+
 excelc code \
-  --pb_dir=./excelc/client/proto \
+  --pb_dir="$SERVER_PROTO_DIR" \
+  --pb_package=excel \
+  --go_out=./server/gen/excel
+```
+
+`"${proto}set"` turns `Config.proto` into `Config.protoset` and the dependency schema `excelc.proto` into `excelc.protoset`. Do not merge everything into an arbitrarily named descriptor set: `excelc` resolves files by workbook name.
+
+#### 3. Generate Client Code and Descriptor Sets
+
+```bash
+CLIENT_PROTO_DIR=./build/excel/client/proto
+PROTOBUF_INCLUDE=./third_party/protobuf/include
+
+for proto in "$CLIENT_PROTO_DIR"/*.proto; do
+  protoc \
+    -I"$CLIENT_PROTO_DIR" \
+    -I"$PROTOBUF_INCLUDE" \
+    --include_imports \
+    --retain_options \
+    --descriptor_set_out="${proto}set" \
+    --gdscript_out=./client/script/gen \
+    --gdscript_opt=string_as_string_name=true \
+    --gdscript-excel_out=./client/script/gen \
+    --gdscript-excel_opt=string_as_string_name=true \
+    "$proto" || exit 1
+done
+
+excelc code \
+  --pb_dir="$CLIENT_PROTO_DIR" \
   --pb_package=excel \
   --gdscript_out=./client/script/gen/excel \
-  --gdscript_default_data_dir=res://excel/
+  --gdscript_default_data_dir=res://excel/ \
+  --gdscript_autoload=false
+```
 
-# 5. Export server table data.
+Keep `string_as_string_name` identical for `protoc-gen-gdscript` and `protoc-gen-gdscript-excel`. Each `*.excel.gd`, its `*.pb.gd`, and the aggregate `tables.gd` should share the same output layer.
+
+#### 4. Export Data
+
+A server can export readable JSON for inspection and hot loading:
+
+```bash
 excelc data \
-  --excel_files=./config/excel/Consts.xlsx \
-  --excel_dir=./config/excel \
-  --pb_dir=./excelc/server/proto \
+  --excel_files=./config/excel/Config.xlsx \
+  --pb_dir=./build/excel/server/proto \
   --pb_package=excel \
-  --targets=s \
+  --targets=server \
   --json_out=./server/res/excel \
-  --binary_out=./server/res/excel
+  --json_multiline=true \
+  --json_indent="  "
+```
 
-# 6. Export client table data as chunked binary files.
+A client can export chunked binary data for on-demand loading:
+
+```bash
 excelc data \
-  --excel_files=./config/excel/Consts.xlsx \
-  --excel_dir=./config/excel \
-  --pb_dir=./excelc/client/proto \
+  --excel_files=./config/excel/Config.xlsx \
+  --pb_dir=./build/excel/client/proto \
   --pb_package=excel \
-  --targets=c \
+  --targets=client \
   --binary_out=./client/excel \
   --binary_chunked=true \
-  --binary_chunk_size=10000
+  --binary_chunk_size=256
 ```
 
-`--targets` does more than choose server/client outputs. It also controls column visibility during Excel export: only fields marked for the selected target are kept in the generated `.proto`, lookup code, and exported table data. In practice, server-only columns can be excluded from client schemas and client data packages, and client-only columns can be omitted from server-side artifacts the same way.
+Chunked mode emits `*.bin.idx` and `*.bin.chk_*`. Indexes and the chunk manifest live in `.idx`; rows live in chunk files, and lookup loads only the chunk containing the matched row. `--binary_chunk_size` is a row count, not a byte count, and should be tuned for row size and access patterns.
 
-`--pb_unique_index_as` controls the representation of `unique_index`, while `--pb_index_as` independently controls `index`, which allows one key to reference multiple rows. Different values produce different index message shapes and therefore different generated lookup code and runtime memory profiles. Servers can favor hash indexes for lookup speed, while memory-constrained clients can use sorted indexes to avoid large numbers of map and bucket objects. Generated GDScript wrappers query sorted `Values` with binary search and still work with `*.bin.idx` / `*.bin.chk_*` chunked table data.
+#### 5. Automation Recommendations
 
-`--gdscript_index_array` only controls the GDScript container used by internal integer index vectors. The default, `packed_int64`, generates `Values`, `Starts`, and `Offsets` as `PackedInt64Array` to reduce resident client memory and improve cache locality during sequential access. Use `array` only when compatibility with an older client runtime that expects `Array[int]` is required. This option does not change the Protobuf wire format; generated Go code continues to use ordinary integer slices, and server data and lookup behavior are unaffected. When using `packed_int64`, update the runtimes from both `tools/protoc-gen-gdscript/godot` and `tools/protoc-gen-gdscript-excel/godot` as well.
+- Split “schema/code compilation” from “data export.” Header, type, metadata, scope, or index changes require recompilation; ordinary row edits only require `excelc data`.
+- Remove stale `.proto`, `.protoset`, and generated code before recompiling so descriptors from deleted workbooks are not scanned by `excelc code`.
+- When generating inside a Godot project, preserve `.uid` files that still have matching scripts and remove only orphaned `.uid` files to avoid unnecessary resource UID churn.
+- Check every command's exit code and stop immediately instead of exporting new data with an old descriptor set.
 
-- `hash_unique_index` emits hash-based unique indexes. Generated lookup code can use these indexes for direct key-oriented queries, which is usually a good fit on the server where table data often stays resident in memory.
-- `sorted_unique_index` emits unique indexes as sorted arrays. Queries become binary search instead of direct hash lookup, but it usually has lower memory overhead than hash-based indexes, which makes it a better fit for memory-constrained clients.
-- `hash_index` emits non-unique indexes as `key -> offsets` buckets. Equality lookup is fast, but every distinct key adds map, bucket, and list overhead.
-- `sorted_index` stores non-unique indexes in flat `Values + Starts + Offsets` arrays. Lookup binary-searches `Values` and uses `Starts` to select the matching contiguous slice within `Offsets`, making this the default for client devices.
-- `--gdscript_index_array=packed_int64|array` selects the GDScript container for integer index vectors and defaults to `packed_int64`. Rerun `excelc proto` and regenerate both `*.pb.gd` and `*.excel.gd` after changing it.
-- `--binary_chunked` controls how binary table data is written during `excelc data`. When enabled, rows are split into `*.bin.chk_*` chunk files and paired with a `*.bin.idx` index file.
-- `--binary_chunk_size` controls the maximum row count per chunk. The default value is `10000`. It affects the exported binary layout but does not change the generated Protobuf schema.
+### `excelc`
 
-## Excel Workbook Specification
-### Workbook Structure
-- The optional `@types` sheet is used to declare reusable struct and enum types for the workbook. Table sheets can reference those custom types in field definitions instead of being limited to built-in scalar types only.
-- In the `@types` sheet, `Meta` supports `separator`, `scope`, and `pb_field_number`. Index-related keys such as `index`, `hash_index`, `sorted_index`, `unique_index`, `hash_unique_index`, and `sorted_unique_index` are only meaningful on table columns, not on `@types` struct or enum declarations.
-- Any table column whose header name does not start with a letter is ignored by `excelc`. In practice, columns starting with `#` are commonly used as comment columns for notes, examples, or editor-only annotations, and they will not participate in generated schema or exported data.
+`excelc` provides three subcommands. Run `excelc <command> --help` for the complete flag list.
 
-### Table Sheet Layout
-- `tools/excelc/examples/ExampleCN.xlsx` and `tools/excelc/examples/ExampleEN.xlsx` use the same table-sheet structure: row 1 is field names, row 2 is field types, row 3 is field `Meta`, row 4 is comments, and actual data starts from row 5.
-- Scalar cells are written directly, such as `1`, `3.14`, `true`, or `HelloWorld`.
-- `bytes` cells use Base64 text, as shown by values like `SGVsbG9Xb3JsZA==`.
-- Enum cells can use enum number, enum name, or enum alias, such as `1`, `EnumB` / `A`, and localized aliases like `枚举值B`.
-- Repeated scalar fields are separated by the field separator. By default this is `,`, so examples look like `1,2,3,4,5`. If `separator=|` is configured in meta, the same field can be written like `HelloWorld|HAHAHAHAHA`.
-- Object cells use YAML-style mapping syntax. Example values include `A: 1, B: HelloWorld, C: [1, 2, 3]`, and object fields may also be addressed by alias, such as `FieldA` / `字段A`.
-- Repeated object fields support both full YAML sequences like `[{A: 1, B: HelloWorld}, {A: 2, B: HAHAHAHAHA}]` and separator-based forms such as `A: 1, B: HelloWorld | A: 2, B: HAHAHAHAHA` when a custom separator is configured.
-- Map cells use YAML-style mapping syntax, for example `0: HelloWorld, 1: HAHAHAHAHA` or `0: {A: 1, B: HelloWorld}, 1: {A: 3, B: HAHAHAHAHA}`.
+#### `excelc proto`
 
-### Column Parameters
-- Field-level options are configured in the table header's `Meta` setting row, also accepted as `元数据` / `特性`. Each field column fills its own meta cell in query-string syntax, such as `scope=c&sorted_unique_index=1` or `separator=|`.
-- `scope`: repeatable target visibility tag. It works together with `--targets`; columns without `scope` are visible to all targets. To match multiple targets, repeat the key, for example `scope=c&scope=s` or `scope=client&scope=editor`.
-- `separator`: delimiter used when parsing repeated or map-like cell values. The default is `,`.
-- `index`: repeatable integer tag defining a non-unique index group. Its representation follows `--pb_index_as`, which defaults to `sorted_index`.
-- `hash_index`: repeatable integer tag forcing the corresponding non-unique index group to use hash buckets.
-- `sorted_index`: repeatable integer tag forcing the corresponding non-unique index group to use flat sorted arrays.
-- `unique_index`: repeatable integer index tag. It defines unique-index groups, and the actual exported representation follows `--pb_unique_index_as`.
-- `hash_unique_index`: repeatable integer index tag. It forces the tagged unique index groups to use hash-based representation.
-- `sorted_unique_index`: repeatable integer index tag. It forces the tagged unique index groups to use sorted-array representation.
-- `pb_field_number`: optional Protobuf field number override. It must be positive, outside Protobuf's reserved field-number range, and unique within the generated message.
-- A single-column unique index is configured by assigning one tag on one field, for example `unique_index=1` or `hash_unique_index=1`.
-- A composite unique index is configured by reusing the same tag on multiple fields. For example, `role_id` with `hash_unique_index=1` and `level` with `hash_unique_index=1` together form one composite unique index on `(role_id, level)`.
-- One table can define multiple unique indexes at the same time by using different tags, for example `id -> hash_unique_index=1`, `name -> sorted_unique_index=2`, and `type + sub_type -> sorted_unique_index=3`.
-- One field can participate in multiple indexes by repeating tags in its meta cell, for example `hash_unique_index=1&hash_unique_index=2`. That field will be included in both index groups.
-- `hash_unique_index` and `sorted_unique_index` group tags independently, so the same number may be reused across the two types; a single field cannot assign the same tag to both types.
-- Non-unique indexes support both single and composite columns: put `index=1` on one column, or reuse the same tag on multiple columns. Generated Go methods use `LookupByHashIndex...` / `LookupBySortedIndex...`; GDScript methods use `lookup_by_hash_index_...` / `lookup_by_sorted_index_...`; misses return an empty collection.
-- `hash_index` and `sorted_index` group tags independently, so the same number may be reused across the two types; a single field cannot assign the same tag to both types.
+Generates `excelc.proto` and one table schema `.proto` for each workbook.
 
-## Godot Integration
-### Runtime Directories
-- `tools/protoc-gen-gdscript/godot` is the Protobuf runtime required by every generated `*.pb.gd` file. Copy this directory into the Godot project so global classes such as `ProtoMessage`, `ProtoUtils`, `ProtoInputFile`, and `ProtoOutputBuffer` are available to generated code.
-- `tools/protoc-gen-gdscript-excel/godot` is the additional runtime directory used by generated `*.excel.gd` wrappers. Excel wrappers still depend on the Protobuf runtime above, so when using `protoc-gen-gdscript-excel`, both runtime directories must be present in the Godot project.
-- `godot/rpcli` is the Godot-side Golaxy RPC client runtime. Copy it into the Godot project when the client connects to Golaxy services through GAP/GTP, or when generated Protobuf code is emitted with `--gdscript_opt=gap_variant=true`.
-- `godot/resty` is a lightweight HTTP helper for Godot 4. Copy it into the Godot project when the client needs regular HTTP APIs, file downloads, or SSE streams outside the GAP/GTP RPC channel.
+| Option                   | Description                                                                                                 |
+|--------------------------|-------------------------------------------------------------------------------------------------------------|
+| `--excel_files`          | Explicit input files; preferred over `--excel_dir`.                                                         |
+| `--excel_dir`            | Scans a directory for Excel files.                                                                          |
+| `--pb_out`               | `.proto` output directory.                                                                                  |
+| `--pb_package`           | Proto package; defaults to `excel`.                                                                         |
+| `--pb_options`           | File options written into generated proto files, such as `go_package`.                                      |
+| `--pb_imports`           | Additional imports written into generated proto files.                                                      |
+| `--pb_custom_options`    | Base number for Excel custom options; defaults to `10000` and must stay consistent across one artifact set. |
+| `--targets`              | Target labels used with field `scope` to trim the schema.                                                   |
+| `--pb_unique_index_as`   | Default `unique_index` representation: `hash_unique_index` or `sorted_unique_index`.                        |
+| `--pb_index_as`          | Default `index` representation: `hash_index` or `sorted_index`.                                             |
+| `--gdscript_index_array` | Uses `packed_int64` or `array` for GDScript index vectors; defaults to `packed_int64`.                      |
 
-### Layout Rules
-- These runtime scripts do not need to live in a fixed directory. A common pattern is to place them under `addons/<name>` and let Godot register them through `class_name`.
-- Generated Protobuf scripts that use `gap_variant=true` depend on `GAPVariants` from `godot/rpcli`, so `res://addons/rpcli/` must be installed before those generated files can load.
-- Generated `*.pb.gd` files are anonymous scripts by default. Pass `--gdscript_opt=class_name=true` to emit a top-level `class_name` for each generated file script, using names such as `LoginPB`.
-- Keep generated `*.pb.gd` files in the same relative layout as the source `.proto` files. Cross-file Protobuf references are emitted as relative `preload(...)` calls.
-- Keep application Protobuf output and Excel-derived Protobuf output in different root directories. In practice, communication/storage schemas and table schemas are usually generated and maintained separately.
-- Keep each generated `*.excel.gd` file next to its matching `*.pb.gd` file. Generated Excel wrappers preload `./<name>.pb.gd` from the same output directory, and `excelc code --gdscript_out=...` typically emits an aggregate loader such as `tables.gd` into that directory as well.
-- The aggregate `tables.gd` script exports `class_name Tables` by default. Use `excelc code --gdscript_class_name=<Name>` to choose a different Godot global class name, or pass an empty value to omit `class_name`. It also auto-loads table data from `_ready()` by default; pass `--gdscript_autoload=false` when the caller should invoke `load_data()` manually.
-- `godot/resty` does not depend on the generated Protobuf or Excel runtimes. Register `resty_client.gd` as an autoload when you want a project-wide HTTP client, or instantiate `RestyClient` manually when a scene needs isolated defaults.
+#### `excelc code`
 
-### Layout Examples
-One common layout for regular Protobuf output:
+Reads `*.protoset` files under `--pb_dir` and generates aggregate loaders:
 
-```text
-res://addons/proto/          # files copied from tools/protoc-gen-gdscript/godot
-res://script/gen/proto/      # regular protobuf-generated client messages
-res://script/gen/proto/login.pb.gd
-```
+- `--go_out` emits `tables.go` with `Tables`, `LoadBinaryFiles`, and `LoadJsonFiles`.
+- `--gdscript_out` emits `tables.gd`, exports tables/messages/enums, and loads ordinary or chunked binary data.
+- `--gdscript_class_name` controls the aggregate script's `class_name`; the default is `Tables`, and an empty value disables it.
+- `--gdscript_default_data_dir` defaults to `res://excel/`.
+- `--gdscript_autoload` defaults to `true` and calls `load_data()` from `_ready()`. Set it to `false` when startup ordering or threading is managed by the application.
 
-One common layout for Excel table output:
+#### `excelc data`
 
-```text
-res://addons/proto/          # files copied from tools/protoc-gen-gdscript/godot
-res://addons/excel/          # files copied from tools/protoc-gen-gdscript-excel/godot
-res://script/gen/excel/      # Excel protobuf + wrapper output
-res://script/gen/excel/excelc.pb.gd
-res://script/gen/excel/example.pb.gd
-res://script/gen/excel/example.excel.gd
-res://script/gen/excel/tables.gd
-res://excel/                 # exported Excel data files
-res://excel/ExampleTable.bin.idx
-res://excel/ExampleTable.bin.chk_0
-```
+Reads workbooks and matching `*.protoset` files, builds dynamic table messages, and exports data:
 
-One common layout for a Godot client that uses the RPC runtime:
+| Option                               | Description                                                           |
+|--------------------------------------|-----------------------------------------------------------------------|
+| `--excel_files` / `--excel_dir`      | Input workbooks.                                                      |
+| `--pb_dir` / `--pb_package`          | Descriptor-set directory and proto package.                           |
+| `--targets`                          | Must match the target used to generate the selected schema directory. |
+| `--json_out`                         | Emits `*.json`.                                                       |
+| `--json_multiline` / `--json_indent` | Controls readable JSON formatting.                                    |
+| `--binary_out`                       | Emits `*.bin`.                                                        |
+| `--binary_chunked`                   | Switches to `.bin.idx + .bin.chk_*`.                                  |
+| `--binary_chunk_size`                | Maximum rows per chunk; defaults to `10000`.                          |
 
-```text
-res://addons/rpcli/          # files copied from godot/rpcli
-res://addons/proto/          # required when RPC payloads use generated protobuf
-res://script/gen/proto/      # optional generated RPC/application messages
-```
+### `protoc-gen-go-excel`
 
-One common layout for a Godot client that also uses regular HTTP APIs:
+This plugin only targets schemas produced by `excelc proto` and emits `*.excel.go`. It reads table/index custom options and adds:
 
-```text
-res://addons/resty/          # files copied from godot/resty
-res://addons/rpcli/          # optional, files copied from godot/rpcli
-res://addons/proto/          # optional, required by generated protobuf messages
-res://script/gen/proto/      # optional generated RPC/application messages
-```
+- Unique indexes: `LookupBy...` returns `(*Row, bool)`, while `GetBy...` panics on a miss. The first unique index also gets `Lookup` / `Get` aliases.
+- Non-unique indexes: `LookupBy...` returns `[]*Row`; a miss returns `nil`, which can be used as an empty slice. No `Get` method is generated.
+- Single- and multi-column indexes, hash-collision verification, and hash/sorted representations.
 
-Register the RPC runtime as a Godot autoload:
+The plugin has no custom options. Generated code depends on [`tools/excelc/excelutils`](./tools/excelc/excelutils), so the application Go module must depend on this repository.
 
-```ini
-[autoload]
+### `protoc-gen-gdscript-excel`
 
-RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
-```
+This plugin only targets schemas produced by `excelc proto` and emits `*.excel.gd` with ordinary and chunked table wrappers:
 
-Register the HTTP runtime as a Godot autoload:
+- `rows`, `row_count`, `row_at`, and their async counterparts.
+- Unique `lookup_by_<index_type>_<fields>` methods returning a row or `null`.
+- Non-unique methods with the same `lookup_by_...` naming and an `Array[Row]` result.
+- `lookup` / `lookup_async` aliases for the first unique index.
+- On-demand chunk loading from async methods on chunked wrappers.
 
-```ini
-[autoload]
+| Option                  | Default | Description                                                                      |
+|-------------------------|---------|----------------------------------------------------------------------------------|
+| `string_as_string_name` | `false` | Must match the setting used by `protoc-gen-gdscript` in the same generation run. |
 
-Resty="*res://addons/resty/resty_client.gd"
-```
+Generated code requires both [`tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) and [`tools/protoc-gen-gdscript-excel/godot`](./tools/protoc-gen-gdscript-excel/godot). Lookup results reference objects in `Rows`; they are not cloned.
 
-Then call HTTP APIs from GDScript:
+### GDScript Index Arrays
 
-```gdscript
-var res := await (
-    Resty.set_base_url("https://api.example.com")
-    .r()
-    .set_bearer_auth("token")
-    .set_query_param("page", 1)
-    .get_async("/users")
+`--gdscript_index_array=packed_int64` maps internal index `Values`, `Starts`, and `Offsets` vectors to `PackedInt64Array`, reducing Variant container overhead and improving sequential access. Use `array` for compatibility with older runtimes that expect `Array[int]`.
+
+This option:
+
+- Applies only to internal Excel index messages, not ordinary repeated fields.
+- Does not change the Protobuf wire format.
+- Does not affect Go code or server data structures.
+- Requires rerunning `excelc proto` and regenerating both `*.pb.gd` and `*.excel.gd` after a change.
+
+## Property Synchronization Generation
+
+### `propc`
+
+`propc` scans `+prop-sync-gen:` annotations immediately above types and methods in one Go declaration file, then emits an adjacent `*.sync.gen.go`. A typical declaration is:
+
+```go
+package state
+
+import (
+	pb "example.com/project/server/gen/pb"
+	"git.golaxy.org/scaffold/addins/propview"
 )
 
-if res.is_success():
-    print(res.json)
-else:
-    push_error(res.error_message)
+//go:generate propc
+
+// +prop-sync-gen:sync=true
+type ProfileProp struct {
+	propview.PropT[*pb.Profile]
+}
+
+// +prop-sync-gen:sync=true
+func (p *ProfileProp) SetName(name string) {
+	p.State().Name = name
+}
 ```
 
-Then connect from GDScript:
+Run:
 
-```gdscript
-var ok := await RPCli.connect_to_async(
-    "ws://127.0.0.1:8080",
-    GolaxyClient.PROTOCOL_WEBSOCKET,
-    "user_id",
-    "token"
-)
+```bash
+go generate ./...
 ```
 
-If the project also uses generated Excel table wrappers, register the aggregate table script as an autoload too:
+Or specify the declaration file directly:
+
+```bash
+propc --decl_file=profile_prop.go
+```
+
+The generated `profile_prop.sync.gen.go` defines `ProfilePropSync` and wraps `Load`, `Save`, `Managed`, and annotated operations. Each synchronized operation invokes the original implementation, increments its revision, and broadcasts the operation through `propview`.
+
+Notes:
+
+- The annotation must be immediately above the target type or method.
+- Only types with `sync=true` receive wrappers.
+- Only pointer-receiver methods on a selected type can be synchronized.
+- The underlying state is normally a message implementing GAP `variant.Value`, which can be generated with `protoc-gen-go-variant`.
+- `//go:generate propc` uses the `GOFILE` environment variable supplied by Go; use `--decl_file` for manual invocation.
+
+## Runtime Components
+
+### Go Add-ins
+
+#### `addins/propview`
+
+`propview` provides managed property tables, serialization, revisions, cross-service loading/persistence, and incremental synchronization. It is normally used with `*Sync` types emitted by `propc` and installed into a Golaxy runtime through `propview.AddIn`.
+
+#### `addins/goscr`
+
+`goscr` is a Yaegi-based service-level script add-in. It can load one or more local or remote script projects and integrate scripted entities/components with the Golaxy lifecycle. `addins/goscr/dynamic` manages projects, solutions, and hot reloads; `addins/goscr/fwlib` contains symbols exported into the script environment.
+
+### Godot Runtime Directories
+
+| Directory                               | Required when                                                                       |
+|-----------------------------------------|-------------------------------------------------------------------------------------|
+| `tools/protoc-gen-gdscript/godot`       | Any generated `*.pb.gd` is used.                                                    |
+| `tools/protoc-gen-gdscript-excel/godot` | Any generated `*.excel.gd` is used; the previous runtime is still required.         |
+| `godot/rpcli`                           | The Godot client connects through GAP/GTP or generation enables `gap_variant=true`. |
+| `godot/resty`                           | The Godot client uses regular HTTP, downloads, or SSE.                              |
+
+The directories do not require fixed installation paths. A common layout is:
+
+```text
+res://addons/proto/
+res://addons/excel/
+res://addons/rpcli/
+res://addons/resty/
+res://script/gen/proto/
+res://script/gen/excel/
+res://excel/
+```
+
+The generated Excel aggregate script can be registered as an autoload:
 
 ```ini
 [autoload]
 
 Excel="*res://script/gen/excel/tables.gd"
+```
+
+When generation used `--gdscript_autoload=false`, call it explicitly during startup:
+
+```gdscript
+if !Excel.load_data("res://excel/"):
+	push_error("failed to load excel data")
+```
+
+Register the RPC client as an autoload and connect:
+
+```ini
+[autoload]
+
 RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
+```
+
+```gdscript
+var ok := await RPCli.connect_to_async(
+	"ws://127.0.0.1:8080",
+	GolaxyClient.PROTOCOL_WEBSOCKET,
+	"user_id",
+	"token"
+)
+```
+
+Register the HTTP client as an autoload and create an isolated request snapshot:
+
+```ini
+[autoload]
+
 Resty="*res://addons/resty/resty_client.gd"
 ```
 
-`Resty.r()` creates an independent request snapshot from the current client defaults, including base URL, headers, query parameters, timeout, gzip, redirect, body-size, download-chunk, JSON parsing, and thread settings. Requests support JSON bodies, form bodies, raw bytes, path parameters, output files, `GET` / `POST` / `PUT` / `PATCH` / `DELETE` / `HEAD`, and both `*_async` and `*_start` styles for concurrent work.
+```gdscript
+var response := await (
+	Resty.set_base_url("https://api.example.com")
+	.r()
+	.set_bearer_auth("token")
+	.set_query_param("page", 1)
+	.get_async("/users")
+)
+```
 
-`Resty.sse(url)` creates a long-lived Server-Sent Events stream. It sends `GET`, adds `Accept: text/event-stream` and `Cache-Control: no-cache` when missing, emits `opened`, `event_received`, and `closed`, and can be stopped with `close()`.
+`Resty` also supports JSON/form/raw bodies, path parameters, output files, concurrent request handles, and `Resty.sse(url)`.
 
-## Tool Reference
-| Command | Key Options | Notes |
-| --- | --- | --- |
-| `excelc proto` | `--excel_files`, `--excel_dir`, `--pb_out`, `--pb_package`, `--pb_imports`, `--pb_options`, `--pb_unique_index_as`, `--pb_index_as`, `--gdscript_index_array`, `--targets` | Generates table `.proto` files and matching `*.protoset` files from Excel workbooks. Prefer `--excel_files` for explicit inputs. |
-| `excelc code` | `--pb_dir`, `--pb_package`, `--go_out`, `--gdscript_out`, `--gdscript_class_name`, `--gdscript_default_data_dir`, `--gdscript_autoload` | Generates Go or GDScript table access code from Excel proto files. |
-| `excelc data` | `--excel_files`, `--excel_dir`, `--pb_dir`, `--pb_package`, `--targets`, `--binary_out`, `--binary_chunked`, `--binary_chunk_size`, `--json_out`, `--json_multiline`, `--json_indent` | Exports binary or JSON table data from Excel workbooks using the generated proto descriptors. |
-| `propc` | `--decl_file` | Reads a property declaration file and writes the sibling `*.sync.gen.go`. The default comes from `GOFILE`, which makes it convenient for `go generate`. |
-| `protoc-gen-gdscript` | `string_as_string_name`, `gap_variant`, `class_name` | Passed as `--gdscript_opt=<name>=<value>` to control string mapping, GAP variant integration, and Godot `class_name` export. |
-| `protoc-gen-gdscript-excel` | `string_as_string_name` | Passed as `--gdscript-excel_opt=<name>=<value>` to control string field mapping in Excel wrappers. |
+## Repository Layout
 
-## Package Layout
-| Path | Responsibility |
-| --- | --- |
-| [`./addins/goscr`](./addins/goscr) | Service-level Go scripting add-in, script-backed entity/component helpers, lifecycle bridges. |
-| [`./addins/goscr/dynamic`](./addins/goscr/dynamic) | Dynamic script loading, project/solution management, and hotfix support. |
-| [`./addins/goscr/fwlib`](./addins/goscr/fwlib) | Symbols exported into script runtimes for `core`, `framework`, and `scaffold` packages. |
-| [`./addins/propview`](./addins/propview) | Runtime property view, property sync, marshaling, and replication helpers. |
-| [`./tools/excelc`](./tools/excelc) | Excel schema generation, access-code generation, and data export CLI. |
-| [`./tools/excelc/examples`](./tools/excelc/examples) | Example workbooks for the Excel table pipeline. |
-| [`./tools/excelc/excelutils`](./tools/excelc/excelutils) | Hash/index conversion, table loading, and lookup helpers used by generated code. |
-| [`./tools/propc`](./tools/propc) | Property synchronization code generator. |
-| [`./tools/protoc-gen-go-excel`](./tools/protoc-gen-go-excel) | Go Protobuf plugin for Excel table lookup APIs. |
-| [`./tools/protoc-gen-go-structure`](./tools/protoc-gen-go-structure) | Go Protobuf plugin for clone helpers. |
-| [`./tools/protoc-gen-go-variant`](./tools/protoc-gen-go-variant) | Go Protobuf plugin for GAP variant integration. |
-| [`./tools/protoc-gen-gdscript`](./tools/protoc-gen-gdscript) | GDScript Protobuf plugin for message types and serialization. |
-| [`./tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) | Godot Protobuf runtime scripts required by generated `*.pb.gd` files. |
-| [`./tools/protoc-gen-gdscript-excel`](./tools/protoc-gen-gdscript-excel) | GDScript Protobuf plugin for Excel table wrappers. |
-| [`./tools/protoc-gen-gdscript-excel/godot`](./tools/protoc-gen-gdscript-excel/godot) | Godot Excel runtime scripts required by generated `*.excel.gd` wrappers. |
-| [`./godot/rpcli`](./godot/rpcli) | Godot Golaxy RPC client runtime for GAP/GTP connections and callbacks. |
-| [`./godot/resty`](./godot/resty) | Godot Resty-style HTTP client runtime for HTTP requests, downloads, concurrent handles, and SSE streams. |
+| Path                                                                   | Responsibility                                            |
+|------------------------------------------------------------------------|-----------------------------------------------------------|
+| [`addins/goscr`](./addins/goscr)                                       | Go scripting add-in, dynamic projects, and hot reloads.   |
+| [`addins/propview`](./addins/propview)                                 | Managed properties and cross-endpoint synchronization.    |
+| [`tools/excelc`](./tools/excelc)                                       | Excel schema, code, and data generation CLI.              |
+| [`tools/excelc/examples`](./tools/excelc/examples)                     | Sample Excel workbooks.                                   |
+| [`tools/excelc/excelutils`](./tools/excelc/excelutils)                 | Go table loading, index, hashing, and comparison helpers. |
+| [`tools/propc`](./tools/propc)                                         | Property synchronization generator.                       |
+| [`tools/protoc-gen-go-structure`](./tools/protoc-gen-go-structure)     | Go Protobuf deep-copy plugin.                             |
+| [`tools/protoc-gen-go-variant`](./tools/protoc-gen-go-variant)         | Go GAP variant plugin.                                    |
+| [`tools/protoc-gen-go-excel`](./tools/protoc-gen-go-excel)             | Go Excel lookup plugin.                                   |
+| [`tools/protoc-gen-gdscript`](./tools/protoc-gen-gdscript)             | GDScript Protobuf plugin and runtime.                     |
+| [`tools/protoc-gen-gdscript-excel`](./tools/protoc-gen-gdscript-excel) | GDScript Excel plugin and runtime.                        |
+| [`godot/rpcli`](./godot/rpcli)                                         | Godot GAP/GTP RPC client.                                 |
+| [`godot/resty`](./godot/resty)                                         | Godot HTTP/SSE client.                                    |
 
 ## Related Repositories
+
 - [Golaxy Distributed Service Development Framework Core](https://github.com/pangdogs/core)
 - [Golaxy Distributed Service Development Framework](https://github.com/pangdogs/framework)
+
+## License
+
+This project is licensed under the [GNU Lesser General Public License v2.1](./LICENSE).

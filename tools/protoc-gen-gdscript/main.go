@@ -509,7 +509,7 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 		valueField := field.Message.Fields[1]
 		g.P("\t\t\t\t\tif pb_wire_type != ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:")
 		g.P("\t\t\t\t\t\treturn false")
-		g.P("\t\t\t\t\tvar pb_entry_size := ProtoUtils.decode_varint(pb_stream)")
+		g.P("\t\t\t\t\tvar pb_entry_size := ProtoUtils.decode_length(pb_stream)")
 		g.P("\t\t\t\t\tif pb_stream.get_error() != OK or pb_entry_size < 0:")
 		g.P("\t\t\t\t\t\treturn false")
 		g.P("\t\t\t\t\tvar pb_entry_stream := ProtoLimitedInputStream.new(pb_stream, pb_entry_size)")
@@ -545,9 +545,9 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 		return nil
 	}
 	if field.Desc.IsList() {
-		if isPackedField(field) {
+		if isPackableField(field) {
 			g.P("\t\t\t\t\tif pb_wire_type == ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:")
-			g.P("\t\t\t\t\t\tvar pb_packed_size := ProtoUtils.decode_varint(pb_stream)")
+			g.P("\t\t\t\t\t\tvar pb_packed_size := ProtoUtils.decode_length(pb_stream)")
 			g.P("\t\t\t\t\t\tif pb_stream.get_error() != OK or pb_packed_size < 0:")
 			g.P("\t\t\t\t\t\t\treturn false")
 			g.P("\t\t\t\t\t\tvar pb_packed_stream := ProtoLimitedInputStream.new(pb_stream, pb_packed_size)")
@@ -606,10 +606,10 @@ func emitDecodedAssignment(g *protogen.GeneratedFile, indent, target string, fie
 		if err != nil {
 			return err
 		}
-		g.P(indent, "var pb_value := ", msgType, ".new()")
-		g.P(indent, "if !ProtoUtils.decode_message(", streamName, ", pb_value):")
+		g.P(indent, "if ", target, " == null:")
+		g.P(indent, "\t", target, " = ", msgType, ".new()")
+		g.P(indent, "if !ProtoUtils.decode_message(", streamName, ", ", target, "):")
 		g.P(indent, "\treturn false")
-		g.P(indent, target, " = pb_value")
 		return nil
 	}
 	g.P(indent, "var pb_value := ", decodeValueExpression(field, streamName))
@@ -927,6 +927,11 @@ func emitSizeField(g *protogen.GeneratedFile, file *protogen.File, field *protog
 				sizeHelper = "sizeof_packed_int64_array"
 			}
 			g.P("\t\tpb_msg_size += ProtoUtils.", sizeHelper, "(", name, ", ", packedTagSizeLiteral(fieldNumber), ", func(pb_value): return ", scalarSizeExpression("pb_value", field, file, importAliases), ")")
+			return nil
+		}
+		if usesPackedInt64Array(field) {
+			g.P("\t\tfor pb_value in ", name, ":")
+			g.P("\t\t\tpb_msg_size += ", tagSizeLiteral(fieldNumber, fieldTypeConst(field)), " + ", scalarSizeExpression("pb_value", field, file, importAliases))
 			return nil
 		}
 		g.P("\t\tpb_msg_size += ProtoUtils.sizeof_array(", name, ", ", tagSizeLiteral(fieldNumber, fieldTypeConst(field)), ", func(pb_value): return ", valueSizeExpression("pb_value", field, file, importAliases), ")")
@@ -1480,18 +1485,11 @@ func fieldEnumValueReference(file *protogen.File, field *protogen.Field, importA
 }
 
 func enumQualifiedName(enum *protogen.Enum) string {
-	parts := []string{}
-	parent := enum.Desc.Parent()
-	for parent != nil {
-		if msg, ok := parent.(protoreflect.MessageDescriptor); ok {
-			parts = append([]string{safeIdentifier(string(msg.Name()))}, parts...)
-			parent = msg.Parent()
-			continue
-		}
-		break
+	name := safeIdentifier(string(enum.Desc.Name()))
+	if parentClass, ok := enumContainingMessageClassName(enum); ok {
+		return parentClass + "." + name
 	}
-	parts = append(parts, safeIdentifier(string(enum.Desc.Name())))
-	return strings.Join(parts, ".")
+	return name
 }
 
 func wireTypeConst(field *protogen.Field) string {
@@ -1544,7 +1542,7 @@ func fieldTypeConst(field *protogen.Field) string {
 	}
 }
 
-func isPackedField(field *protogen.Field) bool {
+func isPackableField(field *protogen.Field) bool {
 	if !field.Desc.IsList() || field.Desc.IsMap() {
 		return false
 	}
@@ -1552,6 +1550,10 @@ func isPackedField(field *protogen.Field) bool {
 		return false
 	}
 	return true
+}
+
+func isPackedField(field *protogen.Field) bool {
+	return isPackableField(field) && field.Desc.IsPacked()
 }
 
 func shouldSerializeExpression(valueExpr string, field *protogen.Field) string {
@@ -1590,12 +1592,20 @@ func encodeValueCall(valueExpr string, field *protogen.Field) string {
 		return "ProtoUtils.encode_float(pb_stream, " + valueExpr + ")"
 	case protoreflect.DoubleKind:
 		return "ProtoUtils.encode_double(pb_stream, " + valueExpr + ")"
+	case protoreflect.Int32Kind:
+		return "ProtoUtils.encode_int32(pb_stream, " + valueExpr + ")"
+	case protoreflect.Uint32Kind:
+		return "ProtoUtils.encode_uint32(pb_stream, " + valueExpr + ")"
+	case protoreflect.EnumKind:
+		return "ProtoUtils.encode_enum(pb_stream, " + valueExpr + ")"
 	case protoreflect.Sint32Kind:
 		return "ProtoUtils.encode_zigzag32(pb_stream, " + valueExpr + ")"
 	case protoreflect.Sint64Kind:
 		return "ProtoUtils.encode_zigzag64(pb_stream, " + valueExpr + ")"
-	case protoreflect.Fixed32Kind, protoreflect.Sfixed32Kind:
+	case protoreflect.Fixed32Kind:
 		return "ProtoUtils.encode_fixed32(pb_stream, " + valueExpr + ")"
+	case protoreflect.Sfixed32Kind:
+		return "ProtoUtils.encode_sfixed32(pb_stream, " + valueExpr + ")"
 	case protoreflect.Fixed64Kind, protoreflect.Sfixed64Kind:
 		return "ProtoUtils.encode_fixed64(pb_stream, " + valueExpr + ")"
 	default:
@@ -1618,12 +1628,20 @@ func decodeValueExpression(field *protogen.Field, streamName string) string {
 		return "ProtoUtils.decode_float(" + streamName + ")"
 	case protoreflect.DoubleKind:
 		return "ProtoUtils.decode_double(" + streamName + ")"
+	case protoreflect.Int32Kind:
+		return "ProtoUtils.decode_int32(" + streamName + ")"
+	case protoreflect.Uint32Kind:
+		return "ProtoUtils.decode_uint32(" + streamName + ")"
+	case protoreflect.EnumKind:
+		return "ProtoUtils.decode_enum(" + streamName + ")"
 	case protoreflect.Sint32Kind:
 		return "ProtoUtils.decode_zigzag32(" + streamName + ")"
 	case protoreflect.Sint64Kind:
 		return "ProtoUtils.decode_zigzag64(" + streamName + ")"
-	case protoreflect.Fixed32Kind, protoreflect.Sfixed32Kind:
+	case protoreflect.Fixed32Kind:
 		return "ProtoUtils.decode_fixed32(" + streamName + ")"
+	case protoreflect.Sfixed32Kind:
+		return "ProtoUtils.decode_sfixed32(" + streamName + ")"
 	case protoreflect.Fixed64Kind, protoreflect.Sfixed64Kind:
 		return "ProtoUtils.decode_fixed64(" + streamName + ")"
 	default:
@@ -1643,6 +1661,10 @@ func scalarSizeExpression(valueExpr string, field *protogen.Field, file *protoge
 		return "ProtoUtils.SIZEOF_FLOAT32"
 	case protoreflect.DoubleKind:
 		return "ProtoUtils.SIZEOF_FLOAT64"
+	case protoreflect.Int32Kind, protoreflect.EnumKind:
+		return "ProtoUtils.sizeof_int32(" + valueExpr + ")"
+	case protoreflect.Uint32Kind:
+		return "ProtoUtils.sizeof_uint32(" + valueExpr + ")"
 	case protoreflect.Sint32Kind:
 		return "ProtoUtils.sizeof_zigzag32(" + valueExpr + ")"
 	case protoreflect.Sint64Kind:

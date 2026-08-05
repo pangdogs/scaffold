@@ -1,40 +1,64 @@
 # Scaffold
+
 [English](./README.md) | [简体中文](./README.zh_CN.md)
 
-## 简介
-`scaffold` 是 [**Golaxy Distributed Service Development Framework**](https://github.com/pangdogs/framework) 的配套工具与 add-in 仓库，负责补齐主运行时之外的工程化能力。它主要面向 Go 服务端、Godot 客户端和 Excel 配表工具链，覆盖协议代码生成、配表数据导出、脚本热更新以及实体属性同步。
+## 项目简介
 
-这个仓库不提供完整业务框架，而是把 Golaxy 项目中常见的构建期与运行期辅助能力拆成可复用组件：
+`scaffold` 是 [Golaxy Distributed Service Development Framework](https://github.com/pangdogs/framework) 的配套工具与 add-in 仓库，为 Go 服务端、Godot 客户端和 Excel 配表流程提供代码生成、数据导出、运行时集成、属性同步与脚本热更新能力。
 
-- `addins`：挂接到 `git.golaxy.org/framework` 的服务级或运行时扩展。
-- `tools`：构建期使用的命令行生成器和 Protobuf 插件。
-- `godot`：Godot 侧可直接拷贝进项目的运行时脚本。
+这个仓库不是独立的业务框架，主要包含三类组件：
 
-## 能力概览
-| 模块 | 职责 |
-| --- | --- |
-| `addins/goscr` | 基于 Yaegi 的服务级 Go 脚本 add-in，支持脚本化实体 / 组件声明、脚本工程加载、本地或远端脚本热更新。 |
-| `addins/propview` | 运行时属性视图 add-in，负责实体属性托管、加载、保存、版本推进和跨服务或客户端同步。 |
-| `tools/propc` | 属性同步代码生成器，扫描带注解的 Go 声明并生成基于 `propview` 的 `*.sync.gen.go` 包装代码。 |
-| `tools/excelc` | Excel 配表工具链，将 `.xlsx` 转换为表结构 proto、访问代码、二进制 / JSON 数据文件。 |
-| `tools/protoc-gen-go-excel` | 为 Excel 配表导出的 Go Protobuf 结构补充表查询、索引访问和加载辅助。 |
-| `tools/protoc-gen-go-structure` | 为 Go Protobuf 消息补充深拷贝辅助函数，覆盖消息、切片、映射、字节数组和嵌套消息。 |
-| `tools/protoc-gen-go-variant` | 让生成的 Go Protobuf 消息可以作为 Golaxy GAP / RPC 栈中的 variant 值使用。 |
-| `tools/protoc-gen-gdscript` | 生成 Godot 侧可用的 GDScript Protobuf 消息类型、序列化和反序列化逻辑。 |
-| `tools/protoc-gen-gdscript-excel` | 为 Excel 生成的表结构补充 GDScript 表包装器和索引查询函数。 |
-| `godot/rpcli` | Godot 侧 Golaxy RPC 客户端运行时，提供 GAP / GTP 连接、重连、RPC 调用、回调绑定和 GAP variant 传输能力。 |
-| `godot/resty` | Godot 侧 Resty 风格 HTTP 运行时，支持链式 HTTP 请求、JSON / 表单 / 原始请求体、文件下载、并发请求和 Server-Sent Events。 |
+- `tools`：构建期运行的命令行工具和 `protoc` 插件。
+- `addins`：挂接到 `git.golaxy.org/framework` 的 Go 运行时扩展。
+- `godot`：可拷贝到 Godot 4 项目中的客户端运行时脚本。
 
-## 安装
-如果需要在业务代码中直接引用 add-in 包，安装整个模块：
+## 文档导航
+
+- [组件一览](#组件一览)
+- [环境与安装](#环境与安装)
+- [Protobuf 代码生成](#protobuf-代码生成)
+- [Excel 配表工具链](#excel-配表工具链)
+- [属性同步代码生成](#属性同步代码生成)
+- [运行时组件](#运行时组件)
+- [仓库目录](#仓库目录)
+
+## 组件一览
+
+| 类型        | 组件                                      | 主要职责                                              |
+|-----------|-----------------------------------------|---------------------------------------------------|
+| Go add-in | `addins/goscr`                          | 基于 Yaegi 加载 Go 脚本工程，支持脚本化实体 / 组件声明、本地或远端源码更新与热重载。 |
+| Go add-in | `addins/propview`                       | 托管实体属性的加载、保存、revision 推进以及跨服务或客户端同步。              |
+| CLI       | `tools/propc`                           | 扫描带注解的 Go 属性声明并生成 `*.sync.gen.go`。                |
+| CLI       | `tools/excelc`                          | 从 `.xlsx` 生成表结构 proto、聚合访问代码以及 JSON / 二进制数据。      |
+| protoc 插件 | `tools/protoc-gen-go-structure`         | 为 Go Protobuf 消息生成深拷贝辅助方法。                        |
+| protoc 插件 | `tools/protoc-gen-go-variant`           | 让 Go Protobuf 消息实现 Golaxy GAP variant 所需接口。       |
+| protoc 插件 | `tools/protoc-gen-go-excel`             | 为 Excel 表消息生成 Go 查询和索引访问方法。                       |
+| protoc 插件 | `tools/protoc-gen-gdscript`             | 生成 Godot 侧的 `*.pb.gd` Protobuf 消息代码。              |
+| protoc 插件 | `tools/protoc-gen-gdscript-excel`       | 生成 Godot 侧的 `*.excel.gd` 表包装器和索引查询方法。             |
+| Godot 运行时 | `tools/protoc-gen-gdscript/godot`       | `*.pb.gd` 依赖的 Protobuf 编解码、文件流、哈希和消息基类。           |
+| Godot 运行时 | `tools/protoc-gen-gdscript-excel/godot` | `*.excel.gd` 依赖的索引查询、分块文件和二分查找辅助。                 |
+| Godot 运行时 | `godot/rpcli`                           | GAP / GTP 连接、重连、RPC 调用、回调绑定和 variant 传输。          |
+| Godot 运行时 | `godot/resty`                           | Resty 风格 HTTP 请求、下载、并发请求和 Server-Sent Events。     |
+
+## 环境与安装
+
+### 前置依赖
+
+- Go `1.25.0` 或与当前 `go.mod` 兼容的版本。
+- `protoc`，以及可被 `-I` 引用的 `google/protobuf/descriptor.proto`。
+- 生成 Go Protobuf 时还需要官方 `protoc-gen-go`。
+- 使用 GDScript 产物时需要 Godot 4，并把对应运行时脚本放入项目。
+
+安装整个 Go 模块依赖：
 
 ```bash
 go get git.golaxy.org/scaffold@latest
 ```
 
-如果只需要命令行工具，可按需单独安装：
+安装官方 Go Protobuf 插件和本仓库中的全部生成工具：
 
 ```bash
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install git.golaxy.org/scaffold/tools/excelc@latest
 go install git.golaxy.org/scaffold/tools/propc@latest
 go install git.golaxy.org/scaffold/tools/protoc-gen-go-excel@latest
@@ -44,319 +68,598 @@ go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript@latest
 go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript-excel@latest
 ```
 
-使用 Protobuf 插件时，需要确保 `protoc` 可用，并且上面安装的 `protoc-gen-*` 可执行文件位于 `PATH` 中。当前模块声明的 Go 版本为 `go 1.25.0`。
+确保 `$GOBIN` 或 `$(go env GOPATH)/bin` 位于 `PATH`。`protoc-gen-<name>` 会被 `protoc` 自动映射为 `--<name>_out`，插件选项通过 `--<name>_opt` 传入。
 
-## 典型工作流
-### Protobuf Schema 流水线
-1. 编写共享的 `.proto` schema，用于 RPC、持久化、快照、配置或其他跨进程数据契约。
-2. 使用 `protoc` 按目标运行时生成绑定代码，例如 Go 服务端代码、结构拷贝辅助、GAP variant 集成，或 Godot 客户端 GDScript 代码。
-3. 将生成结果分别输出到不同运行时目录，例如 `./server/src/gen` 和 `./client/script/gen`。
+本仓库的 Protobuf 插件基于 Go `protogen`。即使只生成 GDScript，每个输入 `.proto` 也需要提供合法的 `option go_package`，或者通过 `M<file>=<go-import-path>` 插件参数映射 Go import path。
 
-### Excel 配表流水线
-1. 编写 `.xlsx` 表格文件。
-2. 使用 `excelc proto` 生成面向表结构的 `.proto` 文件。
-3. 对生成的 schema 执行常规 Protobuf 代码生成流程。
-4. 使用 `excelc code` 生成 Go 或 GDScript 表访问代码。
-5. 使用 `excelc data` 导出二进制和 / 或 JSON 表数据。
+## Protobuf 代码生成
 
-Excel 流水线建立在 Protobuf 之上。生成出来的表结构 schema 仍然是普通 Protobuf 消息，因此除了表查询之外，也可以用于传输、序列化、存储、快照或其他工具链场景。
+### 最小 schema
 
-### 属性同步
-1. 在 Go 中定义属性状态类型和需要同步的方法。
-2. 按 `tools/propc` 的约定添加注解并生成 `*.sync.gen.go`。
-3. 通过 `addins/propview` 声明属性，让其具备加载、保存、按 revision 复制和跨端同步的能力。
+以下示例用于说明普通业务 Protobuf 的生成方式；Excel 生成的 schema 见后面的 [Excel 完整流程](#完整流程)。
 
-### 脚本热更新
-1. 在服务端安装 `addins/goscr`。
-2. 通过 `goscr.With.Projects(...)` 指定一个或多个本地或远端脚本工程。
-3. 使用 `goscr.BuildEntityPT(...)` 结合脚本元信息声明实体原型。
-4. 由 add-in 监听本地文件变更或远端源码变更，并重新加载脚本方案。
+```proto
+syntax = "proto3";
 
-## Excel 端到端示例
-对于前后端分离的项目，一种比较清晰的目录层级如下：
+package example;
+option go_package = "example.com/project/server/gen/pb;pb";
 
-```text
-./config/excel/              # Excel 源文件
-./excelc/server/proto/       # 服务端使用的 Excel proto
-./excelc/client/proto/       # 客户端使用的 Excel proto
-./server/src/gen/            # 服务端生成代码
-./server/res/excel/          # 服务端导出的表数据
-./client/addons/proto/       # 从 tools/protoc-gen-gdscript/godot 拷贝
-./client/addons/excel/       # 从 tools/protoc-gen-gdscript-excel/godot 拷贝
-./client/addons/rpcli/       # 使用 GAP / RPC 时从 godot/rpcli 拷贝
-./client/script/gen/         # 客户端生成代码
-./client/excel/              # 客户端导出的表数据
+message Profile {
+  int64 id = 1;
+  string name = 2;
+  repeated int32 tags = 3;
+}
 ```
 
-按这种结构，编译 Excel proto、生成访问代码、导出表数据的流程可以写成：
+假设保存为 `proto/example/profile.proto`。
+
+### 生成 Go 代码
 
 ```bash
-# 1. 导出服务端 proto，唯一索引用 hash_unique_index。
-excelc proto \
-  --excel_files=./config/excel/Consts.xlsx \
-  --excel_dir=./config/excel \
-  --pb_out=./excelc/server/proto \
-  --pb_package=excel \
-  --pb_options=[go_package=./excel] \
-  --pb_imports=Consts.proto \
-  --pb_unique_index_as=hash_unique_index \
-  --targets=s
+protoc \
+  -I./proto \
+  --go_out=./server/gen/pb \
+  --go_opt=paths=source_relative \
+  --go-structure_out=./server/gen/pb \
+  --go-structure_opt=paths=source_relative \
+  --go-variant_out=./server/gen/pb \
+  --go-variant_opt=paths=source_relative \
+  --go-variant_opt=deterministic=true \
+  ./proto/example/profile.proto
+```
 
-# 2. 导出客户端 proto，唯一索引用 sorted_unique_index。
-excelc proto \
-  --excel_files=./config/excel/Consts.xlsx \
-  --excel_dir=./config/excel \
-  --pb_out=./excelc/client/proto \
-  --pb_package=excel \
-  --pb_options=[go_package=./excel] \
-  --pb_imports=Consts.proto \
-  --pb_unique_index_as=sorted_unique_index \
-  --gdscript_index_array=packed_int64 \
-  --targets=c
+这条命令分别生成：
 
-# 3. 生成服务端 Go protobuf 与 Excel 查询代码。
-protoc -I./excelc/server/proto -I./protobuf/include \
-  --include_imports \
-  --retain_options \
-  --go_out=./server/src/gen \
-  --go-structure_out=./server/src/gen \
-  --go-excel_out=./server/src/gen \
-  ./excelc/server/proto/*.proto
-excelc code --pb_dir=./excelc/server/proto --pb_package=excel --go_out=./server/src/gen/excel
+| 文件                     | 生成器                       | 内容                        |
+|------------------------|---------------------------|---------------------------|
+| `profile.pb.go`        | `protoc-gen-go`           | 官方 Go Protobuf 消息。        |
+| `profile.structure.go` | `protoc-gen-go-structure` | 消息和字段级深拷贝方法。              |
+| `profile.variant.go`   | `protoc-gen-go-variant`   | GAP variant 注册、类型编号及读写接口。 |
 
-# 4. 生成客户端 GDScript protobuf 与 Excel 包装代码。
-protoc -I./excelc/client/proto -I./protobuf/include \
-  --include_imports \
-  --retain_options \
+### `protoc-gen-go-structure`
+
+该插件必须和 `protoc-gen-go` 对同一批 schema、同一个 Go 包运行。它不生成消息定义，只为文件中的顶层 message 补充：
+
+- `Clone()` 消息深拷贝。
+- `Clone<Field>()` 字段级拷贝。
+- 对消息、列表、map、`bytes` 和标量字段采用对应的深拷贝策略。
+
+插件没有自定义选项，只使用 `protogen` 通用的 `paths`、`module` 和 `M<file>=<import>` 等参数。
+
+### `protoc-gen-go-variant`
+
+该插件让文件中的每个顶层 Go 消息参与 Golaxy GAP variant 体系，输出 `*.variant.go`，包括：
+
+- 在 `init()` 中注册消息类型。
+- `Read`、`Write`、`Size`、`TypeId` 和 `Indirect` 等方法。
+- 基于 Protobuf 完整消息名生成稳定的自定义 variant type id。
+
+| 选项              | 默认值     | 说明                                     |
+|-----------------|---------|----------------------------------------|
+| `deterministic` | `false` | 使用确定性 Protobuf 序列化；需要跨进程稳定字节序或哈希时建议开启。 |
+
+生成代码依赖 `git.golaxy.org/framework/net/gap/variant`。
+
+Go 和 GDScript variant 使用兼容的 32 位 FNV-1a type id。它对相同的 `package.message` 保持稳定，但生成器不会跨全部 schema 检测哈希碰撞；协议规模很大时应在构建或测试阶段校验 type id 唯一性。
+
+### 生成 GDScript 代码
+
+```bash
+protoc \
+  -I./proto \
   --gdscript_out=./client/script/gen \
+  --gdscript_opt=paths=source_relative \
   --gdscript_opt=string_as_string_name=true \
-  --gdscript_opt=gap_variant=true \
-  --gdscript-excel_out=./client/script/gen \
-  ./excelc/client/proto/*.proto
+  --gdscript_opt=deterministic=true \
+  ./proto/example/profile.proto
+```
+
+输出 `profile.pb.gd`。生成文件不是自包含的，还需要把 [`tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) 中的全部脚本拷贝到 Godot 项目，例如 `res://addons/proto/`。
+
+### `protoc-gen-gdscript`
+
+该插件为 proto3 的枚举和消息生成：
+
+- GDScript 字段、嵌套消息和枚举。
+- 二进制序列化、反序列化和大小计算。
+- `reset`、`clone`、`equals`、`hash`、`to_dict` 和 `from_dict`。
+- repeated、map、packed/unpacked 数值字段与跨文件 `preload`。
+
+| 选项                      | 默认值     | 说明                                                             |
+|-------------------------|---------|----------------------------------------------------------------|
+| `string_as_string_name` | `false` | 将 proto `string` 映射为 `StringName`；适合大量重复标识符，不适合任意长文本。          |
+| `deterministic`         | `false` | 对 map key 排序后序列化，使相同消息产生稳定字节序。                                 |
+| `gap_variant`           | `false` | 让消息继承 `ProtoGAPVariant` 并注册到 `GAPVariants`；同时依赖 `godot/rpcli`。 |
+| `class_name`            | `false` | 为生成文件导出顶层 `class_name`；默认通过脚本 `preload` 使用。                    |
+
+跨文件引用使用相对 `preload(...)`，因此应让生成目录保持源 `.proto` 的相对层级。启用 `gap_variant=true` 时，还要把 [`godot/rpcli`](./godot/rpcli) 放入项目，使 `GAPVariants` 可用。
+
+#### Protobuf 支持范围
+
+`protoc-gen-gdscript` 仅面向 `syntax = "proto3"`，不支持 proto2 和 Protobuf Editions。常规标量、枚举、消息、`repeated`、`map` 与 packed/unpacked 数组均可使用，但有以下边界：
+
+| 功能                    | 当前行为与限制                                                                                                                         |
+|-----------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| Unknown fields        | 可以跳过 varint、fixed32、fixed64 和 length-delimited 未知字段，但不会保存；再次序列化时这些字段会丢失。未知 group 字段无法跳过。                                        |
+| `oneof`               | 不生成 case/discriminator，也不执行成员互斥或自动清除；成员会被当成独立普通字段，不应在 GDScript 目标中使用。                                                           |
+| `optional` / presence | proto3 标量 `optional` 不生成 `has_*` / `clear_*`；无法区分“未设置”和“显式设置为默认值”。消息字段仍可用 `null` 表示不存在。                                         |
+| Services              | 不根据 `service` 声明生成 RPC client/server stub。                                                                                      |
+| ProtoJSON             | `to_dict` / `from_dict` 是便捷转换，不是完整 ProtoJSON 实现；未提供 `Any`、`Timestamp`、`Duration`、`FieldMask`、`Struct` 等 well-known types 的特殊映射。 |
+| `uint64` / `fixed64`  | wire 编解码保留完整 64 位，但 Godot `int` 是有符号 64 位；大于 `9223372036854775807` 的值表现为负数。业务字段应尽量限制在 int64 正数范围。                               |
+
+## Excel 配表工具链
+
+### 工具关系与产物
+
+Excel 流程由三个阶段和三个生成工具配合完成：
+
+```text
+.xlsx
+  │
+  ├─ excelc proto ───────────────> .proto
+  │                                  │
+  │                                  └─ protoc
+  │                                      ├─ *.pb.go / *.structure.go / *.excel.go
+  │                                      ├─ *.pb.gd / *.excel.gd
+  │                                      └─ *.protoset
+  │
+  ├─ excelc code + *.protoset ───> tables.go / tables.gd
+  │
+  └─ excelc data + *.protoset ───> *.json / *.bin / *.bin.idx + *.bin.chk_*
+```
+
+这里最容易遗漏的是 `*.protoset`：`excelc proto` 只生成 `.proto`，随后必须用 `protoc --descriptor_set_out` 为 `excelc.proto` 和每个工作簿 proto 分别生成同名 `.protoset`。`excelc code` 和 `excelc data` 都从这些 descriptor set 恢复动态消息和自定义 option。
+
+### 推荐目录
+
+下面是一个不绑定具体业务的前后端分离布局：
+
+```text
+config/excel/                    # .xlsx 源文件
+build/excel/server/proto/        # 服务端 .proto + .protoset
+build/excel/client/proto/        # 客户端 .proto + .protoset
+server/gen/excel/                # Go protobuf、查询与聚合加载代码
+server/res/excel/                # 服务端 JSON / 二进制数据
+client/addons/proto/             # GDScript Protobuf 运行时
+client/addons/excel/             # GDScript Excel 运行时
+client/script/gen/excel/         # *.pb.gd、*.excel.gd、tables.gd
+client/excel/                    # 客户端表数据
+```
+
+服务端和客户端建议使用不同的 proto 目录，因为 `--targets` 会裁剪字段，索引结构和 GDScript 内部数组配置也可能不同。
+
+### 工作簿规范
+
+[`tools/excelc/examples/ExampleCN.xlsx`](./tools/excelc/examples/ExampleCN.xlsx) 和 [`ExampleEN.xlsx`](./tools/excelc/examples/ExampleEN.xlsx) 提供了完整示例。
+
+#### 工作簿结构
+
+- 可选的 `@types` 页签声明工作簿内可复用的结构和枚举。
+- 普通页签声明表。列名首字符不是字母的列会被忽略，通常可用 `#` 开头的列写注释。
+- `@types` 的 `Meta` 支持 `separator`、`scope` 和 `pb_field_number`；索引参数只对普通表字段有效。
+
+#### 表页行布局
+
+| 行      | 内容                          |
+|--------|-----------------------------|
+| 第 1 行  | 字段名。                        |
+| 第 2 行  | 字段类型。                       |
+| 第 3 行  | 字段 `Meta`，也兼容表头名“元数据”或“特性”。 |
+| 第 4 行  | 注释。                         |
+| 第 5 行起 | 实际数据。                       |
+
+#### 单元格写法
+
+| 类型          | 示例与说明                                                         |
+|-------------|---------------------------------------------------------------|
+| 标量          | `1`、`3.14`、`true`、`HelloWorld`。                               |
+| `bytes`     | Base64 文本，例如 `SGVsbG9Xb3JsZA==`。                              |
+| 枚举          | 可写数值、枚举名或别名。                                                  |
+| repeated 标量 | 默认用 `,` 分隔，例如 `1,2,3`；可通过 `separator=\|` 改成 `1\|2\|3`。        |
+| 对象          | YAML 风格映射，例如 `id: 1, name: Example, tags: [1, 2]`；字段名和别名都可使用。 |
+| repeated 对象 | YAML 数组 `[{id: 1}, {id: 2}]`，或配合自定义分隔符书写多个映射。                 |
+| map         | YAML 风格映射，例如 `1: Alpha, 2: Beta` 或 `1: {id: 1, name: Alpha}`。 |
+
+#### 字段 Meta
+
+Meta 使用 query-string 格式，例如 `scope=client&sorted_unique_index=1`：
+
+| 参数                    | 说明                                                      |
+|-----------------------|---------------------------------------------------------|
+| `scope`               | 可重复的目标标签，与 `--targets` 配合裁剪字段；未设置时对所有目标可见。              |
+| `separator`           | repeated 或 map 单元格的自定义分隔符，默认 `,`。                       |
+| `pb_field_number`     | 覆盖 Protobuf field number；必须为合法正数、不能位于保留区间，并且在同一消息内不能重复。 |
+| `unique_index`        | 唯一索引逻辑分组，物理结构由 `--pb_unique_index_as` 决定。               |
+| `hash_unique_index`   | 强制使用哈希唯一索引。                                             |
+| `sorted_unique_index` | 强制使用有序唯一索引。                                             |
+| `index`               | 允许同键多行的索引逻辑分组，物理结构由 `--pb_index_as` 决定。                 |
+| `hash_index`          | 强制使用哈希非唯一索引。                                            |
+| `sorted_index`        | 强制使用有序非唯一索引。                                            |
+
+### 索引模型
+
+| 索引                    | 主要结构                               | 查询特征                   | 适用场景                     |
+|-----------------------|------------------------------------|------------------------|--------------------------|
+| `hash_unique_index`   | `hash -> row offset`，另带哈希冲突 bucket | 平均常数时间，唯一命中一行          | 内存充足、查询频繁的服务端。           |
+| `sorted_unique_index` | `Values + Offsets`                 | 对 `Values` 二分查找        | 希望减少 map 对象的客户端。         |
+| `hash_index`          | `hash -> Offsets` bucket           | 平均常数时间，同键返回多行          | 查询优先且可接受 bucket/list 开销。 |
+| `sorted_index`        | `Values + Starts + Offsets`        | 二分 key，再读取连续 offset 区间 | 内存敏感的终端设备。               |
+
+索引配置规则：
+
+- 单列索引只在一个字段配置 tag；复合索引让多个字段复用同一个 tag。
+- 同一字段可以参加多个索引，例如 `hash_unique_index=1&hash_unique_index=2`。
+- 四种物理索引分别使用独立的 tag 分组，可以复用数字；同一个字段不能把同一个 tag 同时配置给多种索引类型。
+- 唯一查询返回一行；非唯一查询返回按原始 row offset 排列的多行。
+- 查询结果引用表消息 `Rows` 中的对象，不会克隆行。
+- `unique_index` 默认使用 `hash_unique_index`，`index` 默认使用 `sorted_index`，可由命令行统一覆盖。
+
+### 完整流程
+
+下面的命令使用 POSIX shell、中性目录和表名，可直接改成项目路径。示例把服务端索引生成为 hash，把客户端索引生成为 sorted；目标标签 `server` / `client` 只是约定，可以换成任意名称。Windows 批处理或 PowerShell 使用等价的续行和逐文件循环即可。
+
+#### 1. 生成服务端和客户端 schema
+
+```bash
+excelc proto \
+  --excel_files=./config/excel/Config.xlsx \
+  --pb_out=./build/excel/server/proto \
+  --pb_package=excel \
+  --pb_options='[go_package=./excel]' \
+  --pb_unique_index_as=hash_unique_index \
+  --pb_index_as=hash_index \
+  --targets=server
+
+excelc proto \
+  --excel_files=./config/excel/Config.xlsx \
+  --pb_out=./build/excel/client/proto \
+  --pb_package=excel \
+  --pb_options='[go_package=./excel]' \
+  --pb_unique_index_as=sorted_unique_index \
+  --pb_index_as=sorted_index \
+  --gdscript_index_array=packed_int64 \
+  --targets=client
+```
+
+如果需要处理目录中的全部工作簿，把 `--excel_files` 换成 `--excel_dir=./config/excel`。
+
+#### 2. 生成服务端代码和 descriptor set
+
+以下是 POSIX shell 示例。`PROTOBUF_INCLUDE` 应指向包含 `google/protobuf/descriptor.proto` 的 include 根目录。
+
+```bash
+SERVER_PROTO_DIR=./build/excel/server/proto
+PROTOBUF_INCLUDE=./third_party/protobuf/include
+
+for proto in "$SERVER_PROTO_DIR"/*.proto; do
+  protoc \
+    -I"$SERVER_PROTO_DIR" \
+    -I"$PROTOBUF_INCLUDE" \
+    --include_imports \
+    --retain_options \
+    --descriptor_set_out="${proto}set" \
+    --go_out=./server/gen \
+    --go-structure_out=./server/gen \
+    --go-excel_out=./server/gen \
+    "$proto" || exit 1
+done
+
 excelc code \
-  --pb_dir=./excelc/client/proto \
+  --pb_dir="$SERVER_PROTO_DIR" \
+  --pb_package=excel \
+  --go_out=./server/gen/excel
+```
+
+`"${proto}set"` 会把 `Config.proto` 写成 `Config.protoset`，把依赖定义 `excelc.proto` 写成 `excelc.protoset`。不要把所有 schema 合并成一个任意名称的 descriptor set，`excelc` 会按工作簿名查找文件。
+
+#### 3. 生成客户端代码和 descriptor set
+
+```bash
+CLIENT_PROTO_DIR=./build/excel/client/proto
+PROTOBUF_INCLUDE=./third_party/protobuf/include
+
+for proto in "$CLIENT_PROTO_DIR"/*.proto; do
+  protoc \
+    -I"$CLIENT_PROTO_DIR" \
+    -I"$PROTOBUF_INCLUDE" \
+    --include_imports \
+    --retain_options \
+    --descriptor_set_out="${proto}set" \
+    --gdscript_out=./client/script/gen \
+    --gdscript_opt=string_as_string_name=true \
+    --gdscript-excel_out=./client/script/gen \
+    --gdscript-excel_opt=string_as_string_name=true \
+    "$proto" || exit 1
+done
+
+excelc code \
+  --pb_dir="$CLIENT_PROTO_DIR" \
   --pb_package=excel \
   --gdscript_out=./client/script/gen/excel \
-  --gdscript_default_data_dir=res://excel/
+  --gdscript_default_data_dir=res://excel/ \
+  --gdscript_autoload=false
+```
 
-# 5. 导出服务端表格数据。
+`string_as_string_name` 必须在 `protoc-gen-gdscript` 和 `protoc-gen-gdscript-excel` 两边保持一致。`*.excel.gd`、对应的 `*.pb.gd` 和聚合脚本 `tables.gd` 应位于同一输出层级。
+
+#### 4. 导出数据
+
+服务端可以导出便于检查和热加载的 JSON：
+
+```bash
 excelc data \
-  --excel_files=./config/excel/Consts.xlsx \
-  --excel_dir=./config/excel \
-  --pb_dir=./excelc/server/proto \
+  --excel_files=./config/excel/Config.xlsx \
+  --pb_dir=./build/excel/server/proto \
   --pb_package=excel \
-  --targets=s \
+  --targets=server \
   --json_out=./server/res/excel \
-  --binary_out=./server/res/excel
+  --json_multiline=true \
+  --json_indent="  "
+```
 
-# 6. 导出客户端分块二进制表数据。
+客户端可以导出按需加载的分块二进制：
+
+```bash
 excelc data \
-  --excel_files=./config/excel/Consts.xlsx \
-  --excel_dir=./config/excel \
-  --pb_dir=./excelc/client/proto \
+  --excel_files=./config/excel/Config.xlsx \
+  --pb_dir=./build/excel/client/proto \
   --pb_package=excel \
-  --targets=c \
+  --targets=client \
   --binary_out=./client/excel \
   --binary_chunked=true \
-  --binary_chunk_size=10000
+  --binary_chunk_size=256
 ```
 
-`--targets` 不只是用来区分服务端 / 客户端输出，它还会控制 Excel 导出时的列可见性。只有标记给当前 target 的字段，才会进入生成出来的 `.proto`、查询代码和最终导出的表数据。也就是说，服务端专用列可以在客户端 schema 和客户端数据中直接裁掉，客户端专用列也可以同样不进入服务端产物。
+分块模式生成 `*.bin.idx` 和 `*.bin.chk_*`。索引及 chunk manifest 位于 `.idx`，行数据位于 chunk 文件；查询时只加载命中行所在的 chunk。`--binary_chunk_size` 是最大行数而不是字节数，应根据单行大小和访问模式调整。
 
-`--pb_unique_index_as` 用来控制 `unique_index` 的存储结构，`--pb_index_as` 则独立控制允许同键多行的 `index`。不同取值会生成不同的索引消息结构，并进一步影响生成出来的查询代码以及表数据加载后的运行时内存特征。服务端通常可以使用哈希索引追求查询速度；内存受限的客户端可以使用有序索引降低 map 和 bucket 对象开销。生成的 GDScript Excel 包装器会对有序索引的 `Values` 做二分查找，并且仍可配合 `*.bin.idx` / `*.bin.chk_*` 读取分块数据。
+#### 5. 自动化建议
 
-`--gdscript_index_array` 只控制 GDScript 中索引内部整数向量的容器。默认的 `packed_int64` 会把 `Values`、`Starts` 和 `Offsets` 生成为 `PackedInt64Array`，减少终端侧常驻内存并改善连续访问的缓存局部性；`array` 可用于兼容仍依赖 `Array[int]` 的旧客户端运行库。该选项不改变 Protobuf wire 格式，Go 生成代码仍使用普通整数切片，服务端数据与查询行为不受影响。使用 `packed_int64` 时也需要同步更新 `tools/protoc-gen-gdscript/godot` 和 `tools/protoc-gen-gdscript-excel/godot` 运行库。
+- 把“schema / 代码编译”和“数据导出”拆成两个脚本。只有表头、类型、Meta、scope 或索引变化时才需要重新生成 schema 和代码；普通数据行变化只运行 `excelc data`。
+- 重新生成前清理旧 `.proto`、`.protoset` 和生成代码，避免已删除工作簿的残留 descriptor 被 `excelc code` 扫描。
+- 在 Godot 项目内生成代码时保留仍有对应脚本的 `.uid`，只清理孤立 `.uid`，避免资源 UID 无意义变化。
+- 每一步检查退出码并立即停止，避免用旧 descriptor set 继续导出新数据。
 
-- `hash_unique_index` 会把唯一索引生成为哈希索引结构。生成的查询代码可以基于它做按 key 的查找，对服务端这类常驻内存的数据访问场景通常更合适。
-- `sorted_unique_index` 会把唯一索引生成为有序数组。查询时改为二分查找，虽然不是直接哈希访问，但通常比哈希索引占用更少内存，更适合内存受限的客户端。
-- `hash_index` 会把非唯一索引生成为 `key -> offsets` bucket；等值查询快，但每个 key 都会产生 map/bucket/list 开销。
-- `sorted_index` 使用扁平的 `Values + Starts + Offsets` 存储非唯一索引。查询先二分 `Values`，再通过 `Starts` 定位 `Offsets` 中对应的连续区间，默认更适合终端设备。
-- `--gdscript_index_array=packed_int64|array` 控制 GDScript 索引整数向量的容器，默认为 `packed_int64`。切换该选项后需要重新运行 `excelc proto`，并同时重新生成 `*.pb.gd` 和 `*.excel.gd`。
-- `--binary_chunked` 控制 `excelc data` 导出二进制表数据时的写出方式。开启后，表行数据会拆成 `*.bin.chk_*` 分块文件，并配套生成一个 `*.bin.idx` 索引文件。
-- `--binary_chunk_size` 控制每个 chunk 最多包含多少行，默认值是 `10000`。它只影响导出的二进制布局，不会改变生成出来的 Protobuf schema。
+### `excelc`
 
-## Excel 工作簿规范
-### 工作簿结构
-- 可选的 `@types` 页签用于声明当前工作簿里可复用的结构和枚举类型。各个表页在定义字段类型时，可以直接引用这些自定义类型，而不只是内置标量类型。
-- `@types` 页签里的 `Meta` 支持 `separator`、`scope` 和 `pb_field_number`。`index`、`hash_index`、`sorted_index`、`unique_index`、`hash_unique_index`、`sorted_unique_index` 这类索引参数只对表页字段列有意义，不用于 `@types` 里的结构或枚举声明。
-- 表页里凡是列名首字符不是字母的列，`excelc` 都会忽略。实际使用时，通常会把 `#` 开头的列当作注释列，用来写说明、示例或仅供编辑查看的辅助信息，这些列不会进入生成的 schema，也不会进入导出的表数据。
+`excelc` 有三个子命令。可随时运行 `excelc <command> --help` 查看完整参数。
 
-### 表页数据布局
-- `tools/excelc/examples/ExampleCN.xlsx` 和 `tools/excelc/examples/ExampleEN.xlsx` 使用同一套表页结构：第 1 行写字段名，第 2 行写字段类型，第 3 行写字段 `Meta`，第 4 行写注释，真正的数据从第 5 行开始。
-- 标量类型直接写单元格值即可，例如 `1`、`3.14`、`true`、`HelloWorld`。
-- `bytes` 类型写 Base64 文本，示例里的 `SGVsbG9Xb3JsZA==` 就是这种格式。
-- 枚举类型可以写枚举数值、枚举名或枚举别名，例如 `1`、`EnumB` / `A`，以及中文别名 `枚举值B`。
-- 重复标量字段按分隔符写入，默认分隔符是 `,`，所以示例里会写成 `1,2,3,4,5`。如果在 `Meta` 里配置了 `separator=|`，同类字段也可以写成 `HelloWorld|HAHAHAHAHA`。
-- 对象类型单元格使用 YAML 风格的映射写法，例如 `A: 1, B: HelloWorld, C: [1, 2, 3]`。对象字段既可以用字段名，也可以用别名，例如 `A` / `字段A`、`FieldA`。
-- 重复对象字段既支持完整的 YAML 数组写法，例如 `[{A: 1, B: HelloWorld}, {A: 2, B: HAHAHAHAHA}]`，也支持在配置了自定义分隔符后写成 `A: 1, B: HelloWorld | A: 2, B: HAHAHAHAHA` 这种分隔形式。
-- `map` 类型单元格同样使用 YAML 风格映射写法，例如 `0: HelloWorld, 1: HAHAHAHAHA`，或者 `0: {A: 1, B: HelloWorld}, 1: {A: 3, B: HAHAHAHAHA}`。
+#### `excelc proto`
 
-### 列参数
-- 字段级参数写在表头里的 `Meta` 设置行中，表头名也兼容 `元数据` / `特性`。每个字段列都在这一行对应的单元格里填写自己的参数，格式使用 query-string 风格，例如 `scope=c&sorted_unique_index=1` 或 `separator=|`。
-- `scope`：可重复的 target 可见性标记。它和 `--targets` 一起生效；没有配置 `scope` 的列默认对所有 target 可见。需要同时命中多个 target 时，重复填写这个键即可，例如 `scope=c&scope=s` 或 `scope=client&scope=editor`。
-- `separator`：重复字段或 map 类单元格值的分隔符，默认是 `,`。
-- `index`：可重复的整数索引 tag，用来声明允许同键多行的索引分组，最终导出成哈希索引还是有序索引取决于 `--pb_index_as`；默认是 `sorted_index`。
-- `hash_index`：可重复的整数索引 tag，强制对应非唯一索引分组使用哈希 bucket 结构。
-- `sorted_index`：可重复的整数索引 tag，强制对应非唯一索引分组使用扁平有序结构。
-- `unique_index`：可重复的整数索引 tag，用来声明唯一索引分组，最终导出成哈希索引还是有序索引取决于 `--pb_unique_index_as`。
-- `hash_unique_index`：可重复的整数索引 tag，强制对应唯一索引分组使用哈希索引结构。
-- `sorted_unique_index`：可重复的整数索引 tag，强制对应唯一索引分组使用有序索引结构。
-- `pb_field_number`：可选的 Protobuf field number 覆盖值。必须为正数，不能落入 Protobuf 保留字段编号范围，并且在生成的同一个 message 内不能重复。
-- 单列唯一索引的配置方式就是把一个 tag 配到一个字段上，例如 `unique_index=1` 或 `hash_unique_index=1`。
-- 复合唯一索引的配置方式是让多个字段复用同一个 tag。例如 `role_id` 写 `hash_unique_index=1`，`level` 也写 `hash_unique_index=1`，那么这两个字段会共同组成 `(role_id, level)` 这个复合唯一索引。
-- 同一张表可以同时配置多个唯一索引，只要使用不同的 tag 分组即可。例如 `id -> hash_unique_index=1`，`name -> sorted_unique_index=2`，`type + sub_type -> sorted_unique_index=3`。
-- 同一个字段也可以同时参与多个索引，只需要在自己的 meta 单元格里重复填写多个 tag，例如 `hash_unique_index=1&hash_unique_index=2`，这样这个字段就会同时进入两个索引分组。
-- `hash_unique_index` 与 `sorted_unique_index` 分别使用各自的 tag 分组，因此不同类型可以复用相同数字；但同一字段不能把同一个 tag 同时配置给两种类型。
-- 非唯一索引同样支持单列和复合列：单列填写一次 `index=1`；复合索引让多个字段填写相同 tag。生成的 Go 查询方法为 `LookupByHashIndex...` / `LookupBySortedIndex...`，GDScript 查询方法为 `lookup_by_hash_index_...` / `lookup_by_sorted_index_...`，未命中时返回空集合。
-- `hash_index` 与 `sorted_index` 分别使用各自的 tag 分组，因此不同类型可以复用相同数字；但同一字段不能把同一个 tag 同时配置给两种类型。
+从工作簿生成 `excelc.proto` 和每个工作簿对应的表结构 `.proto`。
 
-## Godot 集成
-### 运行时目录
-- `tools/protoc-gen-gdscript/godot` 是所有生成的 `*.pb.gd` 文件都依赖的 Protobuf 运行时库。需要把这个目录拷贝到 Godot 项目中，让 `ProtoMessage`、`ProtoUtils`、`ProtoInputFile`、`ProtoOutputBuffer` 等全局类可被生成代码直接使用。
-- `tools/protoc-gen-gdscript-excel/godot` 是生成 `*.excel.gd` 包装器时额外需要的运行时目录。Excel 表格包装器仍然依赖 Protobuf 运行时，因此只要使用 `protoc-gen-gdscript-excel`，这两套运行时目录都需要同时放进 Godot 项目。
-- `godot/rpcli` 是 Godot 侧 Golaxy RPC 客户端运行时。Godot 客户端需要通过 GAP / GTP 连接 Golaxy 服务，或生成 protobuf 时启用了 `--gdscript_opt=gap_variant=true`，都需要把它拷贝进 Godot 项目。
-- `godot/resty` 是面向 Godot 4 的轻量 HTTP 辅助运行时。客户端需要在 GAP / GTP RPC 通道之外访问普通 HTTP API、下载文件或读取 SSE 流时，可以把它拷贝进 Godot 项目。
+| 参数                       | 说明                                                                  |
+|--------------------------|---------------------------------------------------------------------|
+| `--excel_files`          | 显式输入文件列表，优先于 `--excel_dir`。                                         |
+| `--excel_dir`            | 扫描目录中的 Excel 文件。                                                    |
+| `--pb_out`               | `.proto` 输出目录。                                                      |
+| `--pb_package`           | proto package，默认 `excel`。                                           |
+| `--pb_options`           | 写入生成 proto 的 file options，例如 `go_package`。                          |
+| `--pb_imports`           | 额外写入生成 proto 的 import。                                              |
+| `--pb_custom_options`    | Excel 自定义 option 的编号基数，默认 `10000`；同一套产物必须保持一致。                      |
+| `--targets`              | 输出目标标签，并与字段 `scope` 一起裁剪 schema。                                    |
+| `--pb_unique_index_as`   | `unique_index` 的默认物理结构：`hash_unique_index` 或 `sorted_unique_index`。 |
+| `--pb_index_as`          | `index` 的默认物理结构：`hash_index` 或 `sorted_index`。                      |
+| `--gdscript_index_array` | GDScript 索引整数向量使用 `packed_int64` 或 `array`，默认 `packed_int64`。       |
 
-### 布局规则
-- 这些运行时脚本不要求放在固定目录。实际项目里更常见的做法是统一放到 `addons/<name>` 一类目录下，通过 `class_name` 注册给 Godot。
-- 启用 `gap_variant=true` 的生成 protobuf 脚本依赖 `godot/rpcli` 里的 `GAPVariants`，因此加载这些生成文件前，Godot 项目里必须已经有 `res://addons/rpcli/`。
-- 生成的 `*.pb.gd` 文件默认不导出文件脚本类名。传入 `--gdscript_opt=class_name=true` 后，会为每个生成文件写入顶层 `class_name`，类名形如 `LoginPB`。
-- 生成后的 `*.pb.gd` 文件应尽量保持与源 `.proto` 文件相同的相对目录结构，因为跨文件 Protobuf 引用会生成相对 `preload(...)` 调用。
-- 普通业务 Protobuf 输出与 Excel 派生 Protobuf 输出通常应放在不同的根目录下维护。通信 / 存储协议和表格协议一般不是同一套产物，不建议混在一个输出目录里。
-- 每个 `*.excel.gd` 文件都应和对应的 `*.pb.gd` 放在同一输出目录下。生成的 Excel 包装器会从同目录预加载 `./<name>.pb.gd`，而 `excelc code --gdscript_out=...` 也通常会在该目录中生成 `tables.gd` 之类的聚合加载脚本。
-- 聚合脚本 `tables.gd` 默认导出 `class_name Tables`。可以通过 `excelc code --gdscript_class_name=<Name>` 指定其他 Godot 全局类名，也可以传空值来省略 `class_name`。默认还会在 `_ready()` 中自动加载表数据；如果希望调用方手动执行 `load_data()`，可以传 `--gdscript_autoload=false`。
-- `godot/resty` 不依赖生成的 Protobuf 或 Excel 运行时。需要项目级 HTTP 客户端时，可以把 `resty_client.gd` 注册成 autoload；如果某个场景需要独立默认配置，也可以手动实例化 `RestyClient`。
+#### `excelc code`
 
-### 布局示例
-普通 Protobuf 产物一种常见布局如下：
+读取 `--pb_dir` 下的 `*.protoset` 并生成聚合加载入口：
 
-```text
-res://addons/proto/          # 从 tools/protoc-gen-gdscript/godot 拷贝的运行时文件
-res://script/gen/proto/      # 普通 protobuf 生成的客户端消息
-res://script/gen/proto/login.pb.gd
-```
+- `--go_out` 生成 `tables.go`，包含 `Tables`、`LoadBinaryFiles` 和 `LoadJsonFiles`。
+- `--gdscript_out` 生成 `tables.gd`，导出表、消息和枚举，并加载普通或分块二进制。
+- `--gdscript_class_name` 控制聚合脚本的 `class_name`，默认 `Tables`；传空值可禁用。
+- `--gdscript_default_data_dir` 默认 `res://excel/`。
+- `--gdscript_autoload` 默认 `true`，会在 `_ready()` 自动调用 `load_data()`；需要自行安排启动顺序或线程时可设为 `false`。
 
-Excel 配表产物一种常见布局如下：
+#### `excelc data`
 
-```text
-res://addons/proto/          # 从 tools/protoc-gen-gdscript/godot 拷贝的运行时文件
-res://addons/excel/          # 从 tools/protoc-gen-gdscript-excel/godot 拷贝的运行时文件
-res://script/gen/excel/      # Excel protobuf 与包装器输出
-res://script/gen/excel/excelc.pb.gd
-res://script/gen/excel/example.pb.gd
-res://script/gen/excel/example.excel.gd
-res://script/gen/excel/tables.gd
-res://excel/                 # 导出的 Excel 数据文件
-res://excel/ExampleTable.bin.idx
-res://excel/ExampleTable.bin.chk_0
-```
+读取工作簿和匹配的 `*.protoset`，构造动态表消息并导出数据：
 
-Godot 客户端使用 RPC 运行时时，一种常见布局如下：
+| 参数                                   | 说明                                |
+|--------------------------------------|-----------------------------------|
+| `--excel_files` / `--excel_dir`      | 输入工作簿。                            |
+| `--pb_dir` / `--pb_package`          | descriptor set 目录和 proto package。 |
+| `--targets`                          | 必须与生成该目录 schema 时使用的目标一致。         |
+| `--json_out`                         | 导出 `*.json`。                      |
+| `--json_multiline` / `--json_indent` | 控制 JSON 可读格式。                     |
+| `--binary_out`                       | 导出 `*.bin`。                       |
+| `--binary_chunked`                   | 改为 `.bin.idx + .bin.chk_*` 分块格式。  |
+| `--binary_chunk_size`                | 每个 chunk 最大行数，默认 `10000`。         |
 
-```text
-res://addons/rpcli/          # 从 godot/rpcli 拷贝的运行时文件
-res://addons/proto/          # RPC 载荷使用生成 protobuf 时需要
-res://script/gen/proto/      # 可选的 RPC / 业务 protobuf 生成消息
-```
+### `protoc-gen-go-excel`
 
-Godot 客户端同时使用普通 HTTP API 时，一种常见布局如下：
+该插件只面向 `excelc proto` 生成的 schema，输出 `*.excel.go`。它读取表和索引 custom options，为表消息补充：
 
-```text
-res://addons/resty/          # 从 godot/resty 拷贝的运行时文件
-res://addons/rpcli/          # 可选，从 godot/rpcli 拷贝的运行时文件
-res://addons/proto/          # 可选，生成 protobuf 消息需要
-res://script/gen/proto/      # 可选的 RPC / 业务 protobuf 生成消息
-```
+- 唯一索引：`LookupBy...` 返回 `(*Row, bool)`，`GetBy...` 未命中时 panic；第一个唯一索引还会生成简写 `Lookup` / `Get`。
+- 非唯一索引：`LookupBy...` 返回 `[]*Row`，未命中返回 `nil`（可按空切片使用），不生成 `Get`。
+- 单列、复合列、哈希冲突校验以及 hash/sorted 两种索引结构。
 
-在 Godot 里把 RPC 运行时注册成 autoload：
+插件没有自定义选项。生成代码依赖 [`tools/excelc/excelutils`](./tools/excelc/excelutils)，业务 Go 模块需要依赖本仓库。
 
-```ini
-[autoload]
+### `protoc-gen-gdscript-excel`
 
-RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
-```
+该插件只面向 `excelc proto` 生成的 schema，输出 `*.excel.gd`，包含普通表和分块表包装器：
 
-在 Godot 里把 HTTP 运行时注册成 autoload：
+- `rows`、`row_count`、`row_at` 以及对应异步方法。
+- 唯一索引 `lookup_by_<index_type>_<fields>` 返回 row 或 `null`。
+- 非唯一索引使用相同的 `lookup_by_...` 命名，返回 `Array[Row]`。
+- 第一个唯一索引会生成简写 `lookup` / `lookup_async`。
+- 分块包装器的异步查询会按需加载目标 chunk。
 
-```ini
-[autoload]
+| 选项                      | 默认值     | 说明                                      |
+|-------------------------|---------|-----------------------------------------|
+| `string_as_string_name` | `false` | 必须与同一次生成使用的 `protoc-gen-gdscript` 设置一致。 |
 
-Resty="*res://addons/resty/resty_client.gd"
-```
+生成代码同时依赖 [`tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) 和 [`tools/protoc-gen-gdscript-excel/godot`](./tools/protoc-gen-gdscript-excel/godot)。查询返回的是 `Rows` 中的对象引用，不会克隆。
 
-然后可以在 GDScript 中调用 HTTP API：
+### GDScript 索引数组
 
-```gdscript
-var res := await (
-    Resty.set_base_url("https://api.example.com")
-    .r()
-    .set_bearer_auth("token")
-    .set_query_param("page", 1)
-    .get_async("/users")
+`--gdscript_index_array=packed_int64` 会把索引内部的 `Values`、`Starts` 和 `Offsets` 映射为 `PackedInt64Array`，减少 Variant 容器开销并改善连续访问；`array` 用于兼容依赖 `Array[int]` 的旧运行时。
+
+这个选项：
+
+- 只作用于 Excel 内部索引消息，不影响普通 repeated 字段。
+- 不改变 Protobuf wire 格式。
+- 不影响 Go 生成代码和服务端数据结构。
+- 修改后需要重新运行 `excelc proto`，并重新生成 `*.pb.gd` 和 `*.excel.gd`。
+
+## 属性同步代码生成
+
+### `propc`
+
+`propc` 扫描一个 Go 声明文件中紧邻类型和方法的 `+prop-sync-gen:` 注解，生成相邻的 `*.sync.gen.go`。典型声明如下：
+
+```go
+package state
+
+import (
+	pb "example.com/project/server/gen/pb"
+	"git.golaxy.org/scaffold/addins/propview"
 )
 
-if res.is_success():
-    print(res.json)
-else:
-    push_error(res.error_message)
+//go:generate propc
+
+// +prop-sync-gen:sync=true
+type ProfileProp struct {
+	propview.PropT[*pb.Profile]
+}
+
+// +prop-sync-gen:sync=true
+func (p *ProfileProp) SetName(name string) {
+	p.State().Name = name
+}
 ```
 
-然后可以在 GDScript 中连接服务：
+执行：
 
-```gdscript
-var ok := await RPCli.connect_to_async(
-    "ws://127.0.0.1:8080",
-    GolaxyClient.PROTOCOL_WEBSOCKET,
-    "user_id",
-    "token"
-)
+```bash
+go generate ./...
 ```
 
-如果项目同时使用生成的 Excel 表格包装器，也可以把聚合表脚本注册为 autoload：
+也可以直接指定文件：
+
+```bash
+propc --decl_file=profile_prop.go
+```
+
+生成的 `profile_prop.sync.gen.go` 会创建 `ProfilePropSync`，包装 `Load`、`Save`、`Managed` 和被标记的方法。同步方法先调用原始实现，再推进 revision 并通过 `propview` 广播操作。
+
+注意事项：
+
+- 注解必须紧邻目标类型或方法的上一行。
+- 只有 `sync=true` 的类型会生成包装器。
+- 只有该类型的指针 receiver 方法可以标记为同步操作。
+- 属性底层状态通常是实现了 GAP `variant.Value` 的消息，可配合 `protoc-gen-go-variant` 生成。
+- `//go:generate propc` 会使用 Go 自动提供的 `GOFILE`；手动运行时使用 `--decl_file`。
+
+## 运行时组件
+
+### Go add-ins
+
+#### `addins/propview`
+
+`propview` 提供受管属性表、序列化、revision、跨服务加载 / 保存与增量同步。它通常与 `propc` 生成的 `*Sync` 类型一起使用，并通过 `propview.AddIn` 安装到 Golaxy runtime。
+
+#### `addins/goscr`
+
+`goscr` 是基于 Yaegi 的服务级脚本 add-in，可配置一个或多个本地或远端脚本工程，并把脚本实体 / 组件接入 Golaxy 生命周期。`addins/goscr/dynamic` 负责工程、方案和热更新管理，`addins/goscr/fwlib` 提供导出到脚本环境的符号库。
+
+### Godot 运行时目录
+
+| 目录                                      | 何时需要                                              |
+|-----------------------------------------|---------------------------------------------------|
+| `tools/protoc-gen-gdscript/godot`       | 任何生成的 `*.pb.gd`。                                  |
+| `tools/protoc-gen-gdscript-excel/godot` | 任何生成的 `*.excel.gd`；同时仍需要上一项。                      |
+| `godot/rpcli`                           | Godot 连接 Golaxy GAP / GTP，或启用 `gap_variant=true`。 |
+| `godot/resty`                           | Godot 发起普通 HTTP、下载或 SSE 请求。                       |
+
+这些目录没有固定安装路径，常见布局如下：
+
+```text
+res://addons/proto/
+res://addons/excel/
+res://addons/rpcli/
+res://addons/resty/
+res://script/gen/proto/
+res://script/gen/excel/
+res://excel/
+```
+
+生成的 Excel 聚合脚本可注册为 autoload：
 
 ```ini
 [autoload]
 
 Excel="*res://script/gen/excel/tables.gd"
+```
+
+如果生成时设置了 `--gdscript_autoload=false`，由启动流程显式调用：
+
+```gdscript
+if !Excel.load_data("res://excel/"):
+	push_error("failed to load excel data")
+```
+
+RPC 客户端可注册为 autoload 后连接服务：
+
+```ini
+[autoload]
+
 RPCli="*res://addons/rpcli/golaxy_rpcli.gd"
+```
+
+```gdscript
+var ok := await RPCli.connect_to_async(
+	"ws://127.0.0.1:8080",
+	GolaxyClient.PROTOCOL_WEBSOCKET,
+	"user_id",
+	"token"
+)
+```
+
+HTTP 客户端可注册为 autoload 后创建独立请求快照：
+
+```ini
+[autoload]
+
 Resty="*res://addons/resty/resty_client.gd"
 ```
 
-`Resty.r()` 会基于当前客户端默认配置创建一个独立请求快照，包括 base URL、请求头、查询参数、超时、gzip、重定向、请求体大小、下载块大小、JSON 解析和线程设置。请求支持 JSON 请求体、表单请求体、原始字节、路径参数、输出文件、`GET` / `POST` / `PUT` / `PATCH` / `DELETE` / `HEAD`，并同时提供 `*_async` 和 `*_start` 两种风格，便于并发请求。
+```gdscript
+var response := await (
+	Resty.set_base_url("https://api.example.com")
+	.r()
+	.set_bearer_auth("token")
+	.set_query_param("page", 1)
+	.get_async("/users")
+)
+```
 
-`Resty.sse(url)` 会创建一个长连接 Server-Sent Events 流。它使用 `GET`，在缺失时自动补充 `Accept: text/event-stream` 和 `Cache-Control: no-cache`，并发出 `opened`、`event_received`、`closed` 信号；需要停止时调用 `close()`。
+`Resty` 还支持 JSON / 表单 / 原始请求体、路径参数、输出文件、并发请求句柄和 `Resty.sse(url)`。
 
-## 工具参数参考
-| 命令 | 关键参数 | 说明 |
-| --- | --- | --- |
-| `excelc proto` | `--excel_files`、`--excel_dir`、`--pb_out`、`--pb_package`、`--pb_imports`、`--pb_options`、`--pb_unique_index_as`、`--pb_index_as`、`--gdscript_index_array`、`--targets` | 从 Excel 工作簿生成表结构 `.proto` 与配套 `*.protoset`。`--excel_files` 优先用于显式指定输入文件。 |
-| `excelc code` | `--pb_dir`、`--pb_package`、`--go_out`、`--gdscript_out`、`--gdscript_class_name`、`--gdscript_default_data_dir`、`--gdscript_autoload` | 基于 Excel proto 生成 Go 或 GDScript 表访问代码。 |
-| `excelc data` | `--excel_files`、`--excel_dir`、`--pb_dir`、`--pb_package`、`--targets`、`--binary_out`、`--binary_chunked`、`--binary_chunk_size`、`--json_out`、`--json_multiline`、`--json_indent` | 基于 Excel proto 导出二进制或 JSON 表数据。 |
-| `propc` | `--decl_file` | 读取属性声明文件并生成相邻的 `*.sync.gen.go`。默认值来自 `GOFILE`，便于配合 `go generate` 使用。 |
-| `protoc-gen-gdscript` | `string_as_string_name`、`gap_variant`、`class_name` | 通过 `--gdscript_opt=<name>=<value>` 传入，控制字符串映射、GAP variant 集成和 Godot `class_name` 导出。 |
-| `protoc-gen-gdscript-excel` | `string_as_string_name` | 通过 `--gdscript-excel_opt=<name>=<value>` 传入，用于控制 Excel 包装器中的字符串字段映射。 |
+## 仓库目录
 
-## 目录说明
-| 路径 | 职责 |
-| --- | --- |
-| [`./addins/goscr`](./addins/goscr) | 服务级 Go 脚本 add-in、脚本化实体 / 组件辅助与生命周期桥接。 |
-| [`./addins/goscr/dynamic`](./addins/goscr/dynamic) | 动态脚本加载、工程 / 方案管理与热更新支持。 |
-| [`./addins/goscr/fwlib`](./addins/goscr/fwlib) | 向脚本运行时导出的 `core`、`framework`、`scaffold` 符号库。 |
-| [`./addins/propview`](./addins/propview) | 运行时属性视图、属性同步、序列化和复制辅助。 |
-| [`./tools/excelc`](./tools/excelc) | Excel 结构生成、访问代码生成和数据导出 CLI。 |
-| [`./tools/excelc/examples`](./tools/excelc/examples) | Excel 配表流水线示例工作簿。 |
-| [`./tools/excelc/excelutils`](./tools/excelc/excelutils) | 供生成代码使用的哈希 / 索引转换、表加载与查找辅助。 |
-| [`./tools/propc`](./tools/propc) | 属性同步代码生成器。 |
-| [`./tools/protoc-gen-go-excel`](./tools/protoc-gen-go-excel) | 面向 Excel 表访问的 Go Protobuf 插件。 |
-| [`./tools/protoc-gen-go-structure`](./tools/protoc-gen-go-structure) | 面向深拷贝辅助的 Go Protobuf 插件。 |
-| [`./tools/protoc-gen-go-variant`](./tools/protoc-gen-go-variant) | 面向 GAP variant 集成的 Go Protobuf 插件。 |
-| [`./tools/protoc-gen-gdscript`](./tools/protoc-gen-gdscript) | 面向消息类型与序列化逻辑的 GDScript Protobuf 插件。 |
-| [`./tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) | 生成 `*.pb.gd` 文件所依赖的 Godot Protobuf 运行时脚本目录。 |
-| [`./tools/protoc-gen-gdscript-excel`](./tools/protoc-gen-gdscript-excel) | 面向 Excel 表包装器的 GDScript Protobuf 插件。 |
-| [`./tools/protoc-gen-gdscript-excel/godot`](./tools/protoc-gen-gdscript-excel/godot) | 生成 `*.excel.gd` 包装器所依赖的 Godot Excel 运行时脚本目录。 |
-| [`./godot/rpcli`](./godot/rpcli) | Godot 侧 Golaxy RPC 客户端运行时，用于 GAP / GTP 连接与回调。 |
-| [`./godot/resty`](./godot/resty) | Godot 侧 Resty 风格 HTTP 客户端运行时，用于 HTTP 请求、文件下载、并发请求句柄和 SSE 流。 |
+| 路径                                                                     | 职责                        |
+|------------------------------------------------------------------------|---------------------------|
+| [`addins/goscr`](./addins/goscr)                                       | Go 脚本 add-in、动态工程与热更新。    |
+| [`addins/propview`](./addins/propview)                                 | 受管属性和跨端同步。                |
+| [`tools/excelc`](./tools/excelc)                                       | Excel schema、代码和数据生成 CLI。 |
+| [`tools/excelc/examples`](./tools/excelc/examples)                     | Excel 工作簿示例。              |
+| [`tools/excelc/excelutils`](./tools/excelc/excelutils)                 | Go 表加载、索引、哈希和比较辅助。        |
+| [`tools/propc`](./tools/propc)                                         | 属性同步代码生成器。                |
+| [`tools/protoc-gen-go-structure`](./tools/protoc-gen-go-structure)     | Go Protobuf 深拷贝插件。        |
+| [`tools/protoc-gen-go-variant`](./tools/protoc-gen-go-variant)         | Go GAP variant 插件。        |
+| [`tools/protoc-gen-go-excel`](./tools/protoc-gen-go-excel)             | Go Excel 查询插件。            |
+| [`tools/protoc-gen-gdscript`](./tools/protoc-gen-gdscript)             | GDScript Protobuf 插件与运行时。 |
+| [`tools/protoc-gen-gdscript-excel`](./tools/protoc-gen-gdscript-excel) | GDScript Excel 插件与运行时。    |
+| [`godot/rpcli`](./godot/rpcli)                                         | Godot GAP / GTP RPC 客户端。  |
+| [`godot/resty`](./godot/resty)                                         | Godot HTTP / SSE 客户端。     |
 
 ## 相关仓库
+
 - [Golaxy Distributed Service Development Framework Core](https://github.com/pangdogs/core)
 - [Golaxy Distributed Service Development Framework](https://github.com/pangdogs/framework)
+
+## 许可证
+
+本项目采用 [GNU Lesser General Public License v2.1](./LICENSE)。
