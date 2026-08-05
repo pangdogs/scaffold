@@ -261,8 +261,9 @@ message {{.ProtoType}} {
 
 message {{TableName .ProtoType}} {
 	option ({{$package}}.IsTable) = true;
-	repeated {{.ProtoType}} Rows = 1;
-	{{- $FieldNumber := 2 -}}
+	ChunkManifest ChunkManifest = 1;
+	repeated {{.ProtoType}} Rows = 2;
+	{{- $FieldNumber := 3 -}}
 	{{- range $kv := .StructHashUniqueIndexes}}
 	map<uint64, uint32> HashUniqueIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeHashUnique}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
 	{{- $FieldNumber = Incr $FieldNumber}}
@@ -287,7 +288,6 @@ message {{TableName .ProtoType}} {
 	SortedIndex SortedIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeSorted}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
 	{{- $FieldNumber = Incr $FieldNumber}}
 	{{- end}}
-	ChunkManifest ChunkManifest = {{$FieldNumber}};
 }
 {{end}}
 `
