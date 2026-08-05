@@ -265,27 +265,27 @@ message {{TableName .ProtoType}} {
 	{{- $FieldNumber := 2 -}}
 	{{- range $kv := .StructHashUniqueIndexes}}
 	map<uint64, uint32> HashUniqueIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeHashUnique}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
-	{{- $FieldNumber = Add $FieldNumber 1}}
+	{{- $FieldNumber = Incr $FieldNumber}}
 	{{- end}}
 	{{- range $kv := .StructHashUniqueIndexes}}
 	map<uint64, IndexConflict> HashUniqueIndex{{$kv.K}}Conflict = {{$FieldNumber}};
-	{{- $FieldNumber = Add $FieldNumber 1}}
+	{{- $FieldNumber = Incr $FieldNumber}}
 	{{- end}}
 	{{- range $kv := .StructSortedUniqueIndexes}}
 	SortedUniqueIndex SortedUniqueIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeSortedUnique}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
-	{{- $FieldNumber = Add $FieldNumber 1}}
+	{{- $FieldNumber = Incr $FieldNumber}}
 	{{- end}}
 	{{- range $kv := .StructSortedUniqueIndexes}}
 	map<uint64, IndexConflict> SortedUniqueIndex{{$kv.K}}Conflict = {{$FieldNumber}};
-	{{- $FieldNumber = Add $FieldNumber 1}}
+	{{- $FieldNumber = Incr $FieldNumber}}
 	{{- end}}
 	{{- range $kv := .StructHashIndexes}}
 	map<uint64, IndexOffsets> HashIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeHash}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
-	{{- $FieldNumber = Add $FieldNumber 1}}
+	{{- $FieldNumber = Incr $FieldNumber}}
 	{{- end}}
 	{{- range $kv := .StructSortedIndexes}}
 	SortedIndex SortedIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeSorted}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
-	{{- $FieldNumber = Add $FieldNumber 1}}
+	{{- $FieldNumber = Incr $FieldNumber}}
 	{{- end}}
 	ChunkManifest ChunkManifest = {{$FieldNumber}};
 }
