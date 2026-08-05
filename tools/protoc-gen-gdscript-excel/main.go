@@ -24,6 +24,7 @@ import (
 	"flag"
 	"fmt"
 	"path"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -94,6 +95,47 @@ type GeneratorConfig struct {
 	StringAsStringName bool
 }
 
+type GDScriptTypeResolver struct {
+	ImportAliases    map[string]string
+	MessageTypeNames map[protoreflect.FullName]string
+}
+
+func (resolver GDScriptTypeResolver) importAlias(file protoreflect.FileDescriptor) (string, error) {
+	alias, ok := resolver.ImportAliases[file.Path()]
+	if !ok {
+		return "", fmt.Errorf("missing GDScript protobuf import alias for %q", file.Path())
+	}
+	return alias, nil
+}
+
+func (resolver GDScriptTypeResolver) messageTypeReference(message *protogen.Message) (string, error) {
+	alias, err := resolver.importAlias(message.Desc.ParentFile())
+	if err != nil {
+		return "", err
+	}
+	typeName, ok := resolver.MessageTypeNames[message.Desc.FullName()]
+	if !ok {
+		return "", fmt.Errorf("missing GDScript message type name for %q", message.Desc.FullName())
+	}
+	return alias + "." + typeName, nil
+}
+
+func (resolver GDScriptTypeResolver) enumTypeReference(enum *protogen.Enum) (string, error) {
+	alias, err := resolver.importAlias(enum.Desc.ParentFile())
+	if err != nil {
+		return "", err
+	}
+	typeName := safeIdentifier(enum.GoIdent.GoName)
+	if parent, nested := enum.Desc.Parent().(protoreflect.MessageDescriptor); nested {
+		parentTypeName, ok := resolver.MessageTypeNames[parent.FullName()]
+		if !ok {
+			return "", fmt.Errorf("missing GDScript message type name for enum parent %q", parent.FullName())
+		}
+		typeName = parentTypeName + "." + safeIdentifier(string(enum.Desc.Name()))
+	}
+	return alias + "." + typeName, nil
+}
+
 var config GeneratorConfig
 
 func main() {
@@ -134,16 +176,29 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 		return nil
 	}
 
+	protoImportAlias := importAliasIdentifier(path.Base(file.GeneratedFilenamePrefix))
+	usedTypeDependencies := collectIndexTypeDependencies(tables, file.Desc.Path())
+	protoImportAliases, err := collectImportAliases(file, usedTypeDependencies, protoImportAlias)
+	if err != nil {
+		return err
+	}
+	generatedPrefixes := make(map[string]string, len(gen.Files))
+	for _, generatedFile := range gen.Files {
+		generatedPrefixes[generatedFile.Desc.Path()] = generatedFile.GeneratedFilenamePrefix
+	}
+	typeResolver := GDScriptTypeResolver{
+		ImportAliases:    protoImportAliases,
+		MessageTypeNames: collectMessageTypeNames(gen.Files),
+	}
+
 	g := gen.NewGeneratedFile(file.GeneratedFilenamePrefix+".excel.gd", "")
 	emitGeneratedHeader(gen, file, g)
-
-	protoImportAlias := importAliasIdentifier(path.Base(file.GeneratedFilenamePrefix))
-	messageTypeNames := collectMessageTypeNames(file)
-	g.P("const ", protoImportAlias, " = preload(", strconv.Quote("./"+path.Base(file.GeneratedFilenamePrefix)+".pb.gd"), ")")
-	g.P()
+	if err := emitProtoPreloads(g, file, protoImportAlias, protoImportAliases, generatedPrefixes); err != nil {
+		return err
+	}
 
 	for _, table := range tables {
-		if err := emitTableWrapper(g, table, protoImportAlias, messageTypeNames); err != nil {
+		if err := emitTableWrapper(g, table, protoImportAlias, typeResolver); err != nil {
 			return err
 		}
 	}
@@ -470,22 +525,123 @@ func firstUniqueIndexMethod(methods []IndexMethodDecl) (IndexMethodDecl, bool) {
 	return IndexMethodDecl{}, false
 }
 
-func collectMessageTypeNames(file *protogen.File) map[protoreflect.FullName]string {
+func collectImportAliases(file *protogen.File, dependencies map[string]struct{}, currentAlias string) (map[string]string, error) {
+	aliases := map[string]string{file.Desc.Path(): currentAlias}
+	usedAliases := map[string]struct{}{currentAlias: {}}
+	for _, dependency := range file.Proto.Dependency {
+		if _, used := dependencies[dependency]; !used {
+			continue
+		}
+
+		baseAlias := importAliasIdentifier(path.Base(strings.TrimSuffix(dependency, path.Ext(dependency))))
+		alias := baseAlias
+		for suffix := 2; ; suffix++ {
+			if _, exists := usedAliases[alias]; !exists {
+				break
+			}
+			alias = fmt.Sprintf("%s%d", baseAlias, suffix)
+		}
+		aliases[dependency] = alias
+		usedAliases[alias] = struct{}{}
+	}
+	for dependency := range dependencies {
+		if _, exists := aliases[dependency]; !exists {
+			return nil, fmt.Errorf("protobuf type dependency %q is not imported by %q", dependency, file.Desc.Path())
+		}
+	}
+	return aliases, nil
+}
+
+func collectMessageTypeNames(files []*protogen.File) map[protoreflect.FullName]string {
 	names := make(map[protoreflect.FullName]string)
 	var walk func(*protogen.Message)
-	walk = func(msg *protogen.Message) {
-		if msg.Desc.IsMapEntry() {
+	walk = func(message *protogen.Message) {
+		if message.Desc.IsMapEntry() {
 			return
 		}
-		names[msg.Desc.FullName()] = safeIdentifier(msg.GoIdent.GoName)
-		for _, nested := range msg.Messages {
+		names[message.Desc.FullName()] = safeIdentifier(message.GoIdent.GoName)
+		for _, nested := range message.Messages {
 			walk(nested)
 		}
 	}
-	for _, msg := range file.Messages {
-		walk(msg)
+	for _, file := range files {
+		for _, message := range file.Messages {
+			walk(message)
+		}
 	}
 	return names
+}
+
+func collectIndexTypeDependencies(tables []TableDecl, currentProtoPath string) map[string]struct{} {
+	dependencies := make(map[string]struct{})
+	for _, table := range tables {
+		for _, method := range table.IndexMethods {
+			for _, field := range method.IndexFields {
+				collectFieldTypeDependency(field, currentProtoPath, dependencies)
+			}
+		}
+	}
+	return dependencies
+}
+
+func collectFieldTypeDependency(field *protogen.Field, currentProtoPath string, dependencies map[string]struct{}) {
+	if field.Desc.IsMap() {
+		if field.Message != nil && len(field.Message.Fields) >= 2 {
+			collectFieldTypeDependency(field.Message.Fields[0], currentProtoPath, dependencies)
+			collectFieldTypeDependency(field.Message.Fields[1], currentProtoPath, dependencies)
+		}
+		return
+	}
+	if field.Enum != nil {
+		dependency := field.Enum.Desc.ParentFile().Path()
+		if dependency != currentProtoPath {
+			dependencies[dependency] = struct{}{}
+		}
+		return
+	}
+	if field.Message != nil {
+		dependency := field.Message.Desc.ParentFile().Path()
+		if dependency != currentProtoPath {
+			dependencies[dependency] = struct{}{}
+		}
+	}
+}
+
+func emitProtoPreloads(g *protogen.GeneratedFile, file *protogen.File, currentAlias string, importAliases, generatedPrefixes map[string]string) error {
+	g.P("const ", currentAlias, " = preload(", strconv.Quote("./"+path.Base(file.GeneratedFilenamePrefix)+".pb.gd"), ")")
+	for _, dependency := range file.Proto.Dependency {
+		alias, used := importAliases[dependency]
+		if !used {
+			continue
+		}
+		generatedPrefix, exists := generatedPrefixes[dependency]
+		if !exists {
+			return fmt.Errorf("missing generated prefix for dependency %q", dependency)
+		}
+		relativePrefix, err := relativeGeneratedPath(file.GeneratedFilenamePrefix, generatedPrefix)
+		if err != nil {
+			return fmt.Errorf("resolve generated path from %q to %q: %w", file.GeneratedFilenamePrefix, generatedPrefix, err)
+		}
+		g.P("const ", alias, " = preload(", strconv.Quote(relativePrefix+".pb.gd"), ")")
+	}
+	g.P()
+	return nil
+}
+
+func relativeGeneratedPath(fromPrefix, toPrefix string) (string, error) {
+	fromDir := path.Dir(path.Clean(fromPrefix))
+	if fromDir == "." {
+		fromDir = ""
+	}
+	relative, err := filepath.Rel(filepath.FromSlash(fromDir), filepath.FromSlash(path.Clean(toPrefix)))
+	if err != nil {
+		return "", err
+	}
+	relative = filepath.ToSlash(relative)
+	if !strings.HasPrefix(relative, ".") {
+		relative = "./" + relative
+	}
+	return relative, nil
 }
 
 func emitGeneratedHeader(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedFile) {
@@ -503,7 +659,7 @@ func emitGeneratedHeader(gen *protogen.Plugin, file *protogen.File, g *protogen.
 	g.P()
 }
 
-func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAlias string, typeResolver GDScriptTypeResolver) error {
 	tableName := safeIdentifier(table.Message.GoIdent.GoName)
 	chunkedTableName := chunkedTableTypeName(tableName)
 	rowType := protoImportAlias + "." + safeIdentifier(table.RowsMessage.GoIdent.GoName)
@@ -542,22 +698,22 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 
 	defaultMethod, hasDefaultMethod := firstUniqueIndexMethod(table.IndexMethods)
 	if hasDefaultMethod {
-		if err := emitDefaultLookupMethod(g, defaultMethod, rowType, protoImportAlias, messageTypeNames); err != nil {
+		if err := emitDefaultLookupMethod(g, defaultMethod, rowType, typeResolver); err != nil {
 			return err
 		}
 	}
 
 	for _, method := range table.IndexMethods {
-		if err := emitLookupMethod(g, table, method, rowType, protoImportAlias, messageTypeNames); err != nil {
+		if err := emitLookupMethod(g, table, method, rowType, typeResolver); err != nil {
 			return err
 		}
 	}
 	for _, method := range table.IndexMethods {
 		if requiresHashIndex(method.IndexFields) {
-			if err := emitIndexHashMethod(g, method, protoImportAlias, messageTypeNames); err != nil {
+			if err := emitIndexHashMethod(g, method, typeResolver); err != nil {
 				return err
 			}
-			if err := emitIndexMatchMethod(g, method, rowType, protoImportAlias, messageTypeNames); err != nil {
+			if err := emitIndexMatchMethod(g, method, rowType, typeResolver); err != nil {
 				return err
 			}
 		}
@@ -581,12 +737,12 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 		chunkCountFieldName,
 	)
 	if hasDefaultMethod {
-		if err := emitChunkedAsyncDefaultLookupMethod(g, defaultMethod, rowType, protoImportAlias, messageTypeNames); err != nil {
+		if err := emitChunkedAsyncDefaultLookupMethod(g, defaultMethod, rowType, typeResolver); err != nil {
 			return err
 		}
 	}
 	for _, method := range table.IndexMethods {
-		if err := emitChunkedAsyncLookupMethod(g, method, rowType, protoImportAlias, messageTypeNames); err != nil {
+		if err := emitChunkedAsyncLookupMethod(g, method, rowType, typeResolver); err != nil {
 			return err
 		}
 	}
@@ -612,8 +768,8 @@ func chunkedTableTypeName(tableName string) string {
 	return tableName + "ChunkedTable"
 }
 
-func emitDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
-	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+func emitDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType string, typeResolver GDScriptTypeResolver) error {
+	argList, err := gdscriptArgumentList(method.IndexFields, typeResolver)
 	if err != nil {
 		return err
 	}
@@ -629,12 +785,12 @@ func emitDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, 
 	return nil
 }
 
-func emitLookupMethod(g *protogen.GeneratedFile, table TableDecl, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+func emitLookupMethod(g *protogen.GeneratedFile, table TableDecl, method IndexMethodDecl, rowType string, typeResolver GDScriptTypeResolver) error {
 	if !method.Unique {
-		return emitNonUniqueLookupMethod(g, method, rowType, protoImportAlias, messageTypeNames)
+		return emitNonUniqueLookupMethod(g, method, rowType, typeResolver)
 	}
 
-	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+	argList, err := gdscriptArgumentList(method.IndexFields, typeResolver)
 	if err != nil {
 		return err
 	}
@@ -686,8 +842,8 @@ func emitLookupMethod(g *protogen.GeneratedFile, table TableDecl, method IndexMe
 	return nil
 }
 
-func emitNonUniqueLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
-	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+func emitNonUniqueLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType string, typeResolver GDScriptTypeResolver) error {
+	argList, err := gdscriptArgumentList(method.IndexFields, typeResolver)
 	if err != nil {
 		return err
 	}
@@ -731,8 +887,8 @@ func emitNonUniqueLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl
 	return nil
 }
 
-func emitChunkedAsyncDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
-	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+func emitChunkedAsyncDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType string, typeResolver GDScriptTypeResolver) error {
+	argList, err := gdscriptArgumentList(method.IndexFields, typeResolver)
 	if err != nil {
 		return err
 	}
@@ -744,12 +900,12 @@ func emitChunkedAsyncDefaultLookupMethod(g *protogen.GeneratedFile, method Index
 	return nil
 }
 
-func emitChunkedAsyncLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+func emitChunkedAsyncLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType string, typeResolver GDScriptTypeResolver) error {
 	if !method.Unique {
-		return emitChunkedAsyncNonUniqueLookupMethod(g, method, rowType, protoImportAlias, messageTypeNames)
+		return emitChunkedAsyncNonUniqueLookupMethod(g, method, rowType, typeResolver)
 	}
 
-	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+	argList, err := gdscriptArgumentList(method.IndexFields, typeResolver)
 	if err != nil {
 		return err
 	}
@@ -797,8 +953,8 @@ func emitChunkedAsyncLookupMethod(g *protogen.GeneratedFile, method IndexMethodD
 	return nil
 }
 
-func emitChunkedAsyncNonUniqueLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
-	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+func emitChunkedAsyncNonUniqueLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType string, typeResolver GDScriptTypeResolver) error {
+	argList, err := gdscriptArgumentList(method.IndexFields, typeResolver)
 	if err != nil {
 		return err
 	}
@@ -1000,15 +1156,15 @@ func binarySearchU64Method(method IndexMethodDecl) string {
 	return "binary_search_u64"
 }
 
-func emitIndexHashMethod(g *protogen.GeneratedFile, method IndexMethodDecl, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
-	argList, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+func emitIndexHashMethod(g *protogen.GeneratedFile, method IndexMethodDecl, typeResolver GDScriptTypeResolver) error {
+	argList, err := gdscriptArgumentList(method.IndexFields, typeResolver)
 	if err != nil {
 		return err
 	}
 	g.P("\tfunc ", indexHashMethodName(method), "(", argList, ") -> int:")
 	g.P("\t\tvar pb_hasher := ProtoFnv64a.new()")
 	for _, field := range method.IndexFields {
-		if err := emitHashStatements(g, "\t\t", "pb_hasher", gdscriptArgumentName(field), field, protoImportAlias, messageTypeNames); err != nil {
+		if err := emitHashStatements(g, "\t\t", "pb_hasher", gdscriptArgumentName(field), field, typeResolver); err != nil {
 			return err
 		}
 	}
@@ -1017,9 +1173,9 @@ func emitIndexHashMethod(g *protogen.GeneratedFile, method IndexMethodDecl, prot
 	return nil
 }
 
-func emitIndexMatchMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+func emitIndexMatchMethod(g *protogen.GeneratedFile, method IndexMethodDecl, rowType string, typeResolver GDScriptTypeResolver) error {
 	argList := "row: " + rowType
-	args, err := gdscriptArgumentList(method.IndexFields, protoImportAlias, messageTypeNames)
+	args, err := gdscriptArgumentList(method.IndexFields, typeResolver)
 	if err != nil {
 		return err
 	}
@@ -1029,7 +1185,7 @@ func emitIndexMatchMethod(g *protogen.GeneratedFile, method IndexMethodDecl, row
 
 	g.P("\tfunc ", indexMatchMethodName(method), "(", argList, ") -> bool:")
 	for _, field := range method.IndexFields {
-		if err := emitEqualityStatements(g, "\t\t", gdscriptArgumentName(field), "row."+safeIdentifier(field.GoName), field, protoImportAlias, messageTypeNames); err != nil {
+		if err := emitEqualityStatements(g, "\t\t", gdscriptArgumentName(field), "row."+safeIdentifier(field.GoName), field, typeResolver); err != nil {
 			return err
 		}
 	}
@@ -1038,17 +1194,17 @@ func emitIndexMatchMethod(g *protogen.GeneratedFile, method IndexMethodDecl, row
 	return nil
 }
 
-func emitHashStatements(g *protogen.GeneratedFile, indent, hasherName, valueExpr string, field *protogen.Field, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+func emitHashStatements(g *protogen.GeneratedFile, indent, hasherName, valueExpr string, field *protogen.Field, typeResolver GDScriptTypeResolver) error {
 	if field.Desc.IsMap() {
 		if field.Message == nil || len(field.Message.Fields) < 2 {
 			return fmt.Errorf("map field %s has invalid entry descriptor", field.Desc.FullName())
 		}
 		keyField := field.Message.Fields[0]
-		keyHasher, err := hashCallExpression(hasherName, "pb_key", keyField, protoImportAlias, messageTypeNames)
+		keyHasher, err := hashCallExpression(hasherName, "pb_key", keyField, typeResolver)
 		if err != nil {
 			return err
 		}
-		valueHasher, err := hashCallExpression(hasherName, "pb_value", field.Message.Fields[1], protoImportAlias, messageTypeNames)
+		valueHasher, err := hashCallExpression(hasherName, "pb_value", field.Message.Fields[1], typeResolver)
 		if err != nil {
 			return err
 		}
@@ -1057,7 +1213,7 @@ func emitHashStatements(g *protogen.GeneratedFile, indent, hasherName, valueExpr
 	}
 
 	if field.Desc.IsList() {
-		valueHasher, err := hashCallExpression(hasherName, "pb_value", field, protoImportAlias, messageTypeNames)
+		valueHasher, err := hashCallExpression(hasherName, "pb_value", field, typeResolver)
 		if err != nil {
 			return err
 		}
@@ -1065,7 +1221,7 @@ func emitHashStatements(g *protogen.GeneratedFile, indent, hasherName, valueExpr
 		return nil
 	}
 
-	callExpr, err := hashCallExpression(hasherName, valueExpr, field, protoImportAlias, messageTypeNames)
+	callExpr, err := hashCallExpression(hasherName, valueExpr, field, typeResolver)
 	if err != nil {
 		return err
 	}
@@ -1073,12 +1229,12 @@ func emitHashStatements(g *protogen.GeneratedFile, indent, hasherName, valueExpr
 	return nil
 }
 
-func emitEqualityStatements(g *protogen.GeneratedFile, indent, leftExpr, rightExpr string, field *protogen.Field, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
+func emitEqualityStatements(g *protogen.GeneratedFile, indent, leftExpr, rightExpr string, field *protogen.Field, typeResolver GDScriptTypeResolver) error {
 	if field.Desc.IsMap() {
 		if field.Message == nil || len(field.Message.Fields) < 2 {
 			return fmt.Errorf("map field %s has invalid entry descriptor", field.Desc.FullName())
 		}
-		valueEqualExpr, err := equalCallExpression("pb_a", "pb_b", field.Message.Fields[1], protoImportAlias, messageTypeNames)
+		valueEqualExpr, err := equalCallExpression("pb_a", "pb_b", field.Message.Fields[1], typeResolver)
 		if err != nil {
 			return err
 		}
@@ -1088,7 +1244,7 @@ func emitEqualityStatements(g *protogen.GeneratedFile, indent, leftExpr, rightEx
 	}
 
 	if field.Desc.IsList() {
-		valueEqualExpr, err := equalCallExpression("pb_a", "pb_b", field, protoImportAlias, messageTypeNames)
+		valueEqualExpr, err := equalCallExpression("pb_a", "pb_b", field, typeResolver)
 		if err != nil {
 			return err
 		}
@@ -1097,11 +1253,11 @@ func emitEqualityStatements(g *protogen.GeneratedFile, indent, leftExpr, rightEx
 		return nil
 	}
 
-	return emitEqualityValueStatements(g, indent, leftExpr, rightExpr, field, protoImportAlias, messageTypeNames)
+	return emitEqualityValueStatements(g, indent, leftExpr, rightExpr, field, typeResolver)
 }
 
-func emitEqualityValueStatements(g *protogen.GeneratedFile, indent, leftExpr, rightExpr string, field *protogen.Field, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) error {
-	equalExpr, err := equalCallExpression(leftExpr, rightExpr, field, protoImportAlias, messageTypeNames)
+func emitEqualityValueStatements(g *protogen.GeneratedFile, indent, leftExpr, rightExpr string, field *protogen.Field, typeResolver GDScriptTypeResolver) error {
+	equalExpr, err := equalCallExpression(leftExpr, rightExpr, field, typeResolver)
 	if err != nil {
 		return err
 	}
@@ -1110,9 +1266,9 @@ func emitEqualityValueStatements(g *protogen.GeneratedFile, indent, leftExpr, ri
 	return nil
 }
 
-func hashCallExpression(hasherName, valueExpr string, field *protogen.Field, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) (string, error) {
+func hashCallExpression(hasherName, valueExpr string, field *protogen.Field, typeResolver GDScriptTypeResolver) (string, error) {
 	if field.Message != nil && !field.Desc.IsMap() {
-		typeExpr, err := gdscriptSingularTypeExpression(field, protoImportAlias, messageTypeNames)
+		typeExpr, err := gdscriptSingularTypeExpression(field, typeResolver)
 		if err != nil {
 			return "", err
 		}
@@ -1153,9 +1309,9 @@ func dictionaryKeyOrderSuffix(keyField *protogen.Field) string {
 	}
 }
 
-func equalCallExpression(leftExpr, rightExpr string, field *protogen.Field, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) (string, error) {
+func equalCallExpression(leftExpr, rightExpr string, field *protogen.Field, typeResolver GDScriptTypeResolver) (string, error) {
 	if field.Message != nil && !field.Desc.IsMap() {
-		typeExpr, err := gdscriptSingularTypeExpression(field, protoImportAlias, messageTypeNames)
+		typeExpr, err := gdscriptSingularTypeExpression(field, typeResolver)
 		if err != nil {
 			return "", err
 		}
@@ -1171,10 +1327,10 @@ func equalCallExpression(leftExpr, rightExpr string, field *protogen.Field, prot
 	}
 }
 
-func gdscriptArgumentList(fields []*protogen.Field, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) (string, error) {
+func gdscriptArgumentList(fields []*protogen.Field, typeResolver GDScriptTypeResolver) (string, error) {
 	parts := make([]string, 0, len(fields))
 	for _, field := range fields {
-		typeExpr, err := gdscriptTypeExpression(field, protoImportAlias, messageTypeNames)
+		typeExpr, err := gdscriptTypeExpression(field, typeResolver)
 		if err != nil {
 			return "", err
 		}
@@ -1199,37 +1355,37 @@ func gdscriptArgumentName(field *protogen.Field) string {
 	return name
 }
 
-func gdscriptTypeExpression(field *protogen.Field, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) (string, error) {
+func gdscriptTypeExpression(field *protogen.Field, typeResolver GDScriptTypeResolver) (string, error) {
 	if field.Desc.IsMap() {
 		if field.Message == nil || len(field.Message.Fields) < 2 {
 			return "", fmt.Errorf("map field %s has invalid entry descriptor", field.Desc.FullName())
 		}
-		keyType, err := gdscriptSingularTypeExpression(field.Message.Fields[0], protoImportAlias, messageTypeNames)
+		keyType, err := gdscriptSingularTypeExpression(field.Message.Fields[0], typeResolver)
 		if err != nil {
 			return "", err
 		}
-		valueType, err := gdscriptSingularTypeExpression(field.Message.Fields[1], protoImportAlias, messageTypeNames)
+		valueType, err := gdscriptSingularTypeExpression(field.Message.Fields[1], typeResolver)
 		if err != nil {
 			return "", err
 		}
 		return "Dictionary[" + keyType + ", " + valueType + "]", nil
 	}
 	if field.Desc.IsList() {
-		itemType, err := gdscriptSingularTypeExpression(field, protoImportAlias, messageTypeNames)
+		itemType, err := gdscriptSingularTypeExpression(field, typeResolver)
 		if err != nil {
 			return "", err
 		}
 		return "Array[" + itemType + "]", nil
 	}
-	return gdscriptSingularTypeExpression(field, protoImportAlias, messageTypeNames)
+	return gdscriptSingularTypeExpression(field, typeResolver)
 }
 
-func gdscriptSingularTypeExpression(field *protogen.Field, protoImportAlias string, messageTypeNames map[protoreflect.FullName]string) (string, error) {
+func gdscriptSingularTypeExpression(field *protogen.Field, typeResolver GDScriptTypeResolver) (string, error) {
 	if field.Enum != nil {
-		return protoImportAlias + "." + enumTypeReferenceName(field.Enum, messageTypeNames), nil
+		return typeResolver.enumTypeReference(field.Enum)
 	}
 	if field.Message != nil && !field.Desc.IsMap() {
-		return protoImportAlias + "." + safeIdentifier(field.Message.GoIdent.GoName), nil
+		return typeResolver.messageTypeReference(field.Message)
 	}
 
 	switch field.Desc.Kind() {
@@ -1253,15 +1409,6 @@ func gdscriptSingularTypeExpression(field *protogen.Field, protoImportAlias stri
 	default:
 		return "", fmt.Errorf("unsupported gdscript field kind %s for %s", field.Desc.Kind(), field.Desc.FullName())
 	}
-}
-
-func enumTypeReferenceName(enum *protogen.Enum, messageTypeNames map[protoreflect.FullName]string) string {
-	if parent, ok := enum.Desc.Parent().(protoreflect.MessageDescriptor); ok {
-		if messageTypeName, exists := messageTypeNames[parent.FullName()]; exists {
-			return messageTypeName + "." + safeIdentifier(string(enum.Desc.Name()))
-		}
-	}
-	return safeIdentifier(enum.GoIdent.GoName)
 }
 
 func directIndexExpression(argName string, field *protogen.Field) (string, error) {
