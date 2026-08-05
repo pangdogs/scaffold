@@ -851,6 +851,7 @@ func emitNonUniqueLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl
 	indexFieldName := safeIdentifier(method.Field.GoName)
 
 	g.P("\tfunc ", method.LookupMethodName, "(", argList, ") -> Array[", rowType, "]:")
+	g.P("\t\t@warning_ignore(\"shadowed_variable\")")
 	g.P("\t\tvar rows: Array[", rowType, "] = []")
 	g.P("\t\tif row_count() <= 0:")
 	g.P("\t\t\treturn rows")
@@ -962,6 +963,7 @@ func emitChunkedAsyncNonUniqueLookupMethod(g *protogen.GeneratedFile, method Ind
 	indexFieldName := safeIdentifier(method.Field.GoName)
 
 	g.P("\tfunc ", method.LookupMethodName, "_async(", argList, ") -> Array[", rowType, "]:")
+	g.P("\t\t@warning_ignore(\"shadowed_variable\")")
 	g.P("\t\tvar rows: Array[", rowType, "] = []")
 	g.P("\t\tif row_count() <= 0:")
 	g.P("\t\t\treturn rows")
@@ -996,34 +998,32 @@ func emitChunkedAsyncNonUniqueLookupMethod(g *protogen.GeneratedFile, method Ind
 
 func emitNonUniqueOffsets(g *protogen.GeneratedFile, method IndexMethodDecl, indexFieldName string) error {
 	offsetsType := "Array[int]"
-	offsetsDefault := "[]"
 	if method.PackedIndexArrays {
 		offsetsType = "PackedInt64Array"
-		offsetsDefault = "PackedInt64Array()"
 	}
-	g.P("\t\tvar offsets: ", offsetsType, " = ", offsetsDefault)
-	g.P("\t\tvar offset_begin := 0")
-	g.P("\t\tvar offset_end := 0")
 
 	switch method.IndexTypeName {
 	case indexTypeHash:
-		g.P("\t\tvar bucket = _msg.", indexFieldName, ".get(idx)")
+		g.P("\t\tvar index_data := _msg.", indexFieldName)
+		g.P("\t\tvar bucket = index_data.get(idx)")
 		g.P("\t\tif bucket == null:")
 		g.P("\t\t\treturn rows")
-		g.P("\t\toffsets = bucket.Offsets")
-		g.P("\t\toffset_end = offsets.size()")
+		g.P("\t\tvar offsets: ", offsetsType, " = bucket.Offsets")
+		g.P("\t\tvar offset_begin := 0")
+		g.P("\t\tvar offset_end := offsets.size()")
 
 	case indexTypeSorted:
-		g.P("\t\tif _msg.", indexFieldName, " == null:")
+		g.P("\t\tvar index_data := _msg.", indexFieldName)
+		g.P("\t\tif index_data == null:")
 		g.P("\t\t\treturn rows")
-		g.P("\t\tif _msg.", indexFieldName, ".Starts.size() != _msg.", indexFieldName, ".Values.size() + 1:")
+		g.P("\t\tif index_data.Starts.size() != index_data.Values.size() + 1:")
 		g.P("\t\t\treturn rows")
-		g.P("\t\tvar idx_offset := ExcelUtils.", binarySearchU64Method(method), "(_msg.", indexFieldName, ".Values, idx)")
+		g.P("\t\tvar idx_offset := ExcelUtils.", binarySearchU64Method(method), "(index_data.Values, idx)")
 		g.P("\t\tif idx_offset < 0:")
 		g.P("\t\t\treturn rows")
-		g.P("\t\toffsets = _msg.", indexFieldName, ".Offsets")
-		g.P("\t\toffset_begin = _msg.", indexFieldName, ".Starts[idx_offset]")
-		g.P("\t\toffset_end = _msg.", indexFieldName, ".Starts[idx_offset + 1]")
+		g.P("\t\tvar offsets: ", offsetsType, " = index_data.Offsets")
+		g.P("\t\tvar offset_begin := index_data.Starts[idx_offset]")
+		g.P("\t\tvar offset_end := index_data.Starts[idx_offset + 1]")
 		g.P("\t\tif offset_begin < 0 or offset_begin > offset_end or offset_end > offsets.size():")
 		g.P("\t\t\treturn rows")
 
@@ -1131,18 +1131,19 @@ func emitAsyncYield(g *protogen.GeneratedFile) {
 }
 
 func emitLookupOffset(g *protogen.GeneratedFile, method IndexMethodDecl, indexFieldName string) error {
+	g.P("\t\tvar index_data := _msg.", indexFieldName)
 	switch method.IndexTypeName {
 	case indexTypeHashUnique:
-		g.P("\t\tvar offset = _msg.", indexFieldName, ".get(idx)")
+		g.P("\t\tvar offset = index_data.get(idx)")
 		g.P("\t\tif offset == null:")
 		g.P("\t\t\treturn null")
 	case indexTypeSortedUnique:
-		g.P("\t\tif _msg.", indexFieldName, " == null:")
+		g.P("\t\tif index_data == null:")
 		g.P("\t\t\treturn null")
-		g.P("\t\tvar idx_offset := ExcelUtils.", binarySearchU64Method(method), "(_msg.", indexFieldName, ".Values, idx)")
-		g.P("\t\tif idx_offset < 0 or idx_offset >= _msg.", indexFieldName, ".Offsets.size():")
+		g.P("\t\tvar idx_offset := ExcelUtils.", binarySearchU64Method(method), "(index_data.Values, idx)")
+		g.P("\t\tif idx_offset < 0 or idx_offset >= index_data.Offsets.size():")
 		g.P("\t\t\treturn null")
-		g.P("\t\tvar offset := _msg.", indexFieldName, ".Offsets[idx_offset]")
+		g.P("\t\tvar offset := index_data.Offsets[idx_offset]")
 	default:
 		return fmt.Errorf("unsupported index type %q", method.IndexTypeName)
 	}
@@ -1576,7 +1577,7 @@ func isGDScriptKeyword(s string) bool {
 		"pb_other_msg", "pb_a", "pb_b", "pb_array", "pb_dict", "pb_field":
 		return true
 
-	case "idx", "idx_offset", "offset", "offsets", "offset_begin", "offset_end", "offset_index",
+	case "idx", "idx_offset", "index_data", "offset", "offsets", "offset_begin", "offset_end", "offset_index",
 		"row", "bucket", "conflict_offset",
 		"rows", "rows_async", "row_count", "row_at", "row_at_async",
 		"lookup", "lookup_async":
