@@ -27,33 +27,37 @@ var data: PackedByteArray:
 
 func _init(data: PackedByteArray = PackedByteArray()) -> void:
 	_data = data
-	_set_error(OK)
 
 func write_byte(value: int) -> bool:
 	_data.append(value & 0xFF)
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_bytes(value: PackedByteArray) -> bool:
 	if value.is_empty():
-		_set_error(OK)
+		if _error != OK:
+			_set_error(OK)
 		return true
 	_data.append_array(value)
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_fixed32(value: int) -> bool:
 	var offset := _data.size()
 	_data.resize(offset + 4)
 	_data.encode_u32(offset, value)
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_fixed64(value: int) -> bool:
 	var offset := _data.size()
 	_data.resize(offset + 8)
 	_data.encode_u64(offset, value)
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_varint(value: int) -> bool:
@@ -74,23 +78,27 @@ func write_varint(value: int) -> bool:
 			pos += 1
 			value >>= 7
 		_data[pos] = value & 0x7F
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_float(value: float) -> bool:
 	var offset := _data.size()
 	_data.resize(offset + 4)
 	_data.encode_float(offset, value)
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_double(value: float) -> bool:
 	var offset := _data.size()
 	_data.resize(offset + 8)
 	_data.encode_double(offset, value)
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func flush() -> bool:
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true

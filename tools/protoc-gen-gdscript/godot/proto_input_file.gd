@@ -36,34 +36,46 @@ func _init(file: FileAccess, chunk_size: int = DEFAULT_CHUNK_SIZE) -> void:
 	_file = file
 	_file.big_endian = false
 	_chunk_size = max(chunk_size, 256)
-	_set_error(OK)
 
 func eof() -> bool:
 	if _init_failed:
 		return true
-	if _available() > 0:
+	if _position < _buffer.size():
 		return false
 	_fill_buffer()
-	return _available() <= 0
+	return _position >= _buffer.size()
 
 func read_byte() -> int:
 	if _init_failed:
 		return 0
-	if !_ensure_available(1):
-		return 0
+	if _position >= _buffer.size():
+		_fill_buffer()
+		if _error != OK:
+			return 0
+		if _position >= _buffer.size():
+			_set_error(ERR_FILE_EOF, "Unexpected EOF while reading data.")
+			return 0
 	var b := _buffer[_position]
 	_position += 1
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return b
 
 func read_varint() -> int:
 	if _init_failed:
 		return 0
+	var buffer_size := _buffer.size()
 	var value := 0
 	var shift := 0
 	while true:
-		if !_ensure_available(1):
-			return 0
+		if _position >= buffer_size:
+			_fill_buffer()
+			if _error != OK:
+				return 0
+			buffer_size = _buffer.size()
+			if _position >= buffer_size:
+				_set_error(ERR_FILE_EOF, "Unexpected EOF while reading data.")
+				return 0
 		var b := _buffer[_position]
 		_position += 1
 		if shift == 63 and b > 1:
@@ -73,7 +85,8 @@ func read_varint() -> int:
 		if (b & 0x80) == 0:
 			break
 		shift += 7
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return value
 
 func read_bytes(size: int) -> PackedByteArray:
@@ -83,72 +96,100 @@ func read_bytes(size: int) -> PackedByteArray:
 		_set_error(ERR_INVALID_PARAMETER, "size must be >= 0.")
 		return PackedByteArray()
 	if size == 0:
-		_set_error(OK)
+		if _error != OK:
+			_set_error(OK)
 		return PackedByteArray()
-	if !_ensure_available(size):
-		return PackedByteArray()
+	var available := _buffer.size() - _position
+	while available < size:
+		_fill_buffer()
+		if _error != OK:
+			return PackedByteArray()
+		var next_available := _buffer.size() - _position
+		if next_available == available:
+			_set_error(ERR_FILE_EOF, "Unexpected EOF while reading data.")
+			return PackedByteArray()
+		available = next_available
 	var value := _buffer.slice(_position, _position + size)
 	_position += size
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return value
 
 func read_fixed32() -> int:
 	if _init_failed:
 		return 0
-	if !_ensure_available(4):
-		return 0
+	var available := _buffer.size() - _position
+	while available < 4:
+		_fill_buffer()
+		if _error != OK:
+			return 0
+		var next_available := _buffer.size() - _position
+		if next_available == available:
+			_set_error(ERR_FILE_EOF, "Unexpected EOF while reading data.")
+			return 0
+		available = next_available
 	var value := _buffer.decode_u32(_position)
 	_position += 4
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return value
 
 func read_fixed64() -> int:
 	if _init_failed:
 		return 0
-	if !_ensure_available(8):
-		return 0
+	var available := _buffer.size() - _position
+	while available < 8:
+		_fill_buffer()
+		if _error != OK:
+			return 0
+		var next_available := _buffer.size() - _position
+		if next_available == available:
+			_set_error(ERR_FILE_EOF, "Unexpected EOF while reading data.")
+			return 0
+		available = next_available
 	var value := _buffer.decode_u64(_position)
 	_position += 8
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return value
 
 func read_float() -> float:
 	if _init_failed:
 		return 0.0
-	if !_ensure_available(4):
-		return 0.0
+	var available := _buffer.size() - _position
+	while available < 4:
+		_fill_buffer()
+		if _error != OK:
+			return 0.0
+		var next_available := _buffer.size() - _position
+		if next_available == available:
+			_set_error(ERR_FILE_EOF, "Unexpected EOF while reading data.")
+			return 0.0
+		available = next_available
 	var value := _buffer.decode_float(_position)
 	_position += 4
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return value
 
 func read_double() -> float:
 	if _init_failed:
 		return 0.0
-	if !_ensure_available(8):
-		return 0.0
+	var available := _buffer.size() - _position
+	while available < 8:
+		_fill_buffer()
+		if _error != OK:
+			return 0.0
+		var next_available := _buffer.size() - _position
+		if next_available == available:
+			_set_error(ERR_FILE_EOF, "Unexpected EOF while reading data.")
+			return 0.0
+		available = next_available
 	var value := _buffer.decode_double(_position)
 	_position += 8
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return value
-
-# Ensures the unread window contains at least size contiguous bytes.
-func _ensure_available(size: int) -> bool:
-	if size < 0:
-		_set_error(ERR_INVALID_PARAMETER, "size must be >= 0.")
-		return false
-	while _available() < size:
-		var before := _available()
-		_fill_buffer()
-		if get_error() != OK:
-			return false
-		if _available() == before:
-			_set_error(ERR_FILE_EOF, "Unexpected EOF while reading data.")
-			return false
-	return true
-
-func _available() -> int:
-	return _buffer.size() - _position
 
 # Slides the unread window to the front so more file data can be appended.
 func _compact_buffer(force: bool = false) -> void:
@@ -165,7 +206,8 @@ func _fill_buffer() -> void:
 		if err != ERR_FILE_EOF:
 			_set_error(err, "Failed to read file buffer.")
 		else:
-			_set_error(OK)
+			if _error != OK:
+				_set_error(OK)
 		return
 	_compact_buffer(true)
 	var chunk := _file.get_buffer(_chunk_size)
@@ -176,4 +218,5 @@ func _fill_buffer() -> void:
 	if err != OK and err != ERR_FILE_EOF:
 		_set_error(err, "Failed to read file buffer.")
 	else:
-		_set_error(OK)
+		if _error != OK:
+			_set_error(OK)

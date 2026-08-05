@@ -37,16 +37,16 @@ func _init(file: FileAccess, chunk_size: int = DEFAULT_CHUNK_SIZE) -> void:
 	_file.big_endian = false
 	_chunk_size = max(chunk_size, 256)
 	_buffer.resize(_chunk_size)
-	_set_error(OK)
 
 func write_byte(value: int) -> bool:
 	if _init_failed:
 		return false
-	if !_ensure_capacity(1):
+	if _position >= _chunk_size and !_flush_buffer():
 		return false
 	_buffer[_position] = value & 0xFF
 	_position += 1
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_bytes(value: PackedByteArray) -> bool:
@@ -55,10 +55,11 @@ func write_bytes(value: PackedByteArray) -> bool:
 	var offset := 0
 	var remaining := value.size()
 	if remaining <= 0:
-		_set_error(OK)
+		if _error != OK:
+			_set_error(OK)
 		return true
 	while remaining > 0:
-		if !_ensure_capacity(1):
+		if _position >= _chunk_size and !_flush_buffer():
 			return false
 		var take := mini(_chunk_size - _position, remaining)
 		for i in range(take):
@@ -66,34 +67,37 @@ func write_bytes(value: PackedByteArray) -> bool:
 		_position += take
 		offset += take
 		remaining -= take
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_fixed32(value: int) -> bool:
 	if _init_failed:
 		return false
-	if !_ensure_capacity(4):
+	if _chunk_size - _position < 4 and !_flush_buffer():
 		return false
 	_buffer.encode_u32(_position, value)
 	_position += 4
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_fixed64(value: int) -> bool:
 	if _init_failed:
 		return false
-	if !_ensure_capacity(8):
+	if _chunk_size - _position < 8 and !_flush_buffer():
 		return false
 	_buffer.encode_u64(_position, value)
 	_position += 8
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_varint(value: int) -> bool:
 	if _init_failed:
 		return false
 	var size := ProtoUtils.sizeof_varint(value)
-	if !_ensure_capacity(size):
+	if _chunk_size - _position < size and !_flush_buffer():
 		return false
 	if value < 0:
 		for i in range(9):
@@ -109,27 +113,30 @@ func write_varint(value: int) -> bool:
 			value >>= 7
 		_buffer[_position] = value & 0x7F
 		_position += 1
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_float(value: float) -> bool:
 	if _init_failed:
 		return false
-	if !_ensure_capacity(4):
+	if _chunk_size - _position < 4 and !_flush_buffer():
 		return false
 	_buffer.encode_float(_position, value)
 	_position += 4
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func write_double(value: float) -> bool:
 	if _init_failed:
 		return false
-	if !_ensure_capacity(8):
+	if _chunk_size - _position < 8 and !_flush_buffer():
 		return false
 	_buffer.encode_double(_position, value)
 	_position += 8
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
 
 func flush() -> bool:
@@ -163,19 +170,11 @@ func _notification(what: int) -> void:
 				]
 			)
 
-# Flushes buffered data first when the next write would exceed the current chunk.
-func _ensure_capacity(size: int) -> bool:
-	if size < 0:
-		_set_error(ERR_INVALID_PARAMETER, "size must be >= 0")
-		return false
-	if _chunk_size - _position < size:
-		return _flush_buffer()
-	return true
-
 # Writes the buffered prefix to the file and resets the in-memory cursor.
 func _flush_buffer() -> bool:
 	if _position <= 0:
-		_set_error(OK)
+		if _error != OK:
+			_set_error(OK)
 		return true
 	if !_file.store_buffer(_buffer.slice(0, _position)):
 		return _sync_file_error("Failed to write file buffer.")
@@ -187,5 +186,6 @@ func _sync_file_error(message: String) -> bool:
 	if err != OK:
 		_set_error(err, message)
 		return false
-	_set_error(OK)
+	if _error != OK:
+		_set_error(OK)
 	return true
