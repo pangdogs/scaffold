@@ -60,7 +60,7 @@ func write_bytes(value: PackedByteArray) -> bool:
 	while remaining > 0:
 		if !_ensure_capacity(1):
 			return false
-		var take: int = min(_chunk_size - _position, remaining)
+		var take := mini(_chunk_size - _position, remaining)
 		for i in range(take):
 			_buffer[_position + i] = value[offset + i]
 		_position += take
