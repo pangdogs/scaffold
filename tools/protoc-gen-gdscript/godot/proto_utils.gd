@@ -48,7 +48,7 @@ static func encode_bool(stream: ProtoOutputStream, value: bool) -> bool:
 
 # Decodes a protobuf bool varint. Zero is false; any non-zero value is true.
 static func decode_bool(stream: ProtoInputStream) -> bool:
-	return decode_varint(stream) != 0
+	return stream.read_varint() != 0
 
 #endregion
 
@@ -104,22 +104,22 @@ static func decode_varint(stream: ProtoInputStream) -> int:
 
 # Encodes a signed 32-bit integer after applying protobuf's truncation rules.
 static func encode_int32(stream: ProtoOutputStream, value: int) -> bool:
-	return encode_varint(stream, _to_int32(value))
+	return stream.write_varint(_to_int32(value))
 
 # Decodes and sign-extends the low 32 bits of a varint.
 static func decode_int32(stream: ProtoInputStream) -> int:
-	var value := decode_varint(stream)
+	var value := stream.read_varint()
 	if stream.get_error() != OK:
 		return 0
 	return _to_int32(value)
 
 # Encodes the low 32 bits of an unsigned integer.
 static func encode_uint32(stream: ProtoOutputStream, value: int) -> bool:
-	return encode_varint(stream, value & UINT32_MASK)
+	return stream.write_varint(value & UINT32_MASK)
 
 # Decodes the low 32 bits of a varint as an unsigned integer.
 static func decode_uint32(stream: ProtoInputStream) -> int:
-	var value := decode_varint(stream)
+	var value := stream.read_varint()
 	if stream.get_error() != OK:
 		return 0
 	return value & UINT32_MASK
@@ -158,7 +158,7 @@ static func decode_double(stream: ProtoInputStream) -> float:
 static func encode_string(stream: ProtoOutputStream, value: String) -> bool:
 	var utf8_bytes := value.to_utf8_buffer()
 	var size := utf8_bytes.size()
-	return encode_varint(stream, size) and stream.write_bytes(utf8_bytes)
+	return stream.write_varint(size) and stream.write_bytes(utf8_bytes)
 
 # Decodes a UTF-8 string from a length-delimited protobuf field payload.
 static func decode_string(stream: ProtoInputStream) -> String:
@@ -175,7 +175,7 @@ static func decode_string(stream: ProtoInputStream) -> String:
 static func encode_string_name(stream: ProtoOutputStream, value: StringName) -> bool:
 	var utf8_bytes := value.to_utf8_buffer()
 	var size := utf8_bytes.size()
-	return encode_varint(stream, size) and stream.write_bytes(utf8_bytes)
+	return stream.write_varint(size) and stream.write_bytes(utf8_bytes)
 
 # Decodes a UTF-8 StringName from a length-delimited protobuf field payload.
 static func decode_string_name(stream: ProtoInputStream) -> StringName:
@@ -190,7 +190,7 @@ static func decode_string_name(stream: ProtoInputStream) -> StringName:
 
 # Encodes a byte array as a length-delimited protobuf field payload.
 static func encode_bytes(stream: ProtoOutputStream, value: PackedByteArray) -> bool:
-	return encode_varint(stream, value.size()) and stream.write_bytes(value)
+	return stream.write_varint(value.size()) and stream.write_bytes(value)
 
 # Decodes a byte array from a length-delimited protobuf field payload.
 static func decode_bytes(stream: ProtoInputStream) -> PackedByteArray:
@@ -207,11 +207,11 @@ static func decode_bytes(stream: ProtoInputStream) -> PackedByteArray:
 static func encode_zigzag32(stream: ProtoOutputStream, value: int) -> bool:
 	value = _to_int32(value)
 	var zv := (value << 1) ^ (value >> 31)
-	return encode_varint(stream, zv & UINT32_MASK)
+	return stream.write_varint(zv & UINT32_MASK)
 
 # Decodes a signed 32-bit integer using protobuf zigzag encoding.
 static func decode_zigzag32(stream: ProtoInputStream) -> int:
-	var zv := decode_varint(stream)
+	var zv := stream.read_varint()
 	if stream.get_error() != OK:
 		return 0
 	zv &= UINT32_MASK
@@ -220,11 +220,11 @@ static func decode_zigzag32(stream: ProtoInputStream) -> int:
 # Encodes a signed 64-bit integer using protobuf zigzag encoding.
 static func encode_zigzag64(stream: ProtoOutputStream, value: int) -> bool:
 	var zv := (value << 1) ^ (value >> 63)
-	return encode_varint(stream, zv)
+	return stream.write_varint(zv)
 
 # Decodes a signed 64-bit integer using protobuf zigzag encoding.
 static func decode_zigzag64(stream: ProtoInputStream) -> int:
-	var zv := decode_varint(stream)
+	var zv := stream.read_varint()
 	if stream.get_error() != OK:
 		return 0
 	return ((zv >> 1) & INT64_VALUE_MASK) ^ -(zv & 1)
@@ -235,7 +235,7 @@ static func decode_zigzag64(stream: ProtoInputStream) -> int:
 
 # Decodes a protobuf length prefix and rejects values outside the int32 range.
 static func decode_length(stream: ProtoInputStream) -> int:
-	var size := decode_varint(stream)
+	var size := stream.read_varint()
 	if stream.get_error() != OK:
 		return -1
 	if size < 0 or size > MAX_LENGTH:
@@ -253,11 +253,11 @@ static func encode_tag(stream: ProtoOutputStream, field_number: int, field_type:
 		stream._set_error(ERR_INVALID_PARAMETER, "Invalid protobuf field type.")
 		return false
 	var value := (field_number << 3) | wire_type
-	return encode_varint(stream, value)
+	return stream.write_varint(value)
 
 # Decodes a protobuf tag value from the stream.
 static func decode_tag(stream: ProtoInputStream) -> int:
-	var tag := decode_varint(stream)
+	var tag := stream.read_varint()
 	if stream.get_error() != OK:
 		return 0
 	var field_number := get_tag_field_number(tag)
@@ -278,7 +278,7 @@ static func get_tag_wire_type(tag: int) -> int:
 static func skip_field(stream: ProtoInputStream, wire_type: int) -> bool:
 	match wire_type:
 		ProtoFieldDescriptor.WireType.WIRETYPE_VARINT:
-			decode_varint(stream)
+			stream.read_varint()
 			return stream.get_error() == OK
 		ProtoFieldDescriptor.WireType.WIRETYPE_FIXED64:
 			stream.skip(8)
@@ -309,7 +309,7 @@ static func encode_message(stream: ProtoOutputStream, msg: ProtoMessage) -> bool
 	if size < 0:
 		stream._set_error(ERR_INVALID_DATA, "Message size cannot be negative.")
 		return false
-	if !encode_varint(stream, size):
+	if !stream.write_varint(size):
 		return false
 	if !msg.serialize(stream):
 		if stream.get_error() == OK:
