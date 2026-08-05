@@ -495,7 +495,7 @@ func emitDeserializeMethod(g *protogen.GeneratedFile, file *protogen.File, msg *
 	g.P("\t\t\t\t_:")
 	g.P("\t\t\t\t\tif !ProtoUtils.skip_field(pb_stream, pb_wire_type):")
 	g.P("\t\t\t\t\t\treturn false")
-	g.P("\t\treturn true")
+	g.P("\t\treturn pb_stream.get_error() == OK")
 	g.P()
 	return nil
 }
@@ -508,11 +508,15 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 		keyField := field.Message.Fields[0]
 		valueField := field.Message.Fields[1]
 		g.P("\t\t\t\t\tif pb_wire_type != ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:")
+		g.P("\t\t\t\t\t\tpb_stream._set_error(ERR_INVALID_DATA, \"Unexpected wire type for protobuf field ", fieldNumber, ".\")")
 		g.P("\t\t\t\t\t\treturn false")
 		g.P("\t\t\t\t\tvar pb_entry_size := ProtoUtils.decode_length(pb_stream)")
-		g.P("\t\t\t\t\tif pb_stream.get_error() != OK or pb_entry_size < 0:")
+		g.P("\t\t\t\t\tif pb_stream.get_error() != OK:")
 		g.P("\t\t\t\t\t\treturn false")
-		g.P("\t\t\t\t\tvar pb_entry_stream := ProtoLimitedInputStream.new(pb_stream, pb_entry_size)")
+		g.P("\t\t\t\t\tvar pb_entry_payload := pb_stream.read_bytes(pb_entry_size)")
+		g.P("\t\t\t\t\tif pb_stream.get_error() != OK:")
+		g.P("\t\t\t\t\t\treturn false")
+		g.P("\t\t\t\t\tvar pb_entry_stream := ProtoInputBuffer.new(pb_entry_payload)")
 		g.P("\t\t\t\t\tvar pb_entry_key := ", defaultMapKeyExpression(keyField))
 		entryValueExpr, err := defaultMapValueExpression(file, valueField, importAliases)
 		if err != nil {
@@ -548,9 +552,12 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 		if isPackableField(field) {
 			g.P("\t\t\t\t\tif pb_wire_type == ProtoFieldDescriptor.WireType.WIRETYPE_LENGTH_DELIMITED:")
 			g.P("\t\t\t\t\t\tvar pb_packed_size := ProtoUtils.decode_length(pb_stream)")
-			g.P("\t\t\t\t\t\tif pb_stream.get_error() != OK or pb_packed_size < 0:")
+			g.P("\t\t\t\t\t\tif pb_stream.get_error() != OK:")
 			g.P("\t\t\t\t\t\t\treturn false")
-			g.P("\t\t\t\t\t\tvar pb_packed_stream := ProtoLimitedInputStream.new(pb_stream, pb_packed_size)")
+			g.P("\t\t\t\t\t\tvar pb_packed_payload := pb_stream.read_bytes(pb_packed_size)")
+			g.P("\t\t\t\t\t\tif pb_stream.get_error() != OK:")
+			g.P("\t\t\t\t\t\t\treturn false")
+			g.P("\t\t\t\t\t\tvar pb_packed_stream := ProtoInputBuffer.new(pb_packed_payload)")
 			g.P("\t\t\t\t\t\twhile !pb_packed_stream.eof():")
 			if err := emitDecodedAppend(g, "\t\t\t\t\t\t\t", name, field, file, importAliases, "pb_packed_stream"); err != nil {
 				return err
@@ -560,10 +567,12 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 				return err
 			}
 			g.P("\t\t\t\t\telse:")
+			g.P("\t\t\t\t\t\tpb_stream._set_error(ERR_INVALID_DATA, \"Unexpected wire type for protobuf field ", fieldNumber, ".\")")
 			g.P("\t\t\t\t\t\treturn false")
 			return nil
 		}
 		g.P("\t\t\t\t\tif pb_wire_type != ", wireTypeConst(field), ":")
+		g.P("\t\t\t\t\t\tpb_stream._set_error(ERR_INVALID_DATA, \"Unexpected wire type for protobuf field ", fieldNumber, ".\")")
 		g.P("\t\t\t\t\t\treturn false")
 		if err := emitDecodedAppend(g, "\t\t\t\t\t", name, field, file, importAliases, "pb_stream"); err != nil {
 			return err
@@ -571,6 +580,7 @@ func emitDeserializeField(g *protogen.GeneratedFile, file *protogen.File, field 
 		return nil
 	}
 	g.P("\t\t\t\t\tif pb_wire_type != ", wireTypeConst(field), ":")
+	g.P("\t\t\t\t\t\tpb_stream._set_error(ERR_INVALID_DATA, \"Unexpected wire type for protobuf field ", fieldNumber, ".\")")
 	g.P("\t\t\t\t\t\treturn false")
 	if err := emitDecodedAssignment(g, "\t\t\t\t\t", name, field, file, importAliases, "pb_stream"); err != nil {
 		return err
@@ -624,6 +634,7 @@ func emitDecodedAssignment(g *protogen.GeneratedFile, indent, target string, fie
 
 func emitCheckedDecodedAssignment(g *protogen.GeneratedFile, indent, target string, field *protogen.Field, file *protogen.File, importAliases map[string]string, streamName, wireTypeExpr string) error {
 	g.P(indent, "if ", wireTypeExpr, " != ", wireTypeConst(field), ":")
+	g.P(indent, "\t", streamName, "._set_error(ERR_INVALID_DATA, \"Unexpected wire type for map entry field ", int(field.Desc.Number()), ".\")")
 	g.P(indent, "\treturn false")
 	if field.Message != nil && !field.Desc.IsMap() {
 		g.P(indent, "if !ProtoUtils.decode_message(", streamName, ", ", target, "):")
@@ -1869,9 +1880,9 @@ func isGDScriptKeyword(s string) bool {
 		"hash_to", "equals", "type_id",
 		"json_dict", "json_emit_default", "json_enum_as_string",
 		"pb_stream", "pb_tag", "pb_field_number", "pb_wire_type", "pb_key", "pb_value",
-		"pb_data_size", "pb_entry_size", "pb_entry_stream", "pb_entry_key", "pb_entry_value",
+		"pb_data_size", "pb_entry_size", "pb_entry_payload", "pb_entry_stream", "pb_entry_key", "pb_entry_value",
 		"pb_entry_tag", "pb_entry_field_number", "pb_entry_wire_type", "pb_packed_size",
-		"pb_packed_stream", "pb_msg_size", "pb_msg", "pb_hasher", "pb_other",
+		"pb_packed_payload", "pb_packed_stream", "pb_msg_size", "pb_msg", "pb_hasher", "pb_other",
 		"pb_other_msg", "pb_a", "pb_b", "pb_array", "pb_dict", "pb_field":
 		return true
 

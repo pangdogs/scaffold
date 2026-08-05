@@ -17,6 +17,7 @@
 #
 # Abstract byte reader used by the protobuf runtime.
 # Concrete implementations can read from files, memory buffers, or bounded views.
+# Every failed read must leave get_error() set to a non-OK value.
 @abstract
 class_name ProtoInputStream
 extends RefCounted
@@ -55,25 +56,9 @@ func read_fixed32() -> int
 # Reads a little-endian 64-bit fixed-width integer.
 func read_fixed64() -> int
 
+@abstract
 # Reads a protobuf varint using the standard 7-bit continuation encoding.
-func read_varint() -> int:
-	if _init_failed:
-		return 0
-	var value := 0
-	var shift := 0
-	while true:
-		var b := read_byte()
-		if get_error() != OK:
-			return 0
-		if shift == 63 and b > 1:
-			_set_error(ERR_INVALID_DATA, "Varint exceeds 64 bits.")
-			return 0
-		value |= (b & 0x7F) << shift
-		if (b & 0x80) == 0:
-			break
-		shift += 7
-	_set_error(OK)
-	return value
+func read_varint() -> int
 
 @abstract
 # Reads a 32-bit floating-point value encoded in little-endian order.

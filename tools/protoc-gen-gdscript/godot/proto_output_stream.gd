@@ -17,6 +17,7 @@
 #
 # Abstract byte writer used by the protobuf runtime.
 # Concrete implementations can target files, memory buffers, or custom sinks.
+# Every failed write must leave get_error() set to a non-OK value.
 @abstract
 class_name ProtoOutputStream
 extends RefCounted
@@ -51,23 +52,10 @@ func write_fixed32(value: int) -> bool
 # Writes a 64-bit fixed-width integer in little-endian order.
 func write_fixed64(value: int) -> bool
 
+@abstract
 # Writes a protobuf varint using the standard 7-bit continuation encoding.
 # Negative values always expand to ten bytes, matching protobuf int64 behavior.
-func write_varint(value: int) -> bool:
-	if _init_failed:
-		return false
-	_set_error(OK)
-	if value < 0:
-		for i in range(9):
-			if !write_byte((value & 0x7F) | 0x80):
-				return false
-			value >>= 7
-		return write_byte(0x01)
-	while value >= 0x80:
-		if !write_byte((value & 0x7F) | 0x80):
-			return false
-		value >>= 7
-	return write_byte(value & 0x7F)
+func write_varint(value: int) -> bool
 
 @abstract
 # Writes a 32-bit floating-point value in little-endian order.

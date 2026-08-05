@@ -246,9 +246,11 @@ static func decode_length(stream: ProtoInputStream) -> int:
 # Encodes a field number and field type into a protobuf tag.
 static func encode_tag(stream: ProtoOutputStream, field_number: int, field_type: int) -> bool:
 	if field_number <= 0 or field_number > MAX_FIELD_NUMBER:
+		stream._set_error(ERR_INVALID_PARAMETER, "Invalid protobuf field number.")
 		return false
 	var wire_type := ProtoFieldDescriptor.get_field_wire_type(field_type)
 	if wire_type < 0:
+		stream._set_error(ERR_INVALID_PARAMETER, "Invalid protobuf field type.")
 		return false
 	var value := (field_number << 3) | wire_type
 	return encode_varint(stream, value)
@@ -285,14 +287,13 @@ static func skip_field(stream: ProtoInputStream, wire_type: int) -> bool:
 			var field_size := decode_length(stream)
 			if stream.get_error() != OK:
 				return false
-			if field_size < 0:
-				return false
 			stream.skip(field_size)
 			return stream.get_error() == OK
 		ProtoFieldDescriptor.WireType.WIRETYPE_FIXED32:
 			stream.skip(4)
 			return stream.get_error() == OK
 		_:
+			stream._set_error(ERR_INVALID_DATA, "Invalid protobuf wire type.")
 			return false
 
 #endregion
@@ -302,29 +303,39 @@ static func skip_field(stream: ProtoInputStream, wire_type: int) -> bool:
 # Encodes a nested message as a length-delimited protobuf payload.
 static func encode_message(stream: ProtoOutputStream, msg: ProtoMessage) -> bool:
 	if msg == null:
+		stream._set_error(ERR_INVALID_PARAMETER, "message cannot be null")
 		return false
 	var size := msg.size()
 	if size < 0:
+		stream._set_error(ERR_INVALID_DATA, "Message size cannot be negative.")
 		return false
 	if !encode_varint(stream, size):
 		return false
 	if !msg.serialize(stream):
+		if stream.get_error() == OK:
+			stream._set_error(ERR_INVALID_DATA, "Message serialization failed.")
 		return false
 	return stream.get_error() == OK
 
-# Decodes a nested message using a bounded substream of the declared message size.
+# Decodes a nested message from a buffer containing exactly the declared payload.
 static func decode_message(stream: ProtoInputStream, msg: ProtoMessage) -> bool:
 	if msg == null:
+		stream._set_error(ERR_INVALID_PARAMETER, "message cannot be null")
 		return false
 	var size := decode_length(stream)
 	if stream.get_error() != OK:
 		return false
-	if size < 0:
+	var payload := stream.read_bytes(size)
+	if stream.get_error() != OK:
 		return false
-	var limited_stream := ProtoLimitedInputStream.new(stream, size)
-	if !msg.deserialize(limited_stream):
+	var payload_stream := ProtoInputBuffer.new(payload)
+	if !msg.deserialize(payload_stream) or payload_stream.get_error() != OK:
+		_set_nested_input_error(stream, payload_stream, "Message deserialization failed.")
 		return false
-	return limited_stream.get_error() == OK and limited_stream.eof()
+	if !payload_stream.eof():
+		_set_nested_input_error(stream, payload_stream, "Message payload was not fully consumed.")
+		return false
+	return true
 
 #endregion
 
@@ -647,6 +658,14 @@ static func equal_dictionary(a: Dictionary, b: Dictionary, value_equal: Callable
 	return true
 
 #endregion
+
+# Marks the parent payload as invalid while preserving the nested stream error as diagnostic context.
+static func _set_nested_input_error(stream: ProtoInputStream, source: ProtoInputStream, fallback_message: String) -> void:
+	var message: String = "%s payload_error=%d" % [fallback_message, source.get_error()]
+	var payload_message := source.get_error_message()
+	if !payload_message.is_empty():
+		message += ", payload_message=%s" % payload_message
+	stream._set_error(ERR_INVALID_DATA, message)
 
 # Converts the low 32 bits of an int to its signed representation.
 static func _to_int32(value: int) -> int:

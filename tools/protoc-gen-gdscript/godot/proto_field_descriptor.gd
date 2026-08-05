@@ -59,17 +59,32 @@ enum FieldLabel {
 	LABEL_REPEATED = 3,  # repeated
 }
 
+const _FIELD_WIRE_TYPES := [
+	-1,
+	WireType.WIRETYPE_FIXED64,
+	WireType.WIRETYPE_FIXED32,
+	WireType.WIRETYPE_VARINT,
+	WireType.WIRETYPE_VARINT,
+	WireType.WIRETYPE_VARINT,
+	WireType.WIRETYPE_FIXED64,
+	WireType.WIRETYPE_FIXED32,
+	WireType.WIRETYPE_VARINT,
+	WireType.WIRETYPE_LENGTH_DELIMITED,
+	-1,
+	WireType.WIRETYPE_LENGTH_DELIMITED,
+	WireType.WIRETYPE_LENGTH_DELIMITED,
+	WireType.WIRETYPE_VARINT,
+	WireType.WIRETYPE_VARINT,
+	WireType.WIRETYPE_FIXED32,
+	WireType.WIRETYPE_FIXED64,
+	WireType.WIRETYPE_VARINT,
+	WireType.WIRETYPE_VARINT,
+	WireType.WIRETYPE_LENGTH_DELIMITED,
+]
+
 # Maps a protobuf field type identifier to its wire encoding.
 # Returns -1 when the type does not have a supported wire representation.
 static func get_field_wire_type(field_type: int) -> int:
-	match field_type:
-		FieldType.TYPE_INT32, FieldType.TYPE_INT64, FieldType.TYPE_UINT32, FieldType.TYPE_UINT64, FieldType.TYPE_SINT32, FieldType.TYPE_SINT64, FieldType.TYPE_BOOL, FieldType.TYPE_ENUM:
-			return WireType.WIRETYPE_VARINT
-		FieldType.TYPE_FIXED64, FieldType.TYPE_SFIXED64, FieldType.TYPE_DOUBLE:
-			return WireType.WIRETYPE_FIXED64
-		FieldType.TYPE_STRING, FieldType.TYPE_BYTES, FieldType.TYPE_MESSAGE, FieldType.TYPE_MAP:
-			return WireType.WIRETYPE_LENGTH_DELIMITED
-		FieldType.TYPE_FIXED32, FieldType.TYPE_SFIXED32, FieldType.TYPE_FLOAT:
-			return WireType.WIRETYPE_FIXED32
-		_:
-			return -1
+	if field_type < 0 or field_type >= _FIELD_WIRE_TYPES.size():
+		return -1
+	return _FIELD_WIRE_TYPES[field_type]

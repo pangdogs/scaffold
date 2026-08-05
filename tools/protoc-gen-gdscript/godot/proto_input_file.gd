@@ -43,7 +43,7 @@ func eof() -> bool:
 		return true
 	if _available() > 0:
 		return false
-	_fill_buffer(false)
+	_fill_buffer()
 	return _available() <= 0
 
 func read_byte() -> int:
@@ -159,14 +159,13 @@ func _compact_buffer(force: bool = false) -> void:
 		_position = 0
 
 # Pulls the next chunk into the unread window.
-func _fill_buffer(set_error: bool = true) -> void:
+func _fill_buffer() -> void:
 	var err := _file.get_error()
 	if err != OK:
-		if set_error:
-			if err != ERR_FILE_EOF:
-				_set_error(err, "Failed to read file buffer.")
-			else:
-				_set_error(OK)
+		if err != ERR_FILE_EOF:
+			_set_error(err, "Failed to read file buffer.")
+		else:
+			_set_error(OK)
 		return
 	_compact_buffer(true)
 	var chunk := _file.get_buffer(_chunk_size)
@@ -174,8 +173,7 @@ func _fill_buffer(set_error: bool = true) -> void:
 	if err == OK or err == ERR_FILE_EOF:
 		if !chunk.is_empty():
 			_buffer.append_array(chunk)
-	if set_error:
-		if err != OK and err != ERR_FILE_EOF:
-			_set_error(err, "Failed to read file buffer.")
-		else:
-			_set_error(OK)
+	if err != OK and err != ERR_FILE_EOF:
+		_set_error(err, "Failed to read file buffer.")
+	else:
+		_set_error(OK)
