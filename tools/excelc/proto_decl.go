@@ -262,29 +262,32 @@ message {{.ProtoType}} {
 message {{TableName .ProtoType}} {
 	option ({{$package}}.IsTable) = true;
 	repeated {{.ProtoType}} Rows = 1;
-	{{- $StructHashUniqueIndexesCount := .StructHashUniqueIndexes.Len -}}
-	{{- $StructSortedUniqueIndexesCount := .StructSortedUniqueIndexes.Len -}}
-	{{- $StructHashIndexesCount := .StructHashIndexes.Len -}}
-	{{- $StructSortedIndexesCount := .StructSortedIndexes.Len -}}
-	{{- range $i, $kv := .StructHashUniqueIndexes}}
-	map<uint64, uint32> HashUniqueIndex{{$kv.K}} = {{Add $i 2}} [({{$package}}.IndexType) = '{{$indexTypeHashUnique}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- $FieldNumber := 2 -}}
+	{{- range $kv := .StructHashUniqueIndexes}}
+	map<uint64, uint32> HashUniqueIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeHashUnique}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- $FieldNumber = Add $FieldNumber 1}}
 	{{- end}}
-	{{- range $i, $kv := .StructHashUniqueIndexes}}
-	map<uint64, IndexConflict> HashUniqueIndex{{$kv.K}}Conflict = {{Add $i 2 $StructHashUniqueIndexesCount}};
+	{{- range $kv := .StructHashUniqueIndexes}}
+	map<uint64, IndexConflict> HashUniqueIndex{{$kv.K}}Conflict = {{$FieldNumber}};
+	{{- $FieldNumber = Add $FieldNumber 1}}
 	{{- end}}
-	{{- range $i, $kv := .StructSortedUniqueIndexes}}
-	SortedUniqueIndex SortedUniqueIndex{{$kv.K}} = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount}} [({{$package}}.IndexType) = '{{$indexTypeSortedUnique}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- range $kv := .StructSortedUniqueIndexes}}
+	SortedUniqueIndex SortedUniqueIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeSortedUnique}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- $FieldNumber = Add $FieldNumber 1}}
 	{{- end}}
-	{{- range $i, $kv := .StructSortedUniqueIndexes}}
-	map<uint64, IndexConflict> SortedUniqueIndex{{$kv.K}}Conflict = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount}};
+	{{- range $kv := .StructSortedUniqueIndexes}}
+	map<uint64, IndexConflict> SortedUniqueIndex{{$kv.K}}Conflict = {{$FieldNumber}};
+	{{- $FieldNumber = Add $FieldNumber 1}}
 	{{- end}}
-	{{- range $i, $kv := .StructHashIndexes}}
-	map<uint64, IndexOffsets> HashIndex{{$kv.K}} = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}} [({{$package}}.IndexType) = '{{$indexTypeHash}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- range $kv := .StructHashIndexes}}
+	map<uint64, IndexOffsets> HashIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeHash}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- $FieldNumber = Add $FieldNumber 1}}
 	{{- end}}
-	{{- range $i, $kv := .StructSortedIndexes}}
-	SortedIndex SortedIndex{{$kv.K}} = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount $StructHashIndexesCount}} [({{$package}}.IndexType) = '{{$indexTypeSorted}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- range $kv := .StructSortedIndexes}}
+	SortedIndex SortedIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeSorted}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	{{- $FieldNumber = Add $FieldNumber 1}}
 	{{- end}}
-	ChunkManifest ChunkManifest = {{Add 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount $StructHashIndexesCount $StructSortedIndexesCount}};
+	ChunkManifest ChunkManifest = {{$FieldNumber}};
 }
 {{end}}
 `
