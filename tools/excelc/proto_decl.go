@@ -265,6 +265,7 @@ message {{TableName .ProtoType}} {
 	{{- $StructHashUniqueIndexesCount := .StructHashUniqueIndexes.Len -}}
 	{{- $StructSortedUniqueIndexesCount := .StructSortedUniqueIndexes.Len -}}
 	{{- $StructHashIndexesCount := .StructHashIndexes.Len -}}
+	{{- $StructSortedIndexesCount := .StructSortedIndexes.Len -}}
 	{{- range $i, $kv := .StructHashUniqueIndexes}}
 	map<uint64, uint32> HashUniqueIndex{{$kv.K}} = {{Add $i 2}} [({{$package}}.IndexType) = '{{$indexTypeHashUnique}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
 	{{- end}}
@@ -277,13 +278,13 @@ message {{TableName .ProtoType}} {
 	{{- range $i, $kv := .StructSortedUniqueIndexes}}
 	map<uint64, IndexConflict> SortedUniqueIndex{{$kv.K}}Conflict = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount}};
 	{{- end}}
-	ChunkManifest ChunkManifest = {{Add 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}};
 	{{- range $i, $kv := .StructHashIndexes}}
-	map<uint64, IndexOffsets> HashIndex{{$kv.K}} = {{Add $i 3 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}} [({{$package}}.IndexType) = '{{$indexTypeHash}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	map<uint64, IndexOffsets> HashIndex{{$kv.K}} = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount}} [({{$package}}.IndexType) = '{{$indexTypeHash}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
 	{{- end}}
 	{{- range $i, $kv := .StructSortedIndexes}}
-	SortedIndex SortedIndex{{$kv.K}} = {{Add $i 3 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount $StructHashIndexesCount}} [({{$package}}.IndexType) = '{{$indexTypeSorted}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
+	SortedIndex SortedIndex{{$kv.K}} = {{Add $i 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount $StructHashIndexesCount}} [({{$package}}.IndexType) = '{{$indexTypeSorted}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
 	{{- end}}
+	ChunkManifest ChunkManifest = {{Add 2 $StructHashUniqueIndexesCount $StructHashUniqueIndexesCount $StructSortedUniqueIndexesCount $StructSortedUniqueIndexesCount $StructHashIndexesCount $StructSortedIndexesCount}};
 }
 {{end}}
 `
