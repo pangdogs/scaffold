@@ -289,8 +289,8 @@ func genProtoMessage(file *excelize.File) proto.Message {
 								log.Panicf("read excel file %q sheet %q row %d failed: index %q value %d conflicts with sheet %q row %d", file.Path, sheet, i, indexName, h.Sum64(), conflictedRow.Sheet, conflictedRow.Line)
 							}
 
-							log.Printf("read excel file %q sheet %q row %d warning: index %q value %d collides with sheet %q row %d; stored in conflict bucket", file.Path, sheet, i, indexName, h.Sum64(), offsetLines[existed.Uint()].Sheet, offsetLines[existed.Uint()].Line)
-							appendIndexOffset(tableMsg, indexName+"Conflict", key, offset)
+							log.Printf("read excel file %q sheet %q row %d warning: index %q value %d collides with sheet %q row %d; stored in collision bucket", file.Path, sheet, i, indexName, h.Sum64(), offsetLines[existed.Uint()].Sheet, offsetLines[existed.Uint()].Line)
+							appendIndexOffset(tableMsg, indexName+"Collisions", key, offset)
 							return
 						}
 
@@ -340,8 +340,8 @@ func genProtoMessage(file *excelize.File) proto.Message {
 								log.Panicf("read excel file %q sheet %q row %d failed: index %q value %d conflicts with sheet %q row %d", file.Path, sheet, i, indexName, h.Sum64(), conflictedRow.Sheet, conflictedRow.Line)
 							}
 
-							log.Printf("read excel file %q sheet %q row %d warning: index %q value %d collides with sheet %q row %d; stored in conflict bucket", file.Path, sheet, i, indexName, h.Sum64(), offsetLines[existed].Sheet, offsetLines[existed].Line)
-							appendIndexOffset(tableMsg, indexName+"Conflict", key, offset)
+							log.Printf("read excel file %q sheet %q row %d warning: index %q value %d collides with sheet %q row %d; stored in collision bucket", file.Path, sheet, i, indexName, h.Sum64(), offsetLines[existed].Sheet, offsetLines[existed].Line)
+							appendIndexOffset(tableMsg, indexName+"Collisions", key, offset)
 							return
 						}
 
@@ -509,22 +509,22 @@ func findIndexDuplicateOffset(tableMsg protoreflect.Message, indexName string, k
 		return primaryOffset, true
 	}
 
-	conflictField := tableMsg.Descriptor().Fields().ByName(protoreflect.Name(indexName + "Conflict"))
-	if conflictField == nil {
+	collisionField := tableMsg.Descriptor().Fields().ByName(protoreflect.Name(indexName + "Collisions"))
+	if collisionField == nil {
 		return 0, false
 	}
 
-	conflictBucket := tableMsg.Get(conflictField).Map().Get(key)
-	if !conflictBucket.IsValid() {
+	collisionBucket := tableMsg.Get(collisionField).Map().Get(key)
+	if !collisionBucket.IsValid() {
 		return 0, false
 	}
 
-	offsetsField := conflictBucket.Message().Descriptor().Fields().ByName("Offsets")
+	offsetsField := collisionBucket.Message().Descriptor().Fields().ByName("Offsets")
 	if offsetsField == nil {
 		return 0, false
 	}
 
-	offsets := conflictBucket.Message().Get(offsetsField).List()
+	offsets := collisionBucket.Message().Get(offsetsField).List()
 	for i := 0; i < offsets.Len(); i++ {
 		offset := uint32(offsets.Get(i).Uint())
 		if excelutils.ProtoMessageFieldsEqual(tableRows.Get(int(offset)).Message(), rowMsg, fields...) {

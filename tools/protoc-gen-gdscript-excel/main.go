@@ -822,11 +822,11 @@ func emitLookupMethod(g *protogen.GeneratedFile, table TableDecl, method IndexMe
 	g.P("\t\t\treturn null")
 	if requiresHashIndex(method.IndexFields) {
 		g.P("\t\tif !", indexMatchMethodName(method), "(row, ", argNames, "):")
-		g.P("\t\t\tvar bucket = _msg.", indexFieldName, "Conflict.get(idx)")
+		g.P("\t\t\tvar bucket = _msg.", indexFieldName, "Collisions.get(idx)")
 		g.P("\t\t\tif bucket == null:")
 		g.P("\t\t\t\treturn null")
-		g.P("\t\t\tfor conflict_offset in bucket.Offsets:")
-		g.P("\t\t\t\trow = row_at(conflict_offset)")
+		g.P("\t\t\tfor collision_offset in bucket.Offsets:")
+		g.P("\t\t\t\trow = row_at(collision_offset)")
 		g.P("\t\t\t\tif row == null:")
 		g.P("\t\t\t\t\tcontinue")
 		g.P("\t\t\t\tif ", indexMatchMethodName(method), "(row, ", argNames, "):")
@@ -938,11 +938,11 @@ func emitChunkedAsyncLookupMethod(g *protogen.GeneratedFile, method IndexMethodD
 	g.P("\t\t\treturn null")
 	if requiresHashIndex(method.IndexFields) {
 		g.P("\t\tif !", indexMatchMethodName(method), "(row, ", argNames, "):")
-		g.P("\t\t\tvar bucket = _msg.", indexFieldName, "Conflict.get(idx)")
+		g.P("\t\t\tvar bucket = _msg.", indexFieldName, "Collisions.get(idx)")
 		g.P("\t\t\tif bucket == null:")
 		g.P("\t\t\t\treturn null")
-		g.P("\t\t\tfor conflict_offset in bucket.Offsets:")
-		g.P("\t\t\t\trow = await row_at_async(conflict_offset)")
+		g.P("\t\t\tfor collision_offset in bucket.Offsets:")
+		g.P("\t\t\t\trow = await row_at_async(collision_offset)")
 		g.P("\t\t\t\tif row == null:")
 		g.P("\t\t\t\t\tcontinue")
 		g.P("\t\t\t\tif ", indexMatchMethodName(method), "(row, ", argNames, "):")
@@ -1578,7 +1578,7 @@ func isGDScriptKeyword(s string) bool {
 		return true
 
 	case "idx", "idx_offset", "index_data", "offset", "offsets", "offset_begin", "offset_end", "offset_index",
-		"row", "bucket", "conflict_offset",
+		"row", "bucket", "collision_offset",
 		"rows", "rows_async", "row_count", "row_at", "row_at_async",
 		"lookup", "lookup_async":
 		return true

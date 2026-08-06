@@ -68,7 +68,7 @@ message SortedUniqueIndex {
 	repeated uint32 Offsets = 2;
 }
 
-message IndexConflict {
+message IndexCollision {
 	option ({{.Package}}.GDScriptIndexArray) = "{{.GDScriptIndexArray}}";
 	repeated uint32 Offsets = 1;
 }
@@ -267,17 +267,13 @@ message {{TableName .ProtoType}} {
 	{{- range $kv := .StructHashUniqueIndexes}}
 	map<uint64, uint32> HashUniqueIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeHashUnique}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
 	{{- $FieldNumber = Incr $FieldNumber}}
-	{{- end}}
-	{{- range $kv := .StructHashUniqueIndexes}}
-	map<uint64, IndexConflict> HashUniqueIndex{{$kv.K}}Conflict = {{$FieldNumber}};
+	map<uint64, IndexCollision> HashUniqueIndex{{$kv.K}}Collisions = {{$FieldNumber}};
 	{{- $FieldNumber = Incr $FieldNumber}}
 	{{- end}}
 	{{- range $kv := .StructSortedUniqueIndexes}}
 	SortedUniqueIndex SortedUniqueIndex{{$kv.K}} = {{$FieldNumber}} [({{$package}}.IndexType) = '{{$indexTypeSortedUnique}}', ({{$package}}.IndexFields) = '{{$kv.V}}'];
 	{{- $FieldNumber = Incr $FieldNumber}}
-	{{- end}}
-	{{- range $kv := .StructSortedUniqueIndexes}}
-	map<uint64, IndexConflict> SortedUniqueIndex{{$kv.K}}Conflict = {{$FieldNumber}};
+	map<uint64, IndexCollision> SortedUniqueIndex{{$kv.K}}Collisions = {{$FieldNumber}};
 	{{- $FieldNumber = Incr $FieldNumber}}
 	{{- end}}
 	{{- range $kv := .StructHashIndexes}}
