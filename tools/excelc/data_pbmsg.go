@@ -933,28 +933,39 @@ func makeStructValue(ty protoreflect.MessageType, value *yaml.Node, extensions *
 	for i := range msg.Descriptor().Fields().Len() {
 		field := msg.Descriptor().Fields().Get(i)
 
-		idx := slices.IndexFunc(value.Content, func(node *yaml.Node) bool {
-			return node.Value == string(field.Name())
-		})
-		if idx < 0 {
+		fieldValue := findYAMLMappingValue(value, string(field.Name()))
+		if fieldValue == nil {
 			fieldAlias := proto.GetExtension(field.Options(), extensions.FieldAlias).(string)
 			if fieldAlias != "" {
-				idx = slices.IndexFunc(value.Content, func(node *yaml.Node) bool {
-					return node.Value == fieldAlias
-				})
+				fieldValue = findYAMLMappingValue(value, fieldAlias)
 			}
-			if idx < 0 {
+			if fieldValue == nil {
 				continue
 			}
 		}
 
-		err := setFieldStructValue(msg, field, value.Content[idx+1], extensions)
+		err := setFieldStructValue(msg, field, fieldValue, extensions)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return msg, nil
+}
+
+func findYAMLMappingValue(value *yaml.Node, key string) *yaml.Node {
+	if value.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	for i := 0; i+1 < len(value.Content); i += 2 {
+		keyNode := value.Content[i]
+		if keyNode.Kind == yaml.ScalarNode && keyNode.Value == key {
+			return value.Content[i+1]
+		}
+	}
+
+	return nil
 }
 
 func validateYAMLObjectKeys(value *yaml.Node) error {
