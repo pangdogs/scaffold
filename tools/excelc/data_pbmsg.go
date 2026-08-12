@@ -967,7 +967,7 @@ func validateYAMLObjectKeys(value *yaml.Node) error {
 		if key.Kind != yaml.ScalarNode || !strings.ContainsRune(key.Value, ':') {
 			continue
 		}
-		return fmt.Errorf("YAML object key %q contains ':'; object field names cannot contain ':', add whitespace after ':' when assigning a value", key.Value)
+		return fmt.Errorf("YAML object key %q contains ':'; add whitespace after ':' when assigning a value", key.Value)
 	}
 
 	return nil
