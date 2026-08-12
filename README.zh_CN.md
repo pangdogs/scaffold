@@ -49,6 +49,30 @@
 - 生成 Go Protobuf 时还需要官方 `protoc-gen-go`。
 - 使用 GDScript 产物时需要 Godot 4，并把对应运行时脚本放入项目。
 
+### 安装 `protoc`
+
+`protoc` 是由官方 [protocolbuffers/protobuf](https://github.com/protocolbuffers/protobuf) 项目发布的 Protocol Buffers 编译器，用于编译 `excelc proto` 生成的 `.proto` schema、生成 Protobuf 绑定代码，以及生成 Excel 工作流所需的 `*.protoset` descriptor set。特别是生成的 `excelc.proto` 会导入 `google/protobuf/descriptor.proto`，因此必须保留编译器发行包中的 `include` 目录。
+
+Windows 推荐使用 Winget 安装；安装后请新开终端再验证：
+
+```powershell
+winget install protobuf
+protoc --version
+```
+
+也可以从[官方 Releases](https://github.com/protocolbuffers/protobuf/releases/latest)下载与操作系统和 CPU 架构匹配的预编译包，例如 Windows x64 使用 `protoc-<version>-win64.zip`。解压到固定目录后，保留其中的 `bin` 和 `include` 目录，并将 `bin` 加入 `PATH`。以下 PowerShell 命令用于配置并验证当前终端中的手动安装：
+
+```powershell
+$protocRoot = 'C:\tools\protoc'
+$env:Path = "$protocRoot\bin;$env:Path"
+$env:PROTOBUF_INCLUDE = "$protocRoot\include"
+
+protoc --version
+Test-Path "$env:PROTOBUF_INCLUDE\google\protobuf\descriptor.proto"
+```
+
+`PROTOBUF_INCLUDE`（或 `-I` 参数）必须指向 `include` 根目录，不能指向其 `google/protobuf` 子目录。macOS 和 Debian/Ubuntu 可分别通过 `brew install protobuf` 和 `sudo apt-get install protobuf-compiler` 安装，安装后同样使用 `protoc --version` 验证。
+
 安装整个 Go 模块依赖：
 
 ```bash

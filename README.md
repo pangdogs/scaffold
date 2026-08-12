@@ -49,6 +49,30 @@ This repository is not a standalone application framework. It contains three kin
 - The official `protoc-gen-go` when generating Go Protobuf bindings.
 - Godot 4 when using generated GDScript and its runtime scripts.
 
+### Install `protoc`
+
+`protoc` is the Protocol Buffers compiler distributed by the official [protocolbuffers/protobuf](https://github.com/protocolbuffers/protobuf) project. Use it to compile the `.proto` schemas emitted by `excelc proto`, generate Protobuf bindings, and create the `*.protoset` descriptor sets used by the Excel workflow. In particular, the generated `excelc.proto` imports `google/protobuf/descriptor.proto`, so retain the compiler distribution's `include` directory.
+
+On Windows, install it with Winget and open a new terminal before verifying the installation:
+
+```powershell
+winget install protobuf
+protoc --version
+```
+
+Alternatively, download the precompiled archive for the target operating system and architecture from the [official releases](https://github.com/protocolbuffers/protobuf/releases/latest), for example `protoc-<version>-win64.zip`. Extract it to a permanent location, keep both its `bin` and `include` directories, and add `bin` to `PATH`. The following PowerShell commands configure and validate a manually extracted Windows installation for the current terminal:
+
+```powershell
+$protocRoot = 'C:\tools\protoc'
+$env:Path = "$protocRoot\bin;$env:Path"
+$env:PROTOBUF_INCLUDE = "$protocRoot\include"
+
+protoc --version
+Test-Path "$env:PROTOBUF_INCLUDE\google\protobuf\descriptor.proto"
+```
+
+Set `PROTOBUF_INCLUDE` (or pass the same directory with `-I`) to the `include` root, not to its `google/protobuf` subdirectory. On macOS and Debian/Ubuntu, the corresponding package-manager commands are `brew install protobuf` and `sudo apt-get install protobuf-compiler`; verify the resulting compiler with `protoc --version`.
+
 Add the complete Go module when application code imports the add-ins or generated runtime helpers:
 
 ```bash
