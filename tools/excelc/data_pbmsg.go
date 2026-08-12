@@ -926,6 +926,9 @@ func makeStructValue(ty protoreflect.MessageType, value *yaml.Node, extensions *
 	}
 
 	msg := ty.New()
+	if err := validateYAMLObjectKeys(value); err != nil {
+		return nil, err
+	}
 
 	for i := range msg.Descriptor().Fields().Len() {
 		field := msg.Descriptor().Fields().Get(i)
@@ -952,6 +955,22 @@ func makeStructValue(ty protoreflect.MessageType, value *yaml.Node, extensions *
 	}
 
 	return msg, nil
+}
+
+func validateYAMLObjectKeys(value *yaml.Node) error {
+	if value.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	for i := 0; i+1 < len(value.Content); i += 2 {
+		key := value.Content[i]
+		if key.Kind != yaml.ScalarNode || !strings.ContainsRune(key.Value, ':') {
+			continue
+		}
+		return fmt.Errorf("YAML object key %q contains ':'; object field names cannot contain ':', add whitespace after ':' when assigning a value", key.Value)
+	}
+
+	return nil
 }
 
 func setMappingValue(msg protoreflect.Message, field protoreflect.FieldDescriptor, value *yaml.Node, extensions *Extensions) error {

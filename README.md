@@ -238,6 +238,10 @@ Use separate proto directories for server and client targets. `--targets` can re
 - Ordinary sheets define tables. Columns whose first character is not a letter are ignored; `#`-prefixed columns are convenient for comments.
 - `@types` metadata supports `separator`, `scope`, and `pb_field_number`. Index options only apply to ordinary table fields.
 
+Names that become Protobuf identifiers, including `@types` type names, object field names, enum value names, and ordinary table field names, must match `[A-Za-z][A-Za-z0-9_]*`. Names are validated before conversion to UpperCamelCase. An ordinary-table column whose converted name does not start with a letter remains an ignored comment column.
+
+The `Alias` column in `@types` is used for object field aliases and enum value aliases. Aliases may contain text such as Chinese characters, but cannot contain ASCII spaces, YAML indicator characters (`-?:,[]{}#&*!|>'"%@`), a backtick, a backslash, or Unicode control characters. This keeps aliases safe for use as unquoted YAML object keys and Protobuf option values.
+
 #### Table Header Rows
 
 | Row      | Contents                                                                   |
@@ -259,6 +263,8 @@ Use separate proto directories for server and client targets. `--targets` can re
 | Object          | YAML-style mapping such as `id: 1, name: Example, tags: [1, 2]`; field names and aliases are accepted. |
 | Repeated object | YAML array such as `[{id: 1}, {id: 2}]`, or multiple mappings with a custom separator.                 |
 | Map             | YAML-style mapping such as `1: Alpha, 2: Beta` or `1: {id: 1, name: Alpha}`.                           |
+
+In object mappings, `:` must be followed by whitespace, for example `name: Example`. Object field names cannot contain `:`; during data export, `excelc` rejects any parsed object key containing it. This check applies recursively to objects, repeated objects, and object values inside maps; it does not inspect ordinary string values or map keys. Unknown object fields without `:` remain ignored for compatibility with `targets`/`scope` schema trimming.
 
 #### Field Metadata
 

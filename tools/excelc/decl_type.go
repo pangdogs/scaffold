@@ -597,13 +597,17 @@ func predeclareTypeDecls(file *excelize.File) *generic.SliceMap[Type, *Decl] {
 		}
 		row := Row(_row)
 
-		ty := Type(row.Get(columns.Type))
+		typeName := row.Get(columns.Type)
+		ty := Type(typeName)
 		if ty == "" {
 			continue
 		}
 
 		if ty.IsBuiltin() {
 			log.Panicf("read excel file %q sheet %q row %d failed: built-in types cannot be defined", file.Path, SheetTypes, i)
+		}
+		if err := validatePbIdentifier(typeName); err != nil {
+			log.Panicf("read excel file %q sheet %q row %d failed: invalid type name %q: %s", file.Path, SheetTypes, i, typeName, err)
 		}
 
 		ty = Type(snake2Camel(string(ty)))
@@ -731,7 +735,7 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 			Type:      row.Get(columns.Type),
 			IsStruct:  row.Get(columns.EnumValue) == "",
 			IsEnum:    row.Get(columns.EnumValue) != "",
-			FieldName: snake2Camel(row.Get(columns.FieldName)),
+			FieldName: row.Get(columns.FieldName),
 			FieldType: row.Get(columns.FieldType),
 			EnumValue: row.Get(columns.EnumValue),
 			Alias:     row.Get(columns.Alias),
@@ -748,6 +752,9 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 
 		if ty.IsBuiltin() {
 			log.Panicf("read excel file %q sheet %q row %d failed: built-in types cannot be defined", file.Path, SheetTypes, i)
+		}
+		if err := validatePbIdentifier(fieldDesc.Type); err != nil {
+			log.Panicf("read excel file %q sheet %q row %d failed: invalid type name %q: %s", file.Path, SheetTypes, i, fieldDesc.Type, err)
 		}
 
 		ty = Type(snake2Camel(string(ty)))
@@ -778,7 +785,18 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 			log.Panicf("read excel file %q sheet %q row %d failed: parse meta %q failed, %s", file.Path, SheetTypes, i, fieldDesc.Meta, err)
 		}
 
-		fieldName := fieldDesc.FieldName
+		nameKind := "field"
+		if fieldDesc.IsEnum {
+			nameKind = "enum value"
+		}
+		if err := validatePbIdentifier(fieldDesc.FieldName); err != nil {
+			log.Panicf("read excel file %q sheet %q row %d failed: invalid %s name %q: %s", file.Path, SheetTypes, i, nameKind, fieldDesc.FieldName, err)
+		}
+		if err := validateYAMLAlias(fieldDesc.Alias); err != nil {
+			log.Panicf("read excel file %q sheet %q row %d failed: invalid %s alias %q: %s", file.Path, SheetTypes, i, nameKind, fieldDesc.Alias, err)
+		}
+
+		fieldName := snake2Camel(fieldDesc.FieldName)
 		fieldType := Type(fieldDesc.FieldType)
 		fieldAlias := fieldDesc.Alias
 

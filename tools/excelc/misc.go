@@ -21,9 +21,33 @@ package main
 
 import (
 	"bytes"
+	"fmt"
+	"regexp"
 	"strings"
 	"unicode"
 )
+
+var (
+	pbIdentifierRegexp     = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
+	yamlAliasInvalidRegexp = regexp.MustCompile("[\\p{Cc} \\-?:,\\[\\]{}#&*!|>'\"%@`\\\\]")
+)
+
+func validatePbIdentifier(name string) error {
+	if !pbIdentifierRegexp.MatchString(name) {
+		return fmt.Errorf("must match [A-Za-z][A-Za-z0-9_]*")
+	}
+
+	return nil
+}
+
+func validateYAMLAlias(alias string) error {
+	invalid := yamlAliasInvalidRegexp.FindString(alias)
+	if invalid != "" {
+		return fmt.Errorf("contains reserved character %q", []rune(invalid)[0])
+	}
+
+	return nil
+}
 
 func snake2Camel(s string) string {
 	var buf bytes.Buffer

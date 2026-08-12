@@ -151,9 +151,14 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 					break loop
 				}
 
-				tableDesc[j] = &ColumnDesc{
-					Name: snake2Camel(cell),
+				name := snake2Camel(cell)
+				if name != "" && unicode.IsLetter(rune(name[0])) {
+					if err := validatePbIdentifier(cell); err != nil {
+						log.Panicf("read excel file %q sheet %q row %d column %d failed: invalid field name %q: %s", file.Path, sheet, i, j+1, cell, err)
+					}
 				}
+
+				tableDesc[j] = &ColumnDesc{Name: name}
 
 			case SheetTableColumnType:
 				if j < 0 || j >= len(tableDesc) {
