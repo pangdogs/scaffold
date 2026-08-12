@@ -41,14 +41,14 @@ func init() {
 type _git_golaxy_org_framework_addins_discovery_IRegistration struct {
 	IValue               interface{}
 	WDeregister          func(ctx context.Context) error
-	WKeepAliveContinuous func(ctx context.Context) (async.Future, error)
+	WKeepAliveContinuous func(ctx context.Context) (async.Signal, error)
 	WKeepAliveOnce       func(ctx context.Context) error
 }
 
 func (W _git_golaxy_org_framework_addins_discovery_IRegistration) Deregister(ctx context.Context) error {
 	return W.WDeregister(ctx)
 }
-func (W _git_golaxy_org_framework_addins_discovery_IRegistration) KeepAliveContinuous(ctx context.Context) (async.Future, error) {
+func (W _git_golaxy_org_framework_addins_discovery_IRegistration) KeepAliveContinuous(ctx context.Context) (async.Signal, error) {
 	return W.WKeepAliveContinuous(ctx)
 }
 func (W _git_golaxy_org_framework_addins_discovery_IRegistration) KeepAliveOnce(ctx context.Context) error {
@@ -63,7 +63,7 @@ type _git_golaxy_org_framework_addins_discovery_IRegistry struct {
 	WList         func(ctx context.Context) ([]*discovery.Service, error)
 	WRegisterNode func(ctx context.Context, serviceName string, node *discovery.Node, ttl time.Duration) (discovery.IRegistration, error)
 	WWatchEvent   func(ctx context.Context, pattern string, revision ...int64) (<-chan discovery.Event, error)
-	WWatchHandler func(ctx context.Context, pattern string, handler discovery.EventHandler, revision ...int64) (async.Future, error)
+	WWatchHandler func(ctx context.Context, pattern string, handler discovery.EventHandler, revision ...int64) (async.Signal, error)
 }
 
 func (W _git_golaxy_org_framework_addins_discovery_IRegistry) Get(ctx context.Context, serviceName string) (*discovery.Service, error) {
@@ -81,6 +81,6 @@ func (W _git_golaxy_org_framework_addins_discovery_IRegistry) RegisterNode(ctx c
 func (W _git_golaxy_org_framework_addins_discovery_IRegistry) WatchEvent(ctx context.Context, pattern string, revision ...int64) (<-chan discovery.Event, error) {
 	return W.WWatchEvent(ctx, pattern, revision...)
 }
-func (W _git_golaxy_org_framework_addins_discovery_IRegistry) WatchHandler(ctx context.Context, pattern string, handler discovery.EventHandler, revision ...int64) (async.Future, error) {
+func (W _git_golaxy_org_framework_addins_discovery_IRegistry) WatchHandler(ctx context.Context, pattern string, handler discovery.EventHandler, revision ...int64) (async.Signal, error) {
 	return W.WWatchHandler(ctx, pattern, handler, revision...)
 }

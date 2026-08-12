@@ -43,7 +43,7 @@ func (e *EntityState) Awake() {
 		generic.CastAction0(cb.OnCreate).Call(e.Runtime().AutoRecover(), e.Runtime().ReportError())
 	}
 
-	if e.State() != ec.EntityState_Awake {
+	if e.State() != ec.EntityState_Awakened {
 		return
 	}
 
@@ -60,7 +60,7 @@ func (e *EntityState) Start() {
 		method()
 	}
 
-	if e.State() != ec.EntityState_Start {
+	if e.State() != ec.EntityState_Starting {
 		return
 	}
 
@@ -75,7 +75,7 @@ func (e *EntityState) Shut() {
 		generic.CastAction0(cb.OnStop).Call(e.Runtime().AutoRecover(), e.Runtime().ReportError())
 	}
 
-	if e.State() != ec.EntityState_Shut {
+	if e.State() != ec.EntityState_Shutting {
 		return
 	}
 

@@ -33,7 +33,7 @@ type _git_golaxy_org_framework_addins_dsvc_IDistService struct {
 	IValue            interface{}
 	WBringUp          func()
 	WFutureController func() *concurrent.FutureController
-	WListen           func(ctx context.Context, handler dsvc.MsgHandler) (async.Future, error)
+	WListen           func(ctx context.Context, handler dsvc.MsgHandler) (async.Signal, error)
 	WNodeDetails      func() *dsvc.NodeDetails
 	WSend             func(dst string, msg gap.Msg) error
 }
@@ -42,7 +42,7 @@ func (W _git_golaxy_org_framework_addins_dsvc_IDistService) BringUp() { W.WBring
 func (W _git_golaxy_org_framework_addins_dsvc_IDistService) FutureController() *concurrent.FutureController {
 	return W.WFutureController()
 }
-func (W _git_golaxy_org_framework_addins_dsvc_IDistService) Listen(ctx context.Context, handler dsvc.MsgHandler) (async.Future, error) {
+func (W _git_golaxy_org_framework_addins_dsvc_IDistService) Listen(ctx context.Context, handler dsvc.MsgHandler) (async.Signal, error) {
 	return W.WListen(ctx, handler)
 }
 func (W _git_golaxy_org_framework_addins_dsvc_IDistService) NodeDetails() *dsvc.NodeDetails {

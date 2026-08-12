@@ -66,9 +66,9 @@ type _git_golaxy_org_framework_addins_router_IGroup struct {
 	WAdd                 func(ctx context.Context, ids []uid.Id) error
 	WClientAddr          func() string
 	WDataIO              func() router.IDataIO
-	WDeleted             func() async.Future
+	WDeleted             func() async.Signal
 	WEventIO             func() router.IEventIO
-	WKeepAliveContinuous func(ctx context.Context) (async.Future, error)
+	WKeepAliveContinuous func(ctx context.Context) (async.Signal, error)
 	WKeepAliveOnce       func(ctx context.Context) error
 	WList                func() []uid.Id
 	WName                func() string
@@ -80,11 +80,11 @@ func (W _git_golaxy_org_framework_addins_router_IGroup) Add(ctx context.Context,
 }
 func (W _git_golaxy_org_framework_addins_router_IGroup) ClientAddr() string     { return W.WClientAddr() }
 func (W _git_golaxy_org_framework_addins_router_IGroup) DataIO() router.IDataIO { return W.WDataIO() }
-func (W _git_golaxy_org_framework_addins_router_IGroup) Deleted() async.Future  { return W.WDeleted() }
+func (W _git_golaxy_org_framework_addins_router_IGroup) Deleted() async.Signal  { return W.WDeleted() }
 func (W _git_golaxy_org_framework_addins_router_IGroup) EventIO() router.IEventIO {
 	return W.WEventIO()
 }
-func (W _git_golaxy_org_framework_addins_router_IGroup) KeepAliveContinuous(ctx context.Context) (async.Future, error) {
+func (W _git_golaxy_org_framework_addins_router_IGroup) KeepAliveContinuous(ctx context.Context) (async.Signal, error) {
 	return W.WKeepAliveContinuous(ctx)
 }
 func (W _git_golaxy_org_framework_addins_router_IGroup) KeepAliveOnce(ctx context.Context) error {
@@ -103,7 +103,7 @@ type _git_golaxy_org_framework_addins_router_IMapping struct {
 	WEntity     func() ec.ConcurrentEntity
 	WSession    func() gate.ISession
 	WUnmap      func()
-	WUnmapped   func() async.Future
+	WUnmapped   func() async.Signal
 }
 
 func (W _git_golaxy_org_framework_addins_router_IMapping) ClientAddr() string { return W.WClientAddr() }
@@ -114,7 +114,7 @@ func (W _git_golaxy_org_framework_addins_router_IMapping) Session() gate.ISessio
 	return W.WSession()
 }
 func (W _git_golaxy_org_framework_addins_router_IMapping) Unmap() { W.WUnmap() }
-func (W _git_golaxy_org_framework_addins_router_IMapping) Unmapped() async.Future {
+func (W _git_golaxy_org_framework_addins_router_IMapping) Unmapped() async.Signal {
 	return W.WUnmapped()
 }
 

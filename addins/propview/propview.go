@@ -116,9 +116,9 @@ func (m *_PropView) Sync(entityId uid.Id, prop string, syncTo []string, revision
 
 		} else if !gate.ClientDetails.DomainRoot.Contains(dst) {
 			// 同步至其他服务
-			core.Await(m.rt,
+			core.ContinueOnVoid(m.rt,
 				rpc.ProxyRuntime(m.rt, entityId).RPC(dst, AddIn.Name, "DoSync", entityId, prop, revision, op, args),
-			).AnyVoid(m.doSyncRet, dst, entityId, prop, revision, op)
+				m.doSyncRet, dst, entityId, prop, revision, op)
 		}
 	}
 }

@@ -23,11 +23,8 @@ func init() {
 		"Current":                          reflect.ValueOf(service.Current),
 		"ErrContext":                       reflect.ValueOf(&service.ErrContext).Elem(),
 		"ErrEntityManager":                 reflect.ValueOf(&service.ErrEntityManager).Elem(),
+		"NewAddInManager":                  reflect.ValueOf(service.NewAddInManager),
 		"NewContext":                       reflect.ValueOf(service.NewContext),
-		"RunningEvent_AddInActivated":      reflect.ValueOf(service.RunningEvent_AddInActivated),
-		"RunningEvent_AddInActivating":     reflect.ValueOf(service.RunningEvent_AddInActivating),
-		"RunningEvent_AddInDeactivated":    reflect.ValueOf(service.RunningEvent_AddInDeactivated),
-		"RunningEvent_AddInDeactivating":   reflect.ValueOf(service.RunningEvent_AddInDeactivating),
 		"RunningEvent_Birth":               reflect.ValueOf(service.RunningEvent_Birth),
 		"RunningEvent_ComponentPTDeclared": reflect.ValueOf(service.RunningEvent_ComponentPTDeclared),
 		"RunningEvent_EntityDeregistered":  reflect.ValueOf(service.RunningEvent_EntityDeregistered),
@@ -38,11 +35,15 @@ func init() {
 		"RunningEvent_Starting":            reflect.ValueOf(service.RunningEvent_Starting),
 		"RunningEvent_Terminated":          reflect.ValueOf(service.RunningEvent_Terminated),
 		"RunningEvent_Terminating":         reflect.ValueOf(service.RunningEvent_Terminating),
+		"UnsafeAddInManager":               reflect.ValueOf(service.UnsafeAddInManager),
+		"UnsafeAddInStatus":                reflect.ValueOf(service.UnsafeAddInStatus),
 		"UnsafeContext":                    reflect.ValueOf(service.UnsafeContext),
 		"UnsafeNewContext":                 reflect.ValueOf(service.UnsafeNewContext),
 		"With":                             reflect.ValueOf(&service.With).Elem(),
 
 		// type definitions
+		"AddInManager":    reflect.ValueOf((*service.AddInManager)(nil)),
+		"AddInStatus":     reflect.ValueOf((*service.AddInStatus)(nil)),
 		"Caller":          reflect.ValueOf((*service.Caller)(nil)),
 		"Context":         reflect.ValueOf((*service.Context)(nil)),
 		"ContextBehavior": reflect.ValueOf((*service.ContextBehavior)(nil)),
@@ -52,77 +53,132 @@ func init() {
 		"RunningEventCB":  reflect.ValueOf((*service.RunningEventCB)(nil)),
 
 		// interface wrapper definitions
+		"_AddInManager":  reflect.ValueOf((*_git_golaxy_org_core_service_AddInManager)(nil)),
+		"_AddInStatus":   reflect.ValueOf((*_git_golaxy_org_core_service_AddInStatus)(nil)),
 		"_Caller":        reflect.ValueOf((*_git_golaxy_org_core_service_Caller)(nil)),
 		"_Context":       reflect.ValueOf((*_git_golaxy_org_core_service_Context)(nil)),
 		"_EntityManager": reflect.ValueOf((*_git_golaxy_org_core_service_EntityManager)(nil)),
 	}
 }
 
-// _git_golaxy_org_core_service_Caller is an interface wrapper for Caller type
-type _git_golaxy_org_core_service_Caller struct {
-	IValue                 interface{}
-	WCallAsync             func(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future
-	WCallDelegateAsync     func(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future
-	WCallDelegateVoidAsync func(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future
-	WCallVoidAsync         func(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future
+// _git_golaxy_org_core_service_AddInManager is an interface wrapper for AddInManager type
+type _git_golaxy_org_core_service_AddInManager struct {
+	IValue           interface{}
+	WAddInManager    func() extension.AddInManager
+	WGetStatusById   func(id uint64) (extension.AddInStatus, bool)
+	WGetStatusByName func(name string) (extension.AddInStatus, bool)
+	WInstall         func(addInFace iface.FaceAny, name ...string) extension.AddInStatus
+	WListStatuses    func() []extension.AddInStatus
+	WUninstall       func(name string)
 }
 
-func (W _git_golaxy_org_core_service_Caller) CallAsync(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future {
-	return W.WCallAsync(entityId, fun, args...)
+func (W _git_golaxy_org_core_service_AddInManager) AddInManager() extension.AddInManager {
+	return W.WAddInManager()
 }
-func (W _git_golaxy_org_core_service_Caller) CallDelegateAsync(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future {
-	return W.WCallDelegateAsync(entityId, fun, args...)
+func (W _git_golaxy_org_core_service_AddInManager) GetStatusById(id uint64) (extension.AddInStatus, bool) {
+	return W.WGetStatusById(id)
 }
-func (W _git_golaxy_org_core_service_Caller) CallDelegateVoidAsync(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future {
-	return W.WCallDelegateVoidAsync(entityId, fun, args...)
+func (W _git_golaxy_org_core_service_AddInManager) GetStatusByName(name string) (extension.AddInStatus, bool) {
+	return W.WGetStatusByName(name)
 }
-func (W _git_golaxy_org_core_service_Caller) CallVoidAsync(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future {
-	return W.WCallVoidAsync(entityId, fun, args...)
+func (W _git_golaxy_org_core_service_AddInManager) Install(addInFace iface.FaceAny, name ...string) extension.AddInStatus {
+	return W.WInstall(addInFace, name...)
+}
+func (W _git_golaxy_org_core_service_AddInManager) ListStatuses() []extension.AddInStatus {
+	return W.WListStatuses()
+}
+func (W _git_golaxy_org_core_service_AddInManager) Uninstall(name string) { W.WUninstall(name) }
+
+// _git_golaxy_org_core_service_AddInStatus is an interface wrapper for AddInStatus type
+type _git_golaxy_org_core_service_AddInStatus struct {
+	IValue        interface{}
+	WId           func() uint64
+	WInstanceFace func() iface.FaceAny
+	WName         func() string
+	WReflected    func() reflect.Value
+	WState        func() extension.AddInState
+	WString       func() string
+}
+
+func (W _git_golaxy_org_core_service_AddInStatus) Id() uint64 { return W.WId() }
+func (W _git_golaxy_org_core_service_AddInStatus) InstanceFace() iface.FaceAny {
+	return W.WInstanceFace()
+}
+func (W _git_golaxy_org_core_service_AddInStatus) Name() string                { return W.WName() }
+func (W _git_golaxy_org_core_service_AddInStatus) Reflected() reflect.Value    { return W.WReflected() }
+func (W _git_golaxy_org_core_service_AddInStatus) State() extension.AddInState { return W.WState() }
+func (W _git_golaxy_org_core_service_AddInStatus) String() string {
+	if W.WString == nil {
+		return ""
+	}
+	return W.WString()
+}
+
+// _git_golaxy_org_core_service_Caller is an interface wrapper for Caller type
+type _git_golaxy_org_core_service_Caller struct {
+	IValue              interface{}
+	WPost               func(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) error
+	WPostDelegate       func(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) error
+	WSubmit             func(entityID uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future
+	WSubmitDelegate     func(entityID uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future
+	WSubmitDelegateVoid func(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future
+	WSubmitVoid         func(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future
+}
+
+func (W _git_golaxy_org_core_service_Caller) Post(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) error {
+	return W.WPost(entityID, fun, args...)
+}
+func (W _git_golaxy_org_core_service_Caller) PostDelegate(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) error {
+	return W.WPostDelegate(entityID, fun, args...)
+}
+func (W _git_golaxy_org_core_service_Caller) Submit(entityID uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future {
+	return W.WSubmit(entityID, fun, args...)
+}
+func (W _git_golaxy_org_core_service_Caller) SubmitDelegate(entityID uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future {
+	return W.WSubmitDelegate(entityID, fun, args...)
+}
+func (W _git_golaxy_org_core_service_Caller) SubmitDelegateVoid(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future {
+	return W.WSubmitDelegateVoid(entityID, fun, args...)
+}
+func (W _git_golaxy_org_core_service_Caller) SubmitVoid(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future {
+	return W.WSubmitVoid(entityID, fun, args...)
 }
 
 // _git_golaxy_org_core_service_Context is an interface wrapper for Context type
 type _git_golaxy_org_core_service_Context struct {
-	IValue                 interface{}
-	WAddInManager          func() extension.AddInManager
-	WAutoRecover           func() bool
-	WCallAsync             func(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future
-	WCallDelegateAsync     func(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future
-	WCallDelegateVoidAsync func(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future
-	WCallVoidAsync         func(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future
-	WDeadline              func() (deadline time.Time, ok bool)
-	WDone                  func() <-chan struct{}
-	WEntityLib             func() pt.EntityLib
-	WEntityManager         func() service.EntityManager
-	WErr                   func() error
-	WId                    func() uid.Id
-	WInstanceFaceCache     func() iface.Cache
-	WName                  func() string
-	WParentContext         func() context.Context
-	WReflected             func() reflect.Value
-	WReportError           func() chan error
-	WString                func() string
-	WTerminate             func() async.Future
-	WTerminated            func() async.Future
-	WValue                 func(key any) any
-	WWaitGroup             func() corectx.WaitGroup
+	IValue              interface{}
+	WAddInManager       func() extension.AddInManager
+	WAsyncScope         func() *async.Scope
+	WAutoRecover        func() bool
+	WDeadline           func() (deadline time.Time, ok bool)
+	WDone               func() <-chan struct{}
+	WEntityLib          func() pt.EntityLib
+	WEntityManager      func() service.EntityManager
+	WErr                func() error
+	WId                 func() uid.Id
+	WInstanceFaceCache  func() iface.Cache
+	WName               func() string
+	WParentContext      func() context.Context
+	WPost               func(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) error
+	WPostDelegate       func(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) error
+	WReflected          func() reflect.Value
+	WReportError        func() chan error
+	WString             func() string
+	WSubmit             func(entityID uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future
+	WSubmitDelegate     func(entityID uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future
+	WSubmitDelegateVoid func(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future
+	WSubmitVoid         func(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future
+	WTerminate          func() async.Signal
+	WTerminated         func() async.Signal
+	WValue              func(key any) any
+	WWaitGroup          func() corectx.WaitGroup
 }
 
 func (W _git_golaxy_org_core_service_Context) AddInManager() extension.AddInManager {
 	return W.WAddInManager()
 }
-func (W _git_golaxy_org_core_service_Context) AutoRecover() bool { return W.WAutoRecover() }
-func (W _git_golaxy_org_core_service_Context) CallAsync(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future {
-	return W.WCallAsync(entityId, fun, args...)
-}
-func (W _git_golaxy_org_core_service_Context) CallDelegateAsync(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future {
-	return W.WCallDelegateAsync(entityId, fun, args...)
-}
-func (W _git_golaxy_org_core_service_Context) CallDelegateVoidAsync(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future {
-	return W.WCallDelegateVoidAsync(entityId, fun, args...)
-}
-func (W _git_golaxy_org_core_service_Context) CallVoidAsync(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future {
-	return W.WCallVoidAsync(entityId, fun, args...)
-}
+func (W _git_golaxy_org_core_service_Context) AsyncScope() *async.Scope { return W.WAsyncScope() }
+func (W _git_golaxy_org_core_service_Context) AutoRecover() bool        { return W.WAutoRecover() }
 func (W _git_golaxy_org_core_service_Context) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
@@ -140,6 +196,12 @@ func (W _git_golaxy_org_core_service_Context) Name() string { return W.WName() }
 func (W _git_golaxy_org_core_service_Context) ParentContext() context.Context {
 	return W.WParentContext()
 }
+func (W _git_golaxy_org_core_service_Context) Post(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) error {
+	return W.WPost(entityID, fun, args...)
+}
+func (W _git_golaxy_org_core_service_Context) PostDelegate(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) error {
+	return W.WPostDelegate(entityID, fun, args...)
+}
 func (W _git_golaxy_org_core_service_Context) Reflected() reflect.Value { return W.WReflected() }
 func (W _git_golaxy_org_core_service_Context) ReportError() chan error  { return W.WReportError() }
 func (W _git_golaxy_org_core_service_Context) String() string {
@@ -148,8 +210,20 @@ func (W _git_golaxy_org_core_service_Context) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_service_Context) Terminate() async.Future      { return W.WTerminate() }
-func (W _git_golaxy_org_core_service_Context) Terminated() async.Future     { return W.WTerminated() }
+func (W _git_golaxy_org_core_service_Context) Submit(entityID uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future {
+	return W.WSubmit(entityID, fun, args...)
+}
+func (W _git_golaxy_org_core_service_Context) SubmitDelegate(entityID uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future {
+	return W.WSubmitDelegate(entityID, fun, args...)
+}
+func (W _git_golaxy_org_core_service_Context) SubmitDelegateVoid(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future {
+	return W.WSubmitDelegateVoid(entityID, fun, args...)
+}
+func (W _git_golaxy_org_core_service_Context) SubmitVoid(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future {
+	return W.WSubmitVoid(entityID, fun, args...)
+}
+func (W _git_golaxy_org_core_service_Context) Terminate() async.Signal      { return W.WTerminate() }
+func (W _git_golaxy_org_core_service_Context) Terminated() async.Signal     { return W.WTerminated() }
 func (W _git_golaxy_org_core_service_Context) Value(key any) any            { return W.WValue(key) }
 func (W _git_golaxy_org_core_service_Context) WaitGroup() corectx.WaitGroup { return W.WWaitGroup() }
 

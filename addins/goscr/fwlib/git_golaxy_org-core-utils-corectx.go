@@ -17,6 +17,7 @@ func init() {
 		"UnsafeContext": reflect.ValueOf(corectx.UnsafeContext),
 
 		// type definitions
+		"AsyncScopeProvider":        reflect.ValueOf((*corectx.AsyncScopeProvider)(nil)),
 		"ConcurrentContextProvider": reflect.ValueOf((*corectx.ConcurrentContextProvider)(nil)),
 		"Context":                   reflect.ValueOf((*corectx.Context)(nil)),
 		"ContextBehavior":           reflect.ValueOf((*corectx.ContextBehavior)(nil)),
@@ -24,6 +25,7 @@ func init() {
 		"WaitGroup":                 reflect.ValueOf((*corectx.WaitGroup)(nil)),
 
 		// interface wrapper definitions
+		"_AsyncScopeProvider":        reflect.ValueOf((*_git_golaxy_org_core_utils_corectx_AsyncScopeProvider)(nil)),
 		"_ConcurrentContextProvider": reflect.ValueOf((*_git_golaxy_org_core_utils_corectx_ConcurrentContextProvider)(nil)),
 		"_Context":                   reflect.ValueOf((*_git_golaxy_org_core_utils_corectx_Context)(nil)),
 		"_CurrentContextProvider":    reflect.ValueOf((*_git_golaxy_org_core_utils_corectx_CurrentContextProvider)(nil)),
@@ -31,32 +33,44 @@ func init() {
 	}
 }
 
-// _git_golaxy_org_core_utils_corectx_ConcurrentContextProvider is an interface wrapper for ConcurrentContextProvider type
-type _git_golaxy_org_core_utils_corectx_ConcurrentContextProvider struct {
-	IValue             interface{}
-	WConcurrentContext func() iface.Cache
+// _git_golaxy_org_core_utils_corectx_AsyncScopeProvider is an interface wrapper for AsyncScopeProvider type
+type _git_golaxy_org_core_utils_corectx_AsyncScopeProvider struct {
+	IValue      interface{}
+	WAsyncScope func() *async.Scope
 }
 
-func (W _git_golaxy_org_core_utils_corectx_ConcurrentContextProvider) ConcurrentContext() iface.Cache {
-	return W.WConcurrentContext()
+func (W _git_golaxy_org_core_utils_corectx_AsyncScopeProvider) AsyncScope() *async.Scope {
+	return W.WAsyncScope()
+}
+
+// _git_golaxy_org_core_utils_corectx_ConcurrentContextProvider is an interface wrapper for ConcurrentContextProvider type
+type _git_golaxy_org_core_utils_corectx_ConcurrentContextProvider struct {
+	IValue                  interface{}
+	WConcurrentContextCache func() iface.Cache
+}
+
+func (W _git_golaxy_org_core_utils_corectx_ConcurrentContextProvider) ConcurrentContextCache() iface.Cache {
+	return W.WConcurrentContextCache()
 }
 
 // _git_golaxy_org_core_utils_corectx_Context is an interface wrapper for Context type
 type _git_golaxy_org_core_utils_corectx_Context struct {
 	IValue         interface{}
+	WAsyncScope    func() *async.Scope
 	WAutoRecover   func() bool
 	WDeadline      func() (deadline time.Time, ok bool)
 	WDone          func() <-chan struct{}
 	WErr           func() error
 	WParentContext func() context.Context
 	WReportError   func() chan error
-	WTerminate     func() async.Future
-	WTerminated    func() async.Future
+	WTerminate     func() async.Signal
+	WTerminated    func() async.Signal
 	WValue         func(key any) any
 	WWaitGroup     func() corectx.WaitGroup
 }
 
-func (W _git_golaxy_org_core_utils_corectx_Context) AutoRecover() bool { return W.WAutoRecover() }
+func (W _git_golaxy_org_core_utils_corectx_Context) AsyncScope() *async.Scope { return W.WAsyncScope() }
+func (W _git_golaxy_org_core_utils_corectx_Context) AutoRecover() bool        { return W.WAutoRecover() }
 func (W _git_golaxy_org_core_utils_corectx_Context) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
@@ -66,8 +80,8 @@ func (W _git_golaxy_org_core_utils_corectx_Context) ParentContext() context.Cont
 	return W.WParentContext()
 }
 func (W _git_golaxy_org_core_utils_corectx_Context) ReportError() chan error  { return W.WReportError() }
-func (W _git_golaxy_org_core_utils_corectx_Context) Terminate() async.Future  { return W.WTerminate() }
-func (W _git_golaxy_org_core_utils_corectx_Context) Terminated() async.Future { return W.WTerminated() }
+func (W _git_golaxy_org_core_utils_corectx_Context) Terminate() async.Signal  { return W.WTerminate() }
+func (W _git_golaxy_org_core_utils_corectx_Context) Terminated() async.Signal { return W.WTerminated() }
 func (W _git_golaxy_org_core_utils_corectx_Context) Value(key any) any        { return W.WValue(key) }
 func (W _git_golaxy_org_core_utils_corectx_Context) WaitGroup() corectx.WaitGroup {
 	return W.WWaitGroup()
@@ -75,16 +89,16 @@ func (W _git_golaxy_org_core_utils_corectx_Context) WaitGroup() corectx.WaitGrou
 
 // _git_golaxy_org_core_utils_corectx_CurrentContextProvider is an interface wrapper for CurrentContextProvider type
 type _git_golaxy_org_core_utils_corectx_CurrentContextProvider struct {
-	IValue             interface{}
-	WConcurrentContext func() iface.Cache
-	WCurrentContext    func() iface.Cache
+	IValue                  interface{}
+	WConcurrentContextCache func() iface.Cache
+	WCurrentContextCache    func() iface.Cache
 }
 
-func (W _git_golaxy_org_core_utils_corectx_CurrentContextProvider) ConcurrentContext() iface.Cache {
-	return W.WConcurrentContext()
+func (W _git_golaxy_org_core_utils_corectx_CurrentContextProvider) ConcurrentContextCache() iface.Cache {
+	return W.WConcurrentContextCache()
 }
-func (W _git_golaxy_org_core_utils_corectx_CurrentContextProvider) CurrentContext() iface.Cache {
-	return W.WCurrentContext()
+func (W _git_golaxy_org_core_utils_corectx_CurrentContextProvider) CurrentContextCache() iface.Cache {
+	return W.WCurrentContextCache()
 }
 
 // _git_golaxy_org_core_utils_corectx_WaitGroup is an interface wrapper for WaitGroup type

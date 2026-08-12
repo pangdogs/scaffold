@@ -79,22 +79,22 @@ type _git_golaxy_org_framework_addins_gate_IGate struct {
 	IValue interface{}
 	WCount func() int64
 	WGet   func(id uid.Id) (gate.ISession, bool)
-	WWatch func(ctx context.Context, handler gate.SessionEstablishedHandler) (async.Future, error)
+	WWatch func(ctx context.Context, handler gate.SessionEstablishedHandler) (async.Signal, error)
 }
 
 func (W _git_golaxy_org_framework_addins_gate_IGate) Count() int64 { return W.WCount() }
 func (W _git_golaxy_org_framework_addins_gate_IGate) Get(id uid.Id) (gate.ISession, bool) {
 	return W.WGet(id)
 }
-func (W _git_golaxy_org_framework_addins_gate_IGate) Watch(ctx context.Context, handler gate.SessionEstablishedHandler) (async.Future, error) {
+func (W _git_golaxy_org_framework_addins_gate_IGate) Watch(ctx context.Context, handler gate.SessionEstablishedHandler) (async.Signal, error) {
 	return W.WWatch(ctx, handler)
 }
 
 // _git_golaxy_org_framework_addins_gate_ISession is an interface wrapper for ISession type
 type _git_golaxy_org_framework_addins_gate_ISession struct {
 	IValue      interface{}
-	WClose      func(err error) async.Future
-	WClosed     func() async.Future
+	WClose      func(err error) async.Signal
+	WClosed     func() async.Signal
 	WDataIO     func() gate.IDataIO
 	WDeadline   func() (deadline time.Time, ok bool)
 	WDone       func() <-chan struct{}
@@ -111,10 +111,10 @@ type _git_golaxy_org_framework_addins_gate_ISession struct {
 	WValue      func(key any) any
 }
 
-func (W _git_golaxy_org_framework_addins_gate_ISession) Close(err error) async.Future {
+func (W _git_golaxy_org_framework_addins_gate_ISession) Close(err error) async.Signal {
 	return W.WClose(err)
 }
-func (W _git_golaxy_org_framework_addins_gate_ISession) Closed() async.Future { return W.WClosed() }
+func (W _git_golaxy_org_framework_addins_gate_ISession) Closed() async.Signal { return W.WClosed() }
 func (W _git_golaxy_org_framework_addins_gate_ISession) DataIO() gate.IDataIO { return W.WDataIO() }
 func (W _git_golaxy_org_framework_addins_gate_ISession) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()

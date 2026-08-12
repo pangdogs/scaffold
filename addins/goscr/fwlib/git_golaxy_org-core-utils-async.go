@@ -10,19 +10,61 @@ import (
 func init() {
 	Symbols["git.golaxy.org/core/utils/async/async"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"ErrFutureClosed": reflect.ValueOf(&async.ErrFutureClosed).Elem(),
-		"NewFutureChan":   reflect.ValueOf(async.NewFutureChan),
-		"NewFutureVoid":   reflect.ValueOf(async.NewFutureVoid),
-		"NewResult":       reflect.ValueOf(async.NewResult),
-		"Return":          reflect.ValueOf(async.Return),
-		"ReturnVoid":      reflect.ValueOf(async.ReturnVoid),
-		"YieldBreak":      reflect.ValueOf(async.YieldBreak),
-		"YieldReturn":     reflect.ValueOf(async.YieldReturn),
+		"All":                  reflect.ValueOf(async.All),
+		"AllSettled":           reflect.ValueOf(async.AllSettled),
+		"CompletedSignal":      reflect.ValueOf(async.CompletedSignal),
+		"ErrAsync":             reflect.ValueOf(&async.ErrAsync).Elem(),
+		"ErrFutureTimeout":     reflect.ValueOf(&async.ErrFutureTimeout).Elem(),
+		"ErrNoCandidates":      reflect.ValueOf(&async.ErrNoCandidates).Elem(),
+		"ErrNoFutureSucceeded": reflect.ValueOf(&async.ErrNoFutureSucceeded).Elem(),
+		"ErrScopeClosed":       reflect.ValueOf(&async.ErrScopeClosed).Elem(),
+		"FirstSuccess":         reflect.ValueOf(async.FirstSuccess),
+		"FlatMap":              reflect.ValueOf(async.FlatMap),
+		"GenExecutorID":        reflect.ValueOf(async.GenExecutorID),
+		"Map":                  reflect.ValueOf(async.Map),
+		"NewPromise":           reflect.ValueOf(async.NewPromise),
+		"NewResult":            reflect.ValueOf(async.NewResult),
+		"NewScope":             reflect.ValueOf(async.NewScope),
+		"NewSignal":            reflect.ValueOf(async.NewSignal),
+		"NewStream":            reflect.ValueOf(async.NewStream),
+		"Race":                 reflect.ValueOf(async.Race),
+		"Rejected":             reflect.ValueOf(async.Rejected),
+		"Resolved":             reflect.ValueOf(async.Resolved),
+		"Spawn":                reflect.ValueOf(async.Spawn),
+		"SpawnVoid":            reflect.ValueOf(async.SpawnVoid),
+		"Timeout":              reflect.ValueOf(async.Timeout),
+		"Zip2":                 reflect.ValueOf(async.Zip2),
 
 		// type definitions
-		"Future":     reflect.ValueOf((*async.Future)(nil)),
-		"FutureChan": reflect.ValueOf((*async.FutureChan)(nil)),
-		"FutureVoid": reflect.ValueOf((*async.FutureVoid)(nil)),
-		"Result":     reflect.ValueOf((*async.Result)(nil)),
+		"Completer":    reflect.ValueOf((*async.Completer)(nil)),
+		"Emitter":      reflect.ValueOf((*async.Emitter)(nil)),
+		"ExecutorID":   reflect.ValueOf((*async.ExecutorID)(nil)),
+		"Future":       reflect.ValueOf((*async.Future)(nil)),
+		"Pair":         reflect.ValueOf((*async.Pair)(nil)),
+		"Promise":      reflect.ValueOf((*async.Promise)(nil)),
+		"Result":       reflect.ValueOf((*async.Result)(nil)),
+		"Scope":        reflect.ValueOf((*async.Scope)(nil)),
+		"ScopeStats":   reflect.ValueOf((*async.ScopeStats)(nil)),
+		"Signal":       reflect.ValueOf((*async.Signal)(nil)),
+		"Stream":       reflect.ValueOf((*async.Stream)(nil)),
+		"Subscription": reflect.ValueOf((*async.Subscription)(nil)),
+		"WaitGuard":    reflect.ValueOf((*async.WaitGuard)(nil)),
+
+		// interface wrapper definitions
+		"_WaitGuard": reflect.ValueOf((*_git_golaxy_org_core_utils_async_WaitGuard)(nil)),
 	}
+}
+
+// _git_golaxy_org_core_utils_async_WaitGuard is an interface wrapper for WaitGuard type
+type _git_golaxy_org_core_utils_async_WaitGuard struct {
+	IValue            interface{}
+	WAfterFutureWait  func(futureID uint64)
+	WBeforeFutureWait func(futureID uint64, completionExecutorID async.ExecutorID) error
+}
+
+func (W _git_golaxy_org_core_utils_async_WaitGuard) AfterFutureWait(futureID uint64) {
+	W.WAfterFutureWait(futureID)
+}
+func (W _git_golaxy_org_core_utils_async_WaitGuard) BeforeFutureWait(futureID uint64, completionExecutorID async.ExecutorID) error {
+	return W.WBeforeFutureWait(futureID, completionExecutorID)
 }

@@ -31,26 +31,26 @@ func init() {
 		"BindEventTreeNodeMoveTo":                           reflect.ValueOf(ec.BindEventTreeNodeMoveTo),
 		"BindEventTreeNodeRemoveChild":                      reflect.ValueOf(ec.BindEventTreeNodeRemoveChild),
 		"ComponentState_Alive":                              reflect.ValueOf(ec.ComponentState_Alive),
-		"ComponentState_Attach":                             reflect.ValueOf(ec.ComponentState_Attach),
-		"ComponentState_Awake":                              reflect.ValueOf(ec.ComponentState_Awake),
-		"ComponentState_Birth":                              reflect.ValueOf(ec.ComponentState_Birth),
-		"ComponentState_Death":                              reflect.ValueOf(ec.ComponentState_Death),
+		"ComponentState_Attached":                           reflect.ValueOf(ec.ComponentState_Attached),
+		"ComponentState_Awakened":                           reflect.ValueOf(ec.ComponentState_Awakened),
+		"ComponentState_Born":                               reflect.ValueOf(ec.ComponentState_Born),
+		"ComponentState_Dead":                               reflect.ValueOf(ec.ComponentState_Dead),
 		"ComponentState_Destroyed":                          reflect.ValueOf(ec.ComponentState_Destroyed),
-		"ComponentState_Detach":                             reflect.ValueOf(ec.ComponentState_Detach),
-		"ComponentState_Disable":                            reflect.ValueOf(ec.ComponentState_Disable),
-		"ComponentState_Enable":                             reflect.ValueOf(ec.ComponentState_Enable),
+		"ComponentState_Detaching":                          reflect.ValueOf(ec.ComponentState_Detaching),
+		"ComponentState_Disabling":                          reflect.ValueOf(ec.ComponentState_Disabling),
+		"ComponentState_Enabling":                           reflect.ValueOf(ec.ComponentState_Enabling),
 		"ComponentState_Idle":                               reflect.ValueOf(ec.ComponentState_Idle),
-		"ComponentState_Shut":                               reflect.ValueOf(ec.ComponentState_Shut),
-		"ComponentState_Start":                              reflect.ValueOf(ec.ComponentState_Start),
+		"ComponentState_Shutting":                           reflect.ValueOf(ec.ComponentState_Shutting),
+		"ComponentState_Starting":                           reflect.ValueOf(ec.ComponentState_Starting),
 		"EntityState_Alive":                                 reflect.ValueOf(ec.EntityState_Alive),
-		"EntityState_Awake":                                 reflect.ValueOf(ec.EntityState_Awake),
-		"EntityState_Birth":                                 reflect.ValueOf(ec.EntityState_Birth),
-		"EntityState_Death":                                 reflect.ValueOf(ec.EntityState_Death),
+		"EntityState_Awakened":                              reflect.ValueOf(ec.EntityState_Awakened),
+		"EntityState_Born":                                  reflect.ValueOf(ec.EntityState_Born),
+		"EntityState_Dead":                                  reflect.ValueOf(ec.EntityState_Dead),
 		"EntityState_Destroyed":                             reflect.ValueOf(ec.EntityState_Destroyed),
-		"EntityState_Enter":                                 reflect.ValueOf(ec.EntityState_Enter),
-		"EntityState_Leave":                                 reflect.ValueOf(ec.EntityState_Leave),
-		"EntityState_Shut":                                  reflect.ValueOf(ec.EntityState_Shut),
-		"EntityState_Start":                                 reflect.ValueOf(ec.EntityState_Start),
+		"EntityState_Entered":                               reflect.ValueOf(ec.EntityState_Entered),
+		"EntityState_Leaving":                               reflect.ValueOf(ec.EntityState_Leaving),
+		"EntityState_Shutting":                              reflect.ValueOf(ec.EntityState_Shutting),
+		"EntityState_Starting":                              reflect.ValueOf(ec.EntityState_Starting),
 		"ErrEC":                                             reflect.ValueOf(&ec.ErrEC).Elem(),
 		"EventComponentDestroyId":                           reflect.ValueOf(&ec.EventComponentDestroyId).Elem(),
 		"EventComponentEnableChangedId":                     reflect.ValueOf(&ec.EventComponentEnableChangedId).Elem(),
@@ -82,9 +82,10 @@ func init() {
 		"TreeNodeState_Attached":                            reflect.ValueOf(ec.TreeNodeState_Attached),
 		"TreeNodeState_Attaching":                           reflect.ValueOf(ec.TreeNodeState_Attaching),
 		"TreeNodeState_Detaching":                           reflect.ValueOf(ec.TreeNodeState_Detaching),
-		"TreeNodeState_Freedom":                             reflect.ValueOf(ec.TreeNodeState_Freedom),
+		"TreeNodeState_Free":                                reflect.ValueOf(ec.TreeNodeState_Free),
 		"TreeNodeState_Moving":                              reflect.ValueOf(ec.TreeNodeState_Moving),
 		"UnsafeComponent":                                   reflect.ValueOf(ec.UnsafeComponent),
+		"UnsafeConcurrentComponent":                         reflect.ValueOf(ec.UnsafeConcurrentComponent),
 		"UnsafeConcurrentEntity":                            reflect.ValueOf(ec.UnsafeConcurrentEntity),
 		"UnsafeEntity":                                      reflect.ValueOf(ec.UnsafeEntity),
 		"UnsafeNewEntity":                                   reflect.ValueOf(ec.UnsafeNewEntity),
@@ -96,6 +97,7 @@ func init() {
 		"ComponentBehavior":                           reflect.ValueOf((*ec.ComponentBehavior)(nil)),
 		"ComponentPT":                                 reflect.ValueOf((*ec.ComponentPT)(nil)),
 		"ComponentState":                              reflect.ValueOf((*ec.ComponentState)(nil)),
+		"ConcurrentComponent":                         reflect.ValueOf((*ec.ConcurrentComponent)(nil)),
 		"ConcurrentEntity":                            reflect.ValueOf((*ec.ConcurrentEntity)(nil)),
 		"Entity":                                      reflect.ValueOf((*ec.Entity)(nil)),
 		"EntityBehavior":                              reflect.ValueOf((*ec.EntityBehavior)(nil)),
@@ -136,6 +138,7 @@ func init() {
 		// interface wrapper definitions
 		"_Component":                          reflect.ValueOf((*_git_golaxy_org_core_ec_Component)(nil)),
 		"_ComponentPT":                        reflect.ValueOf((*_git_golaxy_org_core_ec_ComponentPT)(nil)),
+		"_ConcurrentComponent":                reflect.ValueOf((*_git_golaxy_org_core_ec_ConcurrentComponent)(nil)),
 		"_ConcurrentEntity":                   reflect.ValueOf((*_git_golaxy_org_core_ec_ConcurrentEntity)(nil)),
 		"_Entity":                             reflect.ValueOf((*_git_golaxy_org_core_ec_Entity)(nil)),
 		"_EntityPT":                           reflect.ValueOf((*_git_golaxy_org_core_ec_EntityPT)(nil)),
@@ -161,9 +164,10 @@ func init() {
 // _git_golaxy_org_core_ec_Component is an interface wrapper for Component type
 type _git_golaxy_org_core_ec_Component struct {
 	IValue                       interface{}
+	WAsyncScope                  func() *async.Scope
 	WBuiltin                     func() ec.BuiltinComponent
-	WConcurrentContext           func() iface.Cache
-	WCurrentContext              func() iface.Cache
+	WConcurrentContextCache      func() iface.Cache
+	WCurrentContextCache         func() iface.Cache
 	WDestroy                     func()
 	WEnabled                     func() bool
 	WEntity                      func() ec.Entity
@@ -179,14 +183,17 @@ type _git_golaxy_org_core_ec_Component struct {
 	WString                      func() string
 }
 
+func (W _git_golaxy_org_core_ec_Component) AsyncScope() *async.Scope     { return W.WAsyncScope() }
 func (W _git_golaxy_org_core_ec_Component) Builtin() ec.BuiltinComponent { return W.WBuiltin() }
-func (W _git_golaxy_org_core_ec_Component) ConcurrentContext() iface.Cache {
-	return W.WConcurrentContext()
+func (W _git_golaxy_org_core_ec_Component) ConcurrentContextCache() iface.Cache {
+	return W.WConcurrentContextCache()
 }
-func (W _git_golaxy_org_core_ec_Component) CurrentContext() iface.Cache { return W.WCurrentContext() }
-func (W _git_golaxy_org_core_ec_Component) Destroy()                    { W.WDestroy() }
-func (W _git_golaxy_org_core_ec_Component) Enabled() bool               { return W.WEnabled() }
-func (W _git_golaxy_org_core_ec_Component) Entity() ec.Entity           { return W.WEntity() }
+func (W _git_golaxy_org_core_ec_Component) CurrentContextCache() iface.Cache {
+	return W.WCurrentContextCache()
+}
+func (W _git_golaxy_org_core_ec_Component) Destroy()          { W.WDestroy() }
+func (W _git_golaxy_org_core_ec_Component) Enabled() bool     { return W.WEnabled() }
+func (W _git_golaxy_org_core_ec_Component) Entity() ec.Entity { return W.WEntity() }
 func (W _git_golaxy_org_core_ec_Component) EventComponentDestroy() event.IEvent {
 	return W.WEventComponentDestroy()
 }
@@ -226,22 +233,49 @@ func (W _git_golaxy_org_core_ec_ComponentPT) String() string {
 	return W.WString()
 }
 
-// _git_golaxy_org_core_ec_ConcurrentEntity is an interface wrapper for ConcurrentEntity type
-type _git_golaxy_org_core_ec_ConcurrentEntity struct {
-	IValue             interface{}
-	WConcurrentContext func() iface.Cache
-	WDeadline          func() (deadline time.Time, ok bool)
-	WDone              func() <-chan struct{}
-	WErr               func() error
-	WId                func() uid.Id
-	WPT                func() ec.EntityPT
-	WString            func() string
-	WTerminated        func() async.Future
-	WValue             func(key any) any
+// _git_golaxy_org_core_ec_ConcurrentComponent is an interface wrapper for ConcurrentComponent type
+type _git_golaxy_org_core_ec_ConcurrentComponent struct {
+	IValue                  interface{}
+	WAsyncScope             func() *async.Scope
+	WConcurrentContextCache func() iface.Cache
+	WId                     func() uid.Id
+	WName                   func() string
+	WString                 func() string
 }
 
-func (W _git_golaxy_org_core_ec_ConcurrentEntity) ConcurrentContext() iface.Cache {
-	return W.WConcurrentContext()
+func (W _git_golaxy_org_core_ec_ConcurrentComponent) AsyncScope() *async.Scope {
+	return W.WAsyncScope()
+}
+func (W _git_golaxy_org_core_ec_ConcurrentComponent) ConcurrentContextCache() iface.Cache {
+	return W.WConcurrentContextCache()
+}
+func (W _git_golaxy_org_core_ec_ConcurrentComponent) Id() uid.Id   { return W.WId() }
+func (W _git_golaxy_org_core_ec_ConcurrentComponent) Name() string { return W.WName() }
+func (W _git_golaxy_org_core_ec_ConcurrentComponent) String() string {
+	if W.WString == nil {
+		return ""
+	}
+	return W.WString()
+}
+
+// _git_golaxy_org_core_ec_ConcurrentEntity is an interface wrapper for ConcurrentEntity type
+type _git_golaxy_org_core_ec_ConcurrentEntity struct {
+	IValue                  interface{}
+	WAsyncScope             func() *async.Scope
+	WConcurrentContextCache func() iface.Cache
+	WDeadline               func() (deadline time.Time, ok bool)
+	WDone                   func() <-chan struct{}
+	WErr                    func() error
+	WId                     func() uid.Id
+	WPT                     func() ec.EntityPT
+	WString                 func() string
+	WTerminated             func() async.Signal
+	WValue                  func(key any) any
+}
+
+func (W _git_golaxy_org_core_ec_ConcurrentEntity) AsyncScope() *async.Scope { return W.WAsyncScope() }
+func (W _git_golaxy_org_core_ec_ConcurrentEntity) ConcurrentContextCache() iface.Cache {
+	return W.WConcurrentContextCache()
 }
 func (W _git_golaxy_org_core_ec_ConcurrentEntity) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
@@ -256,16 +290,17 @@ func (W _git_golaxy_org_core_ec_ConcurrentEntity) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_ec_ConcurrentEntity) Terminated() async.Future { return W.WTerminated() }
+func (W _git_golaxy_org_core_ec_ConcurrentEntity) Terminated() async.Signal { return W.WTerminated() }
 func (W _git_golaxy_org_core_ec_ConcurrentEntity) Value(key any) any        { return W.WValue(key) }
 
 // _git_golaxy_org_core_ec_Entity is an interface wrapper for Entity type
 type _git_golaxy_org_core_ec_Entity struct {
 	IValue                                       interface{}
 	WAddComponent                                func(name string, components ...ec.Component) error
-	WConcurrentContext                           func() iface.Cache
+	WAsyncScope                                  func() *async.Scope
+	WConcurrentContextCache                      func() iface.Cache
 	WCountComponents                             func() int
-	WCurrentContext                              func() iface.Cache
+	WCurrentContextCache                         func() iface.Cache
 	WDeadline                                    func() (deadline time.Time, ok bool)
 	WDestroy                                     func()
 	WDone                                        func() <-chan struct{}
@@ -303,7 +338,7 @@ type _git_golaxy_org_core_ec_Entity struct {
 	WScope                                       func() ec.Scope
 	WState                                       func() ec.EntityState
 	WString                                      func() string
-	WTerminated                                  func() async.Future
+	WTerminated                                  func() async.Signal
 	WTreeNodeState                               func() ec.TreeNodeState
 	WValue                                       func(key any) any
 }
@@ -311,11 +346,14 @@ type _git_golaxy_org_core_ec_Entity struct {
 func (W _git_golaxy_org_core_ec_Entity) AddComponent(name string, components ...ec.Component) error {
 	return W.WAddComponent(name, components...)
 }
-func (W _git_golaxy_org_core_ec_Entity) ConcurrentContext() iface.Cache {
-	return W.WConcurrentContext()
+func (W _git_golaxy_org_core_ec_Entity) AsyncScope() *async.Scope { return W.WAsyncScope() }
+func (W _git_golaxy_org_core_ec_Entity) ConcurrentContextCache() iface.Cache {
+	return W.WConcurrentContextCache()
 }
-func (W _git_golaxy_org_core_ec_Entity) CountComponents() int        { return W.WCountComponents() }
-func (W _git_golaxy_org_core_ec_Entity) CurrentContext() iface.Cache { return W.WCurrentContext() }
+func (W _git_golaxy_org_core_ec_Entity) CountComponents() int { return W.WCountComponents() }
+func (W _git_golaxy_org_core_ec_Entity) CurrentContextCache() iface.Cache {
+	return W.WCurrentContextCache()
+}
 func (W _git_golaxy_org_core_ec_Entity) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
@@ -404,7 +442,7 @@ func (W _git_golaxy_org_core_ec_Entity) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_core_ec_Entity) Terminated() async.Future        { return W.WTerminated() }
+func (W _git_golaxy_org_core_ec_Entity) Terminated() async.Signal        { return W.WTerminated() }
 func (W _git_golaxy_org_core_ec_Entity) TreeNodeState() ec.TreeNodeState { return W.WTreeNodeState() }
 func (W _git_golaxy_org_core_ec_Entity) Value(key any) any               { return W.WValue(key) }
 

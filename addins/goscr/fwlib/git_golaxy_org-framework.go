@@ -44,139 +44,130 @@ func init() {
 		"NewApp":                 reflect.ValueOf(framework.NewApp),
 
 		// type definitions
-		"App":                                             reflect.ValueOf((*framework.App)(nil)),
-		"AwaitDirector":                                   reflect.ValueOf((*framework.AwaitDirector)(nil)),
-		"ComponentBehavior":                               reflect.ValueOf((*framework.ComponentBehavior)(nil)),
-		"EntityBehavior":                                  reflect.ValueOf((*framework.EntityBehavior)(nil)),
-		"EntityCreator":                                   reflect.ValueOf((*framework.EntityCreator)(nil)),
-		"EntityPTCreator":                                 reflect.ValueOf((*framework.EntityPTCreator)(nil)),
-		"IRuntime":                                        reflect.ValueOf((*framework.IRuntime)(nil)),
-		"IRuntimeInstantiator":                            reflect.ValueOf((*framework.IRuntimeInstantiator)(nil)),
-		"IService":                                        reflect.ValueOf((*framework.IService)(nil)),
-		"IServiceInstantiator":                            reflect.ValueOf((*framework.IServiceInstantiator)(nil)),
-		"InstallRuntimeDistEntityRegistry":                reflect.ValueOf((*framework.InstallRuntimeDistEntityRegistry)(nil)),
-		"InstallRuntimeLogger":                            reflect.ValueOf((*framework.InstallRuntimeLogger)(nil)),
-		"InstallRuntimeRPCStack":                          reflect.ValueOf((*framework.InstallRuntimeRPCStack)(nil)),
-		"InstallServiceBroker":                            reflect.ValueOf((*framework.InstallServiceBroker)(nil)),
-		"InstallServiceConfig":                            reflect.ValueOf((*framework.InstallServiceConfig)(nil)),
-		"InstallServiceDistEntityQuerier":                 reflect.ValueOf((*framework.InstallServiceDistEntityQuerier)(nil)),
-		"InstallServiceDistService":                       reflect.ValueOf((*framework.InstallServiceDistService)(nil)),
-		"InstallServiceDistSync":                          reflect.ValueOf((*framework.InstallServiceDistSync)(nil)),
-		"InstallServiceLogger":                            reflect.ValueOf((*framework.InstallServiceLogger)(nil)),
-		"InstallServiceRPC":                               reflect.ValueOf((*framework.InstallServiceRPC)(nil)),
-		"InstallServiceRegistry":                          reflect.ValueOf((*framework.InstallServiceRegistry)(nil)),
-		"LifecycleRuntimeAddInActivated":                  reflect.ValueOf((*framework.LifecycleRuntimeAddInActivated)(nil)),
-		"LifecycleRuntimeAddInActivating":                 reflect.ValueOf((*framework.LifecycleRuntimeAddInActivating)(nil)),
-		"LifecycleRuntimeAddInActivationAborted":          reflect.ValueOf((*framework.LifecycleRuntimeAddInActivationAborted)(nil)),
-		"LifecycleRuntimeAddInDeactivated":                reflect.ValueOf((*framework.LifecycleRuntimeAddInDeactivated)(nil)),
-		"LifecycleRuntimeAddInDeactivating":               reflect.ValueOf((*framework.LifecycleRuntimeAddInDeactivating)(nil)),
-		"LifecycleRuntimeBirth":                           reflect.ValueOf((*framework.LifecycleRuntimeBirth)(nil)),
-		"LifecycleRuntimeBuilt":                           reflect.ValueOf((*framework.LifecycleRuntimeBuilt)(nil)),
-		"LifecycleRuntimeEntityActivated":                 reflect.ValueOf((*framework.LifecycleRuntimeEntityActivated)(nil)),
-		"LifecycleRuntimeEntityActivating":                reflect.ValueOf((*framework.LifecycleRuntimeEntityActivating)(nil)),
-		"LifecycleRuntimeEntityActivationAborted":         reflect.ValueOf((*framework.LifecycleRuntimeEntityActivationAborted)(nil)),
-		"LifecycleRuntimeEntityAddingComponents":          reflect.ValueOf((*framework.LifecycleRuntimeEntityAddingComponents)(nil)),
-		"LifecycleRuntimeEntityComponentRemovalAborted":   reflect.ValueOf((*framework.LifecycleRuntimeEntityComponentRemovalAborted)(nil)),
-		"LifecycleRuntimeEntityComponentRemoved":          reflect.ValueOf((*framework.LifecycleRuntimeEntityComponentRemoved)(nil)),
-		"LifecycleRuntimeEntityComponentsAdded":           reflect.ValueOf((*framework.LifecycleRuntimeEntityComponentsAdded)(nil)),
-		"LifecycleRuntimeEntityComponentsAdditionAborted": reflect.ValueOf((*framework.LifecycleRuntimeEntityComponentsAdditionAborted)(nil)),
-		"LifecycleRuntimeEntityDeactivated":               reflect.ValueOf((*framework.LifecycleRuntimeEntityDeactivated)(nil)),
-		"LifecycleRuntimeEntityDeactivating":              reflect.ValueOf((*framework.LifecycleRuntimeEntityDeactivating)(nil)),
-		"LifecycleRuntimeEntityRemovingComponent":         reflect.ValueOf((*framework.LifecycleRuntimeEntityRemovingComponent)(nil)),
-		"LifecycleRuntimeFrameLoopBegin":                  reflect.ValueOf((*framework.LifecycleRuntimeFrameLoopBegin)(nil)),
-		"LifecycleRuntimeFrameLoopEnd":                    reflect.ValueOf((*framework.LifecycleRuntimeFrameLoopEnd)(nil)),
-		"LifecycleRuntimeFrameUpdateBegin":                reflect.ValueOf((*framework.LifecycleRuntimeFrameUpdateBegin)(nil)),
-		"LifecycleRuntimeFrameUpdateEnd":                  reflect.ValueOf((*framework.LifecycleRuntimeFrameUpdateEnd)(nil)),
-		"LifecycleRuntimeRunCallBegin":                    reflect.ValueOf((*framework.LifecycleRuntimeRunCallBegin)(nil)),
-		"LifecycleRuntimeRunCallEnd":                      reflect.ValueOf((*framework.LifecycleRuntimeRunCallEnd)(nil)),
-		"LifecycleRuntimeRunGCBegin":                      reflect.ValueOf((*framework.LifecycleRuntimeRunGCBegin)(nil)),
-		"LifecycleRuntimeRunGCEnd":                        reflect.ValueOf((*framework.LifecycleRuntimeRunGCEnd)(nil)),
-		"LifecycleRuntimeStarted":                         reflect.ValueOf((*framework.LifecycleRuntimeStarted)(nil)),
-		"LifecycleRuntimeStarting":                        reflect.ValueOf((*framework.LifecycleRuntimeStarting)(nil)),
-		"LifecycleRuntimeTerminated":                      reflect.ValueOf((*framework.LifecycleRuntimeTerminated)(nil)),
-		"LifecycleRuntimeTerminating":                     reflect.ValueOf((*framework.LifecycleRuntimeTerminating)(nil)),
-		"LifecycleServiceAddInActivated":                  reflect.ValueOf((*framework.LifecycleServiceAddInActivated)(nil)),
-		"LifecycleServiceAddInActivating":                 reflect.ValueOf((*framework.LifecycleServiceAddInActivating)(nil)),
-		"LifecycleServiceAddInDeactivated":                reflect.ValueOf((*framework.LifecycleServiceAddInDeactivated)(nil)),
-		"LifecycleServiceAddInDeactivating":               reflect.ValueOf((*framework.LifecycleServiceAddInDeactivating)(nil)),
-		"LifecycleServiceBirth":                           reflect.ValueOf((*framework.LifecycleServiceBirth)(nil)),
-		"LifecycleServiceBuilt":                           reflect.ValueOf((*framework.LifecycleServiceBuilt)(nil)),
-		"LifecycleServiceComponentPTDeclared":             reflect.ValueOf((*framework.LifecycleServiceComponentPTDeclared)(nil)),
-		"LifecycleServiceEntityDeregistered":              reflect.ValueOf((*framework.LifecycleServiceEntityDeregistered)(nil)),
-		"LifecycleServiceEntityPTDeclared":                reflect.ValueOf((*framework.LifecycleServiceEntityPTDeclared)(nil)),
-		"LifecycleServiceEntityRegistered":                reflect.ValueOf((*framework.LifecycleServiceEntityRegistered)(nil)),
-		"LifecycleServiceHeartbeat":                       reflect.ValueOf((*framework.LifecycleServiceHeartbeat)(nil)),
-		"LifecycleServiceStarted":                         reflect.ValueOf((*framework.LifecycleServiceStarted)(nil)),
-		"LifecycleServiceStarting":                        reflect.ValueOf((*framework.LifecycleServiceStarting)(nil)),
-		"LifecycleServiceTerminated":                      reflect.ValueOf((*framework.LifecycleServiceTerminated)(nil)),
-		"LifecycleServiceTerminating":                     reflect.ValueOf((*framework.LifecycleServiceTerminating)(nil)),
-		"RuntimeAssembler":                                reflect.ValueOf((*framework.RuntimeAssembler)(nil)),
-		"RuntimeBehavior":                                 reflect.ValueOf((*framework.RuntimeBehavior)(nil)),
-		"RuntimeCreator":                                  reflect.ValueOf((*framework.RuntimeCreator)(nil)),
-		"ServiceAssembler":                                reflect.ValueOf((*framework.ServiceAssembler)(nil)),
-		"ServiceBehavior":                                 reflect.ValueOf((*framework.ServiceBehavior)(nil)),
+		"App":                                                reflect.ValueOf((*framework.App)(nil)),
+		"ComponentBehavior":                                  reflect.ValueOf((*framework.ComponentBehavior)(nil)),
+		"EntityBehavior":                                     reflect.ValueOf((*framework.EntityBehavior)(nil)),
+		"EntityCreator":                                      reflect.ValueOf((*framework.EntityCreator)(nil)),
+		"EntityPTCreator":                                    reflect.ValueOf((*framework.EntityPTCreator)(nil)),
+		"IRuntime":                                           reflect.ValueOf((*framework.IRuntime)(nil)),
+		"IRuntimeInstantiator":                               reflect.ValueOf((*framework.IRuntimeInstantiator)(nil)),
+		"IService":                                           reflect.ValueOf((*framework.IService)(nil)),
+		"IServiceInstantiator":                               reflect.ValueOf((*framework.IServiceInstantiator)(nil)),
+		"InstallRuntimeDistEntityRegistry":                   reflect.ValueOf((*framework.InstallRuntimeDistEntityRegistry)(nil)),
+		"InstallRuntimeLogger":                               reflect.ValueOf((*framework.InstallRuntimeLogger)(nil)),
+		"InstallRuntimeRPCStack":                             reflect.ValueOf((*framework.InstallRuntimeRPCStack)(nil)),
+		"InstallServiceBroker":                               reflect.ValueOf((*framework.InstallServiceBroker)(nil)),
+		"InstallServiceConfig":                               reflect.ValueOf((*framework.InstallServiceConfig)(nil)),
+		"InstallServiceDistEntityQuerier":                    reflect.ValueOf((*framework.InstallServiceDistEntityQuerier)(nil)),
+		"InstallServiceDistService":                          reflect.ValueOf((*framework.InstallServiceDistService)(nil)),
+		"InstallServiceDistSync":                             reflect.ValueOf((*framework.InstallServiceDistSync)(nil)),
+		"InstallServiceLogger":                               reflect.ValueOf((*framework.InstallServiceLogger)(nil)),
+		"InstallServiceRPC":                                  reflect.ValueOf((*framework.InstallServiceRPC)(nil)),
+		"InstallServiceRegistry":                             reflect.ValueOf((*framework.InstallServiceRegistry)(nil)),
+		"LifecycleRuntimeAddInActivated":                     reflect.ValueOf((*framework.LifecycleRuntimeAddInActivated)(nil)),
+		"LifecycleRuntimeAddInActivating":                    reflect.ValueOf((*framework.LifecycleRuntimeAddInActivating)(nil)),
+		"LifecycleRuntimeAddInActivationAborted":             reflect.ValueOf((*framework.LifecycleRuntimeAddInActivationAborted)(nil)),
+		"LifecycleRuntimeAddInDeactivated":                   reflect.ValueOf((*framework.LifecycleRuntimeAddInDeactivated)(nil)),
+		"LifecycleRuntimeAddInDeactivating":                  reflect.ValueOf((*framework.LifecycleRuntimeAddInDeactivating)(nil)),
+		"LifecycleRuntimeBirth":                              reflect.ValueOf((*framework.LifecycleRuntimeBirth)(nil)),
+		"LifecycleRuntimeBuilt":                              reflect.ValueOf((*framework.LifecycleRuntimeBuilt)(nil)),
+		"LifecycleRuntimeEntityActivated":                    reflect.ValueOf((*framework.LifecycleRuntimeEntityActivated)(nil)),
+		"LifecycleRuntimeEntityActivating":                   reflect.ValueOf((*framework.LifecycleRuntimeEntityActivating)(nil)),
+		"LifecycleRuntimeEntityActivationAborted":            reflect.ValueOf((*framework.LifecycleRuntimeEntityActivationAborted)(nil)),
+		"LifecycleRuntimeEntityComponentDeactivated":         reflect.ValueOf((*framework.LifecycleRuntimeEntityComponentDeactivated)(nil)),
+		"LifecycleRuntimeEntityComponentDeactivating":        reflect.ValueOf((*framework.LifecycleRuntimeEntityComponentDeactivating)(nil)),
+		"LifecycleRuntimeEntityComponentDeactivationAborted": reflect.ValueOf((*framework.LifecycleRuntimeEntityComponentDeactivationAborted)(nil)),
+		"LifecycleRuntimeEntityComponentsActivated":          reflect.ValueOf((*framework.LifecycleRuntimeEntityComponentsActivated)(nil)),
+		"LifecycleRuntimeEntityComponentsActivating":         reflect.ValueOf((*framework.LifecycleRuntimeEntityComponentsActivating)(nil)),
+		"LifecycleRuntimeEntityComponentsActivationAborted":  reflect.ValueOf((*framework.LifecycleRuntimeEntityComponentsActivationAborted)(nil)),
+		"LifecycleRuntimeEntityDeactivated":                  reflect.ValueOf((*framework.LifecycleRuntimeEntityDeactivated)(nil)),
+		"LifecycleRuntimeEntityDeactivating":                 reflect.ValueOf((*framework.LifecycleRuntimeEntityDeactivating)(nil)),
+		"LifecycleRuntimeFrameLoopBegin":                     reflect.ValueOf((*framework.LifecycleRuntimeFrameLoopBegin)(nil)),
+		"LifecycleRuntimeFrameLoopEnd":                       reflect.ValueOf((*framework.LifecycleRuntimeFrameLoopEnd)(nil)),
+		"LifecycleRuntimeFrameUpdateBegin":                   reflect.ValueOf((*framework.LifecycleRuntimeFrameUpdateBegin)(nil)),
+		"LifecycleRuntimeFrameUpdateEnd":                     reflect.ValueOf((*framework.LifecycleRuntimeFrameUpdateEnd)(nil)),
+		"LifecycleRuntimeRunCallBegin":                       reflect.ValueOf((*framework.LifecycleRuntimeRunCallBegin)(nil)),
+		"LifecycleRuntimeRunCallEnd":                         reflect.ValueOf((*framework.LifecycleRuntimeRunCallEnd)(nil)),
+		"LifecycleRuntimeRunGCBegin":                         reflect.ValueOf((*framework.LifecycleRuntimeRunGCBegin)(nil)),
+		"LifecycleRuntimeRunGCEnd":                           reflect.ValueOf((*framework.LifecycleRuntimeRunGCEnd)(nil)),
+		"LifecycleRuntimeStarted":                            reflect.ValueOf((*framework.LifecycleRuntimeStarted)(nil)),
+		"LifecycleRuntimeStarting":                           reflect.ValueOf((*framework.LifecycleRuntimeStarting)(nil)),
+		"LifecycleRuntimeTerminated":                         reflect.ValueOf((*framework.LifecycleRuntimeTerminated)(nil)),
+		"LifecycleRuntimeTerminating":                        reflect.ValueOf((*framework.LifecycleRuntimeTerminating)(nil)),
+		"LifecycleServiceBirth":                              reflect.ValueOf((*framework.LifecycleServiceBirth)(nil)),
+		"LifecycleServiceBuilt":                              reflect.ValueOf((*framework.LifecycleServiceBuilt)(nil)),
+		"LifecycleServiceComponentPTDeclared":                reflect.ValueOf((*framework.LifecycleServiceComponentPTDeclared)(nil)),
+		"LifecycleServiceEntityDeregistered":                 reflect.ValueOf((*framework.LifecycleServiceEntityDeregistered)(nil)),
+		"LifecycleServiceEntityPTDeclared":                   reflect.ValueOf((*framework.LifecycleServiceEntityPTDeclared)(nil)),
+		"LifecycleServiceEntityRegistered":                   reflect.ValueOf((*framework.LifecycleServiceEntityRegistered)(nil)),
+		"LifecycleServiceHeartbeat":                          reflect.ValueOf((*framework.LifecycleServiceHeartbeat)(nil)),
+		"LifecycleServiceStarted":                            reflect.ValueOf((*framework.LifecycleServiceStarted)(nil)),
+		"LifecycleServiceStarting":                           reflect.ValueOf((*framework.LifecycleServiceStarting)(nil)),
+		"LifecycleServiceTerminated":                         reflect.ValueOf((*framework.LifecycleServiceTerminated)(nil)),
+		"LifecycleServiceTerminating":                        reflect.ValueOf((*framework.LifecycleServiceTerminating)(nil)),
+		"RuntimeAssembler":                                   reflect.ValueOf((*framework.RuntimeAssembler)(nil)),
+		"RuntimeBehavior":                                    reflect.ValueOf((*framework.RuntimeBehavior)(nil)),
+		"RuntimeCreator":                                     reflect.ValueOf((*framework.RuntimeCreator)(nil)),
+		"ServiceAssembler":                                   reflect.ValueOf((*framework.ServiceAssembler)(nil)),
+		"ServiceBehavior":                                    reflect.ValueOf((*framework.ServiceBehavior)(nil)),
 
 		// interface wrapper definitions
-		"_IRuntime":                                        reflect.ValueOf((*_git_golaxy_org_framework_IRuntime)(nil)),
-		"_IRuntimeInstantiator":                            reflect.ValueOf((*_git_golaxy_org_framework_IRuntimeInstantiator)(nil)),
-		"_IService":                                        reflect.ValueOf((*_git_golaxy_org_framework_IService)(nil)),
-		"_IServiceInstantiator":                            reflect.ValueOf((*_git_golaxy_org_framework_IServiceInstantiator)(nil)),
-		"_InstallRuntimeDistEntityRegistry":                reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeDistEntityRegistry)(nil)),
-		"_InstallRuntimeLogger":                            reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeLogger)(nil)),
-		"_InstallRuntimeRPCStack":                          reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeRPCStack)(nil)),
-		"_InstallServiceBroker":                            reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceBroker)(nil)),
-		"_InstallServiceConfig":                            reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceConfig)(nil)),
-		"_InstallServiceDistEntityQuerier":                 reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistEntityQuerier)(nil)),
-		"_InstallServiceDistService":                       reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistService)(nil)),
-		"_InstallServiceDistSync":                          reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistSync)(nil)),
-		"_InstallServiceLogger":                            reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceLogger)(nil)),
-		"_InstallServiceRPC":                               reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceRPC)(nil)),
-		"_InstallServiceRegistry":                          reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceRegistry)(nil)),
-		"_LifecycleRuntimeAddInActivated":                  reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInActivated)(nil)),
-		"_LifecycleRuntimeAddInActivating":                 reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInActivating)(nil)),
-		"_LifecycleRuntimeAddInActivationAborted":          reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInActivationAborted)(nil)),
-		"_LifecycleRuntimeAddInDeactivated":                reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInDeactivated)(nil)),
-		"_LifecycleRuntimeAddInDeactivating":               reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInDeactivating)(nil)),
-		"_LifecycleRuntimeBirth":                           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeBirth)(nil)),
-		"_LifecycleRuntimeBuilt":                           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeBuilt)(nil)),
-		"_LifecycleRuntimeEntityActivated":                 reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityActivated)(nil)),
-		"_LifecycleRuntimeEntityActivating":                reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityActivating)(nil)),
-		"_LifecycleRuntimeEntityActivationAborted":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityActivationAborted)(nil)),
-		"_LifecycleRuntimeEntityAddingComponents":          reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityAddingComponents)(nil)),
-		"_LifecycleRuntimeEntityComponentRemovalAborted":   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityComponentRemovalAborted)(nil)),
-		"_LifecycleRuntimeEntityComponentRemoved":          reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityComponentRemoved)(nil)),
-		"_LifecycleRuntimeEntityComponentsAdded":           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityComponentsAdded)(nil)),
-		"_LifecycleRuntimeEntityComponentsAdditionAborted": reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityComponentsAdditionAborted)(nil)),
-		"_LifecycleRuntimeEntityDeactivated":               reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityDeactivated)(nil)),
-		"_LifecycleRuntimeEntityDeactivating":              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityDeactivating)(nil)),
-		"_LifecycleRuntimeEntityRemovingComponent":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityRemovingComponent)(nil)),
-		"_LifecycleRuntimeFrameLoopBegin":                  reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameLoopBegin)(nil)),
-		"_LifecycleRuntimeFrameLoopEnd":                    reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameLoopEnd)(nil)),
-		"_LifecycleRuntimeFrameUpdateBegin":                reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameUpdateBegin)(nil)),
-		"_LifecycleRuntimeFrameUpdateEnd":                  reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameUpdateEnd)(nil)),
-		"_LifecycleRuntimeRunCallBegin":                    reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunCallBegin)(nil)),
-		"_LifecycleRuntimeRunCallEnd":                      reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunCallEnd)(nil)),
-		"_LifecycleRuntimeRunGCBegin":                      reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunGCBegin)(nil)),
-		"_LifecycleRuntimeRunGCEnd":                        reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunGCEnd)(nil)),
-		"_LifecycleRuntimeStarted":                         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeStarted)(nil)),
-		"_LifecycleRuntimeStarting":                        reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeStarting)(nil)),
-		"_LifecycleRuntimeTerminated":                      reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeTerminated)(nil)),
-		"_LifecycleRuntimeTerminating":                     reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeTerminating)(nil)),
-		"_LifecycleServiceAddInActivated":                  reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceAddInActivated)(nil)),
-		"_LifecycleServiceAddInActivating":                 reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceAddInActivating)(nil)),
-		"_LifecycleServiceAddInDeactivated":                reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceAddInDeactivated)(nil)),
-		"_LifecycleServiceAddInDeactivating":               reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceAddInDeactivating)(nil)),
-		"_LifecycleServiceBirth":                           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceBirth)(nil)),
-		"_LifecycleServiceBuilt":                           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceBuilt)(nil)),
-		"_LifecycleServiceComponentPTDeclared":             reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceComponentPTDeclared)(nil)),
-		"_LifecycleServiceEntityDeregistered":              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityDeregistered)(nil)),
-		"_LifecycleServiceEntityPTDeclared":                reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityPTDeclared)(nil)),
-		"_LifecycleServiceEntityRegistered":                reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityRegistered)(nil)),
-		"_LifecycleServiceHeartbeat":                       reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceHeartbeat)(nil)),
-		"_LifecycleServiceStarted":                         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceStarted)(nil)),
-		"_LifecycleServiceStarting":                        reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceStarting)(nil)),
-		"_LifecycleServiceTerminated":                      reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminated)(nil)),
-		"_LifecycleServiceTerminating":                     reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminating)(nil)),
+		"_IRuntime":                                           reflect.ValueOf((*_git_golaxy_org_framework_IRuntime)(nil)),
+		"_IRuntimeInstantiator":                               reflect.ValueOf((*_git_golaxy_org_framework_IRuntimeInstantiator)(nil)),
+		"_IService":                                           reflect.ValueOf((*_git_golaxy_org_framework_IService)(nil)),
+		"_IServiceInstantiator":                               reflect.ValueOf((*_git_golaxy_org_framework_IServiceInstantiator)(nil)),
+		"_InstallRuntimeDistEntityRegistry":                   reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeDistEntityRegistry)(nil)),
+		"_InstallRuntimeLogger":                               reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeLogger)(nil)),
+		"_InstallRuntimeRPCStack":                             reflect.ValueOf((*_git_golaxy_org_framework_InstallRuntimeRPCStack)(nil)),
+		"_InstallServiceBroker":                               reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceBroker)(nil)),
+		"_InstallServiceConfig":                               reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceConfig)(nil)),
+		"_InstallServiceDistEntityQuerier":                    reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistEntityQuerier)(nil)),
+		"_InstallServiceDistService":                          reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistService)(nil)),
+		"_InstallServiceDistSync":                             reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceDistSync)(nil)),
+		"_InstallServiceLogger":                               reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceLogger)(nil)),
+		"_InstallServiceRPC":                                  reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceRPC)(nil)),
+		"_InstallServiceRegistry":                             reflect.ValueOf((*_git_golaxy_org_framework_InstallServiceRegistry)(nil)),
+		"_LifecycleRuntimeAddInActivated":                     reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInActivated)(nil)),
+		"_LifecycleRuntimeAddInActivating":                    reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInActivating)(nil)),
+		"_LifecycleRuntimeAddInActivationAborted":             reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInActivationAborted)(nil)),
+		"_LifecycleRuntimeAddInDeactivated":                   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInDeactivated)(nil)),
+		"_LifecycleRuntimeAddInDeactivating":                  reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeAddInDeactivating)(nil)),
+		"_LifecycleRuntimeBirth":                              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeBirth)(nil)),
+		"_LifecycleRuntimeBuilt":                              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeBuilt)(nil)),
+		"_LifecycleRuntimeEntityActivated":                    reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityActivated)(nil)),
+		"_LifecycleRuntimeEntityActivating":                   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityActivating)(nil)),
+		"_LifecycleRuntimeEntityActivationAborted":            reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityActivationAborted)(nil)),
+		"_LifecycleRuntimeEntityComponentDeactivated":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivated)(nil)),
+		"_LifecycleRuntimeEntityComponentDeactivating":        reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivating)(nil)),
+		"_LifecycleRuntimeEntityComponentDeactivationAborted": reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivationAborted)(nil)),
+		"_LifecycleRuntimeEntityComponentsActivated":          reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivated)(nil)),
+		"_LifecycleRuntimeEntityComponentsActivating":         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivating)(nil)),
+		"_LifecycleRuntimeEntityComponentsActivationAborted":  reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivationAborted)(nil)),
+		"_LifecycleRuntimeEntityDeactivated":                  reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityDeactivated)(nil)),
+		"_LifecycleRuntimeEntityDeactivating":                 reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeEntityDeactivating)(nil)),
+		"_LifecycleRuntimeFrameLoopBegin":                     reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameLoopBegin)(nil)),
+		"_LifecycleRuntimeFrameLoopEnd":                       reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameLoopEnd)(nil)),
+		"_LifecycleRuntimeFrameUpdateBegin":                   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameUpdateBegin)(nil)),
+		"_LifecycleRuntimeFrameUpdateEnd":                     reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeFrameUpdateEnd)(nil)),
+		"_LifecycleRuntimeRunCallBegin":                       reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunCallBegin)(nil)),
+		"_LifecycleRuntimeRunCallEnd":                         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunCallEnd)(nil)),
+		"_LifecycleRuntimeRunGCBegin":                         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunGCBegin)(nil)),
+		"_LifecycleRuntimeRunGCEnd":                           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeRunGCEnd)(nil)),
+		"_LifecycleRuntimeStarted":                            reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeStarted)(nil)),
+		"_LifecycleRuntimeStarting":                           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeStarting)(nil)),
+		"_LifecycleRuntimeTerminated":                         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeTerminated)(nil)),
+		"_LifecycleRuntimeTerminating":                        reflect.ValueOf((*_git_golaxy_org_framework_LifecycleRuntimeTerminating)(nil)),
+		"_LifecycleServiceBirth":                              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceBirth)(nil)),
+		"_LifecycleServiceBuilt":                              reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceBuilt)(nil)),
+		"_LifecycleServiceComponentPTDeclared":                reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceComponentPTDeclared)(nil)),
+		"_LifecycleServiceEntityDeregistered":                 reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityDeregistered)(nil)),
+		"_LifecycleServiceEntityPTDeclared":                   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityPTDeclared)(nil)),
+		"_LifecycleServiceEntityRegistered":                   reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceEntityRegistered)(nil)),
+		"_LifecycleServiceHeartbeat":                          reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceHeartbeat)(nil)),
+		"_LifecycleServiceStarted":                            reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceStarted)(nil)),
+		"_LifecycleServiceStarting":                           reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceStarting)(nil)),
+		"_LifecycleServiceTerminated":                         reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminated)(nil)),
+		"_LifecycleServiceTerminating":                        reflect.ValueOf((*_git_golaxy_org_framework_LifecycleServiceTerminating)(nil)),
 	}
 }
 
@@ -184,16 +175,16 @@ func init() {
 type _git_golaxy_org_framework_IRuntime struct {
 	IValue                    interface{}
 	WAddInManager             func() extension.AddInManager
+	WAfterFutureWait          func(futureID uint64)
+	WAsyncScope               func() *async.Scope
 	WAutoInjection            func() bool
 	WAutoRecover              func() bool
+	WBeforeFutureWait         func(futureID uint64, completionExecutorID async.ExecutorID) error
+	WBlockedFutureID          func() uint64
 	WBuildEntity              func(prototype string) *core.EntityCreator
-	WCallAsync                func(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future
-	WCallDelegateAsync        func(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future
-	WCallDelegateVoidAsync    func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future
-	WCallVoidAsync            func(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future
 	WCollectGC                func(gc runtime.GC)
-	WConcurrentContext        func() iface.Cache
-	WCurrentContext           func() iface.Cache
+	WConcurrentContextCache   func() iface.Cache
+	WCurrentContextCache      func() iface.Cache
 	WDeadline                 func() (deadline time.Time, ok bool)
 	WDistEntityRegistry       func() dent.IDistEntityRegistry
 	WDone                     func() <-chan struct{}
@@ -201,22 +192,30 @@ type _git_golaxy_org_framework_IRuntime struct {
 	WEntityTree               func() runtime.EntityTree
 	WErr                      func() error
 	WEventContextRunningEvent func() event.IEvent
+	WExecutorID               func() async.ExecutorID
 	WFrame                    func() runtime.Frame
 	WId                       func() uid.Id
 	WInstanceFaceCache        func() iface.Cache
 	WL                        func() *zap.Logger
+	WLastWaitRejectID         func() uint64
 	WMainEntity               func() ec.Entity
 	WManaged                  func() *event.ManagedHandles
 	WName                     func() string
 	WParentContext            func() context.Context
+	WPost                     func(fun generic.ActionVar1[runtime.Context, any], args ...any) error
+	WPostDelegate             func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) error
 	WRPCStack                 func() rpcstack.IRPCStack
 	WReflected                func() reflect.Value
 	WReportError              func() chan error
 	WS                        func() *zap.SugaredLogger
 	WService                  func() framework.IService
 	WString                   func() string
-	WTerminate                func() async.Future
-	WTerminated               func() async.Future
+	WSubmit                   func(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future
+	WSubmitDelegate           func(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future
+	WSubmitDelegateVoid       func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future
+	WSubmitVoid               func(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future
+	WTerminate                func() async.Signal
+	WTerminated               func() async.Signal
 	WValue                    func(key any) any
 	WWaitGroup                func() corectx.WaitGroup
 }
@@ -224,28 +223,26 @@ type _git_golaxy_org_framework_IRuntime struct {
 func (W _git_golaxy_org_framework_IRuntime) AddInManager() extension.AddInManager {
 	return W.WAddInManager()
 }
-func (W _git_golaxy_org_framework_IRuntime) AutoInjection() bool { return W.WAutoInjection() }
-func (W _git_golaxy_org_framework_IRuntime) AutoRecover() bool   { return W.WAutoRecover() }
+func (W _git_golaxy_org_framework_IRuntime) AfterFutureWait(futureID uint64) {
+	W.WAfterFutureWait(futureID)
+}
+func (W _git_golaxy_org_framework_IRuntime) AsyncScope() *async.Scope { return W.WAsyncScope() }
+func (W _git_golaxy_org_framework_IRuntime) AutoInjection() bool      { return W.WAutoInjection() }
+func (W _git_golaxy_org_framework_IRuntime) AutoRecover() bool        { return W.WAutoRecover() }
+func (W _git_golaxy_org_framework_IRuntime) BeforeFutureWait(futureID uint64, completionExecutorID async.ExecutorID) error {
+	return W.WBeforeFutureWait(futureID, completionExecutorID)
+}
+func (W _git_golaxy_org_framework_IRuntime) BlockedFutureID() uint64 { return W.WBlockedFutureID() }
 func (W _git_golaxy_org_framework_IRuntime) BuildEntity(prototype string) *core.EntityCreator {
 	return W.WBuildEntity(prototype)
 }
-func (W _git_golaxy_org_framework_IRuntime) CallAsync(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future {
-	return W.WCallAsync(fun, args...)
-}
-func (W _git_golaxy_org_framework_IRuntime) CallDelegateAsync(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future {
-	return W.WCallDelegateAsync(fun, args...)
-}
-func (W _git_golaxy_org_framework_IRuntime) CallDelegateVoidAsync(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future {
-	return W.WCallDelegateVoidAsync(fun, args...)
-}
-func (W _git_golaxy_org_framework_IRuntime) CallVoidAsync(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future {
-	return W.WCallVoidAsync(fun, args...)
-}
 func (W _git_golaxy_org_framework_IRuntime) CollectGC(gc runtime.GC) { W.WCollectGC(gc) }
-func (W _git_golaxy_org_framework_IRuntime) ConcurrentContext() iface.Cache {
-	return W.WConcurrentContext()
+func (W _git_golaxy_org_framework_IRuntime) ConcurrentContextCache() iface.Cache {
+	return W.WConcurrentContextCache()
 }
-func (W _git_golaxy_org_framework_IRuntime) CurrentContext() iface.Cache { return W.WCurrentContext() }
+func (W _git_golaxy_org_framework_IRuntime) CurrentContextCache() iface.Cache {
+	return W.WCurrentContextCache()
+}
 func (W _git_golaxy_org_framework_IRuntime) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
 }
@@ -261,17 +258,25 @@ func (W _git_golaxy_org_framework_IRuntime) Err() error                     { re
 func (W _git_golaxy_org_framework_IRuntime) EventContextRunningEvent() event.IEvent {
 	return W.WEventContextRunningEvent()
 }
-func (W _git_golaxy_org_framework_IRuntime) Frame() runtime.Frame { return W.WFrame() }
-func (W _git_golaxy_org_framework_IRuntime) Id() uid.Id           { return W.WId() }
+func (W _git_golaxy_org_framework_IRuntime) ExecutorID() async.ExecutorID { return W.WExecutorID() }
+func (W _git_golaxy_org_framework_IRuntime) Frame() runtime.Frame         { return W.WFrame() }
+func (W _git_golaxy_org_framework_IRuntime) Id() uid.Id                   { return W.WId() }
 func (W _git_golaxy_org_framework_IRuntime) InstanceFaceCache() iface.Cache {
 	return W.WInstanceFaceCache()
 }
 func (W _git_golaxy_org_framework_IRuntime) L() *zap.Logger                 { return W.WL() }
+func (W _git_golaxy_org_framework_IRuntime) LastWaitRejectID() uint64       { return W.WLastWaitRejectID() }
 func (W _git_golaxy_org_framework_IRuntime) MainEntity() ec.Entity          { return W.WMainEntity() }
 func (W _git_golaxy_org_framework_IRuntime) Managed() *event.ManagedHandles { return W.WManaged() }
 func (W _git_golaxy_org_framework_IRuntime) Name() string                   { return W.WName() }
 func (W _git_golaxy_org_framework_IRuntime) ParentContext() context.Context {
 	return W.WParentContext()
+}
+func (W _git_golaxy_org_framework_IRuntime) Post(fun generic.ActionVar1[runtime.Context, any], args ...any) error {
+	return W.WPost(fun, args...)
+}
+func (W _git_golaxy_org_framework_IRuntime) PostDelegate(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) error {
+	return W.WPostDelegate(fun, args...)
 }
 func (W _git_golaxy_org_framework_IRuntime) RPCStack() rpcstack.IRPCStack { return W.WRPCStack() }
 func (W _git_golaxy_org_framework_IRuntime) Reflected() reflect.Value     { return W.WReflected() }
@@ -284,8 +289,20 @@ func (W _git_golaxy_org_framework_IRuntime) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_framework_IRuntime) Terminate() async.Future      { return W.WTerminate() }
-func (W _git_golaxy_org_framework_IRuntime) Terminated() async.Future     { return W.WTerminated() }
+func (W _git_golaxy_org_framework_IRuntime) Submit(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future {
+	return W.WSubmit(fun, args...)
+}
+func (W _git_golaxy_org_framework_IRuntime) SubmitDelegate(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future {
+	return W.WSubmitDelegate(fun, args...)
+}
+func (W _git_golaxy_org_framework_IRuntime) SubmitDelegateVoid(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future {
+	return W.WSubmitDelegateVoid(fun, args...)
+}
+func (W _git_golaxy_org_framework_IRuntime) SubmitVoid(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future {
+	return W.WSubmitVoid(fun, args...)
+}
+func (W _git_golaxy_org_framework_IRuntime) Terminate() async.Signal      { return W.WTerminate() }
+func (W _git_golaxy_org_framework_IRuntime) Terminated() async.Signal     { return W.WTerminated() }
 func (W _git_golaxy_org_framework_IRuntime) Value(key any) any            { return W.WValue(key) }
 func (W _git_golaxy_org_framework_IRuntime) WaitGroup() corectx.WaitGroup { return W.WWaitGroup() }
 
@@ -301,52 +318,56 @@ func (W _git_golaxy_org_framework_IRuntimeInstantiator) Instantiate() framework.
 
 // _git_golaxy_org_framework_IService is an interface wrapper for IService type
 type _git_golaxy_org_framework_IService struct {
-	IValue                 interface{}
-	WAddInManager          func() extension.AddInManager
-	WAppConf               func() *viper.Viper
-	WAutoRecover           func() bool
-	WBroker                func() broker.IBroker
-	WBuildEntity           func(prototype string) *framework.EntityCreator
-	WBuildEntityPT         func(prototype string) *framework.EntityPTCreator
-	WBuildRuntime          func() *framework.RuntimeCreator
-	WCallAsync             func(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future
-	WCallDelegateAsync     func(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future
-	WCallDelegateVoidAsync func(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future
-	WCallVoidAsync         func(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future
-	WDeadline              func() (deadline time.Time, ok bool)
-	WDistEntityQuerier     func() dent.IDistEntityQuerier
-	WDistService           func() dsvc.IDistService
-	WDistSync              func() dsync.IDistSync
-	WDone                  func() <-chan struct{}
-	WEntityLib             func() pt.EntityLib
-	WEntityManager         func() service.EntityManager
-	WErr                   func() error
-	WId                    func() uid.Id
-	WInstanceFaceCache     func() iface.Cache
-	WL                     func() *zap.Logger
-	WMemory                func() *sync.Map
-	WName                  func() string
-	WParentContext         func() context.Context
-	WRPC                   func() rpc.IRPC
-	WReflected             func() reflect.Value
-	WRegistry              func() discovery.IRegistry
-	WReplicaNo             func() int
-	WReportError           func() chan error
-	WS                     func() *zap.SugaredLogger
-	WServiceConf           func() *viper.Viper
-	WString                func() string
-	WTerminate             func() async.Future
-	WTerminated            func() async.Future
-	WValue                 func(key any) any
-	WWaitGroup             func() corectx.WaitGroup
+	IValue              interface{}
+	WAddInManager       func() extension.AddInManager
+	WAppConf            func() *viper.Viper
+	WAsyncScope         func() *async.Scope
+	WAutoRecover        func() bool
+	WBroker             func() broker.IBroker
+	WBuildEntity        func(prototype string) *framework.EntityCreator
+	WBuildEntityPT      func(prototype string) *framework.EntityPTCreator
+	WBuildRuntime       func() *framework.RuntimeCreator
+	WDeadline           func() (deadline time.Time, ok bool)
+	WDistEntityQuerier  func() dent.IDistEntityQuerier
+	WDistService        func() dsvc.IDistService
+	WDistSync           func() dsync.IDistSync
+	WDone               func() <-chan struct{}
+	WEntityLib          func() pt.EntityLib
+	WEntityManager      func() service.EntityManager
+	WErr                func() error
+	WId                 func() uid.Id
+	WInstanceFaceCache  func() iface.Cache
+	WL                  func() *zap.Logger
+	WMemory             func() *sync.Map
+	WName               func() string
+	WParentContext      func() context.Context
+	WPost               func(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) error
+	WPostDelegate       func(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) error
+	WRPC                func() rpc.IRPC
+	WReflected          func() reflect.Value
+	WRegistry           func() discovery.IRegistry
+	WReplicaNo          func() int
+	WReportError        func() chan error
+	WS                  func() *zap.SugaredLogger
+	WServiceConf        func() *viper.Viper
+	WString             func() string
+	WSubmit             func(entityID uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future
+	WSubmitDelegate     func(entityID uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future
+	WSubmitDelegateVoid func(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future
+	WSubmitVoid         func(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future
+	WTerminate          func() async.Signal
+	WTerminated         func() async.Signal
+	WValue              func(key any) any
+	WWaitGroup          func() corectx.WaitGroup
 }
 
 func (W _git_golaxy_org_framework_IService) AddInManager() extension.AddInManager {
 	return W.WAddInManager()
 }
-func (W _git_golaxy_org_framework_IService) AppConf() *viper.Viper  { return W.WAppConf() }
-func (W _git_golaxy_org_framework_IService) AutoRecover() bool      { return W.WAutoRecover() }
-func (W _git_golaxy_org_framework_IService) Broker() broker.IBroker { return W.WBroker() }
+func (W _git_golaxy_org_framework_IService) AppConf() *viper.Viper    { return W.WAppConf() }
+func (W _git_golaxy_org_framework_IService) AsyncScope() *async.Scope { return W.WAsyncScope() }
+func (W _git_golaxy_org_framework_IService) AutoRecover() bool        { return W.WAutoRecover() }
+func (W _git_golaxy_org_framework_IService) Broker() broker.IBroker   { return W.WBroker() }
 func (W _git_golaxy_org_framework_IService) BuildEntity(prototype string) *framework.EntityCreator {
 	return W.WBuildEntity(prototype)
 }
@@ -355,18 +376,6 @@ func (W _git_golaxy_org_framework_IService) BuildEntityPT(prototype string) *fra
 }
 func (W _git_golaxy_org_framework_IService) BuildRuntime() *framework.RuntimeCreator {
 	return W.WBuildRuntime()
-}
-func (W _git_golaxy_org_framework_IService) CallAsync(entityId uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future {
-	return W.WCallAsync(entityId, fun, args...)
-}
-func (W _git_golaxy_org_framework_IService) CallDelegateAsync(entityId uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future {
-	return W.WCallDelegateAsync(entityId, fun, args...)
-}
-func (W _git_golaxy_org_framework_IService) CallDelegateVoidAsync(entityId uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future {
-	return W.WCallDelegateVoidAsync(entityId, fun, args...)
-}
-func (W _git_golaxy_org_framework_IService) CallVoidAsync(entityId uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future {
-	return W.WCallVoidAsync(entityId, fun, args...)
 }
 func (W _git_golaxy_org_framework_IService) Deadline() (deadline time.Time, ok bool) {
 	return W.WDeadline()
@@ -392,6 +401,12 @@ func (W _git_golaxy_org_framework_IService) Name() string      { return W.WName(
 func (W _git_golaxy_org_framework_IService) ParentContext() context.Context {
 	return W.WParentContext()
 }
+func (W _git_golaxy_org_framework_IService) Post(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) error {
+	return W.WPost(entityID, fun, args...)
+}
+func (W _git_golaxy_org_framework_IService) PostDelegate(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) error {
+	return W.WPostDelegate(entityID, fun, args...)
+}
 func (W _git_golaxy_org_framework_IService) RPC() rpc.IRPC                 { return W.WRPC() }
 func (W _git_golaxy_org_framework_IService) Reflected() reflect.Value      { return W.WReflected() }
 func (W _git_golaxy_org_framework_IService) Registry() discovery.IRegistry { return W.WRegistry() }
@@ -405,8 +420,20 @@ func (W _git_golaxy_org_framework_IService) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_framework_IService) Terminate() async.Future      { return W.WTerminate() }
-func (W _git_golaxy_org_framework_IService) Terminated() async.Future     { return W.WTerminated() }
+func (W _git_golaxy_org_framework_IService) Submit(entityID uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future {
+	return W.WSubmit(entityID, fun, args...)
+}
+func (W _git_golaxy_org_framework_IService) SubmitDelegate(entityID uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future {
+	return W.WSubmitDelegate(entityID, fun, args...)
+}
+func (W _git_golaxy_org_framework_IService) SubmitDelegateVoid(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future {
+	return W.WSubmitDelegateVoid(entityID, fun, args...)
+}
+func (W _git_golaxy_org_framework_IService) SubmitVoid(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future {
+	return W.WSubmitVoid(entityID, fun, args...)
+}
+func (W _git_golaxy_org_framework_IService) Terminate() async.Signal      { return W.WTerminate() }
+func (W _git_golaxy_org_framework_IService) Terminated() async.Signal     { return W.WTerminated() }
 func (W _git_golaxy_org_framework_IService) Value(key any) any            { return W.WValue(key) }
 func (W _git_golaxy_org_framework_IService) WaitGroup() corectx.WaitGroup { return W.WWaitGroup() }
 
@@ -630,54 +657,64 @@ func (W _git_golaxy_org_framework_LifecycleRuntimeEntityActivationAborted) OnEnt
 	W.WOnEntityActivationAborted(rt, entity)
 }
 
-// _git_golaxy_org_framework_LifecycleRuntimeEntityAddingComponents is an interface wrapper for LifecycleRuntimeEntityAddingComponents type
-type _git_golaxy_org_framework_LifecycleRuntimeEntityAddingComponents struct {
-	IValue                    interface{}
-	WOnEntityAddingComponents func(rt framework.IRuntime, entity ec.Entity, components []ec.Component)
+// _git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivated is an interface wrapper for LifecycleRuntimeEntityComponentDeactivated type
+type _git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivated struct {
+	IValue                        interface{}
+	WOnEntityComponentDeactivated func(rt framework.IRuntime, entity ec.Entity, component ec.Component)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeEntityAddingComponents) OnEntityAddingComponents(rt framework.IRuntime, entity ec.Entity, components []ec.Component) {
-	W.WOnEntityAddingComponents(rt, entity, components)
+func (W _git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivated) OnEntityComponentDeactivated(rt framework.IRuntime, entity ec.Entity, component ec.Component) {
+	W.WOnEntityComponentDeactivated(rt, entity, component)
 }
 
-// _git_golaxy_org_framework_LifecycleRuntimeEntityComponentRemovalAborted is an interface wrapper for LifecycleRuntimeEntityComponentRemovalAborted type
-type _git_golaxy_org_framework_LifecycleRuntimeEntityComponentRemovalAborted struct {
-	IValue                           interface{}
-	WOnEntityComponentRemovalAborted func(rt framework.IRuntime, entity ec.Entity, component ec.Component)
+// _git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivating is an interface wrapper for LifecycleRuntimeEntityComponentDeactivating type
+type _git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivating struct {
+	IValue                         interface{}
+	WOnEntityComponentDeactivating func(rt framework.IRuntime, entity ec.Entity, component ec.Component)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeEntityComponentRemovalAborted) OnEntityComponentRemovalAborted(rt framework.IRuntime, entity ec.Entity, component ec.Component) {
-	W.WOnEntityComponentRemovalAborted(rt, entity, component)
+func (W _git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivating) OnEntityComponentDeactivating(rt framework.IRuntime, entity ec.Entity, component ec.Component) {
+	W.WOnEntityComponentDeactivating(rt, entity, component)
 }
 
-// _git_golaxy_org_framework_LifecycleRuntimeEntityComponentRemoved is an interface wrapper for LifecycleRuntimeEntityComponentRemoved type
-type _git_golaxy_org_framework_LifecycleRuntimeEntityComponentRemoved struct {
-	IValue                    interface{}
-	WOnEntityComponentRemoved func(rt framework.IRuntime, entity ec.Entity, component ec.Component)
+// _git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivationAborted is an interface wrapper for LifecycleRuntimeEntityComponentDeactivationAborted type
+type _git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivationAborted struct {
+	IValue                                interface{}
+	WOnEntityComponentDeactivationAborted func(rt framework.IRuntime, entity ec.Entity, component ec.Component)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeEntityComponentRemoved) OnEntityComponentRemoved(rt framework.IRuntime, entity ec.Entity, component ec.Component) {
-	W.WOnEntityComponentRemoved(rt, entity, component)
+func (W _git_golaxy_org_framework_LifecycleRuntimeEntityComponentDeactivationAborted) OnEntityComponentDeactivationAborted(rt framework.IRuntime, entity ec.Entity, component ec.Component) {
+	W.WOnEntityComponentDeactivationAborted(rt, entity, component)
 }
 
-// _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsAdded is an interface wrapper for LifecycleRuntimeEntityComponentsAdded type
-type _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsAdded struct {
-	IValue                   interface{}
-	WOnEntityComponentsAdded func(rt framework.IRuntime, entity ec.Entity, components []ec.Component)
+// _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivated is an interface wrapper for LifecycleRuntimeEntityComponentsActivated type
+type _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivated struct {
+	IValue                       interface{}
+	WOnEntityComponentsActivated func(rt framework.IRuntime, entity ec.Entity, components []ec.Component)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsAdded) OnEntityComponentsAdded(rt framework.IRuntime, entity ec.Entity, components []ec.Component) {
-	W.WOnEntityComponentsAdded(rt, entity, components)
+func (W _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivated) OnEntityComponentsActivated(rt framework.IRuntime, entity ec.Entity, components []ec.Component) {
+	W.WOnEntityComponentsActivated(rt, entity, components)
 }
 
-// _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsAdditionAborted is an interface wrapper for LifecycleRuntimeEntityComponentsAdditionAborted type
-type _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsAdditionAborted struct {
-	IValue                             interface{}
-	WOnEntityComponentsAdditionAborted func(rt framework.IRuntime, entity ec.Entity, components []ec.Component)
+// _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivating is an interface wrapper for LifecycleRuntimeEntityComponentsActivating type
+type _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivating struct {
+	IValue                        interface{}
+	WOnEntityComponentsActivating func(rt framework.IRuntime, entity ec.Entity, components []ec.Component)
 }
 
-func (W _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsAdditionAborted) OnEntityComponentsAdditionAborted(rt framework.IRuntime, entity ec.Entity, components []ec.Component) {
-	W.WOnEntityComponentsAdditionAborted(rt, entity, components)
+func (W _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivating) OnEntityComponentsActivating(rt framework.IRuntime, entity ec.Entity, components []ec.Component) {
+	W.WOnEntityComponentsActivating(rt, entity, components)
+}
+
+// _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivationAborted is an interface wrapper for LifecycleRuntimeEntityComponentsActivationAborted type
+type _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivationAborted struct {
+	IValue                               interface{}
+	WOnEntityComponentsActivationAborted func(rt framework.IRuntime, entity ec.Entity, components []ec.Component)
+}
+
+func (W _git_golaxy_org_framework_LifecycleRuntimeEntityComponentsActivationAborted) OnEntityComponentsActivationAborted(rt framework.IRuntime, entity ec.Entity, components []ec.Component) {
+	W.WOnEntityComponentsActivationAborted(rt, entity, components)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeEntityDeactivated is an interface wrapper for LifecycleRuntimeEntityDeactivated type
@@ -698,16 +735,6 @@ type _git_golaxy_org_framework_LifecycleRuntimeEntityDeactivating struct {
 
 func (W _git_golaxy_org_framework_LifecycleRuntimeEntityDeactivating) OnEntityDeactivating(rt framework.IRuntime, entity ec.Entity) {
 	W.WOnEntityDeactivating(rt, entity)
-}
-
-// _git_golaxy_org_framework_LifecycleRuntimeEntityRemovingComponent is an interface wrapper for LifecycleRuntimeEntityRemovingComponent type
-type _git_golaxy_org_framework_LifecycleRuntimeEntityRemovingComponent struct {
-	IValue                     interface{}
-	WOnEntityRemovingComponent func(rt framework.IRuntime, entity ec.Entity, component ec.Component)
-}
-
-func (W _git_golaxy_org_framework_LifecycleRuntimeEntityRemovingComponent) OnEntityRemovingComponent(rt framework.IRuntime, entity ec.Entity, component ec.Component) {
-	W.WOnEntityRemovingComponent(rt, entity, component)
 }
 
 // _git_golaxy_org_framework_LifecycleRuntimeFrameLoopBegin is an interface wrapper for LifecycleRuntimeFrameLoopBegin type
@@ -828,46 +855,6 @@ type _git_golaxy_org_framework_LifecycleRuntimeTerminating struct {
 
 func (W _git_golaxy_org_framework_LifecycleRuntimeTerminating) OnTerminating(rt framework.IRuntime) {
 	W.WOnTerminating(rt)
-}
-
-// _git_golaxy_org_framework_LifecycleServiceAddInActivated is an interface wrapper for LifecycleServiceAddInActivated type
-type _git_golaxy_org_framework_LifecycleServiceAddInActivated struct {
-	IValue            interface{}
-	WOnAddInActivated func(svc framework.IService, addIn extension.AddInStatus)
-}
-
-func (W _git_golaxy_org_framework_LifecycleServiceAddInActivated) OnAddInActivated(svc framework.IService, addIn extension.AddInStatus) {
-	W.WOnAddInActivated(svc, addIn)
-}
-
-// _git_golaxy_org_framework_LifecycleServiceAddInActivating is an interface wrapper for LifecycleServiceAddInActivating type
-type _git_golaxy_org_framework_LifecycleServiceAddInActivating struct {
-	IValue             interface{}
-	WOnAddInActivating func(svc framework.IService, addIn extension.AddInStatus)
-}
-
-func (W _git_golaxy_org_framework_LifecycleServiceAddInActivating) OnAddInActivating(svc framework.IService, addIn extension.AddInStatus) {
-	W.WOnAddInActivating(svc, addIn)
-}
-
-// _git_golaxy_org_framework_LifecycleServiceAddInDeactivated is an interface wrapper for LifecycleServiceAddInDeactivated type
-type _git_golaxy_org_framework_LifecycleServiceAddInDeactivated struct {
-	IValue              interface{}
-	WOnAddInDeactivated func(svc framework.IService, addIn extension.AddInStatus)
-}
-
-func (W _git_golaxy_org_framework_LifecycleServiceAddInDeactivated) OnAddInDeactivated(svc framework.IService, addIn extension.AddInStatus) {
-	W.WOnAddInDeactivated(svc, addIn)
-}
-
-// _git_golaxy_org_framework_LifecycleServiceAddInDeactivating is an interface wrapper for LifecycleServiceAddInDeactivating type
-type _git_golaxy_org_framework_LifecycleServiceAddInDeactivating struct {
-	IValue               interface{}
-	WOnAddInDeactivating func(svc framework.IService, addIn extension.AddInStatus)
-}
-
-func (W _git_golaxy_org_framework_LifecycleServiceAddInDeactivating) OnAddInDeactivating(svc framework.IService, addIn extension.AddInStatus) {
-	W.WOnAddInDeactivating(svc, addIn)
 }
 
 // _git_golaxy_org_framework_LifecycleServiceBirth is an interface wrapper for LifecycleServiceBirth type

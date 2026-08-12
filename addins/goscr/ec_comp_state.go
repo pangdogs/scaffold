@@ -43,7 +43,7 @@ func (c *ComponentState) Awake() {
 		generic.CastAction0(cb.OnCreate).Call(c.Runtime().AutoRecover(), c.Runtime().ReportError())
 	}
 
-	if c.State() != ec.ComponentState_Awake {
+	if c.State() != ec.ComponentState_Awakened {
 		return
 	}
 
@@ -68,7 +68,7 @@ func (c *ComponentState) Start() {
 		method()
 	}
 
-	if c.State() != ec.ComponentState_Start {
+	if c.State() != ec.ComponentState_Starting {
 		return
 	}
 
@@ -83,7 +83,7 @@ func (c *ComponentState) Shut() {
 		generic.CastAction0(cb.OnStop).Call(c.Runtime().AutoRecover(), c.Runtime().ReportError())
 	}
 
-	if c.State() != ec.ComponentState_Shut {
+	if c.State() != ec.ComponentState_Shutting {
 		return
 	}
 
@@ -108,7 +108,7 @@ func (c *ComponentState) Dispose() {
 		method()
 	}
 
-	if c.State() != ec.ComponentState_Death {
+	if c.State() != ec.ComponentState_Dead {
 		return
 	}
 

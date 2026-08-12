@@ -10,7 +10,9 @@ import (
 func init() {
 	Symbols["git.golaxy.org/core/utils/generic/generic"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"FuncError": reflect.ValueOf(generic.FuncError),
+		"ErrBarrier":  reflect.ValueOf(&generic.ErrBarrier).Elem(),
+		"ErrFreeList": reflect.ValueOf(&generic.ErrFreeList).Elem(),
+		"FuncError":   reflect.ValueOf(generic.FuncError),
 
 		// type definitions
 		"Action0":               reflect.ValueOf((*generic.Action0)(nil)),

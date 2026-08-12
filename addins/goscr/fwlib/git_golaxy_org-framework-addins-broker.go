@@ -36,7 +36,7 @@ type _git_golaxy_org_framework_addins_broker_IBroker struct {
 	WPublish             func(ctx context.Context, topic string, data []byte) error
 	WSeparator           func() string
 	WSubscribeEvent      func(ctx context.Context, pattern string, queue string, autoAck ...bool) (<-chan broker.Event, error)
-	WSubscribeHandler    func(ctx context.Context, pattern string, queue string, handler broker.EventHandler, autoAck ...bool) (async.Future, error)
+	WSubscribeHandler    func(ctx context.Context, pattern string, queue string, handler broker.EventHandler, autoAck ...bool) (async.Signal, error)
 }
 
 func (W _git_golaxy_org_framework_addins_broker_IBroker) DeliveryReliability() broker.DeliveryReliability {
@@ -53,6 +53,6 @@ func (W _git_golaxy_org_framework_addins_broker_IBroker) Separator() string { re
 func (W _git_golaxy_org_framework_addins_broker_IBroker) SubscribeEvent(ctx context.Context, pattern string, queue string, autoAck ...bool) (<-chan broker.Event, error) {
 	return W.WSubscribeEvent(ctx, pattern, queue, autoAck...)
 }
-func (W _git_golaxy_org_framework_addins_broker_IBroker) SubscribeHandler(ctx context.Context, pattern string, queue string, handler broker.EventHandler, autoAck ...bool) (async.Future, error) {
+func (W _git_golaxy_org_framework_addins_broker_IBroker) SubscribeHandler(ctx context.Context, pattern string, queue string, handler broker.EventHandler, autoAck ...bool) (async.Signal, error) {
 	return W.WSubscribeHandler(ctx, pattern, queue, handler, autoAck...)
 }

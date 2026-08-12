@@ -15,36 +15,42 @@ import (
 func init() {
 	Symbols["git.golaxy.org/core/core"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"Await":                reflect.ValueOf(core.Await),
-		"BuildEntity":          reflect.ValueOf(core.BuildEntity),
-		"BuildEntityPT":        reflect.ValueOf(core.BuildEntityPT),
-		"CallAsync":            reflect.ValueOf(core.CallAsync),
-		"CallVoidAsync":        reflect.ValueOf(core.CallVoidAsync),
-		"ErrArgs":              reflect.ValueOf(&core.ErrArgs).Elem(),
-		"ErrCore":              reflect.ValueOf(&core.ErrCore).Elem(),
-		"ErrNoFutureSucceeded": reflect.ValueOf(&core.ErrNoFutureSucceeded).Elem(),
-		"ErrPanicked":          reflect.ValueOf(&core.ErrPanicked).Elem(),
-		"ErrRuntime":           reflect.ValueOf(&core.ErrRuntime).Elem(),
-		"ErrService":           reflect.ValueOf(&core.ErrService).Elem(),
-		"ErrTaskQueueClosed":   reflect.ValueOf(&core.ErrTaskQueueClosed).Elem(),
-		"ErrTaskQueueFull":     reflect.ValueOf(&core.ErrTaskQueueFull).Elem(),
-		"GoAsync":              reflect.ValueOf(core.GoAsync),
-		"GoVoidAsync":          reflect.ValueOf(core.GoVoidAsync),
-		"NewRuntime":           reflect.ValueOf(core.NewRuntime),
-		"NewService":           reflect.ValueOf(core.NewService),
-		"TaskType_Call":        reflect.ValueOf(core.TaskType_Call),
-		"TaskType_Frame":       reflect.ValueOf(core.TaskType_Frame),
-		"TimeAfterAsync":       reflect.ValueOf(core.TimeAfterAsync),
-		"TimeAtAsync":          reflect.ValueOf(core.TimeAtAsync),
-		"TimeTickAsync":        reflect.ValueOf(core.TimeTickAsync),
-		"UnsafeNewRuntime":     reflect.ValueOf(core.UnsafeNewRuntime),
-		"UnsafeNewService":     reflect.ValueOf(core.UnsafeNewService),
-		"UnsafeRuntime":        reflect.ValueOf(core.UnsafeRuntime),
-		"UnsafeService":        reflect.ValueOf(core.UnsafeService),
-		"With":                 reflect.ValueOf(&core.With).Elem(),
+		"After":                  reflect.ValueOf(core.After),
+		"At":                     reflect.ValueOf(core.At),
+		"BuildEntity":            reflect.ValueOf(core.BuildEntity),
+		"BuildEntityPT":          reflect.ValueOf(core.BuildEntityPT),
+		"ContinueOn":             reflect.ValueOf(core.ContinueOn),
+		"ContinueOnDelegate":     reflect.ValueOf(core.ContinueOnDelegate),
+		"ContinueOnDelegateVoid": reflect.ValueOf(core.ContinueOnDelegateVoid),
+		"ContinueOnVoid":         reflect.ValueOf(core.ContinueOnVoid),
+		"ErrArgs":                reflect.ValueOf(&core.ErrArgs).Elem(),
+		"ErrCore":                reflect.ValueOf(&core.ErrCore).Elem(),
+		"ErrPanicked":            reflect.ValueOf(&core.ErrPanicked).Elem(),
+		"ErrRuntime":             reflect.ValueOf(&core.ErrRuntime).Elem(),
+		"ErrService":             reflect.ValueOf(&core.ErrService).Elem(),
+		"ErrTaskQueueClosed":     reflect.ValueOf(&core.ErrTaskQueueClosed).Elem(),
+		"ErrTaskQueueFull":       reflect.ValueOf(&core.ErrTaskQueueFull).Elem(),
+		"Every":                  reflect.ValueOf(core.Every),
+		"NewRuntime":             reflect.ValueOf(core.NewRuntime),
+		"NewService":             reflect.ValueOf(core.NewService),
+		"Post":                   reflect.ValueOf(core.Post),
+		"PostDelegate":           reflect.ValueOf(core.PostDelegate),
+		"Spawn":                  reflect.ValueOf(core.Spawn),
+		"SpawnVoid":              reflect.ValueOf(core.SpawnVoid),
+		"Submit":                 reflect.ValueOf(core.Submit),
+		"SubmitDelegate":         reflect.ValueOf(core.SubmitDelegate),
+		"SubmitDelegateVoid":     reflect.ValueOf(core.SubmitDelegateVoid),
+		"SubmitVoid":             reflect.ValueOf(core.SubmitVoid),
+		"TaskType_Frame":         reflect.ValueOf(core.TaskType_Frame),
+		"TaskType_Post":          reflect.ValueOf(core.TaskType_Post),
+		"TaskType_Submit":        reflect.ValueOf(core.TaskType_Submit),
+		"UnsafeNewRuntime":       reflect.ValueOf(core.UnsafeNewRuntime),
+		"UnsafeNewService":       reflect.ValueOf(core.UnsafeNewService),
+		"UnsafeRuntime":          reflect.ValueOf(core.UnsafeRuntime),
+		"UnsafeService":          reflect.ValueOf(core.UnsafeService),
+		"With":                   reflect.ValueOf(&core.With).Elem(),
 
 		// type definitions
-		"AwaitDirector":                       reflect.ValueOf((*core.AwaitDirector)(nil)),
 		"CustomGC":                            reflect.ValueOf((*core.CustomGC)(nil)),
 		"EntityCreator":                       reflect.ValueOf((*core.EntityCreator)(nil)),
 		"EntityPTCreator":                     reflect.ValueOf((*core.EntityPTCreator)(nil)),
@@ -72,8 +78,10 @@ func init() {
 		"LifecycleServiceAddInShut":           reflect.ValueOf((*core.LifecycleServiceAddInShut)(nil)),
 		"Runtime":                             reflect.ValueOf((*core.Runtime)(nil)),
 		"RuntimeBehavior":                     reflect.ValueOf((*core.RuntimeBehavior)(nil)),
+		"RuntimeHealthStats":                  reflect.ValueOf((*core.RuntimeHealthStats)(nil)),
 		"RuntimeOptions":                      reflect.ValueOf((*core.RuntimeOptions)(nil)),
 		"RuntimeStats":                        reflect.ValueOf((*core.RuntimeStats)(nil)),
+		"RuntimeTaskStats":                    reflect.ValueOf((*core.RuntimeTaskStats)(nil)),
 		"Service":                             reflect.ValueOf((*core.Service)(nil)),
 		"ServiceBehavior":                     reflect.ValueOf((*core.ServiceBehavior)(nil)),
 		"ServiceOptions":                      reflect.ValueOf((*core.ServiceOptions)(nil)),
@@ -285,54 +293,66 @@ func (W _git_golaxy_org_core_LifecycleServiceAddInShut) Shut(svcCtx service.Cont
 
 // _git_golaxy_org_core_Runtime is an interface wrapper for Runtime type
 type _git_golaxy_org_core_Runtime struct {
-	IValue                     interface{}
-	WConcurrentContext         func() iface.Cache
-	WCurrentContext            func() iface.Cache
-	WInstanceFaceCache         func() iface.Cache
-	WPushCallAsync             func(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future
-	WPushCallDelegateAsync     func(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future
-	WPushCallDelegateVoidAsync func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future
-	WPushCallVoidAsync         func(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future
-	WRun                       func() async.Future
-	WStats                     func() core.RuntimeStats
-	WTerminate                 func() async.Future
-	WTerminated                func() async.Future
+	IValue                  interface{}
+	WConcurrentContextCache func() iface.Cache
+	WCurrentContextCache    func() iface.Cache
+	WInstanceFaceCache      func() iface.Cache
+	WPushPost               func(fun generic.ActionVar1[runtime.Context, any], args ...any) error
+	WPushPostDelegate       func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) error
+	WPushSubmit             func(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future
+	WPushSubmitDelegate     func(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future
+	WPushSubmitDelegateVoid func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future
+	WPushSubmitVoid         func(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future
+	WRun                    func() async.Signal
+	WStats                  func() core.RuntimeStats
+	WTerminate              func() async.Signal
+	WTerminated             func() async.Signal
 }
 
-func (W _git_golaxy_org_core_Runtime) ConcurrentContext() iface.Cache { return W.WConcurrentContext() }
-func (W _git_golaxy_org_core_Runtime) CurrentContext() iface.Cache    { return W.WCurrentContext() }
+func (W _git_golaxy_org_core_Runtime) ConcurrentContextCache() iface.Cache {
+	return W.WConcurrentContextCache()
+}
+func (W _git_golaxy_org_core_Runtime) CurrentContextCache() iface.Cache {
+	return W.WCurrentContextCache()
+}
 func (W _git_golaxy_org_core_Runtime) InstanceFaceCache() iface.Cache { return W.WInstanceFaceCache() }
-func (W _git_golaxy_org_core_Runtime) PushCallAsync(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future {
-	return W.WPushCallAsync(fun, args...)
+func (W _git_golaxy_org_core_Runtime) PushPost(fun generic.ActionVar1[runtime.Context, any], args ...any) error {
+	return W.WPushPost(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) PushCallDelegateAsync(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future {
-	return W.WPushCallDelegateAsync(fun, args...)
+func (W _git_golaxy_org_core_Runtime) PushPostDelegate(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) error {
+	return W.WPushPostDelegate(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) PushCallDelegateVoidAsync(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future {
-	return W.WPushCallDelegateVoidAsync(fun, args...)
+func (W _git_golaxy_org_core_Runtime) PushSubmit(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future {
+	return W.WPushSubmit(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) PushCallVoidAsync(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future {
-	return W.WPushCallVoidAsync(fun, args...)
+func (W _git_golaxy_org_core_Runtime) PushSubmitDelegate(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future {
+	return W.WPushSubmitDelegate(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) Run() async.Future        { return W.WRun() }
+func (W _git_golaxy_org_core_Runtime) PushSubmitDelegateVoid(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future {
+	return W.WPushSubmitDelegateVoid(fun, args...)
+}
+func (W _git_golaxy_org_core_Runtime) PushSubmitVoid(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future {
+	return W.WPushSubmitVoid(fun, args...)
+}
+func (W _git_golaxy_org_core_Runtime) Run() async.Signal        { return W.WRun() }
 func (W _git_golaxy_org_core_Runtime) Stats() core.RuntimeStats { return W.WStats() }
-func (W _git_golaxy_org_core_Runtime) Terminate() async.Future  { return W.WTerminate() }
-func (W _git_golaxy_org_core_Runtime) Terminated() async.Future { return W.WTerminated() }
+func (W _git_golaxy_org_core_Runtime) Terminate() async.Signal  { return W.WTerminate() }
+func (W _git_golaxy_org_core_Runtime) Terminated() async.Signal { return W.WTerminated() }
 
 // _git_golaxy_org_core_Service is an interface wrapper for Service type
 type _git_golaxy_org_core_Service struct {
 	IValue             interface{}
 	WContext           func() service.Context
 	WInstanceFaceCache func() iface.Cache
-	WRun               func() async.Future
+	WRun               func() async.Signal
 	WStats             func() core.ServiceStats
-	WTerminate         func() async.Future
-	WTerminated        func() async.Future
+	WTerminate         func() async.Signal
+	WTerminated        func() async.Signal
 }
 
 func (W _git_golaxy_org_core_Service) Context() service.Context       { return W.WContext() }
 func (W _git_golaxy_org_core_Service) InstanceFaceCache() iface.Cache { return W.WInstanceFaceCache() }
-func (W _git_golaxy_org_core_Service) Run() async.Future              { return W.WRun() }
+func (W _git_golaxy_org_core_Service) Run() async.Signal              { return W.WRun() }
 func (W _git_golaxy_org_core_Service) Stats() core.ServiceStats       { return W.WStats() }
-func (W _git_golaxy_org_core_Service) Terminate() async.Future        { return W.WTerminate() }
-func (W _git_golaxy_org_core_Service) Terminated() async.Future       { return W.WTerminated() }
+func (W _git_golaxy_org_core_Service) Terminate() async.Signal        { return W.WTerminate() }
+func (W _git_golaxy_org_core_Service) Terminated() async.Signal       { return W.WTerminated() }
