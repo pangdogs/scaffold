@@ -60,26 +60,56 @@ winget install protobuf
 protoc --version
 ```
 
-也可以从[官方 Releases](https://github.com/protocolbuffers/protobuf/releases/latest)下载与操作系统和 CPU 架构匹配的预编译包，例如 Windows x64 使用 `protoc-<version>-win64.zip`。解压到固定目录后，保留其中的 `bin` 和 `include` 目录，并将 `bin` 加入 `PATH`。以下 PowerShell 命令用于配置并验证当前终端中的手动安装：
+也可以从[官方 Releases](https://github.com/protocolbuffers/protobuf/releases/latest)下载与操作系统和 CPU 架构匹配的预编译包，例如 Windows x64 使用 `protoc-<version>-win64.zip`。把压缩包解压到自定义目录（下面以 `C:\tools\protobuf` 为例），保留其中的 `bin` 和 `include` 目录，并将 `bin` 加入 `PATH`：
+
+```text
+C:\tools\protobuf\
+├─ bin\
+│  └─ protoc.exe
+└─ include\
+   └─ google\protobuf\descriptor.proto
+```
+
+以下 PowerShell 命令用于配置和验证当前终端中的手动安装：
 
 ```powershell
-$protocRoot = 'C:\tools\protoc'
-$env:Path = "$protocRoot\bin;$env:Path"
-$env:PROTOBUF_INCLUDE = "$protocRoot\include"
+$protocRoot = 'C:\tools\protobuf'
+$protocBin = Join-Path $protocRoot 'bin'
+$env:Path = "$protocBin;$env:Path"
+$env:PROTOBUF_INCLUDE = Join-Path $protocRoot 'include'
 
 protoc --version
-Test-Path "$env:PROTOBUF_INCLUDE\google\protobuf\descriptor.proto"
+Test-Path (Join-Path $env:PROTOBUF_INCLUDE 'google\protobuf\descriptor.proto')
 ```
 
 `PROTOBUF_INCLUDE`（或 `-I` 参数）必须指向 `include` 根目录，不能指向其 `google/protobuf` 子目录。macOS 和 Debian/Ubuntu 可分别通过 `brew install protobuf` 和 `sudo apt-get install protobuf-compiler` 安装，安装后同样使用 `protoc --version` 验证。
 
-安装整个 Go 模块依赖：
+### 安装 Go 模块
+
+如果应用代码会导入本仓库的 add-ins 或生成的运行时辅助包，请将本仓库添加为 Go 模块依赖：
 
 ```bash
 go get git.golaxy.org/scaffold@latest
 ```
 
-安装官方 Go Protobuf 插件和本仓库中的全部生成工具：
+### 安装代码生成工具
+
+代码生成工具通常通过 Go 安装；如果提交或发布后不希望使用方再安装 Go，也可以把已编译工具归档到项目目录。
+
+#### 通过 Go 安装
+
+开发机推荐直接执行下面的 `go install` 命令。未设置 `GOBIN` 时，Go 通常会把编译出的可执行文件安装到 `$(go env GOPATH)/bin`；请确保该目录以及 `protoc` 所在的 `bin` 目录都位于 `PATH`。
+
+如果需要将 Go 工具安装到自定义目录，在执行命令前设置 `GOBIN`，例如：
+
+```powershell
+$generatorBin = 'C:\tools\scaffold\bin'
+New-Item -ItemType Directory -Force -Path $generatorBin | Out-Null
+$env:GOBIN = $generatorBin
+$env:Path = "$generatorBin;$env:Path"
+```
+
+然后执行：
 
 ```bash
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -92,7 +122,41 @@ go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript@latest
 go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript-excel@latest
 ```
 
-确保 `$GOBIN` 或 `$(go env GOPATH)/bin` 位于 `PATH`。`protoc-gen-<name>` 会被 `protoc` 自动映射为 `--<name>_out`，插件选项通过 `--<name>_opt` 传入。
+#### 归档已编译工具
+
+如果提交或发布后不希望使用方再安装 Go，可以把已经编译好的 `.exe` 复制到项目的 `tools` 目录中。推荐按 `garden/tools` 的方式按用途分目录：`protobuf/bin` 放 `protoc.exe` 和 `protoc-gen-*` 插件，`excelc/bin` 放 `excelc.exe`，如果使用 `propc` 则放到独立的 `propc/bin`。`protoc.exe` 和 `include` 仍从官方 `protocolbuffers/protobuf` 发布包获取。
+
+```text
+tools\
+├─ protobuf\
+│  ├─ bin\
+│  │  ├─ protoc.exe
+│  │  ├─ protoc-gen-go.exe
+│  │  ├─ protoc-gen-go-excel.exe
+│  │  ├─ protoc-gen-go-structure.exe
+│  │  ├─ protoc-gen-go-variant.exe
+│  │  ├─ protoc-gen-gdscript.exe
+│  │  └─ protoc-gen-gdscript-excel.exe
+│  └─ include\
+│     └─ google\protobuf\descriptor.proto
+├─ excelc\
+│  └─ bin\excelc.exe
+└─ propc\
+   └─ bin\propc.exe
+```
+
+在项目根目录执行下面的 PowerShell 命令，即可在当前终端使用这些项目内工具：
+
+```powershell
+$projectTools = Join-Path (Get-Location) 'tools'
+$protobufBin = Join-Path $projectTools 'protobuf\bin'
+$excelcBin = Join-Path $projectTools 'excelc\bin'
+$propcBin = Join-Path $projectTools 'propc\bin'
+$env:Path = "$protobufBin;$excelcBin;$propcBin;$env:Path"
+$env:PROTOBUF_INCLUDE = Join-Path $projectTools 'protobuf\include'
+```
+
+确保项目内 `protoc`、`excelc` 和 `propc` 所在的目录都位于 `PATH`。`protoc-gen-<name>` 会被 `protoc` 自动映射为 `--<name>_out`，插件选项通过 `--<name>_opt` 传入。
 
 本仓库的 Protobuf 插件基于 Go `protogen`。即使只生成 GDScript，每个输入 `.proto` 也需要提供合法的 `option go_package`，或者通过 `M<file>=<go-import-path>` 插件参数映射 Go import path。
 

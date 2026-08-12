@@ -60,26 +60,56 @@ winget install protobuf
 protoc --version
 ```
 
-Alternatively, download the precompiled archive for the target operating system and architecture from the [official releases](https://github.com/protocolbuffers/protobuf/releases/latest), for example `protoc-<version>-win64.zip`. Extract it to a permanent location, keep both its `bin` and `include` directories, and add `bin` to `PATH`. The following PowerShell commands configure and validate a manually extracted Windows installation for the current terminal:
+Alternatively, download the precompiled archive for the target operating system and architecture from the [official releases](https://github.com/protocolbuffers/protobuf/releases/latest), for example `protoc-<version>-win64.zip`. Extract it to a custom root (the example uses `C:\tools\protobuf`), keep both its `bin` and `include` directories, and add `bin` to `PATH`:
+
+```text
+C:\tools\protobuf\
+├─ bin\
+│  └─ protoc.exe
+└─ include\
+   └─ google\protobuf\descriptor.proto
+```
+
+The following PowerShell commands configure and validate a manually extracted Windows installation for the current terminal:
 
 ```powershell
-$protocRoot = 'C:\tools\protoc'
-$env:Path = "$protocRoot\bin;$env:Path"
-$env:PROTOBUF_INCLUDE = "$protocRoot\include"
+$protocRoot = 'C:\tools\protobuf'
+$protocBin = Join-Path $protocRoot 'bin'
+$env:Path = "$protocBin;$env:Path"
+$env:PROTOBUF_INCLUDE = Join-Path $protocRoot 'include'
 
 protoc --version
-Test-Path "$env:PROTOBUF_INCLUDE\google\protobuf\descriptor.proto"
+Test-Path (Join-Path $env:PROTOBUF_INCLUDE 'google\protobuf\descriptor.proto')
 ```
 
 Set `PROTOBUF_INCLUDE` (or pass the same directory with `-I`) to the `include` root, not to its `google/protobuf` subdirectory. On macOS and Debian/Ubuntu, the corresponding package-manager commands are `brew install protobuf` and `sudo apt-get install protobuf-compiler`; verify the resulting compiler with `protoc --version`.
 
-Add the complete Go module when application code imports the add-ins or generated runtime helpers:
+### Add the Go module
+
+Add this repository as a Go module dependency when application code imports the add-ins or generated runtime helpers:
 
 ```bash
 go get git.golaxy.org/scaffold@latest
 ```
 
-Install the official Go plugin and all generators in this repository:
+### Install code generators
+
+Code generators are normally installed with Go. If users should not need to install Go after a submission or release, the compiled tools can instead be archived in the project directory.
+
+#### Install with Go
+
+For development machines, run the `go install` commands below. When `GOBIN` is unset, Go usually installs the compiled executables to `$(go env GOPATH)/bin`; make sure that directory and the `bin` directory containing `protoc` are both on `PATH`.
+
+To install the Go tools into a custom directory, set `GOBIN` before running the commands, for example:
+
+```powershell
+$generatorBin = 'C:\tools\scaffold\bin'
+New-Item -ItemType Directory -Force -Path $generatorBin | Out-Null
+$env:GOBIN = $generatorBin
+$env:Path = "$generatorBin;$env:Path"
+```
+
+Then run:
 
 ```bash
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -92,7 +122,41 @@ go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript@latest
 go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript-excel@latest
 ```
 
-Make sure `$GOBIN`, or `$(go env GOPATH)/bin`, is on `PATH`. `protoc` maps `protoc-gen-<name>` to `--<name>_out`; pass plugin options with `--<name>_opt`.
+#### Archive prebuilt tools
+
+If users should not need to install Go after a submission or release, copy the already compiled `.exe` files into the project's `tools` directory. A layout matching `garden/tools` keeps `protoc.exe` and `protoc-gen-*` plugins in `protobuf/bin`, `excelc.exe` in `excelc/bin`, and (when used) `propc.exe` in a separate `propc/bin`. Get `protoc.exe` and `include` from the official `protocolbuffers/protobuf` release archive.
+
+```text
+tools\
+├─ protobuf\
+│  ├─ bin\
+│  │  ├─ protoc.exe
+│  │  ├─ protoc-gen-go.exe
+│  │  ├─ protoc-gen-go-excel.exe
+│  │  ├─ protoc-gen-go-structure.exe
+│  │  ├─ protoc-gen-go-variant.exe
+│  │  ├─ protoc-gen-gdscript.exe
+│  │  └─ protoc-gen-gdscript-excel.exe
+│  └─ include\
+│     └─ google\protobuf\descriptor.proto
+├─ excelc\
+│  └─ bin\excelc.exe
+└─ propc\
+   └─ bin\propc.exe
+```
+
+From the project root, run the following PowerShell commands to use these project-local tools in the current terminal:
+
+```powershell
+$projectTools = Join-Path (Get-Location) 'tools'
+$protobufBin = Join-Path $projectTools 'protobuf\bin'
+$excelcBin = Join-Path $projectTools 'excelc\bin'
+$propcBin = Join-Path $projectTools 'propc\bin'
+$env:Path = "$protobufBin;$excelcBin;$propcBin;$env:Path"
+$env:PROTOBUF_INCLUDE = Join-Path $projectTools 'protobuf\include'
+```
+
+Make sure the project-local directories containing `protoc`, `excelc`, and `propc` are on `PATH`. `protoc` maps `protoc-gen-<name>` to `--<name>_out`; pass plugin options with `--<name>_opt`.
 
 The Protobuf plugins in this repository use Go `protogen`. Even for GDScript-only output, every input `.proto` needs a valid `option go_package`, or an `M<file>=<go-import-path>` plugin parameter that supplies its Go import path.
 
