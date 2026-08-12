@@ -264,7 +264,14 @@ The `Alias` column in `@types` is used for object field aliases and enum value a
 | Repeated object | YAML array such as `[{id: 1}, {id: 2}]`, or multiple mappings with a custom separator.                 |
 | Map             | YAML-style mapping such as `1: Alpha, 2: Beta` or `1: {id: 1, name: Alpha}`.                           |
 
-In object mappings, `:` must be followed by whitespace, for example `name: Example`. Object field names cannot contain `:`; during data export, `excelc` rejects any parsed object key containing it. This check applies recursively to objects, repeated objects, and object values inside maps; it does not inspect ordinary string values or map keys. Unknown object fields without `:` remain ignored for compatibility with `targets`/`scope` schema trimming.
+In an object mapping, write each field and value as `field: value`, with a space after the colon:
+
+```yaml
+name: Example  # Valid
+name:Example   # Invalid; excelc asks for a space after the colon
+```
+
+This check applies to objects, repeated objects, and object values inside maps. It does not inspect ordinary strings or map keys. Object fields absent from the current schema remain ignored, allowing the same data to work with schemas trimmed by `targets`/`scope`.
 
 #### Field Metadata
 

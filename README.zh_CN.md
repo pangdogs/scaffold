@@ -264,7 +264,14 @@ client/excel/                    # 客户端表数据
 | repeated 对象 | YAML 数组 `[{id: 1}, {id: 2}]`，或配合自定义分隔符书写多个映射。                 |
 | map         | YAML 风格映射，例如 `1: Alpha, 2: Beta` 或 `1: {id: 1, name: Alpha}`。 |
 
-对象映射的 `:` 后必须留有空白，例如 `name: Example`。对象字段名不允许包含 `:`；导出数据时，`excelc` 会拒绝任何包含 `:` 的对象 key。检查会递归作用于对象、repeated 对象和 map 中的对象值，但不会扫描普通字符串值或 map key。不含 `:` 的未知对象字段仍会被忽略，以兼容 `targets`/`scope` 对 schema 的裁剪。
+对象映射中，字段名与值之间要写成 `字段名: 值`，冒号后必须有空格：
+
+```yaml
+name: Example  # 正确
+name:Example   # 错误，excelc 会提示在冒号后添加空格
+```
+
+该检查适用于对象、repeated 对象以及 map 中作为 value 的对象；普通字符串和 map key 不受影响。无法在当前 schema 中找到的对象字段仍会被忽略，以便同一份数据用于经过 `targets`/`scope` 裁剪的不同 schema。
 
 #### 字段 Meta
 
