@@ -320,6 +320,8 @@ Use separate proto directories for server and client targets. `--targets` can re
 
 [`tools/excelc/examples/ExampleCN.xlsx`](./tools/excelc/examples/ExampleCN.xlsx) and [`ExampleEN.xlsx`](./tools/excelc/examples/ExampleEN.xlsx) are complete samples.
 
+Both workbooks use the same layout and demonstrate object and enum declarations, field aliases, scalar types, lists, object lists, maps, string escaping, `scope=c` / `scope=s`, single-column and composite `unique_index` / `index` definitions, multiple data pages, and note pages. Each data row fills only the fields needed by that example; omitted fields retain their Protobuf defaults.
+
 #### Workbook Contents
 
 - One workbook represents one logical table.

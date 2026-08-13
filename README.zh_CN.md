@@ -320,6 +320,8 @@ client/excel/                    # 客户端表数据
 
 [`tools/excelc/examples/ExampleCN.xlsx`](./tools/excelc/examples/ExampleCN.xlsx) 和 [`ExampleEN.xlsx`](./tools/excelc/examples/ExampleEN.xlsx) 提供了完整示例。
 
+两个工作簿使用相同结构，集中展示对象与枚举声明、字段别名、基础类型、列表、对象列表、map、字符串转义、`scope=c` / `scope=s`、单列与复合 `unique_index` / `index`，以及多数据分页和备注页。数据行只填写当前示例需要的字段，未填写字段保持 Protobuf 默认值。
+
 #### 工作簿组成
 
 - 一个工作簿对应一张逻辑表。
