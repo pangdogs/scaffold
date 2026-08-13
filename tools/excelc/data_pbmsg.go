@@ -72,7 +72,11 @@ func genProtoMessage(file *excelize.File) proto.Message {
 		Name  string
 		Index int
 		Meta  string
+		Field protoreflect.FieldDescriptor
 	}
+	var definitionColumns []*Column
+	var definitionColumnsByName map[string]*Column
+	var definitionFieldsByName map[string]protoreflect.FieldDescriptor
 
 	type OffsetLine struct {
 		Sheet string
@@ -81,7 +85,7 @@ func genProtoMessage(file *excelize.File) proto.Message {
 
 	var offsetLines []OffsetLine
 
-	for _, sheet := range sheets {
+	for sheetIndex, sheet := range sheets {
 		func() {
 			rows, err := file.Rows(sheet)
 			if err != nil {
@@ -90,7 +94,7 @@ func genProtoMessage(file *excelize.File) proto.Message {
 			defer rows.Close()
 
 			var columns []*Column
-			var columnsByFieldNumber map[protoreflect.FieldNumber]*Column
+			definitionSheet := sheetIndex == 0
 
 			for i := 1; rows.Next(); i++ {
 				if i < SheetTableHeader+SheetTableHeaderSize {
@@ -124,7 +128,30 @@ func genProtoMessage(file *excelize.File) proto.Message {
 							return
 						}
 
+						columnsByName := make(map[string]*Column, len(columns))
+						for _, column := range columns {
+							if previous := columnsByName[column.Name]; previous != nil {
+								log.Panicf("read excel file %q sheet %q row %d failed: duplicate column %q at columns %d and %d", file.Path, sheet, i, column.Name, previous.Index+1, column.Index+1)
+							}
+							columnsByName[column.Name] = column
+						}
+
+						if definitionSheet {
+							definitionColumns = columns
+							definitionColumnsByName = columnsByName
+						} else {
+							for _, column := range columns {
+								if definitionColumnsByName[column.Name] == nil {
+									log.Panicf("read excel file %q sheet %q row %d column %d failed: column %q is not defined in first data sheet %q", file.Path, sheet, i, column.Index+1, column.Name, sheets[0])
+								}
+							}
+						}
+
 					case SheetTableColumnMeta:
+						if !definitionSheet {
+							continue
+						}
+
 						row, err := rows.Columns()
 						if err != nil {
 							log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, sheet, i, err)
@@ -198,27 +225,43 @@ func genProtoMessage(file *excelize.File) proto.Message {
 					tableMsg = tableType.New()
 				}
 
-				if columnsByFieldNumber == nil {
-					columnsByFieldNumber = make(map[protoreflect.FieldNumber]*Column, len(columns))
-					for columnIdx, column := range columns {
+				if definitionFieldsByName == nil {
+					definitionFieldsByName = make(map[string]protoreflect.FieldDescriptor, len(definitionColumns))
+					for columnIdx, column := range definitionColumns {
 						meta, err := parseMeta(column.Meta)
 						if err != nil {
-							log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, sheet, column.Meta, column.Name, err)
+							log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, sheets[0], column.Meta, column.Name, err)
 						}
 						if !meta.MatchTargets() {
 							continue
 						}
 
-						fieldNumber := protoreflect.FieldNumber(columnIdx + 1)
-						if meta.PbFieldNumber != nil {
-							fieldNumber = protoreflect.FieldNumber(*meta.PbFieldNumber)
+						field := columnsType.Descriptor().Fields().ByName(protoreflect.Name(column.Name))
+						if field == nil {
+							log.Panicf("parse proto type %q failed: column %q from first data sheet %q was not found", columnsType.Descriptor().FullName(), column.Name, sheets[0])
 						}
 
-						if previous := columnsByFieldNumber[fieldNumber]; previous != nil {
-							log.Panicf("read excel file %q sheet %q failed: column %q field number %d conflicts with column %q", file.Path, sheet, column.Name, fieldNumber, previous.Name)
+						expectedFieldNumber := protoreflect.FieldNumber(columnIdx + 1)
+						if meta.PbFieldNumber != nil {
+							expectedFieldNumber = protoreflect.FieldNumber(*meta.PbFieldNumber)
 						}
-						columnsByFieldNumber[fieldNumber] = column
+						if field.Number() != expectedFieldNumber {
+							log.Panicf("parse proto field %q failed: field number is %d, but first data sheet %q configures %d", field.FullName(), field.Number(), sheets[0], expectedFieldNumber)
+						}
+
+						definitionFieldsByName[column.Name] = field
 					}
+
+					for fieldIdx := range columnsType.Descriptor().Fields().Len() {
+						field := columnsType.Descriptor().Fields().Get(fieldIdx)
+						if definitionFieldsByName[string(field.Name())] == nil {
+							log.Panicf("parse proto type %q failed: field %q is not defined in first data sheet %q", columnsType.Descriptor().FullName(), field.Name(), sheets[0])
+						}
+					}
+				}
+
+				for _, column := range columns {
+					column.Field = definitionFieldsByName[column.Name]
 				}
 
 				row, err := rows.Columns()
@@ -240,15 +283,13 @@ func genProtoMessage(file *excelize.File) proto.Message {
 
 				rowMsg := columnsType.New()
 
-				for j := 0; j < rowMsg.Descriptor().Fields().Len(); j++ {
-					field := rowMsg.Descriptor().Fields().Get(j)
-					column := columnsByFieldNumber[field.Number()]
-					if column == nil {
-						log.Panicf("read excel file %q sheet %q row %d column %q failed: field number %d not found in excel header", file.Path, sheet, i, field.Name(), field.Number())
+				for _, column := range columns {
+					if column.Field == nil {
+						continue
 					}
 
-					if err := setFieldFromString(rowMsg, field, cells.Get(column.Index), extensions); err != nil {
-						log.Panicf("read excel file %q sheet %q row %d column %q failed, %s", file.Path, sheet, i, field.Name(), err)
+					if err := setFieldFromString(rowMsg, column.Field, cells.Get(column.Index), extensions); err != nil {
+						log.Panicf("read excel file %q sheet %q row %d column %q failed, %s", file.Path, sheet, i, column.Field.Name(), err)
 					}
 				}
 
@@ -1067,8 +1108,8 @@ func validateYAMLDuplicateKeys(value *yaml.Node) error {
 				keyID := key.Tag + "\x00" + key.Value
 				if previous := keys[keyID]; previous != nil {
 					return fmt.Errorf(
-						"duplicate YAML key %q at line %d, column %d; first defined at line %d, column %d",
-						key.Value, key.Line, key.Column, previous.Line, previous.Column,
+						"YAML mapping contains duplicate key %q; positions within the cell: first occurrence at line %d, column %d, duplicate occurrence at line %d, column %d",
+						key.Value, previous.Line, previous.Column, key.Line, key.Column,
 					)
 				}
 				keys[keyID] = key

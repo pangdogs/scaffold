@@ -320,27 +320,49 @@ Use separate proto directories for server and client targets. `--targets` can re
 
 [`tools/excelc/examples/ExampleCN.xlsx`](./tools/excelc/examples/ExampleCN.xlsx) and [`ExampleEN.xlsx`](./tools/excelc/examples/ExampleEN.xlsx) are complete samples.
 
-#### Workbook Structure
+#### Workbook Contents
 
-- An optional `@types` sheet defines reusable structs and enums within the workbook.
-- Ordinary sheets define tables. Columns whose first character is not a letter are ignored; `#`-prefixed columns are convenient for comments.
-- `@types` metadata supports `separator`, `scope`, and `pb_field_number`. Index options only apply to ordinary table fields.
+- One workbook represents one logical table.
+- The optional `@types` sheet declares reusable objects and enums for that workbook.
+- Ordinary sheets whose names start with a letter, including Chinese characters, are exported and merged in tab order; prefix note sheets excluded from data export with `#`.
 
-Names that become Protobuf identifiers, including `@types` type names, object field names, enum value names, and ordinary table field names, must match `[A-Za-z][A-Za-z0-9_]*`. Names are validated before conversion to UpperCamelCase. An ordinary-table column whose converted name does not start with a letter remains an ignored comment column.
+#### The `@types` Sheet
 
-The `Alias` column in `@types` is used for object field aliases and enum value aliases. Aliases may contain text such as Chinese characters, but cannot contain ASCII spaces, YAML indicator characters (`-?:,[]{}#&*!|>'"%@`), a backtick, a backslash, or Unicode control characters. This keeps aliases safe for use as unquoted YAML object keys and Protobuf option values.
+Row 1 contains column names. Starting at row 2, each row declares one object field or enum value. A type can span multiple rows. A blank `EnumValue` creates an object field, while a populated value creates an enum value; one type cannot mix both forms.
 
-#### Table Header Rows
+| Column                                 | Description                                                                                                      |
+|----------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| `ObjectType` / `Type`                  | Type name. Reuse it for all fields of one object or all values of one enum.                                      |
+| `FieldName`                            | Object field name or enum value name.                                                                            |
+| `FieldType`                            | Object field type; accepts built-ins, declared types, and `Type[]` arrays. Unused for enum values.               |
+| `EnumValue` / `Value`                  | Leave blank for an object field, or provide a nonnegative integer for an enum value. A proto3 enum starts at `0`. |
+| `Alias`                                | Optional object-field or enum-value alias accepted in data cells; Chinese text is allowed.                       |
+| `Default`                              | Reserved; it currently does not affect schema generation or data export.                                         |
+| `Meta`                                 | Supports `separator`, `scope`, and `pb_field_number`; index options only apply to data-page fields.              |
+| `Comment`                              | Written to the generated Protobuf declaration.                                                                   |
 
-| Row      | Contents                                                                   |
-|----------|----------------------------------------------------------------------------|
-| 1        | Field name.                                                                |
-| 2        | Field type.                                                                |
-| 3        | Field `Meta`; localized headers such as “元数据” or “特性” are also recognized. |
-| 4        | Comment.                                                                   |
-| 5 onward | Table data.                                                                |
+Names emitted as Protobuf identifiers, including type names, object fields, enum values, and data-page fields, must match `[A-Za-z][A-Za-z0-9_]*`; validated names are then converted to UpperCamelCase. Aliases may contain Chinese text but cannot contain ASCII spaces, YAML indicator characters (`-?:,[]{}#&*!|>'"%@`), a backtick, a backslash, or Unicode control characters.
 
-Declaration cells are trimmed, with CRLF and CR normalized to LF. Field names, types, enum values, aliases, defaults, and `Meta` keep their embedded characters for subsequent parsing and validation; control characters in comments/descriptions are converted to visible escapes such as `\n` and `\t`.
+#### Data Pages
+
+The first data page defines fields, types, `Meta`, comments, and indexes. Later pages use only field names in row 1 to bind data. Rows 2 through 4 are ignored on later pages but must remain as placeholders so that data starts at row 5:
+
+| Row      | Contents      |
+|----------|---------------|
+| 1        | Field name.   |
+| 2        | Field type.   |
+| 3        | Field `Meta`. |
+| 4        | Comment.      |
+| 5 onward | Table data.   |
+
+Declaration cells are trimmed, with CRLF and CR normalized to LF. Control characters in comments are converted to visible escapes such as `\n` and `\t`.
+
+- The first blank field-name cell in row 1 ends the active column range. That column and every column to its right are ignored even when other rows contain values.
+- Before that boundary, a column whose converted field name does not start with a letter is also ignored. A `#`-prefixed column is useful for row comments and does not terminate active columns to its right.
+- Starting at row 5, a row is skipped without consuming a row offset when every recognized field column is blank. A blank row never terminates the page; later nonblank rows are still exported. Content only in comment columns or beyond the active-column boundary does not make a row nonblank.
+- A row is exported when any recognized field column is nonblank, and omitted fields retain their Protobuf defaults. `--targets` filtering does not change the blank-row test, keeping row offsets aligned between targets.
+- Later pages bind columns by field name. Columns may be reordered or omitted; an omitted field is treated as an empty cell and retains its Protobuf default. A later page cannot introduce a field absent from the first page or repeat a field name.
+- Merged pages share continuous row offsets and indexes. Unique indexes detect duplicates across pages, and non-unique index results preserve page and source-row order.
 
 #### Cell Syntax
 
@@ -363,12 +385,12 @@ name:Example   # Invalid; excelc asks for a space after the colon
 
 This check applies to objects, repeated objects, and object values inside maps. It does not inspect ordinary strings or map keys. Object fields absent from the current schema remain ignored, allowing the same data to work with schemas trimmed by `targets`/`scope`.
 
-A YAML mapping cannot contain duplicate keys. This is checked recursively in objects, repeated objects, and maps. A duplicate reports both definition locations instead of silently selecting one value.
+A YAML mapping cannot contain duplicate keys. This is checked recursively in objects, repeated objects, and maps. For example, `{1: Alpha, 1: Beta}` reports the first and duplicate occurrences of key `1` instead of silently selecting one value. The reported line and column are positions within the YAML text in the current Excel cell, not worksheet coordinates; the surrounding error identifies the worksheet, data row, and field name.
 
 #### Value Parsing Rules
 
 - Field parsing trims leading and trailing cell whitespace first; a value that becomes empty is ignored. Quote values when leading or trailing whitespace must be preserved, for example `"  Hello  "`.
-- In data cells, CRLF and CR are normalized to real LF characters. Embedded newlines are written unchanged to Protobuf and display directly as newlines in Go and Godot; newlines at either end are still trimmed as surrounding whitespace. In a top-level `string` field, an Excel line break is a real LF, `first\nsecond` keeps the backslash and `n` as two characters, `"first\nsecond"` decodes the YAML double-quoted escape to a real LF, and `'first\nsecond'` keeps the literal `\n`.
+- A line break entered directly in an Excel data cell is stored in Protobuf as a line break and displays as such in Go and Godot; platform-specific line endings are normalized to LF, while line breaks at the beginning or end of a cell are trimmed as surrounding whitespace. A data-page column of type `string` does not treat an unquoted `\n` as a line break: `first\nsecond` is preserved literally, `\n` in `"first\nsecond"` is converted to a line break by YAML double-quote escaping, and `\n` in `'first\nsecond'` remains literal.
 - Each repeated field selects its parsing mode independently. A YAML sequence root uses standard YAML sequence parsing, including `[1, 2, 3]` and block-style `- item`; any other root uses that field's own `separator`, which defaults to `,`.
 - A separator is recognized only outside quotes and outside nested `{}` or `[]`. Each repeated-object fragment is parsed as an independent YAML mapping, and its outer `{}` may be omitted.
 - The default separator `,` also separates object fields, so it is ambiguous for multi-field repeated objects whose outer `{}` are omitted. For example, `A: 1, B: Hello, A: 2, B: World` is ambiguous; use another object-list separator such as `|`, keep the outer `{}`, or use a standard YAML sequence.
