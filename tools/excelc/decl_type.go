@@ -182,7 +182,9 @@ func parseMeta(str string) (*Meta, error) {
 		return nil, err
 	}
 
-	meta.Separator = strings.TrimSpace(meta.Separator)
+	if err := validateSeparator(meta.Separator); err != nil {
+		return nil, fmt.Errorf("invalid separator: %w", err)
+	}
 
 	meta.Scope = pie.Of(meta.Scope).Map(func(s string) string {
 		return strings.TrimSpace(s)
@@ -524,18 +526,18 @@ func (d *Decl) ProtoType() string {
 	return string(d.Type)
 }
 
-type Row []string
+type Cells []string
 
-func (row Row) Get(idx int) string {
-	if idx < 0 || idx >= len(row) {
+func (cells Cells) Get(idx int) string {
+	if idx < 0 || idx >= len(cells) {
 		return ""
 	}
-	return strings.NewReplacer("\r", "", "\n", "\\n").Replace(strings.TrimSpace(row[idx]))
+	return strings.NewReplacer("\r\n", "\n", "\r", "\n").Replace(strings.TrimSpace(cells[idx]))
 }
 
-func (row Row) Empty() bool {
-	for i := range row {
-		if row.Get(i) != "" {
+func (cells Cells) Empty() bool {
+	for i := range cells {
+		if cells.Get(i) != "" {
 			return false
 		}
 	}
@@ -576,11 +578,9 @@ func predeclareTypeDecls(file *excelize.File) *generic.SliceMap[Type, *Decl] {
 				log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, SheetTypes, i, err)
 			}
 
-			for j, cell := range row {
-				row[j] = strings.NewReplacer("\r", "", "\n", "\\n").Replace(strings.TrimSpace(cell))
-			}
-
-			for j, cell := range row {
+			cells := Cells(row)
+			for j := range cells {
+				cell := cells.Get(j)
 				switch cell {
 				case "对象类型", "类型", "ObjectType", "Type":
 					columns.Type = j
@@ -591,13 +591,13 @@ func predeclareTypeDecls(file *excelize.File) *generic.SliceMap[Type, *Decl] {
 			continue
 		}
 
-		_row, err := rows.Columns()
+		row, err := rows.Columns()
 		if err != nil {
 			log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, SheetTypes, i, err)
 		}
-		row := Row(_row)
+		cells := Cells(row)
 
-		typeName := row.Get(columns.Type)
+		typeName := cells.Get(columns.Type)
 		ty := Type(typeName)
 		if ty == "" {
 			continue
@@ -616,7 +616,7 @@ func predeclareTypeDecls(file *excelize.File) *generic.SliceMap[Type, *Decl] {
 			log.Panicf("read excel file %q sheet %q row %d failed: array types cannot be defined", file.Path, SheetTypes, i)
 		}
 
-		isEnum := row.Get(columns.EnumValue) != ""
+		isEnum := cells.Get(columns.EnumValue) != ""
 		isStruct := !isEnum
 
 		typeDecl, ok := decls.Get(ty)
@@ -697,11 +697,9 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 					log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, SheetTypes, i, err)
 				}
 
-				for j, cell := range row {
-					row[j] = strings.NewReplacer("\r", "", "\n", "\\n").Replace(strings.TrimSpace(cell))
-				}
-
-				for j, cell := range row {
+				cells := Cells(row)
+				for j := range cells {
+					cell := cells.Get(j)
 					switch cell {
 					case "类型", "对象类型", "ObjectType", "Type":
 						columns.Type = j
@@ -725,23 +723,23 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 			continue
 		}
 
-		_row, err := rows.Columns()
+		row, err := rows.Columns()
 		if err != nil {
 			log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, SheetTypes, i, err)
 		}
-		row := Row(_row)
+		cells := Cells(row)
 
 		fieldDesc := &FieldDesc{
-			Type:      row.Get(columns.Type),
-			IsStruct:  row.Get(columns.EnumValue) == "",
-			IsEnum:    row.Get(columns.EnumValue) != "",
-			FieldName: row.Get(columns.FieldName),
-			FieldType: row.Get(columns.FieldType),
-			EnumValue: row.Get(columns.EnumValue),
-			Alias:     row.Get(columns.Alias),
-			Default:   row.Get(columns.Default),
-			Meta:      row.Get(columns.Meta),
-			Comment:   row.Get(columns.Comment),
+			Type:      cells.Get(columns.Type),
+			IsStruct:  cells.Get(columns.EnumValue) == "",
+			IsEnum:    cells.Get(columns.EnumValue) != "",
+			FieldName: cells.Get(columns.FieldName),
+			FieldType: cells.Get(columns.FieldType),
+			EnumValue: cells.Get(columns.EnumValue),
+			Alias:     cells.Get(columns.Alias),
+			Default:   cells.Get(columns.Default),
+			Meta:      cells.Get(columns.Meta),
+			Comment:   escapeToGraphic(cells.Get(columns.Comment)),
 		}
 
 		if fieldDesc.Type == "" {

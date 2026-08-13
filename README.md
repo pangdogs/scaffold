@@ -340,17 +340,19 @@ The `Alias` column in `@types` is used for object field aliases and enum value a
 | 4        | Comment.                                                                   |
 | 5 onward | Table data.                                                                |
 
+Declaration cells are trimmed, with CRLF and CR normalized to LF. Field names, types, enum values, aliases, defaults, and `Meta` keep their embedded characters for subsequent parsing and validation; control characters in comments/descriptions are converted to visible escapes such as `\n` and `\t`.
+
 #### Cell Syntax
 
 | Type            | Example and behavior                                                                                   |
 |-----------------|--------------------------------------------------------------------------------------------------------|
-| Scalar          | `1`, `3.14`, `true`, or `HelloWorld`.                                                                  |
-| `bytes`         | Base64 text such as `SGVsbG9Xb3JsZA==`.                                                                |
-| Enum            | Numeric value, enum name, or configured alias.                                                         |
-| Repeated scalar | Comma-separated by default, such as `1,2,3`; use `separator=\|` for `1\|2\|3`.                         |
-| Object          | YAML-style mapping such as `id: 1, name: Example, tags: [1, 2]`; field names and aliases are accepted. |
-| Repeated object | YAML array such as `[{id: 1}, {id: 2}]`, or multiple mappings with a custom separator.                 |
-| Map             | YAML-style mapping such as `1: Alpha, 2: Beta` or `1: {id: 1, name: Alpha}`.                           |
+| Scalar          | `1`, `3.14`, `true`, or `HelloWorld`.                                                                          |
+| `bytes`         | Base64 text such as `SGVsbG9Xb3JsZA==`.                                                                        |
+| Enum            | Numeric value, enum name, or configured alias.                                                                 |
+| Repeated scalar | Comma-separated by default, such as `1,2,3`; YAML sequences such as `[1, 2, 3]` are also supported.           |
+| Object          | YAML-style mapping such as `id: 1, name: Example, tags: [1, 2]`; field names and aliases are accepted.       |
+| Repeated object | Use a YAML sequence such as `[{ID: 1}, {ID: 2}]`, or split mapping fragments with the field `separator`, such as `A: 1, B: Hello \| A: 2, B: World`. |
+| Map             | YAML-style mappings only, such as `{1: Alpha, 2: Beta}` or `{1: {id: 1, name: Alpha}}`; `separator` is not used for maps. |
 
 In an object mapping, write each field and value as `field: value`, with a space after the colon:
 
@@ -361,6 +363,19 @@ name:Example   # Invalid; excelc asks for a space after the colon
 
 This check applies to objects, repeated objects, and object values inside maps. It does not inspect ordinary strings or map keys. Object fields absent from the current schema remain ignored, allowing the same data to work with schemas trimmed by `targets`/`scope`.
 
+A YAML mapping cannot contain duplicate keys. This is checked recursively in objects, repeated objects, and maps. A duplicate reports both definition locations instead of silently selecting one value.
+
+#### Value Parsing Rules
+
+- Field parsing trims leading and trailing cell whitespace first; a value that becomes empty is ignored. Quote values when leading or trailing whitespace must be preserved, for example `"  Hello  "`.
+- In data cells, CRLF and CR are normalized to real LF characters. Embedded newlines are written unchanged to Protobuf and display directly as newlines in Go and Godot; newlines at either end are still trimmed as surrounding whitespace. In a top-level `string` field, an Excel line break is a real LF, `first\nsecond` keeps the backslash and `n` as two characters, `"first\nsecond"` decodes the YAML double-quoted escape to a real LF, and `'first\nsecond'` keeps the literal `\n`.
+- Each repeated field selects its parsing mode independently. A YAML sequence root uses standard YAML sequence parsing, including `[1, 2, 3]` and block-style `- item`; any other root uses that field's own `separator`, which defaults to `,`.
+- A separator is recognized only outside quotes and outside nested `{}` or `[]`. Each repeated-object fragment is parsed as an independent YAML mapping, and its outer `{}` may be omitted.
+- The default separator `,` also separates object fields, so it is ambiguous for multi-field repeated objects whose outer `{}` are omitted. For example, `A: 1, B: Hello, A: 2, B: World` is ambiguous; use another object-list separator such as `|`, keep the outer `{}`, or use a standard YAML sequence.
+- Quotes can protect a nested repeated field's separators from the outer split. After the containing object is parsed, the nested field still applies its own separator. If both the outer field and `D` use `|`, `A: 1, B: HelloWorld, D: "1|2|3" | A: 2, B: HAHAHAHAHA, D: "4|5|6"` produces two objects whose `D` fields each contain three items.
+- Elements of a standard YAML sequence are not split again. For a repeated string, `D: ["1|2|3"]` means one string item, while `D: "1|2|3"` enters separator mode and produces three items.
+- Single and double quotes are YAML syntax and are removed from assigned string values; escapes inside quotes follow YAML rules. If any list item fails to parse, the complete field fails without writing a partial result.
+
 #### Field Metadata
 
 Metadata uses query-string syntax, for example `scope=client&sorted_unique_index=1`:
@@ -368,7 +383,7 @@ Metadata uses query-string syntax, for example `scope=client&sorted_unique_index
 | Parameter             | Description                                                                                                          |
 |-----------------------|----------------------------------------------------------------------------------------------------------------------|
 | `scope`               | Repeatable target label used with `--targets`; fields without a scope are visible to every target.                   |
-| `separator`           | Custom repeated/map cell separator; defaults to `,`.                                                                 |
+| `separator`           | Custom separator for repeated-field cells; defaults to `,` and may contain multiple characters. It cannot be empty or contain whitespace (including at either end), control characters, or `: ' " \\ { } [ ]`. Map fields always use YAML mapping syntax. |
 | `pb_field_number`     | Overrides the Protobuf field number. It must be positive, outside the reserved range, and unique within its message. |
 | `unique_index`        | Logical unique-index group whose representation is selected by `--pb_unique_index_as`.                               |
 | `hash_unique_index`   | Forces a hash-based unique index.                                                                                    |

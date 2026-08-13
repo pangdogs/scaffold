@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -30,6 +31,7 @@ import (
 var (
 	pbIdentifierRegexp     = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
 	yamlAliasInvalidRegexp = regexp.MustCompile("[\\p{Cc} \\-?:,\\[\\]{}#&*!|>'\"%@`\\\\]")
+	separatorInvalidRegexp = regexp.MustCompile("[\\p{Cc}\\p{Z}:\\[\\]{}'\"\\\\]")
 )
 
 func validatePbIdentifier(name string) error {
@@ -47,6 +49,24 @@ func validateYAMLAlias(alias string) error {
 	}
 
 	return nil
+}
+
+func validateSeparator(separator string) error {
+	if separator == "" {
+		return fmt.Errorf("cannot be empty")
+	}
+
+	invalid := separatorInvalidRegexp.FindString(separator)
+	if invalid != "" {
+		return fmt.Errorf("contains reserved character %q", []rune(invalid)[0])
+	}
+
+	return nil
+}
+
+func escapeToGraphic(value string) string {
+	quoted := strconv.QuoteToGraphic(value)
+	return quoted[1 : len(quoted)-1]
 }
 
 func snake2Camel(s string) string {

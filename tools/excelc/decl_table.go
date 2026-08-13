@@ -68,8 +68,9 @@ func predeclareTableDecls(file *excelize.File) *generic.SliceMap[Type, *Decl] {
 			log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, sheet, i, err)
 		}
 
-		for _, cell := range row {
-			name := snake2Camel(strings.NewReplacer("\r", "", "\n", "\\n").Replace(strings.TrimSpace(cell)))
+		cells := Cells(row)
+		for j := range cells {
+			name := snake2Camel(cells.Get(j))
 			if name == "" {
 				break
 			}
@@ -129,17 +130,15 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 			log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, SheetTypes, i, err)
 		}
 
-		for j, cell := range row {
-			row[j] = strings.NewReplacer("\r", "", "\n", "\\n").Replace(strings.TrimSpace(cell))
-		}
-
+		cells := Cells(row)
 	loop:
-		for j, cell := range row {
+		for j := range cells {
+			cell := cells.Get(j)
 			switch i {
 			case SheetTableColumnName:
 				if tableDesc == nil {
-					for k, c := range row {
-						if c == "" {
+					for k := range row {
+						if cells.Get(k) == "" {
 							row = row[:k]
 							break
 						}
@@ -179,7 +178,7 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 					break loop
 				}
 
-				tableDesc[j].Comment = cell
+				tableDesc[j].Comment = escapeToGraphic(cell)
 			}
 		}
 	}

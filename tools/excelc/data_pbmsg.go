@@ -101,15 +101,12 @@ func genProtoMessage(file *excelize.File) proto.Message {
 							log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, sheet, i, err)
 						}
 
-						for j, cell := range row {
+						cells := Cells(row)
+						for j := range row {
 							columns = append(columns, &Column{
-								Name:  snake2Camel(cell),
+								Name:  snake2Camel(cells.Get(j)),
 								Index: j,
 							})
-						}
-
-						for _, col := range columns {
-							col.Name = strings.NewReplacer("\r", "", "\n", "\\n").Replace(strings.TrimSpace(col.Name))
 						}
 
 						for i, col := range columns {
@@ -133,15 +130,12 @@ func genProtoMessage(file *excelize.File) proto.Message {
 							log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, sheet, i, err)
 						}
 
-						for j, cell := range row {
-							row[j] = strings.NewReplacer("\r", "", "\n", "\\n").Replace(strings.TrimSpace(cell))
-						}
-
+						cells := Cells(row)
 						for _, column := range columns {
 							if column.Index < 0 || column.Index >= len(row) {
 								continue
 							}
-							column.Meta = row[column.Index]
+							column.Meta = cells.Get(column.Index)
 						}
 					}
 					continue
@@ -227,15 +221,15 @@ func genProtoMessage(file *excelize.File) proto.Message {
 					}
 				}
 
-				_row, err := rows.Columns()
+				row, err := rows.Columns()
 				if err != nil {
 					log.Panicf("read excel file %q sheet %q row %d failed, %s", file.Path, sheet, i, err)
 				}
-				row := Row(_row)
+				cells := Cells(row)
 
 				if func() bool {
 					for _, column := range columns {
-						if row.Get(column.Index) != "" {
+						if cells.Get(column.Index) != "" {
 							return false
 						}
 					}
@@ -253,7 +247,7 @@ func genProtoMessage(file *excelize.File) proto.Message {
 						log.Panicf("read excel file %q sheet %q row %d column %q failed: field number %d not found in excel header", file.Path, sheet, i, field.Name(), field.Number())
 					}
 
-					if err := setFieldFromString(rowMsg, field, row.Get(column.Index), extensions); err != nil {
+					if err := setFieldFromString(rowMsg, field, cells.Get(column.Index), extensions); err != nil {
 						log.Panicf("read excel file %q sheet %q row %d column %q failed, %s", file.Path, sheet, i, field.Name(), err)
 					}
 				}
@@ -540,303 +534,169 @@ func setFieldFromString(msg protoreflect.Message, field protoreflect.FieldDescri
 		return nil
 	}
 
+	value = strings.TrimSpace(value)
 	if value == "" {
 		return nil
 	}
 
-	switch field.Kind() {
-	case protoreflect.BoolKind:
+	if field.Kind() != protoreflect.MessageKind {
 		if field.IsList() {
 			sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-			l := msg.Mutable(field).List()
-
-			for _, c := range strings.Split(value, sep) {
-				b, err := strconv.ParseBool(c)
-				if err != nil {
-					return err
-				}
-				l.Append(protoreflect.ValueOfBool(b))
-			}
-
-		} else {
-			b, err := strconv.ParseBool(value)
+			values, err := parseYAMLScalarListValue(value, sep)
 			if err != nil {
 				return err
 			}
-			msg.Set(field, protoreflect.ValueOfBool(b))
+			return appendScalarListValues(msg, field, values, extensions)
 		}
 
-	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-		if field.IsList() {
-			sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-			l := msg.Mutable(field).List()
-
-			for _, c := range strings.Split(value, sep) {
-				n, err := strconv.ParseInt(c, 10, 32)
-				if err != nil {
-					return err
-				}
-				l.Append(protoreflect.ValueOfInt32(int32(n)))
-			}
-
-		} else {
-			n, err := strconv.ParseInt(value, 10, 32)
-			if err != nil {
-				return err
-			}
-			msg.Set(field, protoreflect.ValueOfInt32(int32(n)))
+		value, err := decodeYAMLQuotedScalar(value)
+		if err != nil {
+			return err
 		}
-
-	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-		if field.IsList() {
-			sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-			l := msg.Mutable(field).List()
-
-			for _, c := range strings.Split(value, sep) {
-				n, err := strconv.ParseInt(c, 10, 64)
-				if err != nil {
-					return err
-				}
-				l.Append(protoreflect.ValueOfInt64(n))
-			}
-
-		} else {
-			n, err := strconv.ParseInt(value, 10, 64)
-			if err != nil {
-				return err
-			}
-			msg.Set(field, protoreflect.ValueOfInt64(n))
+		fieldValue, err := parseScalarFieldValue(field, value, extensions)
+		if err != nil {
+			return err
 		}
-
-	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-		if field.IsList() {
-			sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-			l := msg.Mutable(field).List()
-
-			for _, c := range strings.Split(value, sep) {
-				n, err := strconv.ParseUint(c, 10, 32)
-				if err != nil {
-					return err
-				}
-				l.Append(protoreflect.ValueOfUint32(uint32(n)))
-			}
-
-		} else {
-			n, err := strconv.ParseUint(value, 10, 32)
-			if err != nil {
-				return err
-			}
-			msg.Set(field, protoreflect.ValueOfUint32(uint32(n)))
-		}
-
-	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-		if field.IsList() {
-			sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-			l := msg.Mutable(field).List()
-
-			for _, c := range strings.Split(value, sep) {
-				n, err := strconv.ParseUint(c, 10, 64)
-				if err != nil {
-					return err
-				}
-				l.Append(protoreflect.ValueOfUint64(n))
-			}
-
-		} else {
-			n, err := strconv.ParseUint(value, 10, 64)
-			if err != nil {
-				return err
-			}
-			msg.Set(field, protoreflect.ValueOfUint64(n))
-		}
-
-	case protoreflect.FloatKind:
-		if field.IsList() {
-			sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-			l := msg.Mutable(field).List()
-
-			for _, c := range strings.Split(value, sep) {
-				n, err := strconv.ParseFloat(c, 32)
-				if err != nil {
-					return err
-				}
-				l.Append(protoreflect.ValueOfFloat32(float32(n)))
-			}
-
-		} else {
-			n, err := strconv.ParseFloat(value, 32)
-			if err != nil {
-				return err
-			}
-			msg.Set(field, protoreflect.ValueOfFloat32(float32(n)))
-		}
-
-	case protoreflect.DoubleKind:
-		if field.IsList() {
-			sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-			l := msg.Mutable(field).List()
-
-			for _, c := range strings.Split(value, sep) {
-				n, err := strconv.ParseFloat(c, 64)
-				if err != nil {
-					return err
-				}
-				l.Append(protoreflect.ValueOfFloat64(n))
-			}
-
-		} else {
-			n, err := strconv.ParseFloat(value, 64)
-			if err != nil {
-				return err
-			}
-			msg.Set(field, protoreflect.ValueOfFloat64(n))
-		}
-
-	case protoreflect.StringKind:
-		if field.IsList() {
-			sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-			l := msg.Mutable(field).List()
-
-			for _, c := range strings.Split(value, sep) {
-				l.Append(protoreflect.ValueOfString(c))
-			}
-
-		} else {
-			msg.Set(field, protoreflect.ValueOfString(value))
-		}
-
-	case protoreflect.BytesKind:
-		if field.IsList() {
-			sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-			l := msg.Mutable(field).List()
-
-			for _, c := range strings.Split(value, sep) {
-				bs, err := base64.URLEncoding.DecodeString(c)
-				if err != nil {
-					return err
-				}
-				l.Append(protoreflect.ValueOfBytes(bs))
-			}
-
-		} else {
-			bs, err := base64.URLEncoding.DecodeString(value)
-			if err != nil {
-				return err
-			}
-			msg.Set(field, protoreflect.ValueOfBytes(bs))
-		}
-
-	case protoreflect.EnumKind:
-		enumDesc := field.Enum()
-
-		if field.IsList() {
-			sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-			l := msg.Mutable(field).List()
-
-			for _, c := range strings.Split(value, sep) {
-				enumValue, err := parseEnumValue(enumDesc, c, extensions)
-				if err != nil {
-					return err
-				}
-				l.Append(enumValue)
-			}
-
-		} else {
-			enumValue, err := parseEnumValue(enumDesc, value, extensions)
-			if err != nil {
-				return err
-			}
-			msg.Set(field, enumValue)
-		}
-
-	case protoreflect.MessageKind:
-		fieldValue, err := parseStructValue(value)
-
-		switch {
-		case field.IsList():
-			if err != nil {
-				sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-
-				for _, v := range strings.Split(value, sep) {
-					childValue, err := parseStructValue(v)
-					if err != nil {
-						return err
-					}
-
-					if childValue.Kind != yaml.DocumentNode || len(childValue.Content) <= 0 {
-						continue
-					}
-					childValue = childValue.Content[0]
-
-					if childValue.Kind != yaml.MappingNode {
-						return fmt.Errorf("YAML config %q is not a MappingNode and cannot be assigned to an object type", childValue.Value)
-					}
-
-					err = setFieldStructValue(msg, field, childValue, extensions)
-					if err != nil {
-						return err
-					}
-				}
-
-			} else {
-				if fieldValue.Kind != yaml.DocumentNode || len(fieldValue.Content) <= 0 {
-					return nil
-				}
-				fieldValue = fieldValue.Content[0]
-
-				switch fieldValue.Kind {
-				case yaml.SequenceNode:
-					for _, c := range fieldValue.Content {
-						if c.Kind != yaml.MappingNode {
-							return fmt.Errorf("YAML config %q is not a MappingNode and cannot be assigned to an object type", c.Value)
-						}
-						err := setFieldStructValue(msg, field, c, extensions)
-						if err != nil {
-							return err
-						}
-					}
-				case yaml.MappingNode:
-					err := setFieldStructValue(msg, field, fieldValue, extensions)
-					if err != nil {
-						return err
-					}
-				}
-			}
-
-		case field.IsMap():
-			if err != nil {
-				return err
-			}
-
-			if fieldValue.Kind != yaml.DocumentNode || len(fieldValue.Content) <= 0 {
-				return nil
-			}
-			fieldValue = fieldValue.Content[0]
-
-			if fieldValue.Kind != yaml.MappingNode {
-				return fmt.Errorf("YAML config %q is not a MappingNode and cannot be assigned to an object type", value)
-			}
-
-			return setMappingValue(msg, field, fieldValue, extensions)
-
-		default:
-			if err != nil {
-				return err
-			}
-
-			if fieldValue.Kind != yaml.DocumentNode || len(fieldValue.Content) <= 0 {
-				return nil
-			}
-			fieldValue = fieldValue.Content[0]
-
-			if fieldValue.Kind != yaml.MappingNode {
-				return fmt.Errorf("YAML config %q is not a MappingNode and cannot be assigned to an object type", value)
-			}
-
-			return setFieldStructValue(msg, field, fieldValue, extensions)
-		}
+		msg.Set(field, fieldValue)
+		return nil
 	}
 
+	switch {
+	case field.IsMap():
+		fieldValue, err := parseStructValue(value)
+		if err != nil {
+			return err
+		}
+		if fieldValue.Kind != yaml.DocumentNode || len(fieldValue.Content) == 0 {
+			return nil
+		}
+
+		fieldValue = fieldValue.Content[0]
+		if fieldValue.Kind != yaml.MappingNode {
+			return fmt.Errorf("YAML config %q is not a MappingNode and cannot be assigned to a map type", value)
+		}
+		return setFieldMappingValue(msg, field, fieldValue, extensions)
+
+	case field.IsList():
+		fieldValue, err := parseYAMLValue(value)
+		if err == nil && fieldValue.Kind == yaml.SequenceNode {
+			return appendMessageListValues(msg, field, fieldValue.Content, extensions)
+		}
+
+		sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
+		values, err := splitYAMLListValue(value, sep)
+		if err != nil {
+			return err
+		}
+
+		fieldValues := make([]*yaml.Node, 0, len(values))
+		for _, item := range values {
+			childValue, err := parseStructValue(item)
+			if err != nil {
+				return err
+			}
+			if childValue.Kind != yaml.DocumentNode || len(childValue.Content) == 0 {
+				continue
+			}
+
+			childValue = childValue.Content[0]
+			if childValue.Kind != yaml.MappingNode {
+				return fmt.Errorf("YAML config %q is not a MappingNode and cannot be assigned to an object type", childValue.Value)
+			}
+			fieldValues = append(fieldValues, childValue)
+		}
+		return appendMessageListValues(msg, field, fieldValues, extensions)
+
+	default:
+		fieldValue, err := parseStructValue(value)
+		if err != nil {
+			return err
+		}
+
+		if fieldValue.Kind != yaml.DocumentNode || len(fieldValue.Content) <= 0 {
+			return nil
+		}
+		fieldValue = fieldValue.Content[0]
+
+		if fieldValue.Kind != yaml.MappingNode {
+			return fmt.Errorf("YAML config %q is not a MappingNode and cannot be assigned to an object type", value)
+		}
+
+		return setFieldStructValue(msg, field, fieldValue, extensions)
+	}
+}
+
+func parseScalarFieldValue(field protoreflect.FieldDescriptor, value string, extensions *Extensions) (protoreflect.Value, error) {
+	switch field.Kind() {
+	case protoreflect.BoolKind:
+		v, err := strconv.ParseBool(value)
+		return protoreflect.ValueOfBool(v), err
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+		v, err := strconv.ParseInt(value, 10, 32)
+		return protoreflect.ValueOfInt32(int32(v)), err
+	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+		v, err := strconv.ParseInt(value, 10, 64)
+		return protoreflect.ValueOfInt64(v), err
+	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+		v, err := strconv.ParseUint(value, 10, 32)
+		return protoreflect.ValueOfUint32(uint32(v)), err
+	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+		v, err := strconv.ParseUint(value, 10, 64)
+		return protoreflect.ValueOfUint64(v), err
+	case protoreflect.FloatKind:
+		v, err := strconv.ParseFloat(value, 32)
+		return protoreflect.ValueOfFloat32(float32(v)), err
+	case protoreflect.DoubleKind:
+		v, err := strconv.ParseFloat(value, 64)
+		return protoreflect.ValueOfFloat64(v), err
+	case protoreflect.StringKind:
+		return protoreflect.ValueOfString(value), nil
+	case protoreflect.BytesKind:
+		v, err := base64.URLEncoding.DecodeString(value)
+		return protoreflect.ValueOfBytes(v), err
+	case protoreflect.EnumKind:
+		return parseEnumValue(field.Enum(), value, extensions)
+	default:
+		return protoreflect.Value{}, fmt.Errorf("unsupported scalar field kind %v", field.Kind())
+	}
+}
+
+func appendScalarListValues(msg protoreflect.Message, field protoreflect.FieldDescriptor, values []string, extensions *Extensions) error {
+	fieldValues := make([]protoreflect.Value, 0, len(values))
+	for _, value := range values {
+		fieldValue, err := parseScalarFieldValue(field, value, extensions)
+		if err != nil {
+			return err
+		}
+		fieldValues = append(fieldValues, fieldValue)
+	}
+
+	list := msg.Mutable(field).List()
+	for _, fieldValue := range fieldValues {
+		list.Append(fieldValue)
+	}
+	return nil
+}
+
+func appendMessageListValues(msg protoreflect.Message, field protoreflect.FieldDescriptor, values []*yaml.Node, extensions *Extensions) error {
+	fieldType, err := protoregistry.GlobalTypes.FindMessageByName(field.Message().FullName())
+	if err != nil {
+		return err
+	}
+
+	fieldValues := make([]protoreflect.Message, 0, len(values))
+	for _, value := range values {
+		fieldValue, err := makeStructValue(fieldType, value, extensions)
+		if err != nil {
+			return err
+		}
+		fieldValues = append(fieldValues, fieldValue)
+	}
+
+	list := msg.Mutable(field).List()
+	for _, fieldValue := range fieldValues {
+		list.Append(protoreflect.ValueOf(fieldValue))
+	}
 	return nil
 }
 
@@ -845,28 +705,33 @@ func setFieldStructValue(msg protoreflect.Message, field protoreflect.FieldDescr
 		return nil
 	}
 
+	if field.IsMap() {
+		if fieldValue.Kind != yaml.MappingNode {
+			return errors.New("field value is not a mapping node")
+		}
+		return setFieldMappingValue(msg, field, fieldValue, extensions)
+	}
+
 	if field.Kind() != protoreflect.MessageKind {
 		if field.IsList() {
 			switch fieldValue.Kind {
 			case yaml.SequenceNode:
-				sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
-				sb := strings.Builder{}
-
+				values := make([]string, 0, len(fieldValue.Content))
 				for _, c := range fieldValue.Content {
 					if c.Kind != yaml.ScalarNode {
 						return errors.New("field value is not a scalar node")
 					}
-
-					if sb.Len() > 0 {
-						sb.WriteString(sep)
-					}
-					sb.WriteString(c.Value)
+					values = append(values, c.Value)
 				}
-
-				return setFieldFromString(msg, field, sb.String(), extensions)
+				return appendScalarListValues(msg, field, values, extensions)
 
 			case yaml.ScalarNode:
-				return setFieldFromString(msg, field, fieldValue.Value, extensions)
+				sep := proto.GetExtension(field.Options(), extensions.Separator).(string)
+				values, err := parseYAMLScalarListValue(fieldValue.Value, sep)
+				if err != nil {
+					return err
+				}
+				return appendScalarListValues(msg, field, values, extensions)
 
 			default:
 				return errors.New("field value is not a sequence or scalar node")
@@ -876,40 +741,35 @@ func setFieldStructValue(msg protoreflect.Message, field protoreflect.FieldDescr
 			if fieldValue.Kind != yaml.ScalarNode {
 				return errors.New("field value is not a scalar node")
 			}
-			return setFieldFromString(msg, field, fieldValue.Value, extensions)
-		}
-	}
-
-	fieldType, err := protoregistry.GlobalTypes.FindMessageByName(field.Message().FullName())
-	if err != nil {
-		return err
-	}
-
-	if field.IsList() {
-		l := msg.Mutable(field).List()
-
-		switch fieldValue.Kind {
-		case yaml.SequenceNode:
-			for _, c := range fieldValue.Content {
-				fieldMsg, err := makeStructValue(fieldType, c, extensions)
-				if err != nil {
-					return err
-				}
-				l.Append(protoreflect.ValueOf(fieldMsg))
-			}
-
-		case yaml.MappingNode:
-			fieldMsg, err := makeStructValue(fieldType, fieldValue, extensions)
+			value, err := parseScalarFieldValue(field, fieldValue.Value, extensions)
 			if err != nil {
 				return err
 			}
-			l.Append(protoreflect.ValueOf(fieldMsg))
+			msg.Set(field, value)
+			return nil
+		}
+	}
+
+	if field.IsList() {
+		switch fieldValue.Kind {
+		case yaml.SequenceNode:
+			return appendMessageListValues(msg, field, fieldValue.Content, extensions)
+
+		case yaml.MappingNode:
+			return appendMessageListValues(msg, field, []*yaml.Node{fieldValue}, extensions)
+
+		case yaml.ScalarNode:
+			return setFieldFromString(msg, field, fieldValue.Value, extensions)
 
 		default:
-			return errors.New("field value is not a sequence or scalar node")
+			return errors.New("field value is not a sequence, mapping, or scalar node")
 		}
 
 	} else {
+		fieldType, err := protoregistry.GlobalTypes.FindMessageByName(field.Message().FullName())
+		if err != nil {
+			return err
+		}
 		fieldMsg, err := makeStructValue(fieldType, fieldValue, extensions)
 		if err != nil {
 			return err
@@ -918,6 +778,220 @@ func setFieldStructValue(msg protoreflect.Message, field protoreflect.FieldDescr
 	}
 
 	return nil
+}
+
+func setFieldMappingValue(msg protoreflect.Message, field protoreflect.FieldDescriptor, value *yaml.Node, extensions *Extensions) error {
+	if !field.IsMap() {
+		return errors.New("field type not mapping")
+	}
+
+	if value.Kind != yaml.MappingNode {
+		return errors.New("field value is not a mapping node")
+	}
+
+	mapping := msg.Mutable(field).Map()
+	kType := field.MapKey()
+	vType := field.MapValue()
+
+	if len(value.Content)%2 != 0 {
+		return errors.New("field value is not a valid mapping node")
+	}
+	if kType == nil || kType.Kind() == protoreflect.MessageKind || kType.IsList() || kType.IsMap() {
+		return errors.New("field map key type is invalid")
+	}
+	if vType == nil {
+		return errors.New("field map value type is invalid")
+	}
+
+	for i := 0; i < len(value.Content); i += 2 {
+		k := value.Content[i]
+		v := value.Content[i+1]
+		if k.Kind != yaml.ScalarNode {
+			return errors.New("field map key is not a scalar node")
+		}
+		if vType.Kind() != protoreflect.MessageKind && v.Kind != yaml.ScalarNode {
+			return errors.New("field map value is not a scalar node")
+		}
+
+		var ik, iv any
+
+		switch kType.Kind() {
+		case protoreflect.BoolKind:
+			b, err := strconv.ParseBool(k.Value)
+			if err != nil {
+				return err
+			}
+			ik = b
+		case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+			n, err := strconv.ParseInt(k.Value, 10, 32)
+			if err != nil {
+				return err
+			}
+			ik = int32(n)
+		case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+			n, err := strconv.ParseInt(k.Value, 10, 64)
+			if err != nil {
+				return err
+			}
+			ik = n
+		case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+			n, err := strconv.ParseUint(k.Value, 10, 32)
+			if err != nil {
+				return err
+			}
+			ik = uint32(n)
+		case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+			n, err := strconv.ParseUint(k.Value, 10, 64)
+			if err != nil {
+				return err
+			}
+			ik = n
+		case protoreflect.StringKind:
+			ik = k.Value
+		default:
+			return fmt.Errorf("unsupported map key kind %v", kType.Kind())
+		}
+
+		switch vType.Kind() {
+		case protoreflect.BoolKind:
+			b, err := strconv.ParseBool(v.Value)
+			if err != nil {
+				return err
+			}
+			iv = b
+		case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+			n, err := strconv.ParseInt(v.Value, 10, 32)
+			if err != nil {
+				return err
+			}
+			iv = int32(n)
+		case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+			n, err := strconv.ParseInt(v.Value, 10, 64)
+			if err != nil {
+				return err
+			}
+			iv = n
+		case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+			n, err := strconv.ParseUint(v.Value, 10, 32)
+			if err != nil {
+				return err
+			}
+			iv = uint32(n)
+		case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+			n, err := strconv.ParseUint(v.Value, 10, 64)
+			if err != nil {
+				return err
+			}
+			iv = n
+		case protoreflect.FloatKind:
+			n, err := strconv.ParseFloat(v.Value, 32)
+			if err != nil {
+				return err
+			}
+			iv = float32(n)
+		case protoreflect.DoubleKind:
+			n, err := strconv.ParseFloat(v.Value, 64)
+			if err != nil {
+				return err
+			}
+			iv = n
+		case protoreflect.StringKind:
+			iv = v.Value
+		case protoreflect.BytesKind:
+			bs, err := base64.URLEncoding.DecodeString(v.Value)
+			if err != nil {
+				return err
+			}
+			iv = bs
+		case protoreflect.EnumKind:
+			enumValue, err := parseEnumValue(vType.Enum(), v.Value, extensions)
+			if err != nil {
+				return err
+			}
+			iv = enumValue.Enum()
+		case protoreflect.MessageKind:
+			if v.Kind != yaml.MappingNode {
+				return fmt.Errorf("YAML config %q is not a MappingNode and cannot be assigned to an object type", v.Value)
+			}
+
+			ty, err := protoregistry.GlobalTypes.FindMessageByName(vType.Message().FullName())
+			if err != nil {
+				return err
+			}
+
+			iv, err = makeStructValue(ty, v, extensions)
+			if err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unsupported map value kind %v", vType.Kind())
+		}
+
+		mapping.Set(protoreflect.ValueOf(ik).MapKey(), protoreflect.ValueOf(iv))
+	}
+
+	return nil
+}
+
+func parseEnumValue(enumDesc protoreflect.EnumDescriptor, value string, extensions *Extensions) (protoreflect.Value, error) {
+	enumValueDesc := enumDesc.Values().ByName(protoreflect.Name(value))
+	if enumValueDesc != nil {
+		return protoreflect.ValueOfEnum(enumValueDesc.Number()), nil
+	}
+
+	enumNum, err := strconv.Atoi(value)
+	if err == nil {
+		enumValueDesc := enumDesc.Values().ByNumber(protoreflect.EnumNumber(enumNum))
+		if enumValueDesc != nil {
+			return protoreflect.ValueOfEnum(enumValueDesc.Number()), nil
+		}
+	}
+
+	for i := range enumDesc.Values().Len() {
+		enumValueDesc := enumDesc.Values().Get(i)
+		enumValueAlias := proto.GetExtension(enumValueDesc.Options(), extensions.EnumValueAlias).(string)
+
+		if enumValueAlias == value {
+			return protoreflect.ValueOfEnum(enumValueDesc.Number()), nil
+		}
+	}
+
+	return protoreflect.Value{}, fmt.Errorf("unsupported enum value %q", value)
+}
+
+func parseStructValue(value string) (*yaml.Node, error) {
+	value = strings.TrimSpace(value)
+	if !strings.HasPrefix(value, "[") {
+		if !strings.HasPrefix(value, "{") {
+			value = "{\n" + value + "\n}"
+		}
+	}
+
+	return parseYAMLDocument(value)
+}
+
+func parseYAMLDocument(value string) (*yaml.Node, error) {
+	node := &yaml.Node{}
+	if err := yaml.Unmarshal([]byte(value), node); err != nil {
+		return nil, err
+	}
+	if err := validateYAMLDuplicateKeys(node); err != nil {
+		return nil, err
+	}
+
+	return node, nil
+}
+
+func parseYAMLValue(value string) (*yaml.Node, error) {
+	node, err := parseYAMLDocument(value)
+	if err != nil {
+		return nil, err
+	}
+	if node.Kind != yaml.DocumentNode || len(node.Content) == 0 {
+		return nil, errors.New("YAML value has no document content")
+	}
+
+	return node.Content[0], nil
 }
 
 func makeStructValue(ty protoreflect.MessageType, value *yaml.Node, extensions *Extensions) (protoreflect.Message, error) {
@@ -984,180 +1058,207 @@ func validateYAMLObjectKeys(value *yaml.Node) error {
 	return nil
 }
 
-func setMappingValue(msg protoreflect.Message, field protoreflect.FieldDescriptor, value *yaml.Node, extensions *Extensions) error {
-	if !field.IsMap() {
-		return errors.New("field type not mapping")
-	}
-
-	if value.Kind != yaml.MappingNode {
-		return errors.New("field value is not a mapping node")
-	}
-
-	mapping := msg.Mutable(field).Map()
-	kType := field.MapKey()
-	vType := field.MapValue()
-
-	for i := 0; i < len(value.Content); i += 2 {
-		k := value.Content[i]
-		v := value.Content[i+1]
-
-		var ik, iv any
-
-		switch kType.Kind() {
-		case protoreflect.BoolKind:
-			b, err := strconv.ParseBool(k.Value)
-			if err != nil {
-				return err
-			}
-			ik = b
-		case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-			n, err := strconv.ParseInt(k.Value, 10, 32)
-			if err != nil {
-				return err
-			}
-			ik = int32(n)
-		case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-			n, err := strconv.ParseInt(k.Value, 10, 64)
-			if err != nil {
-				return err
-			}
-			ik = n
-		case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-			n, err := strconv.ParseUint(k.Value, 10, 32)
-			if err != nil {
-				return err
-			}
-			ik = uint32(n)
-		case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-			n, err := strconv.ParseUint(k.Value, 10, 64)
-			if err != nil {
-				return err
-			}
-			ik = n
-		case protoreflect.StringKind:
-			ik = k.Value
-		}
-
-		switch vType.Kind() {
-		case protoreflect.BoolKind:
-			b, err := strconv.ParseBool(v.Value)
-			if err != nil {
-				return err
-			}
-			iv = b
-		case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-			n, err := strconv.ParseInt(v.Value, 10, 32)
-			if err != nil {
-				return err
-			}
-			iv = int32(n)
-		case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-			n, err := strconv.ParseInt(v.Value, 10, 64)
-			if err != nil {
-				return err
-			}
-			iv = n
-		case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-			n, err := strconv.ParseUint(v.Value, 10, 32)
-			if err != nil {
-				return err
-			}
-			iv = uint32(n)
-		case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-			n, err := strconv.ParseUint(v.Value, 10, 64)
-			if err != nil {
-				return err
-			}
-			iv = n
-		case protoreflect.FloatKind:
-			n, err := strconv.ParseFloat(v.Value, 32)
-			if err != nil {
-				return err
-			}
-			iv = float32(n)
-		case protoreflect.DoubleKind:
-			n, err := strconv.ParseFloat(v.Value, 64)
-			if err != nil {
-				return err
-			}
-			iv = n
-		case protoreflect.StringKind:
-			iv = v.Value
-		case protoreflect.BytesKind:
-			bs, err := base64.URLEncoding.DecodeString(v.Value)
-			if err != nil {
-				return err
-			}
-			iv = bs
-		case protoreflect.EnumKind:
-			enumValue, err := parseEnumValue(field.Enum(), v.Value, extensions)
-			if err != nil {
-				return err
-			}
-			iv = enumValue
-		case protoreflect.MessageKind:
-			if v.Kind != yaml.MappingNode {
-				return fmt.Errorf("YAML config %q is not a MappingNode and cannot be assigned to an object type", v.Value)
-			}
-
-			ty, err := protoregistry.GlobalTypes.FindMessageByName(vType.Message().FullName())
-			if err != nil {
-				return err
-			}
-
-			iv, err = makeStructValue(ty, v, extensions)
-			if err != nil {
-				return err
+func validateYAMLDuplicateKeys(value *yaml.Node) error {
+	if value.Kind == yaml.MappingNode {
+		keys := make(map[string]*yaml.Node, len(value.Content)/2)
+		for i := 0; i+1 < len(value.Content); i += 2 {
+			key := value.Content[i]
+			if key.Kind == yaml.ScalarNode {
+				keyID := key.Tag + "\x00" + key.Value
+				if previous := keys[keyID]; previous != nil {
+					return fmt.Errorf(
+						"duplicate YAML key %q at line %d, column %d; first defined at line %d, column %d",
+						key.Value, key.Line, key.Column, previous.Line, previous.Column,
+					)
+				}
+				keys[keyID] = key
 			}
 		}
-
-		mapping.Set(protoreflect.ValueOf(ik).MapKey(), protoreflect.ValueOf(iv))
 	}
 
+	for _, child := range value.Content {
+		if err := validateYAMLDuplicateKeys(child); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func parseEnumValue(enumDesc protoreflect.EnumDescriptor, value string, extensions *Extensions) (protoreflect.Value, error) {
-	enumValueDesc := enumDesc.Values().ByName(protoreflect.Name(value))
-	if enumValueDesc != nil {
-		return protoreflect.ValueOfEnum(enumValueDesc.Number()), nil
+func decodeYAMLQuotedScalar(value string) (string, error) {
+	if value == "" || (value[0] != '\'' && value[0] != '"') {
+		return value, nil
 	}
-
-	enumNum, err := strconv.Atoi(value)
-	if err == nil {
-		enumValueDesc := enumDesc.Values().ByNumber(protoreflect.EnumNumber(enumNum))
-		if enumValueDesc != nil {
-			return protoreflect.ValueOfEnum(enumValueDesc.Number()), nil
-		}
-	}
-
-	for i := range enumDesc.Values().Len() {
-		enumValueDesc := enumDesc.Values().Get(i)
-		enumValueAlias := proto.GetExtension(enumValueDesc.Options(), extensions.EnumValueAlias).(string)
-
-		if enumValueAlias == value {
-			return protoreflect.ValueOfEnum(enumValueDesc.Number()), nil
-		}
-	}
-
-	return protoreflect.Value{}, fmt.Errorf("unsupported enum value %q", value)
+	return decodeYAMLListScalar(value)
 }
 
-func parseStructValue(value string) (*yaml.Node, error) {
-	if !strings.HasPrefix(value, "[") {
-		if !strings.HasPrefix(value, "{") {
-			value = "{\n" + value + "\n}"
-		}
+func isYAMLListQuoteStart(value string, start, index int) bool {
+	prefix := strings.TrimSpace(value[start:index])
+	if prefix == "" {
+		return true
 	}
 
-	node := &yaml.Node{}
+	switch prefix[len(prefix)-1] {
+	case ':', '[', '{', ',', '-':
+		return true
+	default:
+		return false
+	}
+}
 
-	err := yaml.Unmarshal([]byte(value), node)
+func isYAMLListCollectionStart(value string, start, index int) bool {
+	prefix := strings.TrimSpace(value[start:index])
+	if prefix == "" {
+		return true
+	}
+
+	switch prefix[len(prefix)-1] {
+	case ':', '[', '{', ',':
+		return true
+	default:
+		return false
+	}
+}
+
+func splitYAMLListValue(value, separator string) ([]string, error) {
+	if separator == "" {
+		return nil, errors.New("list separator cannot be empty")
+	}
+
+	values := make([]string, 0, strings.Count(value, separator)+1)
+	start := 0
+	var quote byte
+	var sequenceDepth, mappingDepth int
+
+	for index := 0; index < len(value); {
+		character := value[index]
+
+		if quote != 0 {
+			switch quote {
+			case '\'':
+				if character == '\'' {
+					if index+1 < len(value) && value[index+1] == '\'' {
+						index += 2
+						continue
+					}
+					quote = 0
+				}
+			case '"':
+				if character == '\\' && index+1 < len(value) {
+					index += 2
+					continue
+				}
+				if character == '"' {
+					quote = 0
+				}
+			}
+
+			index++
+			continue
+		}
+
+		if (character == '\'' || character == '"') && isYAMLListQuoteStart(value, start, index) {
+			quote = character
+			index++
+			continue
+		}
+
+		if sequenceDepth == 0 && mappingDepth == 0 && strings.HasPrefix(value[index:], separator) {
+			values = append(values, strings.TrimSpace(value[start:index]))
+			index += len(separator)
+			start = index
+			continue
+		}
+
+		switch character {
+		case '[':
+			if isYAMLListCollectionStart(value, start, index) {
+				sequenceDepth++
+			}
+		case ']':
+			if sequenceDepth > 0 {
+				sequenceDepth--
+			}
+		case '{':
+			if isYAMLListCollectionStart(value, start, index) {
+				mappingDepth++
+			}
+		case '}':
+			if mappingDepth > 0 {
+				mappingDepth--
+			}
+		}
+
+		index++
+	}
+
+	if quote != 0 {
+		return nil, fmt.Errorf("unterminated YAML %c-quoted list value", quote)
+	}
+	if sequenceDepth > 0 || mappingDepth > 0 {
+		return nil, errors.New("unterminated YAML collection in list value")
+	}
+
+	return append(values, strings.TrimSpace(value[start:])), nil
+}
+
+func parseYAMLScalarListValue(value, separator string) ([]string, error) {
+	fieldValue, err := parseYAMLValue(value)
+	if err == nil && fieldValue.Kind == yaml.SequenceNode {
+		values := make([]string, 0, len(fieldValue.Content))
+		for _, item := range fieldValue.Content {
+			if item.Kind != yaml.ScalarNode {
+				return nil, errors.New("field value is not a scalar node")
+			}
+			values = append(values, item.Value)
+		}
+		return values, nil
+	}
+
+	items, err := splitYAMLListValue(value, separator)
 	if err != nil {
 		return nil, err
 	}
 
-	return node, nil
+	values := make([]string, 0, len(items))
+	for _, item := range items {
+		if item == "" {
+			values = append(values, "")
+			continue
+		}
+		fieldValue, err := parseYAMLValue(item)
+		if err != nil {
+			return nil, err
+		}
+		if fieldValue.Kind != yaml.ScalarNode {
+			return nil, errors.New("field value is not a scalar node")
+		}
+		values = append(values, fieldValue.Value)
+	}
+
+	return values, nil
+}
+
+func decodeYAMLListScalar(value string) (string, error) {
+	var decoded string
+	if err := yaml.Unmarshal([]byte(value), &decoded); err != nil {
+		return "", err
+	}
+	return decoded, nil
+}
+
+func encodeYAMLListScalar(value string) (string, error) {
+	node := &yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Tag:   "!!str",
+		Value: value,
+		Style: yaml.DoubleQuotedStyle,
+	}
+
+	encoded, err := yaml.Marshal(node)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(encoded)), nil
 }
 
 type Extensions struct {

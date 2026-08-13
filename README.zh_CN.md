@@ -340,17 +340,19 @@ client/excel/                    # 客户端表数据
 | 第 4 行  | 注释。                         |
 | 第 5 行起 | 实际数据。                       |
 
+声明区域的单元格会裁剪首尾空白，并将 CRLF、CR 统一为 LF。字段名、类型、枚举值、别名、默认值和 `Meta` 不会转义或删除中间字符，由后续解析与校验处理；注释/描述中的控制字符会转换为 `\n`、`\t` 等可见转义形式。
+
 #### 单元格写法
 
 | 类型          | 示例与说明                                                         |
 |-------------|---------------------------------------------------------------|
-| 标量          | `1`、`3.14`、`true`、`HelloWorld`。                               |
-| `bytes`     | Base64 文本，例如 `SGVsbG9Xb3JsZA==`。                              |
-| 枚举          | 可写数值、枚举名或别名。                                                  |
-| repeated 标量 | 默认用 `,` 分隔，例如 `1,2,3`；可通过 `separator=\|` 改成 `1\|2\|3`。        |
-| 对象          | YAML 风格映射，例如 `id: 1, name: Example, tags: [1, 2]`；字段名和别名都可使用。 |
-| repeated 对象 | YAML 数组 `[{id: 1}, {id: 2}]`，或配合自定义分隔符书写多个映射。                 |
-| map         | YAML 风格映射，例如 `1: Alpha, 2: Beta` 或 `1: {id: 1, name: Alpha}`。 |
+| 标量          | `1`、`3.14`、`true`、`HelloWorld`。                                      |
+| `bytes`       | Base64 文本，例如 `SGVsbG9Xb3JsZA==`。                                     |
+| 枚举          | 可写数值、枚举名或别名。                                                       |
+| repeated 标量 | 默认用 `,` 分隔，例如 `1,2,3`；也支持 YAML 数组，例如 `[1, 2, 3]`。               |
+| 对象          | YAML 风格映射，例如 `id: 1, name: Example, tags: [1, 2]`；字段名和别名都可使用。    |
+| repeated 对象 | 可使用 YAML 数组 `[{ID: 1}, {ID: 2}]`，也可用字段的 `separator` 分隔对象片段，例如 `A: 1, B: Hello \| A: 2, B: World`。 |
+| map           | 只能使用 YAML 风格映射，例如 `{1: Alpha, 2: Beta}` 或 `{1: {id: 1, name: Alpha}}`；`separator` 不参与 map 解析。 |
 
 对象映射中，字段名与值之间要写成 `字段名: 值`，冒号后必须有空格：
 
@@ -361,6 +363,19 @@ name:Example   # 错误，excelc 会提示在冒号后添加空格
 
 该检查适用于对象、repeated 对象以及 map 中作为 value 的对象；普通字符串和 map key 不受影响。无法在当前 schema 中找到的对象字段仍会被忽略，以便同一份数据用于经过 `targets`/`scope` 裁剪的不同 schema。
 
+同一个 YAML mapping 内不允许出现重复 key；检查会递归应用于对象、repeated 对象和 map。重复 key 会直接报错并标出两次定义的位置，不会静默使用其中一个值。
+
+#### 值解析规则
+
+- 字段解析开始时会裁剪单元格首尾空白；裁剪后为空的值会被忽略。需要保留首尾空白时，必须使用单引号或双引号，例如 `"  Hello  "`。
+- 实际数据单元格中的 CRLF 和 CR 会统一为真实 LF，中间的换行会原样写入 Protobuf，Go 和 Godot 读取后可直接显示为换行；单元格首尾的换行仍属于首尾空白，会被裁剪。第一层 `string` 字段中，Excel 内直接换行表示真实 LF，`第一行\n第二行` 保留为反斜杠和 `n` 两个字符，`"第一行\n第二行"` 按 YAML 双引号转义为真实 LF，`'第一行\n第二行'` 则保留字面量 `\n`。
+- 每个 repeated 字段独立选择解析方式。YAML 根节点是 sequence 时按标准 YAML 数组处理，支持 `[1, 2, 3]` 和块式 `- item`；否则使用该字段自己的 `separator`，默认是 `,`。
+- separator 只在引号之外且不处于 `{}`、`[]` 内部时切分。repeated 对象的每个片段会作为独立 YAML mapping 解析，片段外层的 `{}` 可以省略。
+- 默认分隔符 `,` 也用于分隔对象字段，因此不适合省略 `{}` 的多字段 repeated 对象。例如 `A: 1, B: Hello, A: 2, B: World` 存在歧义；此时应将对象列表的 separator 改为 `|` 等其他符号，或使用带 `{}` 的对象/标准 YAML sequence。
+- 引号可以保护嵌套 repeated 字段的分隔符，使其不参与外层切分；包含对象解析完成后，嵌套字段仍会使用自己的 separator。例如外层和 `D` 都使用 `|` 时，`A: 1, B: HelloWorld, D: "1|2|3" | A: 2, B: HAHAHAHAHA, D: "4|5|6"` 会得到两个对象，两个 `D` 分别包含三项。
+- 标准 YAML sequence 中的元素不会再次按 separator 切分。对于 repeated string，`D: ["1|2|3"]` 表示只包含一个字符串；`D: "1|2|3"` 则进入 separator 模式并得到三项。
+- 单引号和双引号都属于 YAML 语法，解析后不会写入字符串值；引号内的转义按 YAML 规则处理。任一列表元素解析失败时，整个字段解析失败，不会写入部分结果。
+
 #### 字段 Meta
 
 Meta 使用 query-string 格式，例如 `scope=client&sorted_unique_index=1`：
@@ -368,7 +383,7 @@ Meta 使用 query-string 格式，例如 `scope=client&sorted_unique_index=1`：
 | 参数                    | 说明                                                      |
 |-----------------------|---------------------------------------------------------|
 | `scope`               | 可重复的目标标签，与 `--targets` 配合裁剪字段；未设置时对所有目标可见。              |
-| `separator`           | repeated 或 map 单元格的自定义分隔符，默认 `,`。                       |
+| `separator`           | repeated 字段单元格的自定义分隔符，默认 `,`，支持多字符；不能为空，且首尾或内部均不能包含空白、控制字符、`: ' " \\ { } [ ]`。map 字段始终按 YAML mapping 解析。 |
 | `pb_field_number`     | 覆盖 Protobuf field number；必须为合法正数、不能位于保留区间，并且在同一消息内不能重复。 |
 | `unique_index`        | 唯一索引逻辑分组，物理结构由 `--pb_unique_index_as` 决定。               |
 | `hash_unique_index`   | 强制使用哈希唯一索引。                                             |
