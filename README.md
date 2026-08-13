@@ -279,14 +279,14 @@ Cross-file references use relative `preload(...)`, so the output should preserve
 
 ### Tool and Artifact Flow
 
-The Excel pipeline combines three stages and three generators:
+The Excel toolchain has schema, code, and data stages. `excelc proto` derives Protobuf schemas from workbooks, `protoc` and its plugins generate per-table language bindings, `excelc code` generates the aggregate entry points, and `excelc data` produces the runtime data:
 
 ```text
 .xlsx
   │
-  ├─ excelc proto ───────────────> .proto
+  ├─ excelc proto ───────────────> excelc.proto + <Workbook>.proto
   │                                  │
-  │                                  └─ protoc
+  │                                  └─ protoc + plugins
   │                                      ├─ *.pb.go / *.structure.go / *.excel.go
   │                                      ├─ *.pb.gd / *.excel.gd
   │                                      └─ *.protoset
@@ -298,20 +298,69 @@ The Excel pipeline combines three stages and three generators:
 
 The easily missed artifact is `*.protoset`: `excelc proto` only emits `.proto`. Afterwards, run `protoc --descriptor_set_out` separately for `excelc.proto` and every workbook proto, creating a matching `.protoset`. Both `excelc code` and `excelc data` reconstruct dynamic messages and custom options from those descriptor sets.
 
+For example, `Config.xlsx` produces `Config.proto`, which declares the row message `ConfigColumns` and the table message `ConfigTable` by default. Its per-table code files are `Config.pb.go`, `Config.structure.go`, and `Config.excel.go` (or `Config.pb.gd` and `Config.excel.gd` for Godot). Runtime data uses the table message name, producing `ConfigTable.json`, `ConfigTable.bin`, or `ConfigTable.bin.idx`.
+
+#### Artifact Responsibilities
+
+| Artifact | Producer | Responsibility |
+|----------|----------|----------------|
+| `excelc.proto` | `excelc proto` | Shared declarations for every table, including Excel custom options, index structures, and chunk manifests. It is emitted once per target schema set. |
+| `<Workbook>.proto` | `excelc proto` | Static schema for one workbook: `*Columns`, `*Table`, workbook-local messages and enums, and table index fields. It contains no data rows. |
+| `*.protoset` | `protoc --descriptor_set_out` | Descriptor sets used by `excelc code` and `excelc data` to recover messages, fields, scopes, and index options. They are build-time inputs only. |
+| `*.pb.go` | `protoc-gen-go` | Go Protobuf messages, enums, and wire-format types. Exported data is deserialized into the generated `*Table` and `*Columns` types. |
+| `*.structure.go` | `protoc-gen-go-structure` | Optional Go deep-copy and field-cloning helpers; it does not load or query tables. |
+| `*.excel.go` | `protoc-gen-go-excel` | Per-table Go lookup code, adding `Lookup`, `Get`, and `LookupBy...` methods for unique and non-unique indexes to `*Table`. |
+| `tables.go` | `excelc code --go_out` | Aggregate Go entry point. `Tables` has one field per table; `LoadJsonFiles` and `LoadBinaryFiles` load every table from one directory and return that container. |
+| `*.pb.gd` | `protoc-gen-gdscript` | Godot Protobuf messages, enums, serialization, and deserialization, corresponding to `*.pb.go`. |
+| `*.excel.gd` | `protoc-gen-gdscript-excel` | Per-table GDScript wrapper with row access, index queries, and synchronous/asynchronous chunked-table access. |
+| `tables.gd` | `excelc code --gdscript_out` | Aggregate Godot entry point. It preloads each `*.pb.gd` / `*.excel.gd`, re-exports messages and enums, owns one wrapper per table, and loads ordinary or chunked binaries through `load_data()`. It is commonly registered as an autoload. |
+| `*Table.json` | `excelc data --json_out` | Readable Protobuf JSON containing rows and indexes, primarily for Go `LoadJsonFiles`, inspection, and hot loading. |
+| `*Table.bin` | `excelc data --binary_out` | Complete binary Protobuf table message containing both rows and indexes; Go and Godot can load it. |
+| `*Table.bin.idx` | `excelc data --binary_out --binary_chunked` | Chunked entry file containing indexes and the chunk manifest, but no `Rows`. |
+| `*Table.bin.chk_N` | same command | Chunk data containing only its range of `Rows`; the Godot wrapper loads it on demand for queries or row access. |
+
+Neither `tables.go` nor `tables.gd` embeds table data. They centralize loading all tables and accessing each table. Using a generated `ConfigTable` as an example, the runtime flow is:
+
+```text
+Go:
+ConfigTable.json / ConfigTable.bin
+  └─ LoadJsonFiles / LoadBinaryFiles
+       └─ tables *Tables
+            └─ tables.ConfigTable.Lookup(...)
+
+Godot, ordinary binary:
+Excel.load_data()
+  └─ read ConfigTable.bin (rows and indexes)
+       └─ create Excel.ConfigTable
+            └─ Excel.ConfigTable.lookup(...)
+
+Godot, chunked binary:
+Excel.load_data()
+  └─ read only ConfigTable.bin.idx (indexes and chunk manifest)
+       └─ create Excel.ConfigTable (internally a ConfigChunkedTable)
+            └─ Excel.ConfigTable.lookup(...) / await Excel.ConfigTable.lookup_async(...)
+                 └─ resolve the row offset from the index
+                      └─ load and cache the corresponding ConfigTable.bin.chk_N on demand
+```
+
+Here `Excel` is the instance name when `tables.gd` is registered as an autoload; applications that do not use an autoload can create their own `Tables` instance. Both synchronous and asynchronous chunked lookups load chunks on demand: a synchronous call waits for the background load, while an asynchronous call yields on the main thread while waiting. Calling `rows()` or `rows_async()` requires all chunks to be loaded.
+
+The `.xlsx`, `.proto`, and `*.protoset` files are configuration or build inputs and normally are not shipped with the application. A Go application compiles the generated `*.go` files and deploys JSON or binary data according to its loader. A Godot application needs the generated `*.gd` files, both Godot runtime script sets, and binary table data.
+
 ### Recommended Layout
 
 This generic layout keeps server and client artifacts separate:
 
 ```text
-config/excel/                    # .xlsx sources
-build/excel/server/proto/        # server .proto + .protoset
-build/excel/client/proto/        # client .proto + .protoset
-server/gen/excel/                # Go protobuf, lookup, and aggregate loader code
-server/res/excel/                # server JSON / binary data
-client/addons/proto/             # GDScript Protobuf runtime
-client/addons/excel/             # GDScript Excel runtime
+config/excel/                    # workbook sources: *.xlsx
+build/excel/server/proto/        # server build intermediates: *.proto + *.protoset
+build/excel/client/proto/        # client build intermediates: *.proto + *.protoset
+server/gen/excel/                # *.pb.go, *.structure.go, *.excel.go, tables.go
+server/res/excel/                # runtime *Table.json or *Table.bin
+client/addons/proto/             # tools/protoc-gen-gdscript/godot runtime
+client/addons/excel/             # tools/protoc-gen-gdscript-excel/godot runtime
 client/script/gen/excel/         # *.pb.gd, *.excel.gd, tables.gd
-client/excel/                    # client table data
+client/excel/                    # *Table.bin, or *Table.bin.idx + *Table.bin.chk_*
 ```
 
 Use separate proto directories for server and client targets. `--targets` can remove fields, while the chosen index representation and GDScript array storage may also differ.

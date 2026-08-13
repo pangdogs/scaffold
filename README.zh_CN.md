@@ -279,14 +279,14 @@ protoc \
 
 ### 工具关系与产物
 
-Excel 流程由三个阶段和三个生成工具配合完成：
+Excel 工具链分为结构、代码和数据三个阶段。`excelc proto` 从工作簿生成 Protobuf 结构，`protoc` 及其插件生成各语言的单表代码，`excelc code` 生成所有表的聚合入口，最后由 `excelc data` 导出运行时数据：
 
 ```text
 .xlsx
   │
-  ├─ excelc proto ───────────────> .proto
+  ├─ excelc proto ───────────────> excelc.proto + <Workbook>.proto
   │                                  │
-  │                                  └─ protoc
+  │                                  └─ protoc + plugins
   │                                      ├─ *.pb.go / *.structure.go / *.excel.go
   │                                      ├─ *.pb.gd / *.excel.gd
   │                                      └─ *.protoset
@@ -298,20 +298,69 @@ Excel 流程由三个阶段和三个生成工具配合完成：
 
 这里最容易遗漏的是 `*.protoset`：`excelc proto` 只生成 `.proto`，随后必须用 `protoc --descriptor_set_out` 为 `excelc.proto` 和每个工作簿 proto 分别生成同名 `.protoset`。`excelc code` 和 `excelc data` 都从这些 descriptor set 恢复动态消息和自定义 option。
 
+以 `Config.xlsx` 为例，默认会生成 `Config.proto`，其中声明行消息 `ConfigColumns` 和表消息 `ConfigTable`。对应的单表代码文件是 `Config.pb.go`、`Config.structure.go`、`Config.excel.go`（Godot 侧为 `Config.pb.gd`、`Config.excel.gd`）；运行时数据使用表消息名，因而文件名是 `ConfigTable.json`、`ConfigTable.bin` 或 `ConfigTable.bin.idx`。
+
+#### 产物职责
+
+| 产物 | 生成方式 | 作用 |
+|------|---------|------|
+| `excelc.proto` | `excelc proto` | 所有表共享的声明，包含 Excel custom options、索引结构和分块清单等基础消息。每套目标 schema 生成一次。 |
+| `<Workbook>.proto` | `excelc proto` | 单个工作簿的静态结构，包含 `*Columns`、`*Table`、工作簿内对象和枚举，以及表使用的索引字段；它不包含数据行。 |
+| `*.protoset` | `protoc --descriptor_set_out` | `.proto` 的 descriptor set。`excelc code` 和 `excelc data` 用它识别消息、字段、scope 和索引 option；仅在构建/打表阶段使用。 |
+| `*.pb.go` | `protoc-gen-go` | Go 侧的 Protobuf 消息、枚举和 wire 编解码类型；表数据最终反序列化到这里定义的 `*Table` 和 `*Columns`。 |
+| `*.structure.go` | `protoc-gen-go-structure` | 可选的 Go 深拷贝与字段克隆辅助方法，不负责加载或查询表。 |
+| `*.excel.go` | `protoc-gen-go-excel` | 单张表的 Go 查询代码，在 `*Table` 上生成唯一/非唯一索引的 `Lookup`、`Get` 和 `LookupBy...` 方法。 |
+| `tables.go` | `excelc code --go_out` | Go 聚合入口。`Tables` 为每张表提供一个字段；`LoadJsonFiles` 或 `LoadBinaryFiles` 从同一目录加载全部表并返回该容器。 |
+| `*.pb.gd` | `protoc-gen-gdscript` | Godot 侧的 Protobuf 消息、枚举以及序列化/反序列化代码，对应 Go 的 `*.pb.go`。 |
+| `*.excel.gd` | `protoc-gen-gdscript-excel` | 单张表的 GDScript 包装器，提供行访问、索引查询以及分块表的同步/异步访问能力。 |
+| `tables.gd` | `excelc code --gdscript_out` | Godot 聚合入口。它预加载各表的 `*.pb.gd` / `*.excel.gd`，统一导出消息和枚举，保存每张表的包装器，并由 `load_data()` 加载普通或分块二进制。通常注册为 autoload。 |
+| `*Table.json` | `excelc data --json_out` | 可读的 Protobuf JSON 表数据，包含行和索引；主要供 Go 的 `LoadJsonFiles`、检查和热加载使用。 |
+| `*Table.bin` | `excelc data --binary_out` | 完整的 Protobuf 二进制表消息，行和索引都在一个文件内，可由 Go 或 Godot 加载。 |
+| `*Table.bin.idx` | `excelc data --binary_out --binary_chunked` | 分块模式的入口文件，保存索引、chunk manifest 等信息，不保存 `Rows`。 |
+| `*Table.bin.chk_N` | 同上 | 分块模式的数据文件，只保存对应范围的 `Rows`；Godot 包装器根据查询或行访问按需加载。 |
+
+`tables.go` 和 `tables.gd` 都不保存实际表数据，而是把“加载全部表”和“访问每张表”集中到一个入口。以生成的 `ConfigTable` 为例，运行关系如下：
+
+```text
+Go：
+ConfigTable.json / ConfigTable.bin
+  └─ LoadJsonFiles / LoadBinaryFiles
+       └─ tables *Tables
+            └─ tables.ConfigTable.Lookup(...)
+
+Godot 普通二进制：
+Excel.load_data()
+  └─ 读取 ConfigTable.bin（行与索引）
+       └─ 创建 Excel.ConfigTable
+            └─ Excel.ConfigTable.lookup(...)
+
+Godot 分块二进制：
+Excel.load_data()
+  └─ 只读取 ConfigTable.bin.idx（索引与 chunk manifest）
+       └─ 创建 Excel.ConfigTable（内部为 ConfigChunkedTable）
+            └─ Excel.ConfigTable.lookup(...) / await Excel.ConfigTable.lookup_async(...)
+                 └─ 根据索引得到 row offset
+                      └─ 按需读取并缓存对应的 ConfigTable.bin.chk_N
+```
+
+上面的 `Excel` 是将 `tables.gd` 注册为 autoload 后的实例名；不使用 autoload 时也可以自行创建 `Tables` 实例。分块表的同步和异步查询都会按需加载 chunk：同步方法等待后台加载完成，异步方法在主线程等待期间让出执行权。调用 `rows()` / `rows_async()` 时则需要加载所有 chunk。
+
+`.xlsx`、`.proto` 和 `*.protoset` 属于配置或构建输入，通常不随程序发布。Go 项目编译生成的 `*.go`，并按所选加载方式部署 JSON 或二进制数据；Godot 项目需要生成的 `*.gd`、两套 Godot 运行时脚本，以及二进制表数据。
+
 ### 推荐目录
 
 下面是一个不绑定具体业务的前后端分离布局：
 
 ```text
-config/excel/                    # .xlsx 源文件
-build/excel/server/proto/        # 服务端 .proto + .protoset
-build/excel/client/proto/        # 客户端 .proto + .protoset
-server/gen/excel/                # Go protobuf、查询与聚合加载代码
-server/res/excel/                # 服务端 JSON / 二进制数据
-client/addons/proto/             # GDScript Protobuf 运行时
-client/addons/excel/             # GDScript Excel 运行时
+config/excel/                    # 配表源文件：*.xlsx
+build/excel/server/proto/        # 服务端构建中间产物：*.proto + *.protoset
+build/excel/client/proto/        # 客户端构建中间产物：*.proto + *.protoset
+server/gen/excel/                # *.pb.go、*.structure.go、*.excel.go、tables.go
+server/res/excel/                # 运行时加载的 *Table.json 或 *Table.bin
+client/addons/proto/             # tools/protoc-gen-gdscript/godot 运行时
+client/addons/excel/             # tools/protoc-gen-gdscript-excel/godot 运行时
 client/script/gen/excel/         # *.pb.gd、*.excel.gd、tables.gd
-client/excel/                    # 客户端表数据
+client/excel/                    # *Table.bin，或 *Table.bin.idx + *Table.bin.chk_*
 ```
 
 服务端和客户端建议使用不同的 proto 目录，因为 `--targets` 会裁剪字段，索引结构和 GDScript 内部数组配置也可能不同。
