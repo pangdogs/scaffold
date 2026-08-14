@@ -343,7 +343,7 @@ Excel.load_data()
                       └─ load and cache the corresponding ConfigTable.bin.chk_N on demand
 ```
 
-Here `Excel` is the instance name when `tables.gd` is registered as an autoload; applications that do not use an autoload can create their own `Tables` instance. Both synchronous and asynchronous chunked lookups load chunks on demand. When threads are available, a synchronous call waits for the background load while an asynchronous call yields on the main thread; without thread support, Godot performs the load on the calling thread, so both APIs remain functional but the first access blocks synchronously. Calling `rows()` or `rows_async()` requires all chunks to be loaded.
+Here `Excel` is the instance name when `tables.gd` is registered as an autoload; applications that do not use an autoload can create their own `Tables` instance. Both synchronous and asynchronous chunked lookups load chunks on demand. Synchronous methods perform the first load on the calling thread and may be called from either the main thread or a background thread. Asynchronous methods may only be called from the main thread; when threads are available, they submit the load to a worker and yield while waiting. On platforms without thread support, asynchronous loading runs inline on the main thread, so the first access still blocks synchronously. Calling `rows()` or `rows_async()` requires all chunks to be loaded.
 
 The `.xlsx`, `.proto`, and `*.protoset` files are configuration or build inputs and normally are not shipped with the application. A Go application compiles the generated `*.go` files and deploys JSON or binary data according to its loader. A Godot application needs the generated `*.gd` files, both Godot runtime script sets, and binary table data.
 
@@ -674,6 +674,7 @@ This plugin only targets schemas produced by `excelc proto` and emits `*.excel.g
 - Non-unique methods with the same `lookup_by_...` naming and an `Array[Row]` result.
 - `lookup` / `lookup_async` aliases for the first unique index.
 - On-demand chunk loading from async methods on chunked wrappers.
+- All async methods are main-thread-only. Calls from other threads log an error and return an empty result; background threads must use synchronous methods.
 
 | Option                  | Default | Description                                                                      |
 |-------------------------|---------|----------------------------------------------------------------------------------|

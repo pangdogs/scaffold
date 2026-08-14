@@ -22,7 +22,7 @@ class_name ExcelUtils
 extends RefCounted
 
 # Runtime helper for chunked Excel tables.
-# It owns per-chunk cache and coordinates once-only background loads.
+# It owns per-chunk cache and coordinates once-only loads.
 class ChunkLoader:
 	extends RefCounted
 
@@ -70,7 +70,7 @@ class ChunkLoader:
 		if chunk_index < 0 or chunk_index >= _chunk_states.size():
 			return false
 		var state := _chunk_states[chunk_index]
-		var task_id := _ensure_task_started(state, chunk_index)
+		var task_id := _ensure_task_started(state, chunk_index, false)
 		match task_id:
 			ChunkState.LOADING:
 				while !state.is_loaded():
@@ -84,34 +84,29 @@ class ChunkLoader:
 	# Asynchronously ensures one chunk is loaded.
 	# The first caller starts the task; later callers await the same task completion.
 	func ensure_loaded_async(chunk_index: int) -> bool:
+		if !Thread.is_main_thread():
+			push_error("asynchronous Excel chunk loading is only supported on the main thread")
+			return false
 		if chunk_index < 0 or chunk_index >= _chunk_states.size():
 			return false
 		var state := _chunk_states[chunk_index]
-		var task_id := _ensure_task_started(state, chunk_index)
+		var task_id := _ensure_task_started(state, chunk_index, true)
 		match task_id:
 			ChunkState.LOADING:
-				if Thread.is_main_thread():
-					var tree := Engine.get_main_loop() as SceneTree
-					while !state.is_loaded():
-						await tree.process_frame
-				else:
-					while !state.is_loaded():
-						OS.delay_usec(100)
+				var tree := Engine.get_main_loop() as SceneTree
+				while !state.is_loaded():
+					await tree.process_frame
 			ChunkState.LOADED:
 				return true
 			_:
-				if Thread.is_main_thread():
-					var main_loop := Engine.get_main_loop() as SceneTree
-					while !WorkerThreadPool.is_task_completed(task_id):
-						await main_loop.process_frame
-				else:
-					while !WorkerThreadPool.is_task_completed(task_id):
-						OS.delay_usec(100)
+				var main_loop := Engine.get_main_loop() as SceneTree
+				while !WorkerThreadPool.is_task_completed(task_id):
+					await main_loop.process_frame
 				WorkerThreadPool.wait_for_task_completion(task_id)
 		return true
 
-	# Starts the chunk load task at most once and returns the shared task id.
-	func _ensure_task_started(state: ChunkState, chunk_index: int) -> int:
+	# Claims the first load and either runs it inline or starts a worker task.
+	func _ensure_task_started(state: ChunkState, chunk_index: int, use_worker_pool: bool) -> int:
 		state.mutex.lock()
 		match state.task_id:
 			ChunkState.READY:
@@ -123,6 +118,10 @@ class ChunkLoader:
 				state.mutex.unlock()
 				return ChunkState.LOADING
 		state.mutex.unlock()
+
+		if !use_worker_pool:
+			_load_rows_task(state, chunk_index)
+			return ChunkState.LOADED
 
 		var task_id := WorkerThreadPool.add_task(_load_rows_task.bind(state, chunk_index))
 		state.mutex.lock()

@@ -680,7 +680,7 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 	g.P("\t\treturn _msg.", rowFieldName, ".duplicate()")
 	g.P()
 	g.P("\tfunc rows_async() -> Array[", rowType, "]:")
-	emitAsyncYield(g)
+	emitAsyncYield(g, "[]")
 	g.P("\t\treturn rows()")
 	g.P()
 	g.P("\tfunc row_count() -> int:")
@@ -692,7 +692,7 @@ func emitTableWrapper(g *protogen.GeneratedFile, table TableDecl, protoImportAli
 	g.P("\t\treturn _msg.", rowFieldName, "[offset]")
 	g.P()
 	g.P("\tfunc row_at_async(offset: int) -> ", rowType, ":")
-	emitAsyncYield(g)
+	emitAsyncYield(g, "null")
 	g.P("\t\treturn row_at(offset)")
 	g.P()
 
@@ -779,7 +779,7 @@ func emitDefaultLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl, 
 	g.P("\t\treturn ", method.LookupMethodName, "(", argNames, ")")
 	g.P()
 	g.P("\tfunc lookup_async(", argList, ") -> ", rowType, ":")
-	emitAsyncYield(g)
+	emitAsyncYield(g, "null")
 	g.P("\t\treturn lookup(", argNames, ")")
 	g.P()
 	return nil
@@ -836,7 +836,7 @@ func emitLookupMethod(g *protogen.GeneratedFile, table TableDecl, method IndexMe
 	g.P("\t\treturn row")
 	g.P()
 	g.P("\tfunc ", method.LookupMethodName, "_async(", argList, ") -> ", rowType, ":")
-	emitAsyncYield(g)
+	emitAsyncYield(g, "null")
 	g.P("\t\treturn ", method.LookupMethodName, "(", argNames, ")")
 	g.P()
 	return nil
@@ -882,7 +882,7 @@ func emitNonUniqueLookupMethod(g *protogen.GeneratedFile, method IndexMethodDecl
 	g.P("\t\treturn rows")
 	g.P()
 	g.P("\tfunc ", method.LookupMethodName, "_async(", argList, ") -> Array[", rowType, "]:")
-	emitAsyncYield(g)
+	emitAsyncYield(g, "[]")
 	g.P("\t\treturn ", method.LookupMethodName, "(", argNames, ")")
 	g.P()
 	return nil
@@ -896,6 +896,7 @@ func emitChunkedAsyncDefaultLookupMethod(g *protogen.GeneratedFile, method Index
 	argNames := gdscriptArgumentNames(method.IndexFields)
 
 	g.P("\tfunc lookup_async(", argList, ") -> ", rowType, ":")
+	emitAsyncMainThreadGuard(g, "null")
 	g.P("\t\treturn await ", method.LookupMethodName, "_async(", argNames, ")")
 	g.P()
 	return nil
@@ -914,6 +915,7 @@ func emitChunkedAsyncLookupMethod(g *protogen.GeneratedFile, method IndexMethodD
 	indexFieldName := safeIdentifier(method.Field.GoName)
 
 	g.P("\tfunc ", method.LookupMethodName, "_async(", argList, ") -> ", rowType, ":")
+	emitAsyncMainThreadGuard(g, "null")
 	g.P("\t\tif row_count() <= 0:")
 	g.P("\t\t\treturn null")
 
@@ -963,6 +965,7 @@ func emitChunkedAsyncNonUniqueLookupMethod(g *protogen.GeneratedFile, method Ind
 	indexFieldName := safeIdentifier(method.Field.GoName)
 
 	g.P("\tfunc ", method.LookupMethodName, "_async(", argList, ") -> Array[", rowType, "]:")
+	emitAsyncMainThreadGuard(g, "[]")
 	g.P("\t\t@warning_ignore(\"shadowed_variable\")")
 	g.P("\t\tvar rows: Array[", rowType, "] = []")
 	g.P("\t\tif row_count() <= 0:")
@@ -1041,6 +1044,7 @@ func emitChunkedPublicMethods(g *protogen.GeneratedFile, rowType, chunkOffsetFie
 	g.P("\t\treturn _build_rows_array()")
 	g.P()
 	g.P("\tfunc rows_async() -> Array[", rowType, "]:")
+	emitAsyncMainThreadGuard(g, "[]")
 	g.P("\t\tif !await _ensure_all_rows_loaded_async():")
 	g.P("\t\t\treturn []")
 	g.P("\t\treturn _build_rows_array()")
@@ -1066,6 +1070,7 @@ func emitChunkedPublicMethods(g *protogen.GeneratedFile, rowType, chunkOffsetFie
 	g.P("\t\treturn chunk_rows[row_offset]")
 	g.P()
 	g.P("\tfunc row_at_async(offset: int) -> ", rowType, ":")
+	emitAsyncMainThreadGuard(g, "null")
 	g.P("\t\tif offset < 0 or offset >= row_count():")
 	g.P("\t\t\treturn null")
 	g.P("\t\tvar chunk_index := _chunk_index_for_offset(offset)")
@@ -1107,6 +1112,7 @@ func emitChunkLoaderInternalMethods(g *protogen.GeneratedFile, protoTableType, r
 	g.P("\t\treturn true")
 	g.P()
 	g.P("\tfunc _ensure_all_rows_loaded_async() -> bool:")
+	emitAsyncMainThreadGuard(g, "false")
 	g.P("\t\tvar chunks := _chunks()")
 	g.P("\t\tfor chunk_index in range(chunks.size()):")
 	g.P("\t\t\tif !await _chunk_loader.ensure_loaded_async(chunk_index):")
@@ -1126,8 +1132,15 @@ func emitChunkLoaderInternalMethods(g *protogen.GeneratedFile, protoTableType, r
 	g.P()
 }
 
-func emitAsyncYield(g *protogen.GeneratedFile) {
+func emitAsyncYield(g *protogen.GeneratedFile, failureValue string) {
+	emitAsyncMainThreadGuard(g, failureValue)
 	g.P("\t\tawait Engine.get_main_loop().process_frame")
+}
+
+func emitAsyncMainThreadGuard(g *protogen.GeneratedFile, failureValue string) {
+	g.P("\t\tif !Thread.is_main_thread():")
+	g.P("\t\t\tpush_error(\"asynchronous Excel table access is only supported on the main thread\")")
+	g.P("\t\t\treturn ", failureValue)
 }
 
 func emitLookupOffset(g *protogen.GeneratedFile, method IndexMethodDecl, indexFieldName string) error {
