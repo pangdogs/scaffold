@@ -343,7 +343,7 @@ Excel.load_data()
                       └─ 按需读取并缓存对应的 ConfigTable.bin.chk_N
 ```
 
-上面的 `Excel` 是将 `tables.gd` 注册为 autoload 后的实例名；不使用 autoload 时也可以自行创建 `Tables` 实例。分块表的同步和异步查询都会按需加载 chunk：同步方法等待后台加载完成，异步方法在主线程等待期间让出执行权。调用 `rows()` / `rows_async()` 时则需要加载所有 chunk。
+上面的 `Excel` 是将 `tables.gd` 注册为 autoload 后的实例名；不使用 autoload 时也可以自行创建 `Tables` 实例。分块表的同步和异步查询都会按需加载 chunk：在线程可用时，同步方法等待后台加载完成，异步方法在主线程等待期间让出执行权；在线程不可用时，Godot 会在当前线程完成加载，两个版本都能使用，但首次访问会同步阻塞。调用 `rows()` / `rows_async()` 时则需要加载所有 chunk。
 
 `.xlsx`、`.proto` 和 `*.protoset` 属于配置或构建输入，通常不随程序发布。Go 项目编译生成的 `*.go`，并按所选加载方式部署 JSON 或二进制数据；Godot 项目需要生成的 `*.gd`、两套 Godot 运行时脚本，以及二进制表数据。
 

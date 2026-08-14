@@ -343,7 +343,7 @@ Excel.load_data()
                       └─ load and cache the corresponding ConfigTable.bin.chk_N on demand
 ```
 
-Here `Excel` is the instance name when `tables.gd` is registered as an autoload; applications that do not use an autoload can create their own `Tables` instance. Both synchronous and asynchronous chunked lookups load chunks on demand: a synchronous call waits for the background load, while an asynchronous call yields on the main thread while waiting. Calling `rows()` or `rows_async()` requires all chunks to be loaded.
+Here `Excel` is the instance name when `tables.gd` is registered as an autoload; applications that do not use an autoload can create their own `Tables` instance. Both synchronous and asynchronous chunked lookups load chunks on demand. When threads are available, a synchronous call waits for the background load while an asynchronous call yields on the main thread; without thread support, Godot performs the load on the calling thread, so both APIs remain functional but the first access blocks synchronously. Calling `rows()` or `rows_async()` requires all chunks to be loaded.
 
 The `.xlsx`, `.proto`, and `*.protoset` files are configuration or build inputs and normally are not shipped with the application. A Go application compiles the generated `*.go` files and deploys JSON or binary data according to its loader. A Godot application needs the generated `*.gd` files, both Godot runtime script sets, and binary table data.
 

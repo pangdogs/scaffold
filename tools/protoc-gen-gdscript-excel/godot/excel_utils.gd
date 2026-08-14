@@ -113,15 +113,21 @@ class ChunkLoader:
 	# Starts the chunk load task at most once and returns the shared task id.
 	func _ensure_task_started(state: ChunkState, chunk_index: int) -> int:
 		state.mutex.lock()
-		var task_id: int
 		match state.task_id:
 			ChunkState.READY:
-				state.task_id = WorkerThreadPool.add_task(_load_rows_task.bind(state, chunk_index))
-				task_id = state.task_id
+				state.task_id = ChunkState.LOADING
 			ChunkState.LOADED:
-				task_id = ChunkState.LOADED
+				state.mutex.unlock()
+				return ChunkState.LOADED
 			_:
-				task_id = ChunkState.LOADING
+				state.mutex.unlock()
+				return ChunkState.LOADING
+		state.mutex.unlock()
+
+		var task_id := WorkerThreadPool.add_task(_load_rows_task.bind(state, chunk_index))
+		state.mutex.lock()
+		if state.task_id == ChunkState.LOADING:
+			state.task_id = task_id
 		state.mutex.unlock()
 		return task_id
 
@@ -143,9 +149,11 @@ class ChunkLoader:
 		var msg = _message_factory.call()
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file == null:
+			push_error("failed to open excel table chunk file, file_path=%s" % path)
 			return []
 		var stream := ProtoInputFile.new(file)
 		if !msg.deserialize(stream):
+			push_error("failed to deserialize excel table chunk file, file_path=%s" % path)
 			return []
 		var elapsed_ms := float(Time.get_ticks_usec() - start_usec) / 1000.0
 		print("excel table chunk file loaded, file_path=%s, rows=%d, elapsed_ms=%.3f" % [path, msg.Rows.size(), elapsed_ms])
