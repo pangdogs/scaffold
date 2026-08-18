@@ -78,12 +78,12 @@ func (W _git_golaxy_org_framework_addins_gate_IEventIO) Send(event transport.IEv
 type _git_golaxy_org_framework_addins_gate_IGate struct {
 	IValue interface{}
 	WCount func() int64
-	WGet   func(id uid.Id) (gate.ISession, bool)
+	WGet   func(id uid.ID) (gate.ISession, bool)
 	WWatch func(ctx context.Context, handler gate.SessionEstablishedHandler) (async.Signal, error)
 }
 
 func (W _git_golaxy_org_framework_addins_gate_IGate) Count() int64 { return W.WCount() }
-func (W _git_golaxy_org_framework_addins_gate_IGate) Get(id uid.Id) (gate.ISession, bool) {
+func (W _git_golaxy_org_framework_addins_gate_IGate) Get(id uid.ID) (gate.ISession, bool) {
 	return W.WGet(id)
 }
 func (W _git_golaxy_org_framework_addins_gate_IGate) Watch(ctx context.Context, handler gate.SessionEstablishedHandler) (async.Signal, error) {
@@ -101,13 +101,13 @@ type _git_golaxy_org_framework_addins_gate_ISession struct {
 	WErr        func() error
 	WEventIO    func() gate.IEventIO
 	WExtensions func() []byte
-	WId         func() uid.Id
+	WID         func() uid.ID
 	WMigrations func() int64
 	WNetAddr    func() gate.NetAddr
 	WState      func() gate.SessionState
 	WString     func() string
 	WToken      func() string
-	WUserId     func() string
+	WUserID     func() string
 	WValue      func(key any) any
 }
 
@@ -123,7 +123,7 @@ func (W _git_golaxy_org_framework_addins_gate_ISession) Done() <-chan struct{}  
 func (W _git_golaxy_org_framework_addins_gate_ISession) Err() error               { return W.WErr() }
 func (W _git_golaxy_org_framework_addins_gate_ISession) EventIO() gate.IEventIO   { return W.WEventIO() }
 func (W _git_golaxy_org_framework_addins_gate_ISession) Extensions() []byte       { return W.WExtensions() }
-func (W _git_golaxy_org_framework_addins_gate_ISession) Id() uid.Id               { return W.WId() }
+func (W _git_golaxy_org_framework_addins_gate_ISession) ID() uid.ID               { return W.WID() }
 func (W _git_golaxy_org_framework_addins_gate_ISession) Migrations() int64        { return W.WMigrations() }
 func (W _git_golaxy_org_framework_addins_gate_ISession) NetAddr() gate.NetAddr    { return W.WNetAddr() }
 func (W _git_golaxy_org_framework_addins_gate_ISession) State() gate.SessionState { return W.WState() }
@@ -134,5 +134,5 @@ func (W _git_golaxy_org_framework_addins_gate_ISession) String() string {
 	return W.WString()
 }
 func (W _git_golaxy_org_framework_addins_gate_ISession) Token() string     { return W.WToken() }
-func (W _git_golaxy_org_framework_addins_gate_ISession) UserId() string    { return W.WUserId() }
+func (W _git_golaxy_org_framework_addins_gate_ISession) UserID() string    { return W.WUserID() }
 func (W _git_golaxy_org_framework_addins_gate_ISession) Value(key any) any { return W.WValue(key) }

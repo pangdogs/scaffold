@@ -219,7 +219,7 @@ The plugin has no custom options. It accepts standard `protogen` parameters such
 This plugin makes every top-level Go message in a file participate in the Golaxy GAP variant system and emits `*.variant.go` with:
 
 - Message registration in `init()`.
-- `Read`, `Write`, `Size`, `TypeId`, and `Indirect` methods.
+- `Read`, `Write`, `Size`, `TypeID`, and `Indirect` methods.
 - A stable custom variant type id derived from the Protobuf package and message name.
 
 | Option          | Default | Description                                                                                                     |

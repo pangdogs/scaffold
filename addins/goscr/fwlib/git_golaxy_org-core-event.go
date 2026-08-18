@@ -10,8 +10,8 @@ import (
 func init() {
 	Symbols["git.golaxy.org/core/event/event"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"DeclareEventId":              reflect.ValueOf(event.DeclareEventId),
-		"DeclareEventTabId":           reflect.ValueOf(event.DeclareEventTabId),
+		"DeclareEventID":              reflect.ValueOf(event.DeclareEventID),
+		"DeclareEventTabID":           reflect.ValueOf(event.DeclareEventTabID),
 		"ErrArgs":                     reflect.ValueOf(&event.ErrArgs).Elem(),
 		"ErrEvent":                    reflect.ValueOf(&event.ErrEvent).Elem(),
 		"EventRecursionLimit":         reflect.ValueOf(&event.EventRecursionLimit).Elem(),
@@ -20,10 +20,10 @@ func init() {
 		"EventRecursion_Discard":      reflect.ValueOf(event.EventRecursion_Discard),
 		"EventRecursion_ReceiveOnce":  reflect.ValueOf(event.EventRecursion_ReceiveOnce),
 		"EventRecursion_SkipReceived": reflect.ValueOf(event.EventRecursion_SkipReceived),
-		"GenEventId":                  reflect.ValueOf(event.GenEventId),
-		"GenEventTabId":               reflect.ValueOf(event.GenEventTabId),
+		"GenEventID":                  reflect.ValueOf(event.GenEventID),
+		"GenEventTabID":               reflect.ValueOf(event.GenEventTabID),
 		"Panicf":                      reflect.ValueOf(event.Panicf),
-		"SplitEventId":                reflect.ValueOf(event.SplitEventId),
+		"SplitEventID":                reflect.ValueOf(event.SplitEventID),
 		"Unbind":                      reflect.ValueOf(event.Unbind),
 		"UnbindHandles":               reflect.ValueOf(event.UnbindHandles),
 		"UnsafeEvent":                 reflect.ValueOf(event.UnsafeEvent),

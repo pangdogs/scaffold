@@ -219,7 +219,7 @@ protoc \
 该插件让文件中的每个顶层 Go 消息参与 Golaxy GAP variant 体系，输出 `*.variant.go`，包括：
 
 - 在 `init()` 中注册消息类型。
-- `Read`、`Write`、`Size`、`TypeId` 和 `Indirect` 等方法。
+- `Read`、`Write`、`Size`、`TypeID` 和 `Indirect` 等方法。
 - 基于 Protobuf 完整消息名生成稳定的自定义 variant type id。
 
 | 选项              | 默认值     | 说明                                     |

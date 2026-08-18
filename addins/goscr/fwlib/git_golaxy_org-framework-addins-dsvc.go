@@ -7,7 +7,7 @@ import (
 	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/framework/addins/dsvc"
 	"git.golaxy.org/framework/net/gap"
-	"git.golaxy.org/framework/utils/concurrent"
+	"git.golaxy.org/framework/utils/correlation"
 	"reflect"
 )
 
@@ -30,17 +30,17 @@ func init() {
 
 // _git_golaxy_org_framework_addins_dsvc_IDistService is an interface wrapper for IDistService type
 type _git_golaxy_org_framework_addins_dsvc_IDistService struct {
-	IValue            interface{}
-	WBringUp          func()
-	WFutureController func() *concurrent.FutureController
-	WListen           func(ctx context.Context, handler dsvc.MsgHandler) (async.Signal, error)
-	WNodeDetails      func() *dsvc.NodeDetails
-	WSend             func(dst string, msg gap.Msg) error
+	IValue       interface{}
+	WBringUp     func()
+	WCorrelation func() *correlation.Controller
+	WListen      func(ctx context.Context, handler dsvc.MsgHandler) (async.Signal, error)
+	WNodeDetails func() *dsvc.NodeDetails
+	WSend        func(dst string, msg gap.Msg) error
 }
 
 func (W _git_golaxy_org_framework_addins_dsvc_IDistService) BringUp() { W.WBringUp() }
-func (W _git_golaxy_org_framework_addins_dsvc_IDistService) FutureController() *concurrent.FutureController {
-	return W.WFutureController()
+func (W _git_golaxy_org_framework_addins_dsvc_IDistService) Correlation() *correlation.Controller {
+	return W.WCorrelation()
 }
 func (W _git_golaxy_org_framework_addins_dsvc_IDistService) Listen(ctx context.Context, handler dsvc.MsgHandler) (async.Signal, error) {
 	return W.WListen(ctx, handler)

@@ -77,7 +77,7 @@ func (c *EntityPTCreator) SetComponentAwakeOnFirstTouch(b bool) *EntityPTCreator
 	return c
 }
 
-// SetComponentUniqueID 设置是否为实体组件分配唯一Id
+// SetComponentUniqueID 设置是否为实体组件分配唯一ID
 func (c *EntityPTCreator) SetComponentUniqueID(b bool) *EntityPTCreator {
 	if c.descr == nil {
 		exception.Panic("goscr: descr is nil")

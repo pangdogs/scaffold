@@ -121,17 +121,17 @@ func (W _git_golaxy_org_scaffold_addins_propview_IPropTab) RangeProps(fun generi
 // _git_golaxy_org_scaffold_addins_propview_IPropView is an interface wrapper for IPropView type
 type _git_golaxy_org_scaffold_addins_propview_IPropView struct {
 	IValue interface{}
-	WLoad  func(entityId uid.Id, prop string, service string) ([]byte, int64, error)
-	WSave  func(entityId uid.Id, prop string, service string, data []byte, revision int64) error
-	WSync  func(entityId uid.Id, prop string, syncTo []string, revision int64, op string, args ...any)
+	WLoad  func(entityID uid.ID, prop string, service string) ([]byte, int64, error)
+	WSave  func(entityID uid.ID, prop string, service string, data []byte, revision int64) error
+	WSync  func(entityID uid.ID, prop string, syncTo []string, revision int64, op string, args ...any)
 }
 
-func (W _git_golaxy_org_scaffold_addins_propview_IPropView) Load(entityId uid.Id, prop string, service string) ([]byte, int64, error) {
-	return W.WLoad(entityId, prop, service)
+func (W _git_golaxy_org_scaffold_addins_propview_IPropView) Load(entityID uid.ID, prop string, service string) ([]byte, int64, error) {
+	return W.WLoad(entityID, prop, service)
 }
-func (W _git_golaxy_org_scaffold_addins_propview_IPropView) Save(entityId uid.Id, prop string, service string, data []byte, revision int64) error {
-	return W.WSave(entityId, prop, service, data, revision)
+func (W _git_golaxy_org_scaffold_addins_propview_IPropView) Save(entityID uid.ID, prop string, service string, data []byte, revision int64) error {
+	return W.WSave(entityID, prop, service, data, revision)
 }
-func (W _git_golaxy_org_scaffold_addins_propview_IPropView) Sync(entityId uid.Id, prop string, syncTo []string, revision int64, op string, args ...any) {
-	W.WSync(entityId, prop, syncTo, revision, op, args...)
+func (W _git_golaxy_org_scaffold_addins_propview_IPropView) Sync(entityID uid.ID, prop string, syncTo []string, revision int64, op string, args ...any) {
+	W.WSync(entityID, prop, syncTo, revision, op, args...)
 }

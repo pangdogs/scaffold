@@ -92,7 +92,8 @@ var Symbols = map[string]map[string]reflect.Value{}
 //go:generate yaegi extract git.golaxy.org/framework/net/gtp/transport
 //go:generate yaegi extract git.golaxy.org/framework/net/netpath
 //go:generate yaegi extract git.golaxy.org/framework/utils/binaryutil
-//go:generate yaegi extract git.golaxy.org/framework/utils/concurrent
+//go:generate yaegi extract git.golaxy.org/framework/utils/correlation
+//go:generate yaegi extract git.golaxy.org/framework/utils/fanout
 
 // export git.golaxy.org/scaffold
 //go:generate yaegi extract git.golaxy.org/scaffold/addins/goscr

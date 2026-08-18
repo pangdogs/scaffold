@@ -40,6 +40,7 @@ func init() {
 		"Emitter":      reflect.ValueOf((*async.Emitter)(nil)),
 		"ExecutorID":   reflect.ValueOf((*async.ExecutorID)(nil)),
 		"Future":       reflect.ValueOf((*async.Future)(nil)),
+		"FutureID":     reflect.ValueOf((*async.FutureID)(nil)),
 		"Pair":         reflect.ValueOf((*async.Pair)(nil)),
 		"Promise":      reflect.ValueOf((*async.Promise)(nil)),
 		"Result":       reflect.ValueOf((*async.Result)(nil)),
@@ -58,13 +59,13 @@ func init() {
 // _git_golaxy_org_core_utils_async_WaitGuard is an interface wrapper for WaitGuard type
 type _git_golaxy_org_core_utils_async_WaitGuard struct {
 	IValue            interface{}
-	WAfterFutureWait  func(futureID uint64)
-	WBeforeFutureWait func(futureID uint64, completionExecutorID async.ExecutorID) error
+	WAfterFutureWait  func(futureID async.FutureID)
+	WBeforeFutureWait func(futureID async.FutureID, completionExecutorID async.ExecutorID) error
 }
 
-func (W _git_golaxy_org_core_utils_async_WaitGuard) AfterFutureWait(futureID uint64) {
+func (W _git_golaxy_org_core_utils_async_WaitGuard) AfterFutureWait(futureID async.FutureID) {
 	W.WAfterFutureWait(futureID)
 }
-func (W _git_golaxy_org_core_utils_async_WaitGuard) BeforeFutureWait(futureID uint64, completionExecutorID async.ExecutorID) error {
+func (W _git_golaxy_org_core_utils_async_WaitGuard) BeforeFutureWait(futureID async.FutureID, completionExecutorID async.ExecutorID) error {
 	return W.WBeforeFutureWait(futureID, completionExecutorID)
 }

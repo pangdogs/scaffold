@@ -52,11 +52,11 @@ var (
 // IPropView 属性视图插件接口
 type IPropView interface {
 	// Load 加载属性数据
-	Load(entityId uid.Id, prop string, service string) ([]byte, int64, error)
+	Load(entityID uid.ID, prop string, service string) ([]byte, int64, error)
 	// Save 保存属性数据
-	Save(entityId uid.Id, prop string, service string, data []byte, revision int64) error
+	Save(entityID uid.ID, prop string, service string, data []byte, revision int64) error
 	// Sync 同步属性变化
-	Sync(entityId uid.Id, prop string, syncTo []string, revision int64, op string, args ...any)
+	Sync(entityID uid.ID, prop string, syncTo []string, revision int64, op string, args ...any)
 }
 
 func newPropView(...any) IPropView {
@@ -77,22 +77,22 @@ func (m *_PropView) Shut(rtCtx runtime.Context) {
 	log.L(rtCtx).Info("shutting down add-in", zap.String("name", AddIn.Name))
 }
 
-func (m *_PropView) Load(entityId uid.Id, prop string, service string) ([]byte, int64, error) {
+func (m *_PropView) Load(entityID uid.ID, prop string, service string) ([]byte, int64, error) {
 	if service == m.rt.Service().Name() {
 		log.L(m.rt).Error("load prop data failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", prop),
 			zap.String("service", service),
 			zap.Error(ErrLoadFromServiceItself))
 		return nil, 0, ErrLoadFromServiceItself
 	}
-	return rpc.Assert3[[]byte, int64, error](rpc.ProxyRuntime(m.rt, entityId).RPC(service, AddIn.Name, "DoLoad", entityId, prop))
+	return rpc.Assert3[[]byte, int64, error](rpc.ProxyRuntime(m.rt, entityID).RPC(service, AddIn.Name, "DoLoad", entityID, prop))
 }
 
-func (m *_PropView) Save(entityId uid.Id, prop string, service string, data []byte, revision int64) error {
+func (m *_PropView) Save(entityID uid.ID, prop string, service string, data []byte, revision int64) error {
 	if service == m.rt.Service().Name() {
 		log.L(m.rt).Error("save prop data failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", prop),
 			zap.String("service", service),
 			zap.Int64("revision", revision),
@@ -100,36 +100,36 @@ func (m *_PropView) Save(entityId uid.Id, prop string, service string, data []by
 		)
 		return ErrSaveToServiceItself
 	}
-	return rpc.Assert1[error](rpc.ProxyRuntime(m.rt, entityId).RPC(service, AddIn.Name, "DoSave", entityId, prop, data, revision))
+	return rpc.Assert1[error](rpc.ProxyRuntime(m.rt, entityID).RPC(service, AddIn.Name, "DoSave", entityID, prop, data, revision))
 }
 
-func (m *_PropView) Sync(entityId uid.Id, prop string, syncTo []string, revision int64, op string, args ...any) {
+func (m *_PropView) Sync(entityID uid.ID, prop string, syncTo []string, revision int64, op string, args ...any) {
 	for _, dst := range syncTo {
 		if gate.ClientDetails.DomainUnicast.Equal(dst) {
 			// 同步至实体客户端
-			rpc.ProxyEntity(m.rt, entityId).CliOnewayRPC("", "DoSync", prop, revision, op, args)
+			rpc.ProxyEntity(m.rt, entityID).CliOnewayRPC("", "DoSync", prop, revision, op, args)
 
 		} else if gate.ClientDetails.DomainMulticast.Contains(dst) {
 			// 同步至指定分组
 			group, _ := gate.ClientDetails.DomainMulticast.Relative(dst)
-			rpc.ProxyGroup(m.rt, dst).CliOnewayRPC(group, "DoSync", entityId, prop, revision, op, args)
+			rpc.ProxyGroup(m.rt, dst).CliOnewayRPC(group, "DoSync", entityID, prop, revision, op, args)
 
 		} else if !gate.ClientDetails.DomainRoot.Contains(dst) {
 			// 同步至其他服务
 			core.ContinueOnVoid(m.rt,
-				rpc.ProxyRuntime(m.rt, entityId).RPC(dst, AddIn.Name, "DoSync", entityId, prop, revision, op, args),
-				m.doSyncRet, dst, entityId, prop, revision, op)
+				rpc.ProxyRuntime(m.rt, entityID).RPC(dst, AddIn.Name, "DoSync", entityID, prop, revision, op, args),
+				m.doSyncRet, dst, entityID, prop, revision, op)
 		}
 	}
 }
 
-func (m *_PropView) DoLoad(entityId uid.Id, propName string) ([]byte, int64, error) {
+func (m *_PropView) DoLoad(entityID uid.ID, propName string) ([]byte, int64, error) {
 	caller := m.rt.RPCStack().CallChain().Last()
 
-	entity, ok := m.rt.EntityManager().GetEntity(entityId)
+	entity, ok := m.rt.EntityManager().GetEntity(entityID)
 	if !ok {
 		log.L(m.rt).Error("do load prop data failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.String("caller_svc", caller.Svc),
 			zap.String("caller_addr", caller.Addr),
@@ -141,7 +141,7 @@ func (m *_PropView) DoLoad(entityId uid.Id, propName string) ([]byte, int64, err
 	propTab, ok := entity.(IPropTab)
 	if !ok {
 		log.L(m.rt).Error("do load prop data failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.String("caller_svc", caller.Svc),
 			zap.String("caller_addr", caller.Addr),
@@ -153,7 +153,7 @@ func (m *_PropView) DoLoad(entityId uid.Id, propName string) ([]byte, int64, err
 	prop := propTab.GetProp(propName)
 	if prop == nil {
 		log.L(m.rt).Error("do load prop data failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.String("caller_svc", caller.Svc),
 			zap.String("caller_addr", caller.Addr),
@@ -165,7 +165,7 @@ func (m *_PropView) DoLoad(entityId uid.Id, propName string) ([]byte, int64, err
 	data, revision, err := prop.Managed().Marshal()
 	if err != nil {
 		log.L(m.rt).Error("do load prop data failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.String("caller_svc", caller.Svc),
 			zap.String("caller_addr", caller.Addr),
@@ -175,7 +175,7 @@ func (m *_PropView) DoLoad(entityId uid.Id, propName string) ([]byte, int64, err
 	}
 
 	log.L(m.rt).Info("do load prop data ok",
-		zap.String("entity_id", entityId.String()),
+		zap.String("entity_id", entityID.String()),
 		zap.String("prop", propName),
 		zap.Int64("revision", revision),
 		zap.String("caller_svc", caller.Svc),
@@ -183,13 +183,13 @@ func (m *_PropView) DoLoad(entityId uid.Id, propName string) ([]byte, int64, err
 	return data, revision, nil
 }
 
-func (m *_PropView) DoSave(entityId uid.Id, propName string, data []byte, revision int64) error {
+func (m *_PropView) DoSave(entityID uid.ID, propName string, data []byte, revision int64) error {
 	caller := m.rt.RPCStack().CallChain().Last()
 
-	entity, ok := m.rt.EntityManager().GetEntity(entityId)
+	entity, ok := m.rt.EntityManager().GetEntity(entityID)
 	if !ok {
 		log.L(m.rt).Error("do save prop data failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("caller_svc", caller.Svc),
@@ -202,7 +202,7 @@ func (m *_PropView) DoSave(entityId uid.Id, propName string, data []byte, revisi
 	propTab, ok := entity.(IPropTab)
 	if !ok {
 		log.L(m.rt).Error("do save prop data failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("caller_svc", caller.Svc),
@@ -215,7 +215,7 @@ func (m *_PropView) DoSave(entityId uid.Id, propName string, data []byte, revisi
 	prop := propTab.GetProp(propName)
 	if prop == nil {
 		log.L(m.rt).Error("do save prop data failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("caller_svc", caller.Svc),
@@ -228,7 +228,7 @@ func (m *_PropView) DoSave(entityId uid.Id, propName string, data []byte, revisi
 	err := prop.Managed().Unmarshal(data, revision)
 	if err != nil {
 		log.L(m.rt).Error("do save prop data failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("caller_svc", caller.Svc),
@@ -239,7 +239,7 @@ func (m *_PropView) DoSave(entityId uid.Id, propName string, data []byte, revisi
 	}
 
 	log.L(m.rt).Info("do save prop data ok",
-		zap.String("entity_id", entityId.String()),
+		zap.String("entity_id", entityID.String()),
 		zap.String("prop", propName),
 		zap.Int64("revision", revision),
 		zap.String("caller_svc", caller.Svc),
@@ -248,13 +248,13 @@ func (m *_PropView) DoSave(entityId uid.Id, propName string, data []byte, revisi
 	return nil
 }
 
-func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op string, argsRV []reflect.Value) error {
+func (m *_PropView) DoSync(entityID uid.ID, propName string, revision int64, op string, argsRV []reflect.Value) error {
 	caller := m.rt.RPCStack().CallChain().Last()
 
-	entity, ok := m.rt.EntityManager().GetEntity(entityId)
+	entity, ok := m.rt.EntityManager().GetEntity(entityID)
 	if !ok {
 		log.L(m.rt).Error("do sync op failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),
@@ -268,7 +268,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 	propTab, ok := entity.(IPropTab)
 	if !ok {
 		log.L(m.rt).Error("do sync op failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),
@@ -282,7 +282,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 	prop := propTab.GetProp(propName)
 	if prop == nil {
 		log.L(m.rt).Error("do sync op failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),
@@ -295,7 +295,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 
 	if revision <= prop.Managed().Revision() {
 		log.L(m.rt).Error("do sync op failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),
@@ -308,7 +308,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 
 	if revision != prop.Managed().Revision()+1 {
 		log.L(m.rt).Error("do sync op failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),
@@ -322,7 +322,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 	methodRV := prop.ReflectedManaged().MethodByName(op)
 	if !methodRV.IsValid() {
 		log.L(m.rt).Error("do sync op failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),
@@ -336,7 +336,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 
 	if methodRT.NumIn() != len(argsRV) {
 		log.L(m.rt).Error("do sync op failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),
@@ -361,7 +361,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 		if argRV.CanConvert(paramRT) {
 			if argRT.Size() > paramRT.Size() {
 				log.L(m.rt).Error("do sync op failed",
-					zap.String("entity_id", entityId.String()),
+					zap.String("entity_id", entityID.String()),
 					zap.String("prop", propName),
 					zap.Int64("revision", revision),
 					zap.String("op", op),
@@ -384,7 +384,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 		argRV, err := argsRV[i].Interface().(variant.Variant).ToNative(paramRT)
 		if err != nil {
 			log.L(m.rt).Error("do sync op failed",
-				zap.String("entity_id", entityId.String()),
+				zap.String("entity_id", entityID.String()),
 				zap.String("prop", propName),
 				zap.Int64("revision", revision),
 				zap.String("op", op),
@@ -401,7 +401,7 @@ func (m *_PropView) DoSync(entityId uid.Id, propName string, revision int64, op 
 	prop.Managed().incrRevision()
 
 	log.L(m.rt).Info("do sync op ok",
-		zap.String("entity_id", entityId.String()),
+		zap.String("entity_id", entityID.String()),
 		zap.String("prop", propName),
 		zap.Int64("revision", revision),
 		zap.String("op", op),
@@ -417,14 +417,14 @@ func (m *_PropView) doSyncRet(ctx runtime.Context, ret async.Result, args ...any
 	}
 
 	dst := args[0].(string)
-	entityId := args[1].(uid.Id)
+	entityID := args[1].(uid.ID)
 	propName := args[2].(string)
 	revision := args[3].(int64)
 	op := args[4].(string)
 
 	if retErr != nil {
 		log.L(m.rt).Error("sync op failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),
@@ -438,7 +438,7 @@ func (m *_PropView) doSyncRet(ctx runtime.Context, ret async.Result, args ...any
 
 	if ok := errors.As(err, &syncErr); !ok {
 		log.L(m.rt).Error("sync op failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),
@@ -451,7 +451,7 @@ func (m *_PropView) doSyncRet(ctx runtime.Context, ret async.Result, args ...any
 	switch syncErr.Code {
 	case ErrOutdatedRevision.Code, ErrDiscontinuousRevision.Code, ErrMethodNotFound.Code, ErrMethodParameterCountMismatch.Code, ErrMethodParameterTypeMismatch.Code:
 		log.L(m.rt).Warn("sync op failed, trying to save",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),
@@ -459,10 +459,10 @@ func (m *_PropView) doSyncRet(ctx runtime.Context, ret async.Result, args ...any
 			zap.NamedError("sync_err", err),
 		)
 
-		entity, ok := m.rt.EntityManager().GetEntity(entityId)
+		entity, ok := m.rt.EntityManager().GetEntity(entityID)
 		if !ok {
 			log.L(m.rt).Error("sync trying to save failed",
-				zap.String("entity_id", entityId.String()),
+				zap.String("entity_id", entityID.String()),
 				zap.String("prop", propName),
 				zap.Int64("revision", revision),
 				zap.String("op", op),
@@ -475,7 +475,7 @@ func (m *_PropView) doSyncRet(ctx runtime.Context, ret async.Result, args ...any
 		err := entity.(IPropTab).GetProp(propName).Save(dst)
 		if err != nil {
 			log.L(m.rt).Error("sync trying to save failed",
-				zap.String("entity_id", entityId.String()),
+				zap.String("entity_id", entityID.String()),
 				zap.String("prop", propName),
 				zap.Int64("revision", revision),
 				zap.String("op", op),
@@ -485,7 +485,7 @@ func (m *_PropView) doSyncRet(ctx runtime.Context, ret async.Result, args ...any
 		}
 
 		log.L(m.rt).Info("sync trying to save ok",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),
@@ -494,7 +494,7 @@ func (m *_PropView) doSyncRet(ctx runtime.Context, ret async.Result, args ...any
 
 	default:
 		log.L(m.rt).Error("sync op failed",
-			zap.String("entity_id", entityId.String()),
+			zap.String("entity_id", entityID.String()),
 			zap.String("prop", propName),
 			zap.Int64("revision", revision),
 			zap.String("op", op),

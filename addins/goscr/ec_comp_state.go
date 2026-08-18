@@ -43,7 +43,7 @@ func (c *ComponentState) Awake() {
 		generic.CastAction0(cb.OnCreate).Call(c.Runtime().AutoRecover(), c.Runtime().ReportError())
 	}
 
-	if c.State() != ec.ComponentState_Awakened {
+	if c.State() != ec.ComponentState_Awaking {
 		return
 	}
 

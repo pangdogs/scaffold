@@ -297,14 +297,14 @@ type _git_golaxy_org_core_Runtime struct {
 	WConcurrentContextCache func() iface.Cache
 	WCurrentContextCache    func() iface.Cache
 	WInstanceFaceCache      func() iface.Cache
-	WPushPost               func(fun generic.ActionVar1[runtime.Context, any], args ...any) error
-	WPushPostDelegate       func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) error
-	WPushSubmit             func(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future
-	WPushSubmitDelegate     func(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future
-	WPushSubmitDelegateVoid func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future
-	WPushSubmitVoid         func(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future
+	WPost                   func(fun generic.ActionVar1[runtime.Context, any], args ...any) error
+	WPostDelegate           func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) error
 	WRun                    func() async.Signal
 	WStats                  func() core.RuntimeStats
+	WSubmit                 func(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future
+	WSubmitDelegate         func(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future
+	WSubmitDelegateVoid     func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future
+	WSubmitVoid             func(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future
 	WTerminate              func() async.Signal
 	WTerminated             func() async.Signal
 }
@@ -316,26 +316,26 @@ func (W _git_golaxy_org_core_Runtime) CurrentContextCache() iface.Cache {
 	return W.WCurrentContextCache()
 }
 func (W _git_golaxy_org_core_Runtime) InstanceFaceCache() iface.Cache { return W.WInstanceFaceCache() }
-func (W _git_golaxy_org_core_Runtime) PushPost(fun generic.ActionVar1[runtime.Context, any], args ...any) error {
-	return W.WPushPost(fun, args...)
+func (W _git_golaxy_org_core_Runtime) Post(fun generic.ActionVar1[runtime.Context, any], args ...any) error {
+	return W.WPost(fun, args...)
 }
-func (W _git_golaxy_org_core_Runtime) PushPostDelegate(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) error {
-	return W.WPushPostDelegate(fun, args...)
-}
-func (W _git_golaxy_org_core_Runtime) PushSubmit(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future {
-	return W.WPushSubmit(fun, args...)
-}
-func (W _git_golaxy_org_core_Runtime) PushSubmitDelegate(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future {
-	return W.WPushSubmitDelegate(fun, args...)
-}
-func (W _git_golaxy_org_core_Runtime) PushSubmitDelegateVoid(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future {
-	return W.WPushSubmitDelegateVoid(fun, args...)
-}
-func (W _git_golaxy_org_core_Runtime) PushSubmitVoid(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future {
-	return W.WPushSubmitVoid(fun, args...)
+func (W _git_golaxy_org_core_Runtime) PostDelegate(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) error {
+	return W.WPostDelegate(fun, args...)
 }
 func (W _git_golaxy_org_core_Runtime) Run() async.Signal        { return W.WRun() }
 func (W _git_golaxy_org_core_Runtime) Stats() core.RuntimeStats { return W.WStats() }
+func (W _git_golaxy_org_core_Runtime) Submit(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future {
+	return W.WSubmit(fun, args...)
+}
+func (W _git_golaxy_org_core_Runtime) SubmitDelegate(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future {
+	return W.WSubmitDelegate(fun, args...)
+}
+func (W _git_golaxy_org_core_Runtime) SubmitDelegateVoid(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future {
+	return W.WSubmitDelegateVoid(fun, args...)
+}
+func (W _git_golaxy_org_core_Runtime) SubmitVoid(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future {
+	return W.WSubmitVoid(fun, args...)
+}
 func (W _git_golaxy_org_core_Runtime) Terminate() async.Signal  { return W.WTerminate() }
 func (W _git_golaxy_org_core_Runtime) Terminated() async.Signal { return W.WTerminated() }
 

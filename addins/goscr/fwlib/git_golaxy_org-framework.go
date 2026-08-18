@@ -175,12 +175,12 @@ func init() {
 type _git_golaxy_org_framework_IRuntime struct {
 	IValue                    interface{}
 	WAddInManager             func() extension.AddInManager
-	WAfterFutureWait          func(futureID uint64)
+	WAfterFutureWait          func(futureID async.FutureID)
 	WAsyncScope               func() *async.Scope
 	WAutoInjection            func() bool
 	WAutoRecover              func() bool
-	WBeforeFutureWait         func(futureID uint64, completionExecutorID async.ExecutorID) error
-	WBlockedFutureID          func() uint64
+	WBeforeFutureWait         func(futureID async.FutureID, completionExecutorID async.ExecutorID) error
+	WBlockedFutureID          func() async.FutureID
 	WBuildEntity              func(prototype string) *core.EntityCreator
 	WCollectGC                func(gc runtime.GC)
 	WConcurrentContextCache   func() iface.Cache
@@ -194,10 +194,10 @@ type _git_golaxy_org_framework_IRuntime struct {
 	WEventContextRunningEvent func() event.IEvent
 	WExecutorID               func() async.ExecutorID
 	WFrame                    func() runtime.Frame
-	WId                       func() uid.Id
+	WID                       func() uid.ID
 	WInstanceFaceCache        func() iface.Cache
 	WL                        func() *zap.Logger
-	WLastWaitRejectID         func() uint64
+	WLastWaitRejectID         func() async.FutureID
 	WMainEntity               func() ec.Entity
 	WManaged                  func() *event.ManagedHandles
 	WName                     func() string
@@ -223,16 +223,18 @@ type _git_golaxy_org_framework_IRuntime struct {
 func (W _git_golaxy_org_framework_IRuntime) AddInManager() extension.AddInManager {
 	return W.WAddInManager()
 }
-func (W _git_golaxy_org_framework_IRuntime) AfterFutureWait(futureID uint64) {
+func (W _git_golaxy_org_framework_IRuntime) AfterFutureWait(futureID async.FutureID) {
 	W.WAfterFutureWait(futureID)
 }
 func (W _git_golaxy_org_framework_IRuntime) AsyncScope() *async.Scope { return W.WAsyncScope() }
 func (W _git_golaxy_org_framework_IRuntime) AutoInjection() bool      { return W.WAutoInjection() }
 func (W _git_golaxy_org_framework_IRuntime) AutoRecover() bool        { return W.WAutoRecover() }
-func (W _git_golaxy_org_framework_IRuntime) BeforeFutureWait(futureID uint64, completionExecutorID async.ExecutorID) error {
+func (W _git_golaxy_org_framework_IRuntime) BeforeFutureWait(futureID async.FutureID, completionExecutorID async.ExecutorID) error {
 	return W.WBeforeFutureWait(futureID, completionExecutorID)
 }
-func (W _git_golaxy_org_framework_IRuntime) BlockedFutureID() uint64 { return W.WBlockedFutureID() }
+func (W _git_golaxy_org_framework_IRuntime) BlockedFutureID() async.FutureID {
+	return W.WBlockedFutureID()
+}
 func (W _git_golaxy_org_framework_IRuntime) BuildEntity(prototype string) *core.EntityCreator {
 	return W.WBuildEntity(prototype)
 }
@@ -260,12 +262,14 @@ func (W _git_golaxy_org_framework_IRuntime) EventContextRunningEvent() event.IEv
 }
 func (W _git_golaxy_org_framework_IRuntime) ExecutorID() async.ExecutorID { return W.WExecutorID() }
 func (W _git_golaxy_org_framework_IRuntime) Frame() runtime.Frame         { return W.WFrame() }
-func (W _git_golaxy_org_framework_IRuntime) Id() uid.Id                   { return W.WId() }
+func (W _git_golaxy_org_framework_IRuntime) ID() uid.ID                   { return W.WID() }
 func (W _git_golaxy_org_framework_IRuntime) InstanceFaceCache() iface.Cache {
 	return W.WInstanceFaceCache()
 }
-func (W _git_golaxy_org_framework_IRuntime) L() *zap.Logger                 { return W.WL() }
-func (W _git_golaxy_org_framework_IRuntime) LastWaitRejectID() uint64       { return W.WLastWaitRejectID() }
+func (W _git_golaxy_org_framework_IRuntime) L() *zap.Logger { return W.WL() }
+func (W _git_golaxy_org_framework_IRuntime) LastWaitRejectID() async.FutureID {
+	return W.WLastWaitRejectID()
+}
 func (W _git_golaxy_org_framework_IRuntime) MainEntity() ec.Entity          { return W.WMainEntity() }
 func (W _git_golaxy_org_framework_IRuntime) Managed() *event.ManagedHandles { return W.WManaged() }
 func (W _git_golaxy_org_framework_IRuntime) Name() string                   { return W.WName() }
@@ -335,14 +339,14 @@ type _git_golaxy_org_framework_IService struct {
 	WEntityLib          func() pt.EntityLib
 	WEntityManager      func() service.EntityManager
 	WErr                func() error
-	WId                 func() uid.Id
+	WID                 func() uid.ID
 	WInstanceFaceCache  func() iface.Cache
 	WL                  func() *zap.Logger
 	WMemory             func() *sync.Map
 	WName               func() string
 	WParentContext      func() context.Context
-	WPost               func(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) error
-	WPostDelegate       func(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) error
+	WPost               func(entityID uid.ID, fun generic.ActionVar1[ec.Entity, any], args ...any) error
+	WPostDelegate       func(entityID uid.ID, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) error
 	WRPC                func() rpc.IRPC
 	WReflected          func() reflect.Value
 	WRegistry           func() discovery.IRegistry
@@ -351,10 +355,10 @@ type _git_golaxy_org_framework_IService struct {
 	WS                  func() *zap.SugaredLogger
 	WServiceConf        func() *viper.Viper
 	WString             func() string
-	WSubmit             func(entityID uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future
-	WSubmitDelegate     func(entityID uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future
-	WSubmitDelegateVoid func(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future
-	WSubmitVoid         func(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future
+	WSubmit             func(entityID uid.ID, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future
+	WSubmitDelegate     func(entityID uid.ID, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future
+	WSubmitDelegateVoid func(entityID uid.ID, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future
+	WSubmitVoid         func(entityID uid.ID, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future
 	WTerminate          func() async.Signal
 	WTerminated         func() async.Signal
 	WValue              func(key any) any
@@ -391,7 +395,7 @@ func (W _git_golaxy_org_framework_IService) EntityManager() service.EntityManage
 	return W.WEntityManager()
 }
 func (W _git_golaxy_org_framework_IService) Err() error { return W.WErr() }
-func (W _git_golaxy_org_framework_IService) Id() uid.Id { return W.WId() }
+func (W _git_golaxy_org_framework_IService) ID() uid.ID { return W.WID() }
 func (W _git_golaxy_org_framework_IService) InstanceFaceCache() iface.Cache {
 	return W.WInstanceFaceCache()
 }
@@ -401,10 +405,10 @@ func (W _git_golaxy_org_framework_IService) Name() string      { return W.WName(
 func (W _git_golaxy_org_framework_IService) ParentContext() context.Context {
 	return W.WParentContext()
 }
-func (W _git_golaxy_org_framework_IService) Post(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) error {
+func (W _git_golaxy_org_framework_IService) Post(entityID uid.ID, fun generic.ActionVar1[ec.Entity, any], args ...any) error {
 	return W.WPost(entityID, fun, args...)
 }
-func (W _git_golaxy_org_framework_IService) PostDelegate(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) error {
+func (W _git_golaxy_org_framework_IService) PostDelegate(entityID uid.ID, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) error {
 	return W.WPostDelegate(entityID, fun, args...)
 }
 func (W _git_golaxy_org_framework_IService) RPC() rpc.IRPC                 { return W.WRPC() }
@@ -420,16 +424,16 @@ func (W _git_golaxy_org_framework_IService) String() string {
 	}
 	return W.WString()
 }
-func (W _git_golaxy_org_framework_IService) Submit(entityID uid.Id, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future {
+func (W _git_golaxy_org_framework_IService) Submit(entityID uid.ID, fun generic.FuncVar1[ec.Entity, any, async.Result], args ...any) async.Future {
 	return W.WSubmit(entityID, fun, args...)
 }
-func (W _git_golaxy_org_framework_IService) SubmitDelegate(entityID uid.Id, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future {
+func (W _git_golaxy_org_framework_IService) SubmitDelegate(entityID uid.ID, fun generic.DelegateVar1[ec.Entity, any, async.Result], args ...any) async.Future {
 	return W.WSubmitDelegate(entityID, fun, args...)
 }
-func (W _git_golaxy_org_framework_IService) SubmitDelegateVoid(entityID uid.Id, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future {
+func (W _git_golaxy_org_framework_IService) SubmitDelegateVoid(entityID uid.ID, fun generic.DelegateVoidVar1[ec.Entity, any], args ...any) async.Future {
 	return W.WSubmitDelegateVoid(entityID, fun, args...)
 }
-func (W _git_golaxy_org_framework_IService) SubmitVoid(entityID uid.Id, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future {
+func (W _git_golaxy_org_framework_IService) SubmitVoid(entityID uid.ID, fun generic.ActionVar1[ec.Entity, any], args ...any) async.Future {
 	return W.WSubmitVoid(entityID, fun, args...)
 }
 func (W _git_golaxy_org_framework_IService) Terminate() async.Signal      { return W.WTerminate() }

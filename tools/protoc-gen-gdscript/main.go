@@ -977,7 +977,7 @@ func emitTypeIDMethod(g *protogen.GeneratedFile, file *protogen.File, msg *proto
 		return
 	}
 	g.P("\tfunc type_id() -> int:")
-	g.P("\t\treturn ", makeTypeId(string(file.Desc.Package()), string(msg.Desc.Name())))
+	g.P("\t\treturn ", makeTypeID(string(file.Desc.Package()), string(msg.Desc.Name())))
 	g.P()
 }
 
@@ -1143,7 +1143,7 @@ func emitScriptStaticInit(g *protogen.GeneratedFile, file *protogen.File, messag
 	g.P()
 	g.P("static func ", gapVariantRegisterMethod, "() -> void:")
 	for _, msg := range messages {
-		g.P("\tGAPVariants.custom_type_registry.register(", makeTypeId(string(file.Desc.Package()), string(msg.Desc.Name())), ", ", safeIdentifier(msg.GoIdent.GoName), ")")
+		g.P("\tGAPVariants.custom_type_registry.register(", makeTypeID(string(file.Desc.Package()), string(msg.Desc.Name())), ", ", safeIdentifier(msg.GoIdent.GoName), ")")
 	}
 	g.P()
 }
@@ -1813,10 +1813,10 @@ func messageBaseType() string {
 	return "ProtoMessage"
 }
 
-func makeTypeId(pkgName, msgName string) variant.TypeId {
+func makeTypeID(pkgName, msgName string) variant.TypeID {
 	hash := fnv.New32a()
 	hash.Write([]byte(pkgName + "." + msgName))
-	return variant.TypeId(variant.TypeId_Customize + hash.Sum32())
+	return variant.TypeID(variant.TypeID_Customize + hash.Sum32())
 }
 
 func safeIdentifier(s string) string {

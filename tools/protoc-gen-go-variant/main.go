@@ -102,9 +102,9 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 		g.P("}")
 		g.P()
 
-		g.P("// TypeId returns the variant type id")
-		g.P("func (x *", m.GoIdent, ") TypeId() ", variantPackage.Ident("TypeId"), " {")
-		g.P("\treturn ", makeTypeId(string(file.Desc.Package()), string(m.Desc.Name())), "")
+		g.P("// TypeID returns the variant type id")
+		g.P("func (x *", m.GoIdent, ") TypeID() ", variantPackage.Ident("TypeID"), " {")
+		g.P("\treturn ", makeTypeID(string(file.Desc.Package()), string(m.Desc.Name())), "")
 		g.P("}")
 		g.P()
 
@@ -137,8 +137,8 @@ func genGeneratedHeader(gen *protogen.Plugin, file *protogen.File, g *protogen.G
 	g.P()
 }
 
-func makeTypeId(pkgName, msgName string) variant.TypeId {
+func makeTypeID(pkgName, msgName string) variant.TypeID {
 	hash := fnv.New32a()
 	hash.Write([]byte(pkgName + "." + msgName))
-	return variant.TypeId(variant.TypeId_Customize + hash.Sum32())
+	return variant.TypeID(variant.TypeID_Customize + hash.Sum32())
 }

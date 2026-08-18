@@ -67,18 +67,18 @@ func init() {
 		"Hash_SHA512":                            reflect.ValueOf(gtp.Hash_SHA512),
 		"LoadPrivateKeyFile":                     reflect.ValueOf(gtp.LoadPrivateKeyFile),
 		"LoadPublicKeyFile":                      reflect.ValueOf(gtp.LoadPublicKeyFile),
-		"MsgId_Auth":                             reflect.ValueOf(gtp.MsgId_Auth),
-		"MsgId_ChangeCipherSpec":                 reflect.ValueOf(gtp.MsgId_ChangeCipherSpec),
-		"MsgId_Continue":                         reflect.ValueOf(gtp.MsgId_Continue),
-		"MsgId_Customize":                        reflect.ValueOf(constant.MakeFromLiteral("16", token.INT, 0)),
-		"MsgId_ECDHESecretKeyExchange":           reflect.ValueOf(gtp.MsgId_ECDHESecretKeyExchange),
-		"MsgId_Finished":                         reflect.ValueOf(gtp.MsgId_Finished),
-		"MsgId_Heartbeat":                        reflect.ValueOf(gtp.MsgId_Heartbeat),
-		"MsgId_Hello":                            reflect.ValueOf(gtp.MsgId_Hello),
-		"MsgId_None":                             reflect.ValueOf(gtp.MsgId_None),
-		"MsgId_Payload":                          reflect.ValueOf(gtp.MsgId_Payload),
-		"MsgId_Rst":                              reflect.ValueOf(gtp.MsgId_Rst),
-		"MsgId_SyncTime":                         reflect.ValueOf(gtp.MsgId_SyncTime),
+		"MsgID_Auth":                             reflect.ValueOf(gtp.MsgID_Auth),
+		"MsgID_ChangeCipherSpec":                 reflect.ValueOf(gtp.MsgID_ChangeCipherSpec),
+		"MsgID_Continue":                         reflect.ValueOf(gtp.MsgID_Continue),
+		"MsgID_Customize":                        reflect.ValueOf(constant.MakeFromLiteral("16", token.INT, 0)),
+		"MsgID_ECDHESecretKeyExchange":           reflect.ValueOf(gtp.MsgID_ECDHESecretKeyExchange),
+		"MsgID_Finished":                         reflect.ValueOf(gtp.MsgID_Finished),
+		"MsgID_Heartbeat":                        reflect.ValueOf(gtp.MsgID_Heartbeat),
+		"MsgID_Hello":                            reflect.ValueOf(gtp.MsgID_Hello),
+		"MsgID_None":                             reflect.ValueOf(gtp.MsgID_None),
+		"MsgID_Payload":                          reflect.ValueOf(gtp.MsgID_Payload),
+		"MsgID_Rst":                              reflect.ValueOf(gtp.MsgID_Rst),
+		"MsgID_SyncTime":                         reflect.ValueOf(gtp.MsgID_SyncTime),
 		"NamedCurve_None":                        reflect.ValueOf(gtp.NamedCurve_None),
 		"NamedCurve_P256":                        reflect.ValueOf(gtp.NamedCurve_P256),
 		"NamedCurve_P384":                        reflect.ValueOf(gtp.NamedCurve_P384),
@@ -133,7 +133,7 @@ func init() {
 		"MsgHead":                   reflect.ValueOf((*gtp.MsgHead)(nil)),
 		"MsgHeartbeat":              reflect.ValueOf((*gtp.MsgHeartbeat)(nil)),
 		"MsgHello":                  reflect.ValueOf((*gtp.MsgHello)(nil)),
-		"MsgId":                     reflect.ValueOf((*gtp.MsgId)(nil)),
+		"MsgID":                     reflect.ValueOf((*gtp.MsgID)(nil)),
 		"MsgPacket":                 reflect.ValueOf((*gtp.MsgPacket)(nil)),
 		"MsgPacketLen":              reflect.ValueOf((*gtp.MsgPacketLen)(nil)),
 		"MsgPayload":                reflect.ValueOf((*gtp.MsgPayload)(nil)),
@@ -159,26 +159,26 @@ func init() {
 type _git_golaxy_org_framework_net_gtp_IMsgCreator struct {
 	IValue   interface{}
 	WDeclare func(msg gtp.Msg)
-	WNew     func(msgId gtp.MsgId) (gtp.Msg, error)
+	WNew     func(msgID gtp.MsgID) (gtp.Msg, error)
 }
 
 func (W _git_golaxy_org_framework_net_gtp_IMsgCreator) Declare(msg gtp.Msg) { W.WDeclare(msg) }
-func (W _git_golaxy_org_framework_net_gtp_IMsgCreator) New(msgId gtp.MsgId) (gtp.Msg, error) {
-	return W.WNew(msgId)
+func (W _git_golaxy_org_framework_net_gtp_IMsgCreator) New(msgID gtp.MsgID) (gtp.Msg, error) {
+	return W.WNew(msgID)
 }
 
 // _git_golaxy_org_framework_net_gtp_Msg is an interface wrapper for Msg type
 type _git_golaxy_org_framework_net_gtp_Msg struct {
 	IValue interface{}
 	WClone func() gtp.Msg
-	WMsgId func() gtp.MsgId
+	WMsgID func() gtp.MsgID
 	WRead  func(p []byte) (n int, err error)
 	WSize  func() int
 	WWrite func(p []byte) (n int, err error)
 }
 
 func (W _git_golaxy_org_framework_net_gtp_Msg) Clone() gtp.Msg                    { return W.WClone() }
-func (W _git_golaxy_org_framework_net_gtp_Msg) MsgId() gtp.MsgId                  { return W.WMsgId() }
+func (W _git_golaxy_org_framework_net_gtp_Msg) MsgID() gtp.MsgID                  { return W.WMsgID() }
 func (W _git_golaxy_org_framework_net_gtp_Msg) Read(p []byte) (n int, err error)  { return W.WRead(p) }
 func (W _git_golaxy_org_framework_net_gtp_Msg) Size() int                         { return W.WSize() }
 func (W _git_golaxy_org_framework_net_gtp_Msg) Write(p []byte) (n int, err error) { return W.WWrite(p) }
@@ -187,13 +187,13 @@ func (W _git_golaxy_org_framework_net_gtp_Msg) Write(p []byte) (n int, err error
 type _git_golaxy_org_framework_net_gtp_ReadableMsg struct {
 	IValue interface{}
 	WClone func() gtp.Msg
-	WMsgId func() gtp.MsgId
+	WMsgID func() gtp.MsgID
 	WRead  func(p []byte) (n int, err error)
 	WSize  func() int
 }
 
 func (W _git_golaxy_org_framework_net_gtp_ReadableMsg) Clone() gtp.Msg   { return W.WClone() }
-func (W _git_golaxy_org_framework_net_gtp_ReadableMsg) MsgId() gtp.MsgId { return W.WMsgId() }
+func (W _git_golaxy_org_framework_net_gtp_ReadableMsg) MsgID() gtp.MsgID { return W.WMsgID() }
 func (W _git_golaxy_org_framework_net_gtp_ReadableMsg) Read(p []byte) (n int, err error) {
 	return W.WRead(p)
 }

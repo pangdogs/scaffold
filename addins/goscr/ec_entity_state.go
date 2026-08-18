@@ -43,7 +43,7 @@ func (e *EntityState) Awake() {
 		generic.CastAction0(cb.OnCreate).Call(e.Runtime().AutoRecover(), e.Runtime().ReportError())
 	}
 
-	if e.State() != ec.EntityState_Awakened {
+	if e.State() != ec.EntityState_Awaking {
 		return
 	}
 

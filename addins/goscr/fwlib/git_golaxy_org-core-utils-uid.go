@@ -15,6 +15,6 @@ func init() {
 		"Nil":  reflect.ValueOf(&uid.Nil).Elem(),
 
 		// type definitions
-		"Id": reflect.ValueOf((*uid.Id)(nil)),
+		"ID": reflect.ValueOf((*uid.ID)(nil)),
 	}
 }

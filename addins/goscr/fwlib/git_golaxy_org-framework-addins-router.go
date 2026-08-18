@@ -63,19 +63,19 @@ func (W _git_golaxy_org_framework_addins_router_IEventIO) Send(event transport.I
 // _git_golaxy_org_framework_addins_router_IGroup is an interface wrapper for IGroup type
 type _git_golaxy_org_framework_addins_router_IGroup struct {
 	IValue               interface{}
-	WAdd                 func(ctx context.Context, ids []uid.Id) error
+	WAdd                 func(ctx context.Context, ids []uid.ID) error
 	WClientAddr          func() string
 	WDataIO              func() router.IDataIO
 	WDeleted             func() async.Signal
 	WEventIO             func() router.IEventIO
 	WKeepAliveContinuous func(ctx context.Context) (async.Signal, error)
 	WKeepAliveOnce       func(ctx context.Context) error
-	WList                func() []uid.Id
+	WList                func() []uid.ID
 	WName                func() string
-	WRemove              func(ctx context.Context, ids []uid.Id) error
+	WRemove              func(ctx context.Context, ids []uid.ID) error
 }
 
-func (W _git_golaxy_org_framework_addins_router_IGroup) Add(ctx context.Context, ids []uid.Id) error {
+func (W _git_golaxy_org_framework_addins_router_IGroup) Add(ctx context.Context, ids []uid.ID) error {
 	return W.WAdd(ctx, ids)
 }
 func (W _git_golaxy_org_framework_addins_router_IGroup) ClientAddr() string     { return W.WClientAddr() }
@@ -90,9 +90,9 @@ func (W _git_golaxy_org_framework_addins_router_IGroup) KeepAliveContinuous(ctx 
 func (W _git_golaxy_org_framework_addins_router_IGroup) KeepAliveOnce(ctx context.Context) error {
 	return W.WKeepAliveOnce(ctx)
 }
-func (W _git_golaxy_org_framework_addins_router_IGroup) List() []uid.Id { return W.WList() }
+func (W _git_golaxy_org_framework_addins_router_IGroup) List() []uid.ID { return W.WList() }
 func (W _git_golaxy_org_framework_addins_router_IGroup) Name() string   { return W.WName() }
-func (W _git_golaxy_org_framework_addins_router_IGroup) Remove(ctx context.Context, ids []uid.Id) error {
+func (W _git_golaxy_org_framework_addins_router_IGroup) Remove(ctx context.Context, ids []uid.ID) error {
 	return W.WRemove(ctx, ids)
 }
 
@@ -121,16 +121,16 @@ func (W _git_golaxy_org_framework_addins_router_IMapping) Unmapped() async.Signa
 // _git_golaxy_org_framework_addins_router_IRouter is an interface wrapper for IRouter type
 type _git_golaxy_org_framework_addins_router_IRouter struct {
 	IValue             interface{}
-	WAddGroup          func(ctx context.Context, name string, ids []uid.Id, ttl time.Duration) (router.IGroup, error)
+	WAddGroup          func(ctx context.Context, name string, ids []uid.ID, ttl time.Duration) (router.IGroup, error)
 	WDeleteGroup       func(ctx context.Context, name string)
 	WGetGroupByAddr    func(ctx context.Context, addr string) (router.IGroup, bool)
 	WGetGroupByName    func(ctx context.Context, name string) (router.IGroup, bool)
-	WGetGroupsByEntity func(ctx context.Context, entityId uid.Id) []router.IGroup
-	WLookup            func(id uid.Id) (router.IMapping, bool)
-	WMap               func(entityId uid.Id, sessionId uid.Id) (router.IMapping, error)
+	WGetGroupsByEntity func(ctx context.Context, entityID uid.ID) []router.IGroup
+	WLookup            func(id uid.ID) (router.IMapping, bool)
+	WMap               func(entityID uid.ID, sessionID uid.ID) (router.IMapping, error)
 }
 
-func (W _git_golaxy_org_framework_addins_router_IRouter) AddGroup(ctx context.Context, name string, ids []uid.Id, ttl time.Duration) (router.IGroup, error) {
+func (W _git_golaxy_org_framework_addins_router_IRouter) AddGroup(ctx context.Context, name string, ids []uid.ID, ttl time.Duration) (router.IGroup, error) {
 	return W.WAddGroup(ctx, name, ids, ttl)
 }
 func (W _git_golaxy_org_framework_addins_router_IRouter) DeleteGroup(ctx context.Context, name string) {
@@ -142,12 +142,12 @@ func (W _git_golaxy_org_framework_addins_router_IRouter) GetGroupByAddr(ctx cont
 func (W _git_golaxy_org_framework_addins_router_IRouter) GetGroupByName(ctx context.Context, name string) (router.IGroup, bool) {
 	return W.WGetGroupByName(ctx, name)
 }
-func (W _git_golaxy_org_framework_addins_router_IRouter) GetGroupsByEntity(ctx context.Context, entityId uid.Id) []router.IGroup {
-	return W.WGetGroupsByEntity(ctx, entityId)
+func (W _git_golaxy_org_framework_addins_router_IRouter) GetGroupsByEntity(ctx context.Context, entityID uid.ID) []router.IGroup {
+	return W.WGetGroupsByEntity(ctx, entityID)
 }
-func (W _git_golaxy_org_framework_addins_router_IRouter) Lookup(id uid.Id) (router.IMapping, bool) {
+func (W _git_golaxy_org_framework_addins_router_IRouter) Lookup(id uid.ID) (router.IMapping, bool) {
 	return W.WLookup(id)
 }
-func (W _git_golaxy_org_framework_addins_router_IRouter) Map(entityId uid.Id, sessionId uid.Id) (router.IMapping, error) {
-	return W.WMap(entityId, sessionId)
+func (W _git_golaxy_org_framework_addins_router_IRouter) Map(entityID uid.ID, sessionID uid.ID) (router.IMapping, error) {
+	return W.WMap(entityID, sessionID)
 }

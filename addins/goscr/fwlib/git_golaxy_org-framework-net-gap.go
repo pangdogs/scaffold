@@ -15,13 +15,13 @@ func init() {
 		"DefaultMsgCreator": reflect.ValueOf(gap.DefaultMsgCreator),
 		"ErrGAP":            reflect.ValueOf(&gap.ErrGAP).Elem(),
 		"ErrNotDeclared":    reflect.ValueOf(&gap.ErrNotDeclared).Elem(),
-		"GenMsgId":          reflect.ValueOf(gap.GenMsgId),
-		"MsgId_Customize":   reflect.ValueOf(constant.MakeFromLiteral("32", token.INT, 0)),
-		"MsgId_Forward":     reflect.ValueOf(gap.MsgId_Forward),
-		"MsgId_None":        reflect.ValueOf(gap.MsgId_None),
-		"MsgId_OnewayRPC":   reflect.ValueOf(gap.MsgId_OnewayRPC),
-		"MsgId_RPC_Reply":   reflect.ValueOf(gap.MsgId_RPC_Reply),
-		"MsgId_RPC_Request": reflect.ValueOf(gap.MsgId_RPC_Request),
+		"GenMsgID":          reflect.ValueOf(gap.GenMsgID),
+		"MsgID_Customize":   reflect.ValueOf(constant.MakeFromLiteral("32", token.INT, 0)),
+		"MsgID_Forward":     reflect.ValueOf(gap.MsgID_Forward),
+		"MsgID_None":        reflect.ValueOf(gap.MsgID_None),
+		"MsgID_OnewayRPC":   reflect.ValueOf(gap.MsgID_OnewayRPC),
+		"MsgID_RPC_Reply":   reflect.ValueOf(gap.MsgID_RPC_Reply),
+		"MsgID_RPC_Request": reflect.ValueOf(gap.MsgID_RPC_Request),
 		"NewMsgCreator":     reflect.ValueOf(gap.NewMsgCreator),
 		"Unmarshal":         reflect.ValueOf(gap.Unmarshal),
 
@@ -30,7 +30,7 @@ func init() {
 		"Msg":           reflect.ValueOf((*gap.Msg)(nil)),
 		"MsgForward":    reflect.ValueOf((*gap.MsgForward)(nil)),
 		"MsgHead":       reflect.ValueOf((*gap.MsgHead)(nil)),
-		"MsgId":         reflect.ValueOf((*gap.MsgId)(nil)),
+		"MsgID":         reflect.ValueOf((*gap.MsgID)(nil)),
 		"MsgOnewayRPC":  reflect.ValueOf((*gap.MsgOnewayRPC)(nil)),
 		"MsgPacket":     reflect.ValueOf((*gap.MsgPacket)(nil)),
 		"MsgRPCReply":   reflect.ValueOf((*gap.MsgRPCReply)(nil)),
@@ -50,24 +50,24 @@ func init() {
 type _git_golaxy_org_framework_net_gap_IMsgCreator struct {
 	IValue   interface{}
 	WDeclare func(msg gap.Msg)
-	WNew     func(msgId gap.MsgId) (gap.Msg, error)
+	WNew     func(msgID gap.MsgID) (gap.Msg, error)
 }
 
 func (W _git_golaxy_org_framework_net_gap_IMsgCreator) Declare(msg gap.Msg) { W.WDeclare(msg) }
-func (W _git_golaxy_org_framework_net_gap_IMsgCreator) New(msgId gap.MsgId) (gap.Msg, error) {
-	return W.WNew(msgId)
+func (W _git_golaxy_org_framework_net_gap_IMsgCreator) New(msgID gap.MsgID) (gap.Msg, error) {
+	return W.WNew(msgID)
 }
 
 // _git_golaxy_org_framework_net_gap_Msg is an interface wrapper for Msg type
 type _git_golaxy_org_framework_net_gap_Msg struct {
 	IValue interface{}
-	WMsgId func() gap.MsgId
+	WMsgID func() gap.MsgID
 	WRead  func(p []byte) (n int, err error)
 	WSize  func() int
 	WWrite func(p []byte) (n int, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gap_Msg) MsgId() gap.MsgId                  { return W.WMsgId() }
+func (W _git_golaxy_org_framework_net_gap_Msg) MsgID() gap.MsgID                  { return W.WMsgID() }
 func (W _git_golaxy_org_framework_net_gap_Msg) Read(p []byte) (n int, err error)  { return W.WRead(p) }
 func (W _git_golaxy_org_framework_net_gap_Msg) Size() int                         { return W.WSize() }
 func (W _git_golaxy_org_framework_net_gap_Msg) Write(p []byte) (n int, err error) { return W.WWrite(p) }
@@ -75,12 +75,12 @@ func (W _git_golaxy_org_framework_net_gap_Msg) Write(p []byte) (n int, err error
 // _git_golaxy_org_framework_net_gap_ReadableMsg is an interface wrapper for ReadableMsg type
 type _git_golaxy_org_framework_net_gap_ReadableMsg struct {
 	IValue interface{}
-	WMsgId func() gap.MsgId
+	WMsgID func() gap.MsgID
 	WRead  func(p []byte) (n int, err error)
 	WSize  func() int
 }
 
-func (W _git_golaxy_org_framework_net_gap_ReadableMsg) MsgId() gap.MsgId { return W.WMsgId() }
+func (W _git_golaxy_org_framework_net_gap_ReadableMsg) MsgID() gap.MsgID { return W.WMsgID() }
 func (W _git_golaxy_org_framework_net_gap_ReadableMsg) Read(p []byte) (n int, err error) {
 	return W.WRead(p)
 }

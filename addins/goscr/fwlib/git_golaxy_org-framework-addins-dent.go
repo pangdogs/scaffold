@@ -15,8 +15,8 @@ func init() {
 		// function, constant and variable definitions
 		"BindEventDistEntityOffline":   reflect.ValueOf(dent.BindEventDistEntityOffline),
 		"BindEventDistEntityOnline":    reflect.ValueOf(dent.BindEventDistEntityOnline),
-		"EventDistEntityOfflineId":     reflect.ValueOf(&dent.EventDistEntityOfflineId).Elem(),
-		"EventDistEntityOnlineId":      reflect.ValueOf(&dent.EventDistEntityOnlineId).Elem(),
+		"EventDistEntityOfflineID":     reflect.ValueOf(&dent.EventDistEntityOfflineID).Elem(),
+		"EventDistEntityOnlineID":      reflect.ValueOf(&dent.EventDistEntityOnlineID).Elem(),
 		"HandleEventDistEntityOffline": reflect.ValueOf(dent.HandleEventDistEntityOffline),
 		"HandleEventDistEntityOnline":  reflect.ValueOf(dent.HandleEventDistEntityOnline),
 		"QuerierAddIn":                 reflect.ValueOf(&dent.QuerierAddIn).Elem(),
@@ -68,10 +68,10 @@ func (W _git_golaxy_org_framework_addins_dent_EventDistEntityOnline) OnDistEntit
 // _git_golaxy_org_framework_addins_dent_IDistEntityQuerier is an interface wrapper for IDistEntityQuerier type
 type _git_golaxy_org_framework_addins_dent_IDistEntityQuerier struct {
 	IValue         interface{}
-	WGetDistEntity func(id uid.Id) (*dent.DistEntity, bool)
+	WGetDistEntity func(id uid.ID) (*dent.DistEntity, bool)
 }
 
-func (W _git_golaxy_org_framework_addins_dent_IDistEntityQuerier) GetDistEntity(id uid.Id) (*dent.DistEntity, bool) {
+func (W _git_golaxy_org_framework_addins_dent_IDistEntityQuerier) GetDistEntity(id uid.ID) (*dent.DistEntity, bool) {
 	return W.WGetDistEntity(id)
 }
 

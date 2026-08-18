@@ -18,33 +18,33 @@ func init() {
 		"ErrVariant":          reflect.ValueOf(&variant.ErrVariant).Elem(),
 		"Errorf":              reflect.ValueOf(variant.Errorf),
 		"Errorln":             reflect.ValueOf(variant.Errorln),
-		"GenTypeId":           reflect.ValueOf(variant.GenTypeId),
+		"GenTypeID":           reflect.ValueOf(variant.GenTypeID),
 		"NewError":            reflect.ValueOf(variant.NewError),
 		"NewVariant":          reflect.ValueOf(variant.NewVariant),
 		"ToVariant":           reflect.ValueOf(variant.ToVariant),
-		"TypeId_Array":        reflect.ValueOf(variant.TypeId_Array),
-		"TypeId_Bool":         reflect.ValueOf(variant.TypeId_Bool),
-		"TypeId_Byte":         reflect.ValueOf(variant.TypeId_Byte),
-		"TypeId_Bytes":        reflect.ValueOf(variant.TypeId_Bytes),
-		"TypeId_CallChain":    reflect.ValueOf(variant.TypeId_CallChain),
-		"TypeId_Customize":    reflect.ValueOf(constant.MakeFromLiteral("32", token.INT, 0)),
-		"TypeId_Double":       reflect.ValueOf(variant.TypeId_Double),
-		"TypeId_Error":        reflect.ValueOf(variant.TypeId_Error),
-		"TypeId_Float":        reflect.ValueOf(variant.TypeId_Float),
-		"TypeId_Int":          reflect.ValueOf(variant.TypeId_Int),
-		"TypeId_Int16":        reflect.ValueOf(variant.TypeId_Int16),
-		"TypeId_Int32":        reflect.ValueOf(variant.TypeId_Int32),
-		"TypeId_Int64":        reflect.ValueOf(variant.TypeId_Int64),
-		"TypeId_Int8":         reflect.ValueOf(variant.TypeId_Int8),
-		"TypeId_Map":          reflect.ValueOf(variant.TypeId_Map),
-		"TypeId_None":         reflect.ValueOf(variant.TypeId_None),
-		"TypeId_Null":         reflect.ValueOf(variant.TypeId_Null),
-		"TypeId_String":       reflect.ValueOf(variant.TypeId_String),
-		"TypeId_Uint":         reflect.ValueOf(variant.TypeId_Uint),
-		"TypeId_Uint16":       reflect.ValueOf(variant.TypeId_Uint16),
-		"TypeId_Uint32":       reflect.ValueOf(variant.TypeId_Uint32),
-		"TypeId_Uint64":       reflect.ValueOf(variant.TypeId_Uint64),
-		"TypeId_Uint8":        reflect.ValueOf(variant.TypeId_Uint8),
+		"TypeID_Array":        reflect.ValueOf(variant.TypeID_Array),
+		"TypeID_Bool":         reflect.ValueOf(variant.TypeID_Bool),
+		"TypeID_Byte":         reflect.ValueOf(variant.TypeID_Byte),
+		"TypeID_Bytes":        reflect.ValueOf(variant.TypeID_Bytes),
+		"TypeID_CallChain":    reflect.ValueOf(variant.TypeID_CallChain),
+		"TypeID_Customize":    reflect.ValueOf(constant.MakeFromLiteral("32", token.INT, 0)),
+		"TypeID_Double":       reflect.ValueOf(variant.TypeID_Double),
+		"TypeID_Error":        reflect.ValueOf(variant.TypeID_Error),
+		"TypeID_Float":        reflect.ValueOf(variant.TypeID_Float),
+		"TypeID_Int":          reflect.ValueOf(variant.TypeID_Int),
+		"TypeID_Int16":        reflect.ValueOf(variant.TypeID_Int16),
+		"TypeID_Int32":        reflect.ValueOf(variant.TypeID_Int32),
+		"TypeID_Int64":        reflect.ValueOf(variant.TypeID_Int64),
+		"TypeID_Int8":         reflect.ValueOf(variant.TypeID_Int8),
+		"TypeID_Map":          reflect.ValueOf(variant.TypeID_Map),
+		"TypeID_None":         reflect.ValueOf(variant.TypeID_None),
+		"TypeID_Null":         reflect.ValueOf(variant.TypeID_Null),
+		"TypeID_String":       reflect.ValueOf(variant.TypeID_String),
+		"TypeID_Uint":         reflect.ValueOf(variant.TypeID_Uint),
+		"TypeID_Uint16":       reflect.ValueOf(variant.TypeID_Uint16),
+		"TypeID_Uint32":       reflect.ValueOf(variant.TypeID_Uint32),
+		"TypeID_Uint64":       reflect.ValueOf(variant.TypeID_Uint64),
+		"TypeID_Uint8":        reflect.ValueOf(variant.TypeID_Uint8),
 		"VariantCreator":      reflect.ValueOf(variant.VariantCreator),
 
 		// type definitions
@@ -67,7 +67,7 @@ func init() {
 		"Null":            reflect.ValueOf((*variant.Null)(nil)),
 		"ReadableValue":   reflect.ValueOf((*variant.ReadableValue)(nil)),
 		"String":          reflect.ValueOf((*variant.String)(nil)),
-		"TypeId":          reflect.ValueOf((*variant.TypeId)(nil)),
+		"TypeID":          reflect.ValueOf((*variant.TypeID)(nil)),
 		"Uint":            reflect.ValueOf((*variant.Uint)(nil)),
 		"Uint16":          reflect.ValueOf((*variant.Uint16)(nil)),
 		"Uint32":          reflect.ValueOf((*variant.Uint32)(nil)),
@@ -87,18 +87,18 @@ func init() {
 type _git_golaxy_org_framework_net_gap_variant_IVariantCreator struct {
 	IValue        interface{}
 	WDeclare      func(v variant.Value)
-	WNew          func(typeId variant.TypeId) (variant.Value, error)
-	WNewReflected func(typeId variant.TypeId) (reflect.Value, error)
+	WNew          func(typeID variant.TypeID) (variant.Value, error)
+	WNewReflected func(typeID variant.TypeID) (reflect.Value, error)
 }
 
 func (W _git_golaxy_org_framework_net_gap_variant_IVariantCreator) Declare(v variant.Value) {
 	W.WDeclare(v)
 }
-func (W _git_golaxy_org_framework_net_gap_variant_IVariantCreator) New(typeId variant.TypeId) (variant.Value, error) {
-	return W.WNew(typeId)
+func (W _git_golaxy_org_framework_net_gap_variant_IVariantCreator) New(typeID variant.TypeID) (variant.Value, error) {
+	return W.WNew(typeID)
 }
-func (W _git_golaxy_org_framework_net_gap_variant_IVariantCreator) NewReflected(typeId variant.TypeId) (reflect.Value, error) {
-	return W.WNewReflected(typeId)
+func (W _git_golaxy_org_framework_net_gap_variant_IVariantCreator) NewReflected(typeID variant.TypeID) (reflect.Value, error) {
+	return W.WNewReflected(typeID)
 }
 
 // _git_golaxy_org_framework_net_gap_variant_ReadableValue is an interface wrapper for ReadableValue type
@@ -107,7 +107,7 @@ type _git_golaxy_org_framework_net_gap_variant_ReadableValue struct {
 	WIndirect func() any
 	WRead     func(p []byte) (n int, err error)
 	WSize     func() int
-	WTypeId   func() variant.TypeId
+	WTypeID   func() variant.TypeID
 }
 
 func (W _git_golaxy_org_framework_net_gap_variant_ReadableValue) Indirect() any { return W.WIndirect() }
@@ -115,8 +115,8 @@ func (W _git_golaxy_org_framework_net_gap_variant_ReadableValue) Read(p []byte) 
 	return W.WRead(p)
 }
 func (W _git_golaxy_org_framework_net_gap_variant_ReadableValue) Size() int { return W.WSize() }
-func (W _git_golaxy_org_framework_net_gap_variant_ReadableValue) TypeId() variant.TypeId {
-	return W.WTypeId()
+func (W _git_golaxy_org_framework_net_gap_variant_ReadableValue) TypeID() variant.TypeID {
+	return W.WTypeID()
 }
 
 // _git_golaxy_org_framework_net_gap_variant_Value is an interface wrapper for Value type
@@ -125,7 +125,7 @@ type _git_golaxy_org_framework_net_gap_variant_Value struct {
 	WIndirect func() any
 	WRead     func(p []byte) (n int, err error)
 	WSize     func() int
-	WTypeId   func() variant.TypeId
+	WTypeID   func() variant.TypeID
 	WWrite    func(p []byte) (n int, err error)
 }
 
@@ -134,7 +134,7 @@ func (W _git_golaxy_org_framework_net_gap_variant_Value) Read(p []byte) (n int, 
 	return W.WRead(p)
 }
 func (W _git_golaxy_org_framework_net_gap_variant_Value) Size() int              { return W.WSize() }
-func (W _git_golaxy_org_framework_net_gap_variant_Value) TypeId() variant.TypeId { return W.WTypeId() }
+func (W _git_golaxy_org_framework_net_gap_variant_Value) TypeID() variant.TypeID { return W.WTypeID() }
 func (W _git_golaxy_org_framework_net_gap_variant_Value) Write(p []byte) (n int, err error) {
 	return W.WWrite(p)
 }

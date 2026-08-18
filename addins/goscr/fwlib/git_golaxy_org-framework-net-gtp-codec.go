@@ -49,16 +49,16 @@ func init() {
 // _git_golaxy_org_framework_net_gtp_codec_IAuthentication is an interface wrapper for IAuthentication type
 type _git_golaxy_org_framework_net_gtp_codec_IAuthentication struct {
 	IValue          interface{}
-	WAuth           func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (authBuf []byte, err error)
-	WSign           func(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (signedBuf binaryutil.Bytes, err error)
+	WAuth           func(msgID gtp.MsgID, flags gtp.Flags, msgBuf []byte) (authBuf []byte, err error)
+	WSign           func(msgID gtp.MsgID, flags gtp.Flags, msgBuf []byte) (signedBuf binaryutil.Bytes, err error)
 	WSizeOfAddition func(msgLen int) (size int, err error)
 }
 
-func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) Auth(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (authBuf []byte, err error) {
-	return W.WAuth(msgId, flags, msgBuf)
+func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) Auth(msgID gtp.MsgID, flags gtp.Flags, msgBuf []byte) (authBuf []byte, err error) {
+	return W.WAuth(msgID, flags, msgBuf)
 }
-func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) Sign(msgId gtp.MsgId, flags gtp.Flags, msgBuf []byte) (signedBuf binaryutil.Bytes, err error) {
-	return W.WSign(msgId, flags, msgBuf)
+func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) Sign(msgID gtp.MsgID, flags gtp.Flags, msgBuf []byte) (signedBuf binaryutil.Bytes, err error) {
+	return W.WSign(msgID, flags, msgBuf)
 }
 func (W _git_golaxy_org_framework_net_gtp_codec_IAuthentication) SizeOfAddition(msgLen int) (size int, err error) {
 	return W.WSizeOfAddition(msgLen)

@@ -59,7 +59,7 @@ func (W _git_golaxy_org_framework_addins_discovery_IRegistration) KeepAliveOnce(
 type _git_golaxy_org_framework_addins_discovery_IRegistry struct {
 	IValue        interface{}
 	WGet          func(ctx context.Context, serviceName string) (*discovery.Service, error)
-	WGetNode      func(ctx context.Context, serviceName string, nodeId uid.Id) (*discovery.Service, error)
+	WGetNode      func(ctx context.Context, serviceName string, nodeID uid.ID) (*discovery.Service, error)
 	WList         func(ctx context.Context) ([]*discovery.Service, error)
 	WRegisterNode func(ctx context.Context, serviceName string, node *discovery.Node, ttl time.Duration) (discovery.IRegistration, error)
 	WWatchEvent   func(ctx context.Context, pattern string, revision ...int64) (<-chan discovery.Event, error)
@@ -69,8 +69,8 @@ type _git_golaxy_org_framework_addins_discovery_IRegistry struct {
 func (W _git_golaxy_org_framework_addins_discovery_IRegistry) Get(ctx context.Context, serviceName string) (*discovery.Service, error) {
 	return W.WGet(ctx, serviceName)
 }
-func (W _git_golaxy_org_framework_addins_discovery_IRegistry) GetNode(ctx context.Context, serviceName string, nodeId uid.Id) (*discovery.Service, error) {
-	return W.WGetNode(ctx, serviceName, nodeId)
+func (W _git_golaxy_org_framework_addins_discovery_IRegistry) GetNode(ctx context.Context, serviceName string, nodeID uid.ID) (*discovery.Service, error) {
+	return W.WGetNode(ctx, serviceName, nodeID)
 }
 func (W _git_golaxy_org_framework_addins_discovery_IRegistry) List(ctx context.Context) ([]*discovery.Service, error) {
 	return W.WList(ctx)

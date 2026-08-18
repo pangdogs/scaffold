@@ -67,15 +67,15 @@ func (ps *PropSyncer) init(view IPropView, entity ec.Entity, name string, reflec
 }
 
 func (ps *PropSyncer) load(service string) ([]byte, int64, error) {
-	return ps.view.Load(ps.entity.Id(), ps.name, service)
+	return ps.view.Load(ps.entity.ID(), ps.name, service)
 }
 
 func (ps *PropSyncer) save(service string, data []byte, revision int64) error {
-	return ps.view.Save(ps.entity.Id(), ps.name, service, data, revision)
+	return ps.view.Save(ps.entity.ID(), ps.name, service, data, revision)
 }
 
 func (ps *PropSyncer) sync(revision int64, op string, args ...any) {
-	ps.view.Sync(ps.entity.Id(), ps.name, ps.syncTo, revision, op, args...)
+	ps.view.Sync(ps.entity.ID(), ps.name, ps.syncTo, revision, op, args...)
 }
 
 // ReflectedManaged 托管的属性反射值

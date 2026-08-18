@@ -41,20 +41,20 @@ func init() {
 		"ErrEntityTree":                                        reflect.ValueOf(&runtime.ErrEntityTree).Elem(),
 		"ErrFrame":                                             reflect.ValueOf(&runtime.ErrFrame).Elem(),
 		"ErrRuntimeSelfWait":                                   reflect.ValueOf(&runtime.ErrRuntimeSelfWait).Elem(),
-		"EventAddInStateChangedId":                             reflect.ValueOf(&runtime.EventAddInStateChangedId).Elem(),
-		"EventContextRunningEventId":                           reflect.ValueOf(&runtime.EventContextRunningEventId).Elem(),
-		"EventEntityManagerAddEntityId":                        reflect.ValueOf(&runtime.EventEntityManagerAddEntityId).Elem(),
-		"EventEntityManagerEntityAddComponentsId":              reflect.ValueOf(&runtime.EventEntityManagerEntityAddComponentsId).Elem(),
-		"EventEntityManagerEntityComponentEnableChangedId":     reflect.ValueOf(&runtime.EventEntityManagerEntityComponentEnableChangedId).Elem(),
-		"EventEntityManagerEntityFirstTouchComponentId":        reflect.ValueOf(&runtime.EventEntityManagerEntityFirstTouchComponentId).Elem(),
-		"EventEntityManagerEntityRemoveComponentId":            reflect.ValueOf(&runtime.EventEntityManagerEntityRemoveComponentId).Elem(),
-		"EventEntityManagerRemoveEntityId":                     reflect.ValueOf(&runtime.EventEntityManagerRemoveEntityId).Elem(),
-		"EventEntityTreeAddNodeId":                             reflect.ValueOf(&runtime.EventEntityTreeAddNodeId).Elem(),
-		"EventEntityTreeMoveNodeId":                            reflect.ValueOf(&runtime.EventEntityTreeMoveNodeId).Elem(),
-		"EventEntityTreeRemoveNodeId":                          reflect.ValueOf(&runtime.EventEntityTreeRemoveNodeId).Elem(),
-		"EventInstallAddInId":                                  reflect.ValueOf(&runtime.EventInstallAddInId).Elem(),
-		"EventUninstallAddInId":                                reflect.ValueOf(&runtime.EventUninstallAddInId).Elem(),
-		"ForestNodeId":                                         reflect.ValueOf(&runtime.ForestNodeId).Elem(),
+		"EventAddInStateChangedID":                             reflect.ValueOf(&runtime.EventAddInStateChangedID).Elem(),
+		"EventContextRunningEventID":                           reflect.ValueOf(&runtime.EventContextRunningEventID).Elem(),
+		"EventEntityManagerAddEntityID":                        reflect.ValueOf(&runtime.EventEntityManagerAddEntityID).Elem(),
+		"EventEntityManagerEntityAddComponentsID":              reflect.ValueOf(&runtime.EventEntityManagerEntityAddComponentsID).Elem(),
+		"EventEntityManagerEntityComponentEnableChangedID":     reflect.ValueOf(&runtime.EventEntityManagerEntityComponentEnableChangedID).Elem(),
+		"EventEntityManagerEntityFirstTouchComponentID":        reflect.ValueOf(&runtime.EventEntityManagerEntityFirstTouchComponentID).Elem(),
+		"EventEntityManagerEntityRemoveComponentID":            reflect.ValueOf(&runtime.EventEntityManagerEntityRemoveComponentID).Elem(),
+		"EventEntityManagerRemoveEntityID":                     reflect.ValueOf(&runtime.EventEntityManagerRemoveEntityID).Elem(),
+		"EventEntityTreeAddNodeID":                             reflect.ValueOf(&runtime.EventEntityTreeAddNodeID).Elem(),
+		"EventEntityTreeMoveNodeID":                            reflect.ValueOf(&runtime.EventEntityTreeMoveNodeID).Elem(),
+		"EventEntityTreeRemoveNodeID":                          reflect.ValueOf(&runtime.EventEntityTreeRemoveNodeID).Elem(),
+		"EventInstallAddInID":                                  reflect.ValueOf(&runtime.EventInstallAddInID).Elem(),
+		"EventUninstallAddInID":                                reflect.ValueOf(&runtime.EventUninstallAddInID).Elem(),
+		"ForestNodeID":                                         reflect.ValueOf(&runtime.ForestNodeID).Elem(),
 		"HandleEventAddInStateChanged":                         reflect.ValueOf(runtime.HandleEventAddInStateChanged),
 		"HandleEventContextRunningEvent":                       reflect.ValueOf(runtime.HandleEventContextRunningEvent),
 		"HandleEventEntityManagerAddEntity":                    reflect.ValueOf(runtime.HandleEventEntityManagerAddEntity),
@@ -109,7 +109,6 @@ func init() {
 		// type definitions
 		"AddInManager":                                   reflect.ValueOf((*runtime.AddInManager)(nil)),
 		"AddInStatus":                                    reflect.ValueOf((*runtime.AddInStatus)(nil)),
-		"Callee":                                         reflect.ValueOf((*runtime.Callee)(nil)),
 		"Caller":                                         reflect.ValueOf((*runtime.Caller)(nil)),
 		"ConcurrentContext":                              reflect.ValueOf((*runtime.ConcurrentContext)(nil)),
 		"ConcurrentContextProvider":                      reflect.ValueOf((*runtime.ConcurrentContextProvider)(nil)),
@@ -158,7 +157,6 @@ func init() {
 		// interface wrapper definitions
 		"_AddInManager":                          reflect.ValueOf((*_git_golaxy_org_core_runtime_AddInManager)(nil)),
 		"_AddInStatus":                           reflect.ValueOf((*_git_golaxy_org_core_runtime_AddInStatus)(nil)),
-		"_Callee":                                reflect.ValueOf((*_git_golaxy_org_core_runtime_Callee)(nil)),
 		"_Caller":                                reflect.ValueOf((*_git_golaxy_org_core_runtime_Caller)(nil)),
 		"_ConcurrentContext":                     reflect.ValueOf((*_git_golaxy_org_core_runtime_ConcurrentContext)(nil)),
 		"_ConcurrentContextProvider":             reflect.ValueOf((*_git_golaxy_org_core_runtime_ConcurrentContextProvider)(nil)),
@@ -196,7 +194,7 @@ type _git_golaxy_org_core_runtime_AddInManager struct {
 	WEventAddInStateChanged func() event.IEvent
 	WEventInstallAddIn      func() event.IEvent
 	WEventUninstallAddIn    func() event.IEvent
-	WGetStatusById          func(id uint64) (extension.AddInStatus, bool)
+	WGetStatusByID          func(id uint64) (extension.AddInStatus, bool)
 	WGetStatusByName        func(name string) (extension.AddInStatus, bool)
 	WInstall                func(addInFace iface.FaceAny, name ...string) extension.AddInStatus
 	WListStatuses           func() []extension.AddInStatus
@@ -215,8 +213,8 @@ func (W _git_golaxy_org_core_runtime_AddInManager) EventInstallAddIn() event.IEv
 func (W _git_golaxy_org_core_runtime_AddInManager) EventUninstallAddIn() event.IEvent {
 	return W.WEventUninstallAddIn()
 }
-func (W _git_golaxy_org_core_runtime_AddInManager) GetStatusById(id uint64) (extension.AddInStatus, bool) {
-	return W.WGetStatusById(id)
+func (W _git_golaxy_org_core_runtime_AddInManager) GetStatusByID(id uint64) (extension.AddInStatus, bool) {
+	return W.WGetStatusByID(id)
 }
 func (W _git_golaxy_org_core_runtime_AddInManager) GetStatusByName(name string) (extension.AddInStatus, bool) {
 	return W.WGetStatusByName(name)
@@ -232,7 +230,7 @@ func (W _git_golaxy_org_core_runtime_AddInManager) Uninstall(name string) { W.WU
 // _git_golaxy_org_core_runtime_AddInStatus is an interface wrapper for AddInStatus type
 type _git_golaxy_org_core_runtime_AddInStatus struct {
 	IValue        interface{}
-	WId           func() uint64
+	WID           func() uint64
 	WInstanceFace func() iface.FaceAny
 	WName         func() string
 	WReflected    func() reflect.Value
@@ -240,7 +238,7 @@ type _git_golaxy_org_core_runtime_AddInStatus struct {
 	WString       func() string
 }
 
-func (W _git_golaxy_org_core_runtime_AddInStatus) Id() uint64 { return W.WId() }
+func (W _git_golaxy_org_core_runtime_AddInStatus) ID() uint64 { return W.WID() }
 func (W _git_golaxy_org_core_runtime_AddInStatus) InstanceFace() iface.FaceAny {
 	return W.WInstanceFace()
 }
@@ -252,36 +250,6 @@ func (W _git_golaxy_org_core_runtime_AddInStatus) String() string {
 		return ""
 	}
 	return W.WString()
-}
-
-// _git_golaxy_org_core_runtime_Callee is an interface wrapper for Callee type
-type _git_golaxy_org_core_runtime_Callee struct {
-	IValue                  interface{}
-	WPushPost               func(fun generic.ActionVar1[runtime.Context, any], args ...any) error
-	WPushPostDelegate       func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) error
-	WPushSubmit             func(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future
-	WPushSubmitDelegate     func(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future
-	WPushSubmitDelegateVoid func(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future
-	WPushSubmitVoid         func(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future
-}
-
-func (W _git_golaxy_org_core_runtime_Callee) PushPost(fun generic.ActionVar1[runtime.Context, any], args ...any) error {
-	return W.WPushPost(fun, args...)
-}
-func (W _git_golaxy_org_core_runtime_Callee) PushPostDelegate(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) error {
-	return W.WPushPostDelegate(fun, args...)
-}
-func (W _git_golaxy_org_core_runtime_Callee) PushSubmit(fun generic.FuncVar1[runtime.Context, any, async.Result], args ...any) async.Future {
-	return W.WPushSubmit(fun, args...)
-}
-func (W _git_golaxy_org_core_runtime_Callee) PushSubmitDelegate(fun generic.DelegateVar1[runtime.Context, any, async.Result], args ...any) async.Future {
-	return W.WPushSubmitDelegate(fun, args...)
-}
-func (W _git_golaxy_org_core_runtime_Callee) PushSubmitDelegateVoid(fun generic.DelegateVoidVar1[runtime.Context, any], args ...any) async.Future {
-	return W.WPushSubmitDelegateVoid(fun, args...)
-}
-func (W _git_golaxy_org_core_runtime_Callee) PushSubmitVoid(fun generic.ActionVar1[runtime.Context, any], args ...any) async.Future {
-	return W.WPushSubmitVoid(fun, args...)
 }
 
 // _git_golaxy_org_core_runtime_Caller is an interface wrapper for Caller type
@@ -319,14 +287,14 @@ type _git_golaxy_org_core_runtime_ConcurrentContext struct {
 	IValue                  interface{}
 	WAsyncScope             func() *async.Scope
 	WAutoRecover            func() bool
-	WBlockedFutureID        func() uint64
+	WBlockedFutureID        func() async.FutureID
 	WConcurrentContextCache func() iface.Cache
 	WDeadline               func() (deadline time.Time, ok bool)
 	WDone                   func() <-chan struct{}
 	WErr                    func() error
 	WExecutorID             func() async.ExecutorID
-	WId                     func() uid.Id
-	WLastWaitRejectID       func() uint64
+	WID                     func() uid.ID
+	WLastWaitRejectID       func() async.FutureID
 	WName                   func() string
 	WParentContext          func() context.Context
 	WPost                   func(fun generic.ActionVar1[runtime.Context, any], args ...any) error
@@ -347,7 +315,7 @@ func (W _git_golaxy_org_core_runtime_ConcurrentContext) AsyncScope() *async.Scop
 	return W.WAsyncScope()
 }
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) AutoRecover() bool { return W.WAutoRecover() }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) BlockedFutureID() uint64 {
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) BlockedFutureID() async.FutureID {
 	return W.WBlockedFutureID()
 }
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) ConcurrentContextCache() iface.Cache {
@@ -361,8 +329,8 @@ func (W _git_golaxy_org_core_runtime_ConcurrentContext) Err() error            {
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) ExecutorID() async.ExecutorID {
 	return W.WExecutorID()
 }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) Id() uid.Id { return W.WId() }
-func (W _git_golaxy_org_core_runtime_ConcurrentContext) LastWaitRejectID() uint64 {
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) ID() uid.ID { return W.WID() }
+func (W _git_golaxy_org_core_runtime_ConcurrentContext) LastWaitRejectID() async.FutureID {
 	return W.WLastWaitRejectID()
 }
 func (W _git_golaxy_org_core_runtime_ConcurrentContext) Name() string { return W.WName() }
@@ -421,11 +389,11 @@ func (W _git_golaxy_org_core_runtime_ConcurrentContextProvider) ConcurrentContex
 type _git_golaxy_org_core_runtime_Context struct {
 	IValue                    interface{}
 	WAddInManager             func() extension.AddInManager
-	WAfterFutureWait          func(futureID uint64)
+	WAfterFutureWait          func(futureID async.FutureID)
 	WAsyncScope               func() *async.Scope
 	WAutoRecover              func() bool
-	WBeforeFutureWait         func(futureID uint64, completionExecutorID async.ExecutorID) error
-	WBlockedFutureID          func() uint64
+	WBeforeFutureWait         func(futureID async.FutureID, completionExecutorID async.ExecutorID) error
+	WBlockedFutureID          func() async.FutureID
 	WCollectGC                func(gc runtime.GC)
 	WConcurrentContextCache   func() iface.Cache
 	WCurrentContextCache      func() iface.Cache
@@ -437,9 +405,9 @@ type _git_golaxy_org_core_runtime_Context struct {
 	WEventContextRunningEvent func() event.IEvent
 	WExecutorID               func() async.ExecutorID
 	WFrame                    func() runtime.Frame
-	WId                       func() uid.Id
+	WID                       func() uid.ID
 	WInstanceFaceCache        func() iface.Cache
-	WLastWaitRejectID         func() uint64
+	WLastWaitRejectID         func() async.FutureID
 	WManaged                  func() *event.ManagedHandles
 	WName                     func() string
 	WParentContext            func() context.Context
@@ -461,15 +429,17 @@ type _git_golaxy_org_core_runtime_Context struct {
 func (W _git_golaxy_org_core_runtime_Context) AddInManager() extension.AddInManager {
 	return W.WAddInManager()
 }
-func (W _git_golaxy_org_core_runtime_Context) AfterFutureWait(futureID uint64) {
+func (W _git_golaxy_org_core_runtime_Context) AfterFutureWait(futureID async.FutureID) {
 	W.WAfterFutureWait(futureID)
 }
 func (W _git_golaxy_org_core_runtime_Context) AsyncScope() *async.Scope { return W.WAsyncScope() }
 func (W _git_golaxy_org_core_runtime_Context) AutoRecover() bool        { return W.WAutoRecover() }
-func (W _git_golaxy_org_core_runtime_Context) BeforeFutureWait(futureID uint64, completionExecutorID async.ExecutorID) error {
+func (W _git_golaxy_org_core_runtime_Context) BeforeFutureWait(futureID async.FutureID, completionExecutorID async.ExecutorID) error {
 	return W.WBeforeFutureWait(futureID, completionExecutorID)
 }
-func (W _git_golaxy_org_core_runtime_Context) BlockedFutureID() uint64 { return W.WBlockedFutureID() }
+func (W _git_golaxy_org_core_runtime_Context) BlockedFutureID() async.FutureID {
+	return W.WBlockedFutureID()
+}
 func (W _git_golaxy_org_core_runtime_Context) CollectGC(gc runtime.GC) { W.WCollectGC(gc) }
 func (W _git_golaxy_org_core_runtime_Context) ConcurrentContextCache() iface.Cache {
 	return W.WConcurrentContextCache()
@@ -491,11 +461,13 @@ func (W _git_golaxy_org_core_runtime_Context) EventContextRunningEvent() event.I
 }
 func (W _git_golaxy_org_core_runtime_Context) ExecutorID() async.ExecutorID { return W.WExecutorID() }
 func (W _git_golaxy_org_core_runtime_Context) Frame() runtime.Frame         { return W.WFrame() }
-func (W _git_golaxy_org_core_runtime_Context) Id() uid.Id                   { return W.WId() }
+func (W _git_golaxy_org_core_runtime_Context) ID() uid.ID                   { return W.WID() }
 func (W _git_golaxy_org_core_runtime_Context) InstanceFaceCache() iface.Cache {
 	return W.WInstanceFaceCache()
 }
-func (W _git_golaxy_org_core_runtime_Context) LastWaitRejectID() uint64       { return W.WLastWaitRejectID() }
+func (W _git_golaxy_org_core_runtime_Context) LastWaitRejectID() async.FutureID {
+	return W.WLastWaitRejectID()
+}
 func (W _git_golaxy_org_core_runtime_Context) Managed() *event.ManagedHandles { return W.WManaged() }
 func (W _git_golaxy_org_core_runtime_Context) Name() string                   { return W.WName() }
 func (W _git_golaxy_org_core_runtime_Context) ParentContext() context.Context {
@@ -561,10 +533,10 @@ type _git_golaxy_org_core_runtime_EntityManager struct {
 	WEventEntityManagerEntityRemoveComponent        func() event.IEvent
 	WEventEntityManagerRemoveEntity                 func() event.IEvent
 	WFilterEntities                                 func(fun generic.Func1[ec.Entity, bool]) []ec.Entity
-	WGetEntity                                      func(id uid.Id) (ec.Entity, bool)
+	WGetEntity                                      func(id uid.ID) (ec.Entity, bool)
 	WListEntities                                   func() []ec.Entity
 	WRangeEntities                                  func(fun generic.Func1[ec.Entity, bool])
-	WRemoveEntity                                   func(id uid.Id)
+	WRemoveEntity                                   func(id uid.ID)
 	WReversedEachEntities                           func(fun generic.Action1[ec.Entity])
 	WReversedRangeEntities                          func(fun generic.Func1[ec.Entity, bool])
 }
@@ -603,7 +575,7 @@ func (W _git_golaxy_org_core_runtime_EntityManager) EventEntityManagerRemoveEnti
 func (W _git_golaxy_org_core_runtime_EntityManager) FilterEntities(fun generic.Func1[ec.Entity, bool]) []ec.Entity {
 	return W.WFilterEntities(fun)
 }
-func (W _git_golaxy_org_core_runtime_EntityManager) GetEntity(id uid.Id) (ec.Entity, bool) {
+func (W _git_golaxy_org_core_runtime_EntityManager) GetEntity(id uid.ID) (ec.Entity, bool) {
 	return W.WGetEntity(id)
 }
 func (W _git_golaxy_org_core_runtime_EntityManager) ListEntities() []ec.Entity {
@@ -612,7 +584,7 @@ func (W _git_golaxy_org_core_runtime_EntityManager) ListEntities() []ec.Entity {
 func (W _git_golaxy_org_core_runtime_EntityManager) RangeEntities(fun generic.Func1[ec.Entity, bool]) {
 	W.WRangeEntities(fun)
 }
-func (W _git_golaxy_org_core_runtime_EntityManager) RemoveEntity(id uid.Id) { W.WRemoveEntity(id) }
+func (W _git_golaxy_org_core_runtime_EntityManager) RemoveEntity(id uid.ID) { W.WRemoveEntity(id) }
 func (W _git_golaxy_org_core_runtime_EntityManager) ReversedEachEntities(fun generic.Action1[ec.Entity]) {
 	W.WReversedEachEntities(fun)
 }
@@ -623,46 +595,46 @@ func (W _git_golaxy_org_core_runtime_EntityManager) ReversedRangeEntities(fun ge
 // _git_golaxy_org_core_runtime_EntityTree is an interface wrapper for EntityTree type
 type _git_golaxy_org_core_runtime_EntityTree struct {
 	IValue                     interface{}
-	WAddChild                  func(parentId uid.Id, childId uid.Id) error
+	WAddChild                  func(parentID uid.ID, childID uid.ID) error
 	WConcurrentContextCache    func() iface.Cache
-	WCountChildren             func(parentId uid.Id) (int, error)
+	WCountChildren             func(parentID uid.ID) (int, error)
 	WCurrentContextCache       func() iface.Cache
-	WDetachNode                func(childId uid.Id) error
-	WEachChildren              func(parentId uid.Id, fun generic.Action1[ec.Entity]) error
+	WDetachNode                func(childID uid.ID) error
+	WEachChildren              func(parentID uid.ID, fun generic.Action1[ec.Entity]) error
 	WEventEntityTreeAddNode    func() event.IEvent
 	WEventEntityTreeMoveNode   func() event.IEvent
 	WEventEntityTreeRemoveNode func() event.IEvent
-	WFilterChildren            func(parentId uid.Id, fun generic.Func1[ec.Entity, bool]) ([]ec.Entity, error)
-	WGetParent                 func(childId uid.Id) (ec.Entity, error)
-	WIsFree                    func(entityId uid.Id) (bool, error)
-	WIsLeaf                    func(entityId uid.Id) (bool, error)
-	WIsRoot                    func(entityId uid.Id) (bool, error)
-	WListChildren              func(parentId uid.Id) ([]ec.Entity, error)
-	WMakeRoot                  func(entityId uid.Id) error
-	WMoveNode                  func(childId uid.Id, parentId uid.Id) error
-	WRangeChildren             func(parentId uid.Id, fun generic.Func1[ec.Entity, bool]) error
-	WRemoveNode                func(childId uid.Id) error
-	WReversedEachChildren      func(parentId uid.Id, fun generic.Action1[ec.Entity]) error
-	WReversedRangeChildren     func(parentId uid.Id, fun generic.Func1[ec.Entity, bool]) error
+	WFilterChildren            func(parentID uid.ID, fun generic.Func1[ec.Entity, bool]) ([]ec.Entity, error)
+	WGetParent                 func(childID uid.ID) (ec.Entity, error)
+	WIsFree                    func(entityID uid.ID) (bool, error)
+	WIsLeaf                    func(entityID uid.ID) (bool, error)
+	WIsRoot                    func(entityID uid.ID) (bool, error)
+	WListChildren              func(parentID uid.ID) ([]ec.Entity, error)
+	WMakeRoot                  func(entityID uid.ID) error
+	WMoveNode                  func(childID uid.ID, parentID uid.ID) error
+	WRangeChildren             func(parentID uid.ID, fun generic.Func1[ec.Entity, bool]) error
+	WRemoveNode                func(childID uid.ID) error
+	WReversedEachChildren      func(parentID uid.ID, fun generic.Action1[ec.Entity]) error
+	WReversedRangeChildren     func(parentID uid.ID, fun generic.Func1[ec.Entity, bool]) error
 }
 
-func (W _git_golaxy_org_core_runtime_EntityTree) AddChild(parentId uid.Id, childId uid.Id) error {
-	return W.WAddChild(parentId, childId)
+func (W _git_golaxy_org_core_runtime_EntityTree) AddChild(parentID uid.ID, childID uid.ID) error {
+	return W.WAddChild(parentID, childID)
 }
 func (W _git_golaxy_org_core_runtime_EntityTree) ConcurrentContextCache() iface.Cache {
 	return W.WConcurrentContextCache()
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) CountChildren(parentId uid.Id) (int, error) {
-	return W.WCountChildren(parentId)
+func (W _git_golaxy_org_core_runtime_EntityTree) CountChildren(parentID uid.ID) (int, error) {
+	return W.WCountChildren(parentID)
 }
 func (W _git_golaxy_org_core_runtime_EntityTree) CurrentContextCache() iface.Cache {
 	return W.WCurrentContextCache()
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) DetachNode(childId uid.Id) error {
-	return W.WDetachNode(childId)
+func (W _git_golaxy_org_core_runtime_EntityTree) DetachNode(childID uid.ID) error {
+	return W.WDetachNode(childID)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) EachChildren(parentId uid.Id, fun generic.Action1[ec.Entity]) error {
-	return W.WEachChildren(parentId, fun)
+func (W _git_golaxy_org_core_runtime_EntityTree) EachChildren(parentID uid.ID, fun generic.Action1[ec.Entity]) error {
+	return W.WEachChildren(parentID, fun)
 }
 func (W _git_golaxy_org_core_runtime_EntityTree) EventEntityTreeAddNode() event.IEvent {
 	return W.WEventEntityTreeAddNode()
@@ -673,41 +645,41 @@ func (W _git_golaxy_org_core_runtime_EntityTree) EventEntityTreeMoveNode() event
 func (W _git_golaxy_org_core_runtime_EntityTree) EventEntityTreeRemoveNode() event.IEvent {
 	return W.WEventEntityTreeRemoveNode()
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) FilterChildren(parentId uid.Id, fun generic.Func1[ec.Entity, bool]) ([]ec.Entity, error) {
-	return W.WFilterChildren(parentId, fun)
+func (W _git_golaxy_org_core_runtime_EntityTree) FilterChildren(parentID uid.ID, fun generic.Func1[ec.Entity, bool]) ([]ec.Entity, error) {
+	return W.WFilterChildren(parentID, fun)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) GetParent(childId uid.Id) (ec.Entity, error) {
-	return W.WGetParent(childId)
+func (W _git_golaxy_org_core_runtime_EntityTree) GetParent(childID uid.ID) (ec.Entity, error) {
+	return W.WGetParent(childID)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) IsFree(entityId uid.Id) (bool, error) {
-	return W.WIsFree(entityId)
+func (W _git_golaxy_org_core_runtime_EntityTree) IsFree(entityID uid.ID) (bool, error) {
+	return W.WIsFree(entityID)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) IsLeaf(entityId uid.Id) (bool, error) {
-	return W.WIsLeaf(entityId)
+func (W _git_golaxy_org_core_runtime_EntityTree) IsLeaf(entityID uid.ID) (bool, error) {
+	return W.WIsLeaf(entityID)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) IsRoot(entityId uid.Id) (bool, error) {
-	return W.WIsRoot(entityId)
+func (W _git_golaxy_org_core_runtime_EntityTree) IsRoot(entityID uid.ID) (bool, error) {
+	return W.WIsRoot(entityID)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) ListChildren(parentId uid.Id) ([]ec.Entity, error) {
-	return W.WListChildren(parentId)
+func (W _git_golaxy_org_core_runtime_EntityTree) ListChildren(parentID uid.ID) ([]ec.Entity, error) {
+	return W.WListChildren(parentID)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) MakeRoot(entityId uid.Id) error {
-	return W.WMakeRoot(entityId)
+func (W _git_golaxy_org_core_runtime_EntityTree) MakeRoot(entityID uid.ID) error {
+	return W.WMakeRoot(entityID)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) MoveNode(childId uid.Id, parentId uid.Id) error {
-	return W.WMoveNode(childId, parentId)
+func (W _git_golaxy_org_core_runtime_EntityTree) MoveNode(childID uid.ID, parentID uid.ID) error {
+	return W.WMoveNode(childID, parentID)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) RangeChildren(parentId uid.Id, fun generic.Func1[ec.Entity, bool]) error {
-	return W.WRangeChildren(parentId, fun)
+func (W _git_golaxy_org_core_runtime_EntityTree) RangeChildren(parentID uid.ID, fun generic.Func1[ec.Entity, bool]) error {
+	return W.WRangeChildren(parentID, fun)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) RemoveNode(childId uid.Id) error {
-	return W.WRemoveNode(childId)
+func (W _git_golaxy_org_core_runtime_EntityTree) RemoveNode(childID uid.ID) error {
+	return W.WRemoveNode(childID)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) ReversedEachChildren(parentId uid.Id, fun generic.Action1[ec.Entity]) error {
-	return W.WReversedEachChildren(parentId, fun)
+func (W _git_golaxy_org_core_runtime_EntityTree) ReversedEachChildren(parentID uid.ID, fun generic.Action1[ec.Entity]) error {
+	return W.WReversedEachChildren(parentID, fun)
 }
-func (W _git_golaxy_org_core_runtime_EntityTree) ReversedRangeChildren(parentId uid.Id, fun generic.Func1[ec.Entity, bool]) error {
-	return W.WReversedRangeChildren(parentId, fun)
+func (W _git_golaxy_org_core_runtime_EntityTree) ReversedRangeChildren(parentID uid.ID, fun generic.Func1[ec.Entity, bool]) error {
+	return W.WReversedRangeChildren(parentID, fun)
 }
 
 // _git_golaxy_org_core_runtime_EventAddInStateChanged is an interface wrapper for EventAddInStateChanged type
@@ -793,31 +765,31 @@ func (W _git_golaxy_org_core_runtime_EventEntityManagerRemoveEntity) OnEntityMan
 // _git_golaxy_org_core_runtime_EventEntityTreeAddNode is an interface wrapper for EventEntityTreeAddNode type
 type _git_golaxy_org_core_runtime_EventEntityTreeAddNode struct {
 	IValue               interface{}
-	WOnEntityTreeAddNode func(entityTree runtime.EntityTree, parentId uid.Id, childId uid.Id)
+	WOnEntityTreeAddNode func(entityTree runtime.EntityTree, parentID uid.ID, childID uid.ID)
 }
 
-func (W _git_golaxy_org_core_runtime_EventEntityTreeAddNode) OnEntityTreeAddNode(entityTree runtime.EntityTree, parentId uid.Id, childId uid.Id) {
-	W.WOnEntityTreeAddNode(entityTree, parentId, childId)
+func (W _git_golaxy_org_core_runtime_EventEntityTreeAddNode) OnEntityTreeAddNode(entityTree runtime.EntityTree, parentID uid.ID, childID uid.ID) {
+	W.WOnEntityTreeAddNode(entityTree, parentID, childID)
 }
 
 // _git_golaxy_org_core_runtime_EventEntityTreeMoveNode is an interface wrapper for EventEntityTreeMoveNode type
 type _git_golaxy_org_core_runtime_EventEntityTreeMoveNode struct {
 	IValue                interface{}
-	WOnEntityTreeMoveNode func(entityTree runtime.EntityTree, childId uid.Id, fromParentId uid.Id, toParentId uid.Id)
+	WOnEntityTreeMoveNode func(entityTree runtime.EntityTree, childID uid.ID, fromParentID uid.ID, toParentID uid.ID)
 }
 
-func (W _git_golaxy_org_core_runtime_EventEntityTreeMoveNode) OnEntityTreeMoveNode(entityTree runtime.EntityTree, childId uid.Id, fromParentId uid.Id, toParentId uid.Id) {
-	W.WOnEntityTreeMoveNode(entityTree, childId, fromParentId, toParentId)
+func (W _git_golaxy_org_core_runtime_EventEntityTreeMoveNode) OnEntityTreeMoveNode(entityTree runtime.EntityTree, childID uid.ID, fromParentID uid.ID, toParentID uid.ID) {
+	W.WOnEntityTreeMoveNode(entityTree, childID, fromParentID, toParentID)
 }
 
 // _git_golaxy_org_core_runtime_EventEntityTreeRemoveNode is an interface wrapper for EventEntityTreeRemoveNode type
 type _git_golaxy_org_core_runtime_EventEntityTreeRemoveNode struct {
 	IValue                  interface{}
-	WOnEntityTreeRemoveNode func(entityTree runtime.EntityTree, parentId uid.Id, childId uid.Id)
+	WOnEntityTreeRemoveNode func(entityTree runtime.EntityTree, parentID uid.ID, childID uid.ID)
 }
 
-func (W _git_golaxy_org_core_runtime_EventEntityTreeRemoveNode) OnEntityTreeRemoveNode(entityTree runtime.EntityTree, parentId uid.Id, childId uid.Id) {
-	W.WOnEntityTreeRemoveNode(entityTree, parentId, childId)
+func (W _git_golaxy_org_core_runtime_EventEntityTreeRemoveNode) OnEntityTreeRemoveNode(entityTree runtime.EntityTree, parentID uid.ID, childID uid.ID) {
+	W.WOnEntityTreeRemoveNode(entityTree, parentID, childID)
 }
 
 // _git_golaxy_org_core_runtime_EventInstallAddIn is an interface wrapper for EventInstallAddIn type

@@ -15,7 +15,7 @@ func init() {
 		"AddInState_Running":  reflect.ValueOf(extension.AddInState_Running),
 		"AddInState_Unloaded": reflect.ValueOf(extension.AddInState_Unloaded),
 		"ErrExtension":        reflect.ValueOf(&extension.ErrExtension).Elem(),
-		"GenAddInId":          reflect.ValueOf(extension.GenAddInId),
+		"GenAddInID":          reflect.ValueOf(extension.GenAddInID),
 		"GenAddInName":        reflect.ValueOf(extension.GenAddInName),
 		"Uninstall":           reflect.ValueOf(extension.Uninstall),
 
@@ -36,7 +36,7 @@ func init() {
 type _git_golaxy_org_core_extension_AddInManager struct {
 	IValue           interface{}
 	WAddInManager    func() extension.AddInManager
-	WGetStatusById   func(id uint64) (extension.AddInStatus, bool)
+	WGetStatusByID   func(id uint64) (extension.AddInStatus, bool)
 	WGetStatusByName func(name string) (extension.AddInStatus, bool)
 	WInstall         func(addInFace iface.FaceAny, name ...string) extension.AddInStatus
 	WListStatuses    func() []extension.AddInStatus
@@ -46,8 +46,8 @@ type _git_golaxy_org_core_extension_AddInManager struct {
 func (W _git_golaxy_org_core_extension_AddInManager) AddInManager() extension.AddInManager {
 	return W.WAddInManager()
 }
-func (W _git_golaxy_org_core_extension_AddInManager) GetStatusById(id uint64) (extension.AddInStatus, bool) {
-	return W.WGetStatusById(id)
+func (W _git_golaxy_org_core_extension_AddInManager) GetStatusByID(id uint64) (extension.AddInStatus, bool) {
+	return W.WGetStatusByID(id)
 }
 func (W _git_golaxy_org_core_extension_AddInManager) GetStatusByName(name string) (extension.AddInStatus, bool) {
 	return W.WGetStatusByName(name)
@@ -73,7 +73,7 @@ func (W _git_golaxy_org_core_extension_AddInProvider) AddInManager() extension.A
 // _git_golaxy_org_core_extension_AddInStatus is an interface wrapper for AddInStatus type
 type _git_golaxy_org_core_extension_AddInStatus struct {
 	IValue        interface{}
-	WId           func() uint64
+	WID           func() uint64
 	WInstanceFace func() iface.FaceAny
 	WName         func() string
 	WReflected    func() reflect.Value
@@ -81,7 +81,7 @@ type _git_golaxy_org_core_extension_AddInStatus struct {
 	WString       func() string
 }
 
-func (W _git_golaxy_org_core_extension_AddInStatus) Id() uint64 { return W.WId() }
+func (W _git_golaxy_org_core_extension_AddInStatus) ID() uint64 { return W.WID() }
 func (W _git_golaxy_org_core_extension_AddInStatus) InstanceFace() iface.FaceAny {
 	return W.WInstanceFace()
 }

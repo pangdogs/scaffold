@@ -32,7 +32,7 @@ func init() {
 		"BindEventTreeNodeRemoveChild":                      reflect.ValueOf(ec.BindEventTreeNodeRemoveChild),
 		"ComponentState_Alive":                              reflect.ValueOf(ec.ComponentState_Alive),
 		"ComponentState_Attached":                           reflect.ValueOf(ec.ComponentState_Attached),
-		"ComponentState_Awakened":                           reflect.ValueOf(ec.ComponentState_Awakened),
+		"ComponentState_Awaking":                            reflect.ValueOf(ec.ComponentState_Awaking),
 		"ComponentState_Born":                               reflect.ValueOf(ec.ComponentState_Born),
 		"ComponentState_Dead":                               reflect.ValueOf(ec.ComponentState_Dead),
 		"ComponentState_Destroyed":                          reflect.ValueOf(ec.ComponentState_Destroyed),
@@ -43,7 +43,7 @@ func init() {
 		"ComponentState_Shutting":                           reflect.ValueOf(ec.ComponentState_Shutting),
 		"ComponentState_Starting":                           reflect.ValueOf(ec.ComponentState_Starting),
 		"EntityState_Alive":                                 reflect.ValueOf(ec.EntityState_Alive),
-		"EntityState_Awakened":                              reflect.ValueOf(ec.EntityState_Awakened),
+		"EntityState_Awaking":                               reflect.ValueOf(ec.EntityState_Awaking),
 		"EntityState_Born":                                  reflect.ValueOf(ec.EntityState_Born),
 		"EntityState_Dead":                                  reflect.ValueOf(ec.EntityState_Dead),
 		"EntityState_Destroyed":                             reflect.ValueOf(ec.EntityState_Destroyed),
@@ -52,18 +52,18 @@ func init() {
 		"EntityState_Shutting":                              reflect.ValueOf(ec.EntityState_Shutting),
 		"EntityState_Starting":                              reflect.ValueOf(ec.EntityState_Starting),
 		"ErrEC":                                             reflect.ValueOf(&ec.ErrEC).Elem(),
-		"EventComponentDestroyId":                           reflect.ValueOf(&ec.EventComponentDestroyId).Elem(),
-		"EventComponentEnableChangedId":                     reflect.ValueOf(&ec.EventComponentEnableChangedId).Elem(),
-		"EventComponentManagerAddComponentsId":              reflect.ValueOf(&ec.EventComponentManagerAddComponentsId).Elem(),
-		"EventComponentManagerComponentEnableChangedId":     reflect.ValueOf(&ec.EventComponentManagerComponentEnableChangedId).Elem(),
-		"EventComponentManagerFirstTouchComponentId":        reflect.ValueOf(&ec.EventComponentManagerFirstTouchComponentId).Elem(),
-		"EventComponentManagerRemoveComponentId":            reflect.ValueOf(&ec.EventComponentManagerRemoveComponentId).Elem(),
-		"EventEntityDestroyId":                              reflect.ValueOf(&ec.EventEntityDestroyId).Elem(),
-		"EventTreeNodeAddChildId":                           reflect.ValueOf(&ec.EventTreeNodeAddChildId).Elem(),
-		"EventTreeNodeAttachParentId":                       reflect.ValueOf(&ec.EventTreeNodeAttachParentId).Elem(),
-		"EventTreeNodeDetachParentId":                       reflect.ValueOf(&ec.EventTreeNodeDetachParentId).Elem(),
-		"EventTreeNodeMoveToId":                             reflect.ValueOf(&ec.EventTreeNodeMoveToId).Elem(),
-		"EventTreeNodeRemoveChildId":                        reflect.ValueOf(&ec.EventTreeNodeRemoveChildId).Elem(),
+		"EventComponentDestroyID":                           reflect.ValueOf(&ec.EventComponentDestroyID).Elem(),
+		"EventComponentEnableChangedID":                     reflect.ValueOf(&ec.EventComponentEnableChangedID).Elem(),
+		"EventComponentManagerAddComponentsID":              reflect.ValueOf(&ec.EventComponentManagerAddComponentsID).Elem(),
+		"EventComponentManagerComponentEnableChangedID":     reflect.ValueOf(&ec.EventComponentManagerComponentEnableChangedID).Elem(),
+		"EventComponentManagerFirstTouchComponentID":        reflect.ValueOf(&ec.EventComponentManagerFirstTouchComponentID).Elem(),
+		"EventComponentManagerRemoveComponentID":            reflect.ValueOf(&ec.EventComponentManagerRemoveComponentID).Elem(),
+		"EventEntityDestroyID":                              reflect.ValueOf(&ec.EventEntityDestroyID).Elem(),
+		"EventTreeNodeAddChildID":                           reflect.ValueOf(&ec.EventTreeNodeAddChildID).Elem(),
+		"EventTreeNodeAttachParentID":                       reflect.ValueOf(&ec.EventTreeNodeAttachParentID).Elem(),
+		"EventTreeNodeDetachParentID":                       reflect.ValueOf(&ec.EventTreeNodeDetachParentID).Elem(),
+		"EventTreeNodeMoveToID":                             reflect.ValueOf(&ec.EventTreeNodeMoveToID).Elem(),
+		"EventTreeNodeRemoveChildID":                        reflect.ValueOf(&ec.EventTreeNodeRemoveChildID).Elem(),
 		"HandleEventComponentDestroy":                       reflect.ValueOf(ec.HandleEventComponentDestroy),
 		"HandleEventComponentEnableChanged":                 reflect.ValueOf(ec.HandleEventComponentEnableChanged),
 		"HandleEventComponentManagerAddComponents":          reflect.ValueOf(ec.HandleEventComponentManagerAddComponents),
@@ -173,7 +173,7 @@ type _git_golaxy_org_core_ec_Component struct {
 	WEntity                      func() ec.Entity
 	WEventComponentDestroy       func() event.IEvent
 	WEventComponentEnableChanged func() event.IEvent
-	WId                          func() uid.Id
+	WID                          func() uid.ID
 	WManaged                     func() *event.ManagedHandles
 	WName                        func() string
 	WReflected                   func() reflect.Value
@@ -200,7 +200,7 @@ func (W _git_golaxy_org_core_ec_Component) EventComponentDestroy() event.IEvent 
 func (W _git_golaxy_org_core_ec_Component) EventComponentEnableChanged() event.IEvent {
 	return W.WEventComponentEnableChanged()
 }
-func (W _git_golaxy_org_core_ec_Component) Id() uid.Id                     { return W.WId() }
+func (W _git_golaxy_org_core_ec_Component) ID() uid.ID                     { return W.WID() }
 func (W _git_golaxy_org_core_ec_Component) Managed() *event.ManagedHandles { return W.WManaged() }
 func (W _git_golaxy_org_core_ec_Component) Name() string                   { return W.WName() }
 func (W _git_golaxy_org_core_ec_Component) Reflected() reflect.Value       { return W.WReflected() }
@@ -238,7 +238,7 @@ type _git_golaxy_org_core_ec_ConcurrentComponent struct {
 	IValue                  interface{}
 	WAsyncScope             func() *async.Scope
 	WConcurrentContextCache func() iface.Cache
-	WId                     func() uid.Id
+	WID                     func() uid.ID
 	WName                   func() string
 	WString                 func() string
 }
@@ -249,7 +249,7 @@ func (W _git_golaxy_org_core_ec_ConcurrentComponent) AsyncScope() *async.Scope {
 func (W _git_golaxy_org_core_ec_ConcurrentComponent) ConcurrentContextCache() iface.Cache {
 	return W.WConcurrentContextCache()
 }
-func (W _git_golaxy_org_core_ec_ConcurrentComponent) Id() uid.Id   { return W.WId() }
+func (W _git_golaxy_org_core_ec_ConcurrentComponent) ID() uid.ID   { return W.WID() }
 func (W _git_golaxy_org_core_ec_ConcurrentComponent) Name() string { return W.WName() }
 func (W _git_golaxy_org_core_ec_ConcurrentComponent) String() string {
 	if W.WString == nil {
@@ -266,7 +266,7 @@ type _git_golaxy_org_core_ec_ConcurrentEntity struct {
 	WDeadline               func() (deadline time.Time, ok bool)
 	WDone                   func() <-chan struct{}
 	WErr                    func() error
-	WId                     func() uid.Id
+	WID                     func() uid.ID
 	WPT                     func() ec.EntityPT
 	WString                 func() string
 	WTerminated             func() async.Signal
@@ -282,7 +282,7 @@ func (W _git_golaxy_org_core_ec_ConcurrentEntity) Deadline() (deadline time.Time
 }
 func (W _git_golaxy_org_core_ec_ConcurrentEntity) Done() <-chan struct{} { return W.WDone() }
 func (W _git_golaxy_org_core_ec_ConcurrentEntity) Err() error            { return W.WErr() }
-func (W _git_golaxy_org_core_ec_ConcurrentEntity) Id() uid.Id            { return W.WId() }
+func (W _git_golaxy_org_core_ec_ConcurrentEntity) ID() uid.ID            { return W.WID() }
 func (W _git_golaxy_org_core_ec_ConcurrentEntity) PT() ec.EntityPT       { return W.WPT() }
 func (W _git_golaxy_org_core_ec_ConcurrentEntity) String() string {
 	if W.WString == nil {
@@ -318,11 +318,11 @@ type _git_golaxy_org_core_ec_Entity struct {
 	WEventTreeNodeRemoveChild                    func() event.IEvent
 	WFilterComponents                            func(fun generic.Func1[ec.Component, bool]) []ec.Component
 	WGetComponent                                func(name string) ec.Component
-	WGetComponentById                            func(id uid.Id) ec.Component
+	WGetComponentByID                            func(id uid.ID) ec.Component
 	WGetComponentByPT                            func(prototype string) ec.Component
 	WGetComponents                               func(name string) []ec.Component
 	WGetComponentsByPT                           func(prototype string) []ec.Component
-	WId                                          func() uid.Id
+	WID                                          func() uid.ID
 	WInstanceFaceCache                           func() iface.Cache
 	WListComponents                              func() []ec.Component
 	WManaged                                     func() *event.ManagedHandles
@@ -331,7 +331,7 @@ type _git_golaxy_org_core_ec_Entity struct {
 	WRangeComponents                             func(fun generic.Func1[ec.Component, bool])
 	WReflected                                   func() reflect.Value
 	WRemoveComponent                             func(name string)
-	WRemoveComponentById                         func(id uid.Id)
+	WRemoveComponentByID                         func(id uid.ID)
 	WRemoveComponentByPT                         func(prototype string)
 	WReversedEachComponents                      func(fun generic.Action1[ec.Component])
 	WReversedRangeComponents                     func(fun generic.Func1[ec.Component, bool])
@@ -399,8 +399,8 @@ func (W _git_golaxy_org_core_ec_Entity) FilterComponents(fun generic.Func1[ec.Co
 func (W _git_golaxy_org_core_ec_Entity) GetComponent(name string) ec.Component {
 	return W.WGetComponent(name)
 }
-func (W _git_golaxy_org_core_ec_Entity) GetComponentById(id uid.Id) ec.Component {
-	return W.WGetComponentById(id)
+func (W _git_golaxy_org_core_ec_Entity) GetComponentByID(id uid.ID) ec.Component {
+	return W.WGetComponentByID(id)
 }
 func (W _git_golaxy_org_core_ec_Entity) GetComponentByPT(prototype string) ec.Component {
 	return W.WGetComponentByPT(prototype)
@@ -411,7 +411,7 @@ func (W _git_golaxy_org_core_ec_Entity) GetComponents(name string) []ec.Componen
 func (W _git_golaxy_org_core_ec_Entity) GetComponentsByPT(prototype string) []ec.Component {
 	return W.WGetComponentsByPT(prototype)
 }
-func (W _git_golaxy_org_core_ec_Entity) Id() uid.Id { return W.WId() }
+func (W _git_golaxy_org_core_ec_Entity) ID() uid.ID { return W.WID() }
 func (W _git_golaxy_org_core_ec_Entity) InstanceFaceCache() iface.Cache {
 	return W.WInstanceFaceCache()
 }
@@ -424,7 +424,7 @@ func (W _git_golaxy_org_core_ec_Entity) RangeComponents(fun generic.Func1[ec.Com
 }
 func (W _git_golaxy_org_core_ec_Entity) Reflected() reflect.Value      { return W.WReflected() }
 func (W _git_golaxy_org_core_ec_Entity) RemoveComponent(name string)   { W.WRemoveComponent(name) }
-func (W _git_golaxy_org_core_ec_Entity) RemoveComponentById(id uid.Id) { W.WRemoveComponentById(id) }
+func (W _git_golaxy_org_core_ec_Entity) RemoveComponentByID(id uid.ID) { W.WRemoveComponentByID(id) }
 func (W _git_golaxy_org_core_ec_Entity) RemoveComponentByPT(prototype string) {
 	W.WRemoveComponentByPT(prototype)
 }
@@ -560,51 +560,51 @@ func (W _git_golaxy_org_core_ec_EventEntityDestroy) OnEntityDestroy(entity ec.En
 // _git_golaxy_org_core_ec_EventTreeNodeAddChild is an interface wrapper for EventTreeNodeAddChild type
 type _git_golaxy_org_core_ec_EventTreeNodeAddChild struct {
 	IValue              interface{}
-	WOnTreeNodeAddChild func(entity ec.Entity, childId uid.Id)
+	WOnTreeNodeAddChild func(entity ec.Entity, childID uid.ID)
 }
 
-func (W _git_golaxy_org_core_ec_EventTreeNodeAddChild) OnTreeNodeAddChild(entity ec.Entity, childId uid.Id) {
-	W.WOnTreeNodeAddChild(entity, childId)
+func (W _git_golaxy_org_core_ec_EventTreeNodeAddChild) OnTreeNodeAddChild(entity ec.Entity, childID uid.ID) {
+	W.WOnTreeNodeAddChild(entity, childID)
 }
 
 // _git_golaxy_org_core_ec_EventTreeNodeAttachParent is an interface wrapper for EventTreeNodeAttachParent type
 type _git_golaxy_org_core_ec_EventTreeNodeAttachParent struct {
 	IValue                  interface{}
-	WOnTreeNodeAttachParent func(entity ec.Entity, parentId uid.Id)
+	WOnTreeNodeAttachParent func(entity ec.Entity, parentID uid.ID)
 }
 
-func (W _git_golaxy_org_core_ec_EventTreeNodeAttachParent) OnTreeNodeAttachParent(entity ec.Entity, parentId uid.Id) {
-	W.WOnTreeNodeAttachParent(entity, parentId)
+func (W _git_golaxy_org_core_ec_EventTreeNodeAttachParent) OnTreeNodeAttachParent(entity ec.Entity, parentID uid.ID) {
+	W.WOnTreeNodeAttachParent(entity, parentID)
 }
 
 // _git_golaxy_org_core_ec_EventTreeNodeDetachParent is an interface wrapper for EventTreeNodeDetachParent type
 type _git_golaxy_org_core_ec_EventTreeNodeDetachParent struct {
 	IValue                  interface{}
-	WOnTreeNodeDetachParent func(entity ec.Entity, parentId uid.Id)
+	WOnTreeNodeDetachParent func(entity ec.Entity, parentID uid.ID)
 }
 
-func (W _git_golaxy_org_core_ec_EventTreeNodeDetachParent) OnTreeNodeDetachParent(entity ec.Entity, parentId uid.Id) {
-	W.WOnTreeNodeDetachParent(entity, parentId)
+func (W _git_golaxy_org_core_ec_EventTreeNodeDetachParent) OnTreeNodeDetachParent(entity ec.Entity, parentID uid.ID) {
+	W.WOnTreeNodeDetachParent(entity, parentID)
 }
 
 // _git_golaxy_org_core_ec_EventTreeNodeMoveTo is an interface wrapper for EventTreeNodeMoveTo type
 type _git_golaxy_org_core_ec_EventTreeNodeMoveTo struct {
 	IValue            interface{}
-	WOnTreeNodeMoveTo func(entity ec.Entity, fromParentId uid.Id, toParentId uid.Id)
+	WOnTreeNodeMoveTo func(entity ec.Entity, fromParentID uid.ID, toParentID uid.ID)
 }
 
-func (W _git_golaxy_org_core_ec_EventTreeNodeMoveTo) OnTreeNodeMoveTo(entity ec.Entity, fromParentId uid.Id, toParentId uid.Id) {
-	W.WOnTreeNodeMoveTo(entity, fromParentId, toParentId)
+func (W _git_golaxy_org_core_ec_EventTreeNodeMoveTo) OnTreeNodeMoveTo(entity ec.Entity, fromParentID uid.ID, toParentID uid.ID) {
+	W.WOnTreeNodeMoveTo(entity, fromParentID, toParentID)
 }
 
 // _git_golaxy_org_core_ec_EventTreeNodeRemoveChild is an interface wrapper for EventTreeNodeRemoveChild type
 type _git_golaxy_org_core_ec_EventTreeNodeRemoveChild struct {
 	IValue                 interface{}
-	WOnTreeNodeRemoveChild func(entity ec.Entity, childId uid.Id)
+	WOnTreeNodeRemoveChild func(entity ec.Entity, childID uid.ID)
 }
 
-func (W _git_golaxy_org_core_ec_EventTreeNodeRemoveChild) OnTreeNodeRemoveChild(entity ec.Entity, childId uid.Id) {
-	W.WOnTreeNodeRemoveChild(entity, childId)
+func (W _git_golaxy_org_core_ec_EventTreeNodeRemoveChild) OnTreeNodeRemoveChild(entity ec.Entity, childID uid.ID) {
+	W.WOnTreeNodeRemoveChild(entity, childID)
 }
 
 // _git_golaxy_org_core_ec_IComponentEventTab is an interface wrapper for IComponentEventTab type
