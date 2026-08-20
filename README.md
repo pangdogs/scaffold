@@ -1,6 +1,6 @@
 # Scaffold
 
-[English](./README.md) | [简体中文](./README.zh_CN.md)
+**English** | [简体中文](./README.zh_CN.md)
 
 ## Overview
 
@@ -21,6 +21,9 @@ This repository is not a standalone application framework. It contains three kin
 - [Property Synchronization Generation](#property-synchronization-generation)
 - [Runtime Components](#runtime-components)
 - [Repository Layout](#repository-layout)
+- [Development and Verification](#development-and-verification)
+- [Related Repositories](#related-repositories)
+- [License](#license)
 
 ## Components
 
@@ -56,7 +59,7 @@ This repository is not a standalone application framework. It contains three kin
 On Windows, install it with Winget and open a new terminal before verifying the installation:
 
 ```powershell
-winget install protobuf
+winget install --id Google.Protobuf --exact
 protoc --version
 ```
 
@@ -94,7 +97,7 @@ go get git.golaxy.org/scaffold@latest
 
 ### Install code generators
 
-Code generators are normally installed with Go. If users should not need to install Go after a submission or release, the compiled tools can instead be archived in the project directory.
+Code generators are normally installed with Go. If users should not need Go after a project handoff or release, prebuilt tools can instead be kept inside the project directory.
 
 #### Install with Go
 
@@ -122,9 +125,9 @@ go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript@latest
 go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript-excel@latest
 ```
 
-#### Archive prebuilt tools
+#### Project-local prebuilt tools
 
-If users should not need to install Go after a submission or release, copy the already compiled `.exe` files into the project's `tools` directory. A layout matching `garden/tools` keeps `protoc.exe` and `protoc-gen-*` plugins in `protobuf/bin`, `excelc.exe` in `excelc/bin`, and (when used) `propc.exe` in a separate `propc/bin`. Get `protoc.exe` and `include` from the official `protocolbuffers/protobuf` release archive.
+For a self-contained project toolchain, copy the compiled `.exe` files into the project's `tools` directory. A layout matching `garden/tools` keeps `protoc.exe` and `protoc-gen-*` plugins in `protobuf/bin`, `excelc.exe` in `excelc/bin`, and (when used) `propc.exe` in a separate `propc/bin`. Get `protoc.exe` and `include` from the official `protocolbuffers/protobuf` release archive.
 
 ```text
 tools\
@@ -179,7 +182,7 @@ message Profile {
 }
 ```
 
-Assume it is stored at `proto/example/profile.proto`.
+Assume it is stored at `proto/profile.proto`.
 
 ### Generate Go Code
 
@@ -193,7 +196,7 @@ protoc \
   --go-variant_out=./server/gen/pb \
   --go-variant_opt=paths=source_relative \
   --go-variant_opt=deterministic=true \
-  ./proto/example/profile.proto
+  ./proto/profile.proto
 ```
 
 The command produces:
@@ -202,7 +205,7 @@ The command produces:
 |------------------------|---------------------------|-----------------------------------------------------|
 | `profile.pb.go`        | `protoc-gen-go`           | Official Go Protobuf message.                       |
 | `profile.structure.go` | `protoc-gen-go-structure` | Message- and field-level deep-copy helpers.         |
-| `profile.variant.go`   | `protoc-gen-go-variant`   | GAP variant registration, type id, and I/O methods. |
+| `profile.variant.go`   | `protoc-gen-go-variant`   | GAP variant registration, type ID, and I/O methods. |
 
 ### `protoc-gen-go-structure`
 
@@ -220,7 +223,7 @@ This plugin makes every top-level Go message in a file participate in the Golaxy
 
 - Message registration in `init()`.
 - `Read`, `Write`, `Size`, `TypeID`, and `Indirect` methods.
-- A stable custom variant type id derived from the Protobuf package and message name.
+- A custom variant type ID deterministically derived from the fully qualified Protobuf message name.
 
 | Option          | Default | Description                                                                                                     |
 |-----------------|---------|-----------------------------------------------------------------------------------------------------------------|
@@ -228,7 +231,7 @@ This plugin makes every top-level Go message in a file participate in the Golaxy
 
 Generated code depends on `git.golaxy.org/framework/net/gap/variant`.
 
-Go and GDScript variants use compatible 32-bit FNV-1a type ids. The id is stable for the same `package.message`, but the generators do not detect hash collisions across the complete schema set. Large protocols should validate type-id uniqueness during builds or tests.
+Go and GDScript variants use the same 32-bit FNV-1a type-ID derivation. The result is reproducible while `package.message` remains unchanged; renaming the package or message changes it. The generators do not detect hash collisions across the complete schema set, so large protocols should validate type-ID uniqueness during builds or tests.
 
 ### Generate GDScript Code
 
@@ -239,7 +242,7 @@ protoc \
   --gdscript_opt=paths=source_relative \
   --gdscript_opt=string_as_string_name=true \
   --gdscript_opt=deterministic=true \
-  ./proto/example/profile.proto
+  ./proto/profile.proto
 ```
 
 This emits `profile.pb.gd`. Generated scripts are not self-contained: copy every file from [`tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) into the Godot project, for example under `res://addons/proto/`.
@@ -825,7 +828,7 @@ var response := await (
 )
 ```
 
-`Resty` also supports JSON/form/raw bodies, path parameters, output files, concurrent request handles, and `Resty.sse(url)`.
+`Resty` also supports JSON/form/raw bodies, path parameters, output files, concurrent request handles, and SSE streams created with `Resty.sse()`. See the [`godot/resty` guide](./godot/resty/README.md) for the complete API.
 
 ## Repository Layout
 
@@ -844,6 +847,17 @@ var response := await (
 | [`tools/protoc-gen-gdscript-excel`](./tools/protoc-gen-gdscript-excel) | GDScript Excel plugin and runtime.                        |
 | [`godot/rpcli`](./godot/rpcli)                                         | Godot GAP/GTP RPC client.                                 |
 | [`godot/resty`](./godot/resty)                                         | Godot HTTP/SSE client.                                    |
+
+## Development and Verification
+
+Run repository-wide Go checks from the module root:
+
+```bash
+go test ./...
+go vet ./...
+```
+
+When changing a generator, also run it against the smallest relevant example or fixture and review the generated diff. Godot runtime changes should be opened in a Godot 4 project that exercises the affected code path.
 
 ## Related Repositories
 

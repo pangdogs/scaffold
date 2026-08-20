@@ -1,6 +1,6 @@
 # Scaffold
 
-[English](./README.md) | [简体中文](./README.zh_CN.md)
+[English](./README.md) | **简体中文**
 
 ## 项目简介
 
@@ -21,6 +21,9 @@
 - [属性同步代码生成](#属性同步代码生成)
 - [运行时组件](#运行时组件)
 - [仓库目录](#仓库目录)
+- [开发与验证](#开发与验证)
+- [相关仓库](#相关仓库)
+- [许可证](#许可证)
 
 ## 组件一览
 
@@ -56,7 +59,7 @@
 Windows 推荐使用 Winget 安装；安装后请新开终端再验证：
 
 ```powershell
-winget install protobuf
+winget install --id Google.Protobuf --exact
 protoc --version
 ```
 
@@ -94,7 +97,7 @@ go get git.golaxy.org/scaffold@latest
 
 ### 安装代码生成工具
 
-代码生成工具通常通过 Go 安装；如果提交或发布后不希望使用方再安装 Go，也可以把已编译工具归档到项目目录。
+代码生成工具通常通过 Go 安装；如果项目交付或发布后不希望使用方再安装 Go，也可以把预编译工具保存在项目目录中。
 
 #### 通过 Go 安装
 
@@ -122,9 +125,9 @@ go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript@latest
 go install git.golaxy.org/scaffold/tools/protoc-gen-gdscript-excel@latest
 ```
 
-#### 归档已编译工具
+#### 项目内预编译工具
 
-如果提交或发布后不希望使用方再安装 Go，可以把已经编译好的 `.exe` 复制到项目的 `tools` 目录中。推荐按 `garden/tools` 的方式按用途分目录：`protobuf/bin` 放 `protoc.exe` 和 `protoc-gen-*` 插件，`excelc/bin` 放 `excelc.exe`，如果使用 `propc` 则放到独立的 `propc/bin`。`protoc.exe` 和 `include` 仍从官方 `protocolbuffers/protobuf` 发布包获取。
+如需让项目自带完整工具链，可以把编译好的 `.exe` 复制到项目的 `tools` 目录中。推荐按 `garden/tools` 的方式按用途分目录：`protobuf/bin` 放 `protoc.exe` 和 `protoc-gen-*` 插件，`excelc/bin` 放 `excelc.exe`，如果使用 `propc` 则放到独立的 `propc/bin`。`protoc.exe` 和 `include` 仍从官方 `protocolbuffers/protobuf` 发布包获取。
 
 ```text
 tools\
@@ -179,7 +182,7 @@ message Profile {
 }
 ```
 
-假设保存为 `proto/example/profile.proto`。
+假设保存为 `proto/profile.proto`。
 
 ### 生成 Go 代码
 
@@ -193,7 +196,7 @@ protoc \
   --go-variant_out=./server/gen/pb \
   --go-variant_opt=paths=source_relative \
   --go-variant_opt=deterministic=true \
-  ./proto/example/profile.proto
+  ./proto/profile.proto
 ```
 
 这条命令分别生成：
@@ -220,7 +223,7 @@ protoc \
 
 - 在 `init()` 中注册消息类型。
 - `Read`、`Write`、`Size`、`TypeID` 和 `Indirect` 等方法。
-- 基于 Protobuf 完整消息名生成稳定的自定义 variant type id。
+- 根据 Protobuf 完整消息名确定性生成自定义 variant type ID。
 
 | 选项              | 默认值     | 说明                                     |
 |-----------------|---------|----------------------------------------|
@@ -228,7 +231,7 @@ protoc \
 
 生成代码依赖 `git.golaxy.org/framework/net/gap/variant`。
 
-Go 和 GDScript variant 使用兼容的 32 位 FNV-1a type id。它对相同的 `package.message` 保持稳定，但生成器不会跨全部 schema 检测哈希碰撞；协议规模很大时应在构建或测试阶段校验 type id 唯一性。
+Go 和 GDScript variant 使用相同的 32 位 FNV-1a type ID 推导方式。只要 `package.message` 不变，结果就可以重复生成；重命名 package 或 message 会改变结果。生成器不会跨全部 schema 检测哈希碰撞，因此协议规模较大时应在构建或测试阶段校验 type ID 唯一性。
 
 ### 生成 GDScript 代码
 
@@ -239,7 +242,7 @@ protoc \
   --gdscript_opt=paths=source_relative \
   --gdscript_opt=string_as_string_name=true \
   --gdscript_opt=deterministic=true \
-  ./proto/example/profile.proto
+  ./proto/profile.proto
 ```
 
 输出 `profile.pb.gd`。生成文件不是自包含的，还需要把 [`tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) 中的全部脚本拷贝到 Godot 项目，例如 `res://addons/proto/`。
@@ -825,7 +828,7 @@ var response := await (
 )
 ```
 
-`Resty` 还支持 JSON / 表单 / 原始请求体、路径参数、输出文件、并发请求句柄和 `Resty.sse(url)`。
+`Resty` 还支持 JSON / 表单 / 原始请求体、路径参数、输出文件、并发请求句柄，以及通过 `Resty.sse()` 创建的 SSE 流。完整接口见 [`godot/resty` 使用说明](./godot/resty/README.md)。
 
 ## 仓库目录
 
@@ -844,6 +847,17 @@ var response := await (
 | [`tools/protoc-gen-gdscript-excel`](./tools/protoc-gen-gdscript-excel) | GDScript Excel 插件与运行时。    |
 | [`godot/rpcli`](./godot/rpcli)                                         | Godot GAP / GTP RPC 客户端。  |
 | [`godot/resty`](./godot/resty)                                         | Godot HTTP / SSE 客户端。     |
+
+## 开发与验证
+
+在模块根目录执行 Go 项目的完整检查：
+
+```bash
+go test ./...
+go vet ./...
+```
+
+修改生成器后，还应使用最小相关示例或 fixture 执行一次生成并审查产物差异。修改 Godot 运行时后，应在覆盖对应代码路径的 Godot 4 项目中验证。
 
 ## 相关仓库
 

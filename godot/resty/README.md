@@ -2,11 +2,11 @@
 
 Lightweight Resty-style HTTP helper for Godot 4.
 
-## Autoload
+## Installation
 
-Add `res://addons/resty/resty_client.gd` as an Autoload named `Resty`.
+Copy the scripts into the Godot project, for example under `res://addons/resty/`. Keep all files together because the client uses the other globally named Resty types.
 
-This project already has it registered in `project.godot`.
+Then add `res://addons/resty/resty_client.gd` as an Autoload named `Resty` in **Project Settings > Globals > Autoload**.
 
 ## Basic Usage
 
@@ -229,18 +229,18 @@ Resty.set_basic_auth(username: String, password: String) -> RestyClient
 Resty.set_query_param(name: String, value: Variant) -> RestyClient
 Resty.set_query_params(values: Dictionary) -> RestyClient
 
-Resty.get_async(url: String) -> RestyResponse
-Resty.get_start(url: String) -> RestyRequestHandle
-Resty.post_async(url: String, body: Variant = null) -> RestyResponse
-Resty.post_start(url: String, body: Variant = null) -> RestyRequestHandle
-Resty.put_async(url: String, body: Variant = null) -> RestyResponse
-Resty.put_start(url: String, body: Variant = null) -> RestyRequestHandle
-Resty.patch_async(url: String, body: Variant = null) -> RestyResponse
-Resty.patch_start(url: String, body: Variant = null) -> RestyRequestHandle
-Resty.delete_async(url: String) -> RestyResponse
-Resty.delete_start(url: String) -> RestyRequestHandle
-Resty.head_async(url: String) -> RestyResponse
-Resty.head_start(url: String) -> RestyRequestHandle
+Resty.get_async(url: String = "") -> RestyResponse
+Resty.get_start(url: String = "") -> RestyRequestHandle
+Resty.post_async(url: String = "", body: Variant = null) -> RestyResponse
+Resty.post_start(url: String = "", body: Variant = null) -> RestyRequestHandle
+Resty.put_async(url: String = "", body: Variant = null) -> RestyResponse
+Resty.put_start(url: String = "", body: Variant = null) -> RestyRequestHandle
+Resty.patch_async(url: String = "", body: Variant = null) -> RestyResponse
+Resty.patch_start(url: String = "", body: Variant = null) -> RestyRequestHandle
+Resty.delete_async(url: String = "") -> RestyResponse
+Resty.delete_start(url: String = "") -> RestyRequestHandle
+Resty.head_async(url: String = "") -> RestyResponse
+Resty.head_start(url: String = "") -> RestyRequestHandle
 ```
 
 ## Request API
@@ -268,21 +268,21 @@ req.set_raw_body(value: PackedByteArray, content_type: String = "application/oct
 req.set_json(value: Variant, content_type: String = "application/json") -> RestyRequest
 req.set_form(values: Dictionary, content_type: String = "application/x-www-form-urlencoded") -> RestyRequest
 
-req.request_async(method: int, url: String) -> RestyResponse
-req.request_start(method: int, url: String) -> RestyRequestHandle
+req.request_async(method: int = HTTPClient.METHOD_GET, url: String = "") -> RestyResponse
+req.request_start(method: int = HTTPClient.METHOD_GET, url: String = "") -> RestyRequestHandle
 
-req.get_async(url: String) -> RestyResponse
-req.get_start(url: String) -> RestyRequestHandle
-req.post_async(url: String) -> RestyResponse
-req.post_start(url: String) -> RestyRequestHandle
-req.put_async(url: String) -> RestyResponse
-req.put_start(url: String) -> RestyRequestHandle
-req.patch_async(url: String) -> RestyResponse
-req.patch_start(url: String) -> RestyRequestHandle
-req.delete_async(url: String) -> RestyResponse
-req.delete_start(url: String) -> RestyRequestHandle
-req.head_async(url: String) -> RestyResponse
-req.head_start(url: String) -> RestyRequestHandle
+req.get_async(url: String = "") -> RestyResponse
+req.get_start(url: String = "") -> RestyRequestHandle
+req.post_async(url: String = "") -> RestyResponse
+req.post_start(url: String = "") -> RestyRequestHandle
+req.put_async(url: String = "") -> RestyResponse
+req.put_start(url: String = "") -> RestyRequestHandle
+req.patch_async(url: String = "") -> RestyResponse
+req.patch_start(url: String = "") -> RestyRequestHandle
+req.delete_async(url: String = "") -> RestyResponse
+req.delete_start(url: String = "") -> RestyRequestHandle
+req.head_async(url: String = "") -> RestyResponse
+req.head_start(url: String = "") -> RestyRequestHandle
 ```
 
 ## SSE API
@@ -307,7 +307,7 @@ stream.set_raw_body(value: PackedByteArray, content_type: String = "application/
 stream.set_json(value: Variant, content_type: String = "application/json") -> RestySSEStream
 stream.set_form(values: Dictionary, content_type: String = "application/x-www-form-urlencoded") -> RestySSEStream
 
-stream.start(method: int, url: String) -> bool
+stream.start(method: int = HTTPClient.METHOD_GET, url: String = "") -> bool
 stream.close() -> void
 stream.get_response_header(name: String) -> String
 
