@@ -49,6 +49,7 @@ func init() {
 		"ContextBehavior": reflect.ValueOf((*service.ContextBehavior)(nil)),
 		"ContextOptions":  reflect.ValueOf((*service.ContextOptions)(nil)),
 		"EntityManager":   reflect.ValueOf((*service.EntityManager)(nil)),
+		"RetainedAddIn":   reflect.ValueOf((*service.RetainedAddIn)(nil)),
 		"RunningEvent":    reflect.ValueOf((*service.RunningEvent)(nil)),
 		"RunningEventCB":  reflect.ValueOf((*service.RunningEventCB)(nil)),
 
@@ -58,6 +59,7 @@ func init() {
 		"_Caller":        reflect.ValueOf((*_git_golaxy_org_core_service_Caller)(nil)),
 		"_Context":       reflect.ValueOf((*_git_golaxy_org_core_service_Context)(nil)),
 		"_EntityManager": reflect.ValueOf((*_git_golaxy_org_core_service_EntityManager)(nil)),
+		"_RetainedAddIn": reflect.ValueOf((*_git_golaxy_org_core_service_RetainedAddIn)(nil)),
 	}
 }
 
@@ -242,3 +244,13 @@ func (W _git_golaxy_org_core_service_EntityManager) GetOrAddEntity(entity ec.Con
 	return W.WGetOrAddEntity(entity)
 }
 func (W _git_golaxy_org_core_service_EntityManager) RemoveEntity(id uid.ID) { W.WRemoveEntity(id) }
+
+// _git_golaxy_org_core_service_RetainedAddIn is an interface wrapper for RetainedAddIn type
+type _git_golaxy_org_core_service_RetainedAddIn struct {
+	IValue                  interface{}
+	WRetainAfterTermination func()
+}
+
+func (W _git_golaxy_org_core_service_RetainedAddIn) RetainAfterTermination() {
+	W.WRetainAfterTermination()
+}

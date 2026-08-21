@@ -93,6 +93,7 @@ func (W _git_golaxy_org_framework_addins_gate_IGate) Watch(ctx context.Context, 
 // _git_golaxy_org_framework_addins_gate_ISession is an interface wrapper for ISession type
 type _git_golaxy_org_framework_addins_gate_ISession struct {
 	IValue      interface{}
+	WAsyncScope func() *async.Scope
 	WClose      func(err error) async.Signal
 	WClosed     func() async.Signal
 	WDataIO     func() gate.IDataIO
@@ -111,6 +112,9 @@ type _git_golaxy_org_framework_addins_gate_ISession struct {
 	WValue      func(key any) any
 }
 
+func (W _git_golaxy_org_framework_addins_gate_ISession) AsyncScope() *async.Scope {
+	return W.WAsyncScope()
+}
 func (W _git_golaxy_org_framework_addins_gate_ISession) Close(err error) async.Signal {
 	return W.WClose(err)
 }
