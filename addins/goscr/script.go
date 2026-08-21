@@ -20,11 +20,14 @@
 package goscr
 
 import (
+	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"git.golaxy.org/core/ec"
 	"git.golaxy.org/core/service"
+	"git.golaxy.org/core/utils/async"
 	"git.golaxy.org/core/utils/option"
 	"git.golaxy.org/framework/addins/log"
 	"git.golaxy.org/framework/addins/rpc/callpath"
@@ -33,8 +36,6 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/pangdogs/yaegi/stdlib"
 	"go.uber.org/zap"
-
-	"time"
 )
 
 // IScript 脚本插件接口
@@ -156,11 +157,11 @@ func (s *_Script) autoHotFix() {
 			}
 		}
 
-		go func() {
+		async.SpawnVoid(s.svcCtx.AsyncScope(), func(ctx context.Context) {
 			defer watcher.Close()
 			for {
 				select {
-				case <-s.svcCtx.Done():
+				case <-ctx.Done():
 					return
 				case e, ok := <-watcher.Events:
 					if !ok {
@@ -173,18 +174,18 @@ func (s *_Script) autoHotFix() {
 						zap.String("file_op", e.Op.String()),
 						zap.Duration("delay_time", s.options.AutoHotFixLocalDetectingDelayTime))
 
-					go func() {
+					async.SpawnVoid(s.svcCtx.AsyncScope(), func(ctx context.Context) {
 						if !s.reloadingMu.TryLock() {
 							return
 						}
 						defer s.reloadingMu.Unlock()
 
-						time.Sleep(s.options.AutoHotFixLocalDetectingDelayTime)
-
+						timer := time.NewTimer(s.options.AutoHotFixLocalDetectingDelayTime)
+						defer timer.Stop()
 						select {
-						case <-s.svcCtx.Done():
+						case <-ctx.Done():
 							return
-						default:
+						case <-timer.C:
 						}
 
 						solution, err := s.loadSolution()
@@ -200,7 +201,7 @@ func (s *_Script) autoHotFix() {
 						log.L(s.svcCtx).Info("auto hotfix load solution ok",
 							zap.String("pkg_root", s.options.PkgRoot),
 							zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)))
-					}()
+					})
 
 				case err, ok := <-watcher.Errors:
 					if !ok {
@@ -211,7 +212,7 @@ func (s *_Script) autoHotFix() {
 						zap.Error(err))
 				}
 			}
-		}()
+		})
 
 		log.L(s.svcCtx).Info("auto hotfix watch solution local path changes ok",
 			zap.String("pkg_root", s.options.PkgRoot),
@@ -219,14 +220,15 @@ func (s *_Script) autoHotFix() {
 	}
 
 	if pie.Any(s.options.Projects, func(project *dynamic.Project) bool { return project.RemoteURL != "" }) {
-		go func() {
-			for {
-				time.Sleep(s.options.AutoHotFixRemoteCheckingIntervalTime)
+		async.SpawnVoid(s.svcCtx.AsyncScope(), func(ctx context.Context) {
+			ticker := time.NewTicker(s.options.AutoHotFixRemoteCheckingIntervalTime)
+			defer ticker.Stop()
 
+			for {
 				select {
-				case <-s.svcCtx.Done():
+				case <-ctx.Done():
 					return
-				default:
+				case <-ticker.C:
 				}
 
 				b, err := s.solution.DetectRemoteChanged()
@@ -265,7 +267,7 @@ func (s *_Script) autoHotFix() {
 						zap.Strings("projects", pie.Of(s.options.Projects).StringsUsing(s.showProject)))
 				}()
 			}
-		}()
+		})
 
 		log.L(s.svcCtx).Info("auto hotfix watch solution remote path changes ok",
 			zap.String("pkg_root", s.options.PkgRoot),
