@@ -658,6 +658,8 @@ excelc data \
 | `--binary_chunked`                   | 改为 `.bin.idx + .bin.chk_*` 分块格式。  |
 | `--binary_chunk_size`                | 每个 chunk 最大行数，默认 `10000`。         |
 
+表结构有效但没有数据行时仍会生成空表文件；分块模式会生成 `.bin.idx`，但不会生成 `.bin.chk_*`。
+
 ### `protoc-gen-go-excel`
 
 该插件只面向 `excelc proto` 生成的 schema，输出 `*.excel.go`。它读取表和索引 custom options，为表消息补充：

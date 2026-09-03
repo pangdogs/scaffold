@@ -658,6 +658,8 @@ Reads workbooks and matching `*.protoset` files, builds dynamic table messages, 
 | `--binary_chunked`                   | Switches to `.bin.idx + .bin.chk_*`.                                  |
 | `--binary_chunk_size`                | Maximum rows per chunk; defaults to `10000`.                          |
 
+A valid table with no data rows still produces an empty table file. Chunked output produces `.bin.idx` without any `.bin.chk_*` files.
+
 ### `protoc-gen-go-excel`
 
 This plugin only targets schemas produced by `excelc proto` and emits `*.excel.go`. It reads table/index custom options and adds:

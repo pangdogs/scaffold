@@ -85,6 +85,98 @@ func genProtoMessage(file *excelize.File) proto.Message {
 
 	var offsetLines []OffsetLine
 
+	initializeTable := func() {
+		if tableMsg != nil {
+			return
+		}
+
+		columnsName := fmt.Sprintf("%s.%s", viper.GetString("pb_package"), snake2Camel(strings.TrimSuffix(filepath.Base(file.Path), filepath.Ext(file.Path)))+"Columns")
+
+		columnsType, err = pbTypes.FindMessageByName(protoreflect.FullName(columnsName))
+		if err != nil {
+			log.Panicf("parse proto type %q failed, %s", columnsName, err)
+		}
+
+		tableName := fmt.Sprintf("%s.%s", viper.GetString("pb_package"), snake2Camel(strings.TrimSuffix(filepath.Base(file.Path), filepath.Ext(file.Path)))+"Table")
+
+		tableType, err = pbTypes.FindMessageByName(protoreflect.FullName(tableName))
+		if err != nil {
+			log.Panicf("parse proto type %q failed, %s", tableName, err)
+		}
+
+		for j := range tableType.Descriptor().Fields().Len() {
+			field := tableType.Descriptor().Fields().Get(j)
+
+			indexTypeValue, ok := proto.GetExtension(field.Options(), extensions.IndexType).(string)
+			if !ok || indexTypeValue == "" {
+				continue
+			}
+			indexKind := indexType(indexTypeValue)
+
+			indexFields := proto.GetExtension(field.Options(), extensions.IndexFields).(string)
+			if indexFields == "" {
+				continue
+			}
+
+			fieldDescs := make([]protoreflect.FieldDescriptor, 0, len(strings.Split(indexFields, ",")))
+			for _, indexFieldName := range strings.Split(indexFields, ",") {
+				fieldDesc := columnsType.Descriptor().Fields().ByName(protoreflect.Name(indexFieldName))
+				if fieldDesc == nil {
+					log.Panicf("parse proto type %q failed, index field %q not found", columnsType.Descriptor().FullName(), indexFieldName)
+				}
+				fieldDescs = append(fieldDescs, fieldDesc)
+			}
+
+			switch indexKind {
+			case indexTypeHashUnique:
+				tableHashUniqueIndexes.Add(string(field.Name()), fieldDescs)
+			case indexTypeSortedUnique:
+				tableSortedUniqueIndexes.Add(string(field.Name()), fieldDescs)
+			case indexTypeHash:
+				tableHashIndexes.Add(string(field.Name()), fieldDescs)
+			case indexTypeSorted:
+				tableSortedIndexes.Add(string(field.Name()), fieldDescs)
+			default:
+				log.Panicf("parse proto field %q failed, unsupported index type %q", field.FullName(), indexKind)
+			}
+		}
+
+		tableMsg = tableType.New()
+
+		definitionFieldsByName = make(map[string]protoreflect.FieldDescriptor, len(definitionColumns))
+		for columnIdx, column := range definitionColumns {
+			meta, err := parseMeta(column.Meta)
+			if err != nil {
+				log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, sheets[0], column.Meta, column.Name, err)
+			}
+			if !meta.MatchTargets() {
+				continue
+			}
+
+			field := columnsType.Descriptor().Fields().ByName(protoreflect.Name(column.Name))
+			if field == nil {
+				log.Panicf("parse proto type %q failed: column %q from first data sheet %q was not found", columnsType.Descriptor().FullName(), column.Name, sheets[0])
+			}
+
+			expectedFieldNumber := protoreflect.FieldNumber(columnIdx + 1)
+			if meta.PbFieldNumber != nil {
+				expectedFieldNumber = protoreflect.FieldNumber(*meta.PbFieldNumber)
+			}
+			if field.Number() != expectedFieldNumber {
+				log.Panicf("parse proto field %q failed: field number is %d, but first data sheet %q configures %d", field.FullName(), field.Number(), sheets[0], expectedFieldNumber)
+			}
+
+			definitionFieldsByName[column.Name] = field
+		}
+
+		for fieldIdx := range columnsType.Descriptor().Fields().Len() {
+			field := columnsType.Descriptor().Fields().Get(fieldIdx)
+			if definitionFieldsByName[string(field.Name())] == nil {
+				log.Panicf("parse proto type %q failed: field %q is not defined in first data sheet %q", columnsType.Descriptor().FullName(), field.Name(), sheets[0])
+			}
+		}
+	}
+
 	for sheetIndex, sheet := range sheets {
 		func() {
 			rows, err := file.Rows(sheet)
@@ -168,97 +260,7 @@ func genProtoMessage(file *excelize.File) proto.Message {
 					continue
 				}
 
-				if columnsType == nil {
-					columnsName := fmt.Sprintf("%s.%s", viper.GetString("pb_package"), snake2Camel(strings.TrimSuffix(filepath.Base(file.Path), filepath.Ext(file.Path)))+"Columns")
-
-					columnsType, err = pbTypes.FindMessageByName(protoreflect.FullName(columnsName))
-					if err != nil {
-						log.Panicf("parse proto type %q failed, %s", columnsName, err)
-					}
-				}
-
-				if tableType == nil {
-					tableName := fmt.Sprintf("%s.%s", viper.GetString("pb_package"), snake2Camel(strings.TrimSuffix(filepath.Base(file.Path), filepath.Ext(file.Path)))+"Table")
-
-					tableType, err = pbTypes.FindMessageByName(protoreflect.FullName(tableName))
-					if err != nil {
-						log.Panicf("parse proto type %q failed, %s", tableName, err)
-					}
-
-					for j := range tableType.Descriptor().Fields().Len() {
-						field := tableType.Descriptor().Fields().Get(j)
-
-						indexTypeValue, ok := proto.GetExtension(field.Options(), extensions.IndexType).(string)
-						if !ok || indexTypeValue == "" {
-							continue
-						}
-						indexKind := indexType(indexTypeValue)
-
-						indexFields := proto.GetExtension(field.Options(), extensions.IndexFields).(string)
-						if indexFields == "" {
-							continue
-						}
-
-						fieldDescs := make([]protoreflect.FieldDescriptor, 0, len(strings.Split(indexFields, ",")))
-						for _, indexFieldName := range strings.Split(indexFields, ",") {
-							fieldDesc := columnsType.Descriptor().Fields().ByName(protoreflect.Name(indexFieldName))
-							if fieldDesc == nil {
-								log.Panicf("parse proto type %q failed, index field %q not found", columnsType.Descriptor().FullName(), indexFieldName)
-							}
-							fieldDescs = append(fieldDescs, fieldDesc)
-						}
-
-						switch indexKind {
-						case indexTypeHashUnique:
-							tableHashUniqueIndexes.Add(string(field.Name()), fieldDescs)
-						case indexTypeSortedUnique:
-							tableSortedUniqueIndexes.Add(string(field.Name()), fieldDescs)
-						case indexTypeHash:
-							tableHashIndexes.Add(string(field.Name()), fieldDescs)
-						case indexTypeSorted:
-							tableSortedIndexes.Add(string(field.Name()), fieldDescs)
-						default:
-							log.Panicf("parse proto field %q failed, unsupported index type %q", field.FullName(), indexKind)
-						}
-					}
-
-					tableMsg = tableType.New()
-				}
-
-				if definitionFieldsByName == nil {
-					definitionFieldsByName = make(map[string]protoreflect.FieldDescriptor, len(definitionColumns))
-					for columnIdx, column := range definitionColumns {
-						meta, err := parseMeta(column.Meta)
-						if err != nil {
-							log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, sheets[0], column.Meta, column.Name, err)
-						}
-						if !meta.MatchTargets() {
-							continue
-						}
-
-						field := columnsType.Descriptor().Fields().ByName(protoreflect.Name(column.Name))
-						if field == nil {
-							log.Panicf("parse proto type %q failed: column %q from first data sheet %q was not found", columnsType.Descriptor().FullName(), column.Name, sheets[0])
-						}
-
-						expectedFieldNumber := protoreflect.FieldNumber(columnIdx + 1)
-						if meta.PbFieldNumber != nil {
-							expectedFieldNumber = protoreflect.FieldNumber(*meta.PbFieldNumber)
-						}
-						if field.Number() != expectedFieldNumber {
-							log.Panicf("parse proto field %q failed: field number is %d, but first data sheet %q configures %d", field.FullName(), field.Number(), sheets[0], expectedFieldNumber)
-						}
-
-						definitionFieldsByName[column.Name] = field
-					}
-
-					for fieldIdx := range columnsType.Descriptor().Fields().Len() {
-						field := columnsType.Descriptor().Fields().Get(fieldIdx)
-						if definitionFieldsByName[string(field.Name())] == nil {
-							log.Panicf("parse proto type %q failed: field %q is not defined in first data sheet %q", columnsType.Descriptor().FullName(), field.Name(), sheets[0])
-						}
-					}
-				}
+				initializeTable()
 
 				for _, column := range columns {
 					column.Field = definitionFieldsByName[column.Name]
@@ -424,6 +426,10 @@ func genProtoMessage(file *excelize.File) proto.Message {
 				})
 			}
 		}()
+	}
+
+	if tableMsg == nil && len(definitionColumns) > 0 {
+		initializeTable()
 	}
 
 	if tableMsg == nil {
