@@ -458,7 +458,7 @@ Meta 使用 query-string 格式，例如 `scope=client&sorted_unique_index=1`：
 
 | 参数                    | 说明                                                      |
 |-----------------------|---------------------------------------------------------|
-| `scope`               | 可重复的目标标签，与 `--targets` 配合裁剪字段；未设置时对所有目标可见。              |
+| `scope`               | 可重复的目标标签，只能包含 ASCII 字母、数字和下划线；与 `--targets` 配合裁剪字段，未设置时对所有目标可见。 |
 | `separator`           | repeated 字段单元格的自定义分隔符，默认 `,`，支持多字符；不能为空，且首尾或内部均不能包含空白、控制字符、`: ' " \\ { } [ ]`。map 字段始终按 YAML mapping 解析。 |
 | `pb_field_number`     | 覆盖 Protobuf field number；必须为合法正数、不能位于保留区间，并且在同一消息内不能重复。 |
 | `unique_index`        | 唯一索引逻辑分组，物理结构由 `--pb_unique_index_as` 决定。               |
@@ -467,6 +467,9 @@ Meta 使用 query-string 格式，例如 `scope=client&sorted_unique_index=1`：
 | `index`               | 允许同键多行的索引逻辑分组，物理结构由 `--pb_index_as` 决定。                 |
 | `hash_index`          | 强制使用哈希非唯一索引。                                            |
 | `sorted_index`        | 强制使用有序非唯一索引。                                            |
+
+所有 Meta 参数均可省略。参数名区分大小写，无法绑定的未知参数会被忽略。`scope` 和各索引参数重复配置时保留全部值；`separator` 和 `pb_field_number` 重复配置时以第一个值为准。成功绑定的值会按字段的校验规则检查，负数索引 tag 会导致编译失败。
+Meta 参数值使用 URL query 编码，因此保留字符需要按需编码。分隔符中常见的替换为：`+` 写作 `%2B`、`&` 写作 `%26`、`%` 写作 `%25`、`;` 写作 `%3B`。
 
 ### 索引模型
 

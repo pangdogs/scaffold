@@ -458,7 +458,7 @@ Metadata uses query-string syntax, for example `scope=client&sorted_unique_index
 
 | Parameter             | Description                                                                                                          |
 |-----------------------|----------------------------------------------------------------------------------------------------------------------|
-| `scope`               | Repeatable target label used with `--targets`; fields without a scope are visible to every target.                   |
+| `scope`               | Repeatable target label containing only ASCII letters, digits, and underscores; used with `--targets`, while fields without a scope are visible to every target. |
 | `separator`           | Custom separator for repeated-field cells; defaults to `,` and may contain multiple characters. It cannot be empty or contain whitespace (including at either end), control characters, or `: ' " \\ { } [ ]`. Map fields always use YAML mapping syntax. |
 | `pb_field_number`     | Overrides the Protobuf field number. It must be positive, outside the reserved range, and unique within its message. |
 | `unique_index`        | Logical unique-index group whose representation is selected by `--pb_unique_index_as`.                               |
@@ -467,6 +467,9 @@ Metadata uses query-string syntax, for example `scope=client&sorted_unique_index
 | `index`               | Logical non-unique group whose representation is selected by `--pb_index_as`.                                        |
 | `hash_index`          | Forces a hash-based non-unique index.                                                                                |
 | `sorted_index`        | Forces a sorted non-unique index.                                                                                    |
+
+All Meta parameters are optional. Parameter names are case-sensitive, and unknown parameters that cannot be bound are ignored. Repeated `scope` and index parameters retain every value; repeated `separator` and `pb_field_number` parameters use the first value. Successfully bound values are checked by their field validation rules, and negative index tags cause compilation to fail.
+Meta values use URL query encoding, so reserved characters must be encoded when necessary. Common separator replacements are `+` as `%2B`, `&` as `%26`, `%` as `%25`, and `;` as `%3B`.
 
 ### Index Model
 

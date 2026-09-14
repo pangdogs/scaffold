@@ -30,6 +30,7 @@ import (
 
 var (
 	pbIdentifierRegexp     = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
+	scopeRegexp            = regexp.MustCompile(`^[A-Za-z0-9_]+$`)
 	yamlAliasInvalidRegexp = regexp.MustCompile("[\\p{Cc} \\-?:,\\[\\]{}#&*!|>'\"%@`\\\\]")
 	separatorInvalidRegexp = regexp.MustCompile("[\\p{Cc}\\p{Z}:\\[\\]{}'\"\\\\]")
 )
@@ -37,6 +38,14 @@ var (
 func validatePbIdentifier(name string) error {
 	if !pbIdentifierRegexp.MatchString(name) {
 		return fmt.Errorf("must match [A-Za-z][A-Za-z0-9_]*")
+	}
+
+	return nil
+}
+
+func validateScope(scope string) error {
+	if !scopeRegexp.MatchString(scope) {
+		return fmt.Errorf("must contain only ASCII letters, digits, and underscores")
 	}
 
 	return nil

@@ -120,15 +120,15 @@ func (ty Type) Repeated() Type {
 }
 
 type Meta struct {
-	Separator         string   `form:"separator"`
-	Scope             []string `form:"scope"`
-	Index             []int32  `form:"index"`
-	HashIndex         []int32  `form:"hash_index"`
-	SortedIndex       []int32  `form:"sorted_index"`
-	UniqueIndex       []int32  `form:"unique_index"`
-	HashUniqueIndex   []int32  `form:"hash_unique_index"`
-	SortedUniqueIndex []int32  `form:"sorted_unique_index"`
-	PbFieldNumber     *int32   `form:"pb_field_number"`
+	Separator         string   `form:"separator" validate:"valid_separator"`
+	Scope             []string `form:"scope" validate:"omitempty,dive,required,valid_scope"`
+	Index             []int32  `form:"index" validate:"omitempty,dive,gte=0"`
+	HashIndex         []int32  `form:"hash_index" validate:"omitempty,dive,gte=0"`
+	SortedIndex       []int32  `form:"sorted_index" validate:"omitempty,dive,gte=0"`
+	UniqueIndex       []int32  `form:"unique_index" validate:"omitempty,dive,gte=0"`
+	HashUniqueIndex   []int32  `form:"hash_unique_index" validate:"omitempty,dive,gte=0"`
+	SortedUniqueIndex []int32  `form:"sorted_unique_index" validate:"omitempty,dive,gte=0"`
+	PbFieldNumber     *int32   `form:"pb_field_number" validate:"omitempty,valid_pb_field_number"`
 }
 
 func (m *Meta) MatchTargets() bool {
@@ -174,7 +174,7 @@ func parseMeta(str string) (*Meta, error) {
 
 	values, err := url.ParseQuery(str)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w; %s", err, metaQueryEncodingHint)
 	}
 
 	err = form.NewDecoder().Decode(&meta, values)
@@ -182,15 +182,12 @@ func parseMeta(str string) (*Meta, error) {
 		return nil, err
 	}
 
-	if err := validateSeparator(meta.Separator); err != nil {
-		return nil, fmt.Errorf("invalid separator: %w", err)
-	}
-
 	meta.Scope = pie.Of(meta.Scope).Map(func(s string) string {
 		return strings.TrimSpace(s)
-	}).Filter(func(s string) bool {
-		return s != ""
 	}).Result
+	if err := validateMeta(&meta); err != nil {
+		return nil, err
+	}
 
 	meta.Index = normalizeIndexTags(meta.Index)
 	if len(meta.Index) > 0 {
@@ -228,12 +225,6 @@ func parseMeta(str string) (*Meta, error) {
 		return pie.Contains(meta.SortedUniqueIndex, tag)
 	}).Result; len(conflicted) > 0 {
 		return nil, fmt.Errorf("hash_unique_index tags %v conflict with sorted_unique_index", conflicted)
-	}
-
-	if meta.PbFieldNumber != nil {
-		if err := checkPbFieldNumber(*meta.PbFieldNumber); err != nil {
-			return nil, err
-		}
 	}
 
 	return &meta, nil
