@@ -21,7 +21,9 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
+	"go/token"
 	"slices"
 	"strings"
 
@@ -47,6 +49,11 @@ const (
 	indexTypeSortedUnique indexType = "SortedUniqueIndex"
 	indexTypeHash         indexType = "HashIndex"
 	indexTypeSorted       indexType = "SortedIndex"
+
+	defaultHashUniqueIndexPrefix   = "HashUniqueIndex"
+	defaultSortedUniqueIndexPrefix = "SortedUniqueIndex"
+	defaultHashIndexPrefix         = "HashIndex"
+	defaultSortedIndexPrefix       = "SortedIndex"
 )
 
 type FieldDecl struct {
@@ -67,8 +74,37 @@ type Extensions struct {
 	IndexFields protoreflect.ExtensionType
 }
 
+type GeneratorConfig struct {
+	HashUniqueIndexPrefix   string
+	SortedUniqueIndexPrefix string
+	HashIndexPrefix         string
+	SortedIndexPrefix       string
+}
+
+var config = GeneratorConfig{
+	HashUniqueIndexPrefix:   defaultHashUniqueIndexPrefix,
+	SortedUniqueIndexPrefix: defaultSortedUniqueIndexPrefix,
+	HashIndexPrefix:         defaultHashIndexPrefix,
+	SortedIndexPrefix:       defaultSortedIndexPrefix,
+}
+
 func main() {
-	protogen.Options{}.Run(func(gen *protogen.Plugin) error {
+	var flags flag.FlagSet
+	hashUniqueIndexPrefix := flags.String("hash_unique_index_prefix", defaultHashUniqueIndexPrefix, "rename the generated hash unique-index method prefix")
+	sortedUniqueIndexPrefix := flags.String("sorted_unique_index_prefix", defaultSortedUniqueIndexPrefix, "rename the generated sorted unique-index method prefix")
+	hashIndexPrefix := flags.String("hash_index_prefix", defaultHashIndexPrefix, "rename the generated hash non-unique-index method prefix")
+	sortedIndexPrefix := flags.String("sorted_index_prefix", defaultSortedIndexPrefix, "rename the generated sorted non-unique-index method prefix")
+
+	protogen.Options{ParamFunc: flags.Set}.Run(func(gen *protogen.Plugin) error {
+		config = GeneratorConfig{
+			HashUniqueIndexPrefix:   *hashUniqueIndexPrefix,
+			SortedUniqueIndexPrefix: *sortedUniqueIndexPrefix,
+			HashIndexPrefix:         *hashIndexPrefix,
+			SortedIndexPrefix:       *sortedIndexPrefix,
+		}
+		if err := config.validate(); err != nil {
+			return err
+		}
 		for _, f := range gen.Files {
 			if err := registerProtoTypes(protoregistry.GlobalTypes, f.Desc); err != nil {
 				return fmt.Errorf("register proto types for %q: %w", f.Desc.Path(), err)
@@ -115,6 +151,7 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 		}
 		fieldRows := m.Fields[fieldRowsIdx]
 		defaultMethodsEmitted := false
+		generatedIndexMethods := map[string]protoreflect.FullName{}
 
 		for j, f := range m.Fields {
 			indexTypeValue, ok := proto.GetExtension(pbMsg.Field[j].Options, ext.IndexType).(string)
@@ -179,17 +216,15 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) error {
 				notFoundArgs.WriteString(name)
 			})
 
-			indexShorten := f.GoName
-			switch indexKind {
-			case indexTypeHashUnique:
-				indexShorten = string(indexTypeHashUnique) + strings.TrimPrefix(indexShorten, string(indexTypeHashUnique))
-			case indexTypeSortedUnique:
-				indexShorten = string(indexTypeSortedUnique) + strings.TrimPrefix(indexShorten, string(indexTypeSortedUnique))
-			case indexTypeHash:
-				indexShorten = string(indexTypeHash) + strings.TrimPrefix(indexShorten, string(indexTypeHash))
-			case indexTypeSorted:
-				indexShorten = string(indexTypeSorted) + strings.TrimPrefix(indexShorten, string(indexTypeSorted))
+			indexShorten, err := buildIndexMethodSuffix(indexKind, f.GoName)
+			if err != nil {
+				return fmt.Errorf("field %q: %w", f.Desc.FullName(), err)
 			}
+			lookupMethodName := "LookupBy" + indexShorten
+			if previous, ok := generatedIndexMethods[lookupMethodName]; ok {
+				return fmt.Errorf("table %q index fields %q and %q generate duplicate method %q", m.Desc.FullName(), previous, f.Desc.FullName(), lookupMethodName)
+			}
+			generatedIndexMethods[lookupMethodName] = f.Desc.FullName()
 
 			if !isUniqueIndexType(indexKind) {
 				if err := emitNonUniqueLookupMethod(
@@ -410,6 +445,66 @@ func isUniqueIndexType(typ indexType) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func (cfg GeneratorConfig) validate() error {
+	uniquePrefixes := []struct {
+		option string
+		value  string
+	}{
+		{option: "hash_unique_index_prefix", value: cfg.HashUniqueIndexPrefix},
+		{option: "sorted_unique_index_prefix", value: cfg.SortedUniqueIndexPrefix},
+	}
+	nonUniquePrefixes := []struct {
+		option string
+		value  string
+	}{
+		{option: "hash_index_prefix", value: cfg.HashIndexPrefix},
+		{option: "sorted_index_prefix", value: cfg.SortedIndexPrefix},
+	}
+
+	for _, prefix := range append(uniquePrefixes, nonUniquePrefixes...) {
+		if err := validateGoIndexPrefix(prefix.option, prefix.value); err != nil {
+			return err
+		}
+	}
+	for _, uniquePrefix := range uniquePrefixes {
+		for _, nonUniquePrefix := range nonUniquePrefixes {
+			if uniquePrefix.value == nonUniquePrefix.value {
+				return fmt.Errorf("%s and %s must differ, but both are %q", uniquePrefix.option, nonUniquePrefix.option, uniquePrefix.value)
+			}
+		}
+	}
+	return nil
+}
+
+func validateGoIndexPrefix(optionName, prefix string) error {
+	if prefix == "" {
+		return fmt.Errorf("%s cannot be empty", optionName)
+	}
+	if token.IsKeyword(prefix) {
+		return fmt.Errorf("%s %q cannot be a Go keyword", optionName, prefix)
+	}
+	if !token.IsIdentifier(prefix) {
+		return fmt.Errorf("%s %q must be a valid Go identifier", optionName, prefix)
+	}
+	return nil
+}
+
+func buildIndexMethodSuffix(typ indexType, fieldName string) (string, error) {
+	fieldSuffix := strings.TrimPrefix(fieldName, string(typ))
+	switch typ {
+	case indexTypeHashUnique:
+		return config.HashUniqueIndexPrefix + fieldSuffix, nil
+	case indexTypeSortedUnique:
+		return config.SortedUniqueIndexPrefix + fieldSuffix, nil
+	case indexTypeHash:
+		return config.HashIndexPrefix + fieldSuffix, nil
+	case indexTypeSorted:
+		return config.SortedIndexPrefix + fieldSuffix, nil
+	default:
+		return "", fmt.Errorf("unsupported index type %q", typ)
 	}
 }
 

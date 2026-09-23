@@ -671,7 +671,14 @@ excelc data \
 - 非唯一索引：`LookupBy...` 返回 `[]*Row`，未命中返回 `nil`（可按空切片使用），不生成 `Get`。
 - 单列、复合列、哈希冲突校验以及 hash/sorted 两种索引结构。
 
-插件没有自定义选项。生成代码依赖 [`tools/excelc/excelutils`](./tools/excelc/excelutils)，业务 Go 模块需要依赖本仓库。
+| 选项                             | 默认值                 | 说明                           |
+|--------------------------------|---------------------|------------------------------|
+| `hash_unique_index_prefix`     | `HashUniqueIndex`   | 哈希唯一索引查询及 getter 方法的前缀。    |
+| `sorted_unique_index_prefix`   | `SortedUniqueIndex` | 有序唯一索引查询及 getter 方法的前缀。    |
+| `hash_index_prefix`            | `HashIndex`         | 哈希非唯一索引查询方法的前缀。            |
+| `sorted_index_prefix`          | `SortedIndex`       | 有序非唯一索引查询方法的前缀。            |
+
+例如，把两个唯一索引前缀都设为 `U`，两个非唯一索引前缀都设为 `I`，会生成 `LookupByU...`、`LookupByI...` 等名称。前缀不能为空，必须是合法的 Go 标识符且不能是 Go 关键字。同一类别的 hash 与 sorted 前缀可以相同；唯一索引与非唯一索引的前缀不能相同。如果同一张表最终生成了重名方法，生成过程也会报错。生成代码依赖 [`tools/excelc/excelutils`](./tools/excelc/excelutils)，业务 Go 模块需要依赖本仓库。
 
 ### `protoc-gen-gdscript-excel`
 
@@ -684,9 +691,15 @@ excelc data \
 - 分块包装器的异步查询会按需加载目标 chunk。
 - 所有异步方法只允许在主线程调用；非主线程调用会记录错误并返回空结果，后台线程应使用同步方法。
 
-| 选项                      | 默认值     | 说明                                      |
-|-------------------------|---------|-----------------------------------------|
-| `string_as_string_name` | `false` | 必须与同一次生成使用的 `protoc-gen-gdscript` 设置一致。 |
+| 选项                             | 默认值                   | 说明                                      |
+|--------------------------------|-----------------------|-----------------------------------------|
+| `string_as_string_name`        | `false`               | 必须与同一次生成使用的 `protoc-gen-gdscript` 设置一致。    |
+| `hash_unique_index_prefix`     | `hash_unique_index`   | 哈希唯一索引查询方法的前缀。                        |
+| `sorted_unique_index_prefix`   | `sorted_unique_index` | 有序唯一索引查询方法的前缀。                        |
+| `hash_index_prefix`            | `hash_index`          | 哈希非唯一索引查询方法的前缀。                       |
+| `sorted_index_prefix`          | `sorted_index`        | 有序非唯一索引查询方法的前缀。                       |
+
+例如，把两个唯一索引前缀都设为 `u`，两个非唯一索引前缀都设为 `i`，会生成 `lookup_by_u_...`、`lookup_by_i_...` 等名称。前缀不能为空，必须是合法的 GDScript 标识符且不能是保留字。同一类别的 hash 与 sorted 前缀可以相同；唯一索引与非唯一索引的前缀不能相同。如果同一张表最终生成了重名方法，生成过程也会报错。
 
 生成代码同时依赖 [`tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) 和 [`tools/protoc-gen-gdscript-excel/godot`](./tools/protoc-gen-gdscript-excel/godot)。查询返回的是 `Rows` 中的对象引用，不会克隆。
 

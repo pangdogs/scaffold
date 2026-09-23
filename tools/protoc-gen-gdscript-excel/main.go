@@ -55,7 +55,11 @@ const (
 )
 
 const (
-	gdscriptIndexArrayOptionName = "GDScriptIndexArray"
+	gdscriptIndexArrayOptionName   = "GDScriptIndexArray"
+	defaultHashUniqueIndexPrefix   = "hash_unique_index"
+	defaultSortedUniqueIndexPrefix = "sorted_unique_index"
+	defaultHashIndexPrefix         = "hash_index"
+	defaultSortedIndexPrefix       = "sorted_index"
 )
 
 type TableDecl struct {
@@ -92,7 +96,11 @@ type Extensions struct {
 }
 
 type GeneratorConfig struct {
-	StringAsStringName bool
+	StringAsStringName      bool
+	HashUniqueIndexPrefix   string
+	SortedUniqueIndexPrefix string
+	HashIndexPrefix         string
+	SortedIndexPrefix       string
 }
 
 type GDScriptTypeResolver struct {
@@ -136,15 +144,31 @@ func (resolver GDScriptTypeResolver) enumTypeReference(enum *protogen.Enum) (str
 	return alias + "." + typeName, nil
 }
 
-var config GeneratorConfig
+var config = GeneratorConfig{
+	HashUniqueIndexPrefix:   defaultHashUniqueIndexPrefix,
+	SortedUniqueIndexPrefix: defaultSortedUniqueIndexPrefix,
+	HashIndexPrefix:         defaultHashIndexPrefix,
+	SortedIndexPrefix:       defaultSortedIndexPrefix,
+}
 
 func main() {
 	var flags flag.FlagSet
 	stringAsStringName := flags.Bool("string_as_string_name", false, "map proto string fields to GDScript StringName")
+	hashUniqueIndexPrefix := flags.String("hash_unique_index_prefix", defaultHashUniqueIndexPrefix, "rename the generated hash unique-index method prefix")
+	sortedUniqueIndexPrefix := flags.String("sorted_unique_index_prefix", defaultSortedUniqueIndexPrefix, "rename the generated sorted unique-index method prefix")
+	hashIndexPrefix := flags.String("hash_index_prefix", defaultHashIndexPrefix, "rename the generated hash non-unique-index method prefix")
+	sortedIndexPrefix := flags.String("sorted_index_prefix", defaultSortedIndexPrefix, "rename the generated sorted non-unique-index method prefix")
 
 	protogen.Options{ParamFunc: flags.Set}.Run(func(gen *protogen.Plugin) error {
 		config = GeneratorConfig{
-			StringAsStringName: *stringAsStringName,
+			StringAsStringName:      *stringAsStringName,
+			HashUniqueIndexPrefix:   *hashUniqueIndexPrefix,
+			SortedUniqueIndexPrefix: *sortedUniqueIndexPrefix,
+			HashIndexPrefix:         *hashIndexPrefix,
+			SortedIndexPrefix:       *sortedIndexPrefix,
+		}
+		if err := config.validate(); err != nil {
+			return err
 		}
 		for _, f := range gen.Files {
 			if err := registerProtoTypes(protoregistry.GlobalTypes, f.Desc); err != nil {
@@ -363,6 +387,7 @@ func protoFullName(file *protogen.File, suffix string) protoreflect.FullName {
 
 func collectIndexMethods(msg *protogen.Message, pbMsg *descriptorpb.DescriptorProto, rowsMessage *protogen.Message, ext *Extensions) ([]IndexMethodDecl, error) {
 	var methods []IndexMethodDecl
+	generatedMethodFields := map[string]protoreflect.FullName{}
 
 	for fieldIndex, field := range msg.Fields {
 		indexTypeName, err := resolveIndexTypeName(pbMsg.Field[fieldIndex], ext)
@@ -383,12 +408,17 @@ func collectIndexMethods(msg *protogen.Message, pbMsg *descriptorpb.DescriptorPr
 		if err != nil {
 			return nil, err
 		}
+		lookupMethodName := "lookup_by_" + methodSuffix
+		if previous, ok := generatedMethodFields[lookupMethodName]; ok {
+			return nil, fmt.Errorf("table %q index fields %q and %q generate duplicate method %q", msg.Desc.FullName(), previous, field.Desc.FullName(), lookupMethodName)
+		}
+		generatedMethodFields[lookupMethodName] = field.Desc.FullName()
 
 		methods = append(methods, IndexMethodDecl{
 			Field:             field,
 			IndexTypeName:     indexTypeName,
 			IndexFields:       indexFields,
-			LookupMethodName:  "lookup_by_" + methodSuffix,
+			LookupMethodName:  lookupMethodName,
 			Unique:            isUniqueIndexType(indexTypeName),
 			PackedIndexArrays: indexUsesPackedInt64Array(field, ext.GDScriptIndexArray),
 		})
@@ -448,16 +478,23 @@ func buildIndexMethodSuffix(indexTypeName indexType, indexFields []*protogen.Fie
 		return "", fmt.Errorf("index fields cannot be empty")
 	}
 
-	suffix := strings.Join(parts, "_")
+	prefix, err := indexMethodPrefix(indexTypeName)
+	if err != nil {
+		return "", err
+	}
+	return prefix + "_" + strings.Join(parts, "_"), nil
+}
+
+func indexMethodPrefix(indexTypeName indexType) (string, error) {
 	switch indexTypeName {
 	case indexTypeHashUnique:
-		return "hash_unique_index_" + suffix, nil
+		return config.HashUniqueIndexPrefix, nil
 	case indexTypeSortedUnique:
-		return "sorted_unique_index_" + suffix, nil
+		return config.SortedUniqueIndexPrefix, nil
 	case indexTypeHash:
-		return "hash_index_" + suffix, nil
+		return config.HashIndexPrefix, nil
 	case indexTypeSorted:
-		return "sorted_index_" + suffix, nil
+		return config.SortedIndexPrefix, nil
 	default:
 		return "", fmt.Errorf("unsupported index type %q", indexTypeName)
 	}
@@ -470,6 +507,53 @@ func isUniqueIndexType(indexTypeName indexType) bool {
 	default:
 		return false
 	}
+}
+
+func (cfg GeneratorConfig) validate() error {
+	uniquePrefixes := []struct {
+		option string
+		value  string
+	}{
+		{option: "hash_unique_index_prefix", value: cfg.HashUniqueIndexPrefix},
+		{option: "sorted_unique_index_prefix", value: cfg.SortedUniqueIndexPrefix},
+	}
+	nonUniquePrefixes := []struct {
+		option string
+		value  string
+	}{
+		{option: "hash_index_prefix", value: cfg.HashIndexPrefix},
+		{option: "sorted_index_prefix", value: cfg.SortedIndexPrefix},
+	}
+
+	for _, prefix := range append(uniquePrefixes, nonUniquePrefixes...) {
+		if err := validateGDScriptIndexPrefix(prefix.option, prefix.value); err != nil {
+			return err
+		}
+	}
+	for _, uniquePrefix := range uniquePrefixes {
+		for _, nonUniquePrefix := range nonUniquePrefixes {
+			if uniquePrefix.value == nonUniquePrefix.value {
+				return fmt.Errorf("%s and %s must differ, but both are %q", uniquePrefix.option, nonUniquePrefix.option, uniquePrefix.value)
+			}
+		}
+	}
+	return nil
+}
+
+func validateGDScriptIndexPrefix(optionName, prefix string) error {
+	if prefix == "" {
+		return fmt.Errorf("%s cannot be empty", optionName)
+	}
+	if isGDScriptKeyword(prefix) {
+		return fmt.Errorf("%s %q cannot be a GDScript reserved word", optionName, prefix)
+	}
+	for index, r := range prefix {
+		if unicode.IsLetter(r) || r == '_' || (index > 0 && unicode.IsDigit(r)) {
+			continue
+		}
+		return fmt.Errorf("%s %q must be a valid GDScript identifier", optionName, prefix)
+	}
+	return nil
 }
 
 func indexUsesPackedInt64Array(field *protogen.Field, ext protoreflect.ExtensionType) bool {
@@ -1574,10 +1658,10 @@ func toSnakeCase(s string) string {
 
 func isGDScriptKeyword(s string) bool {
 	switch s {
-	case "and", "as", "assert", "await", "break", "class", "class_name", "const", "continue",
+	case "and", "as", "assert", "await", "break", "breakpoint", "class", "class_name", "const", "continue",
 		"elif", "else", "enum", "extends", "false", "for", "func", "if", "in", "is", "match",
-		"namespace", "not", "null", "or", "pass", "return", "self", "signal", "static", "super",
-		"tool", "true", "var", "while", "yield":
+		"namespace", "not", "null", "or", "pass", "preload", "return", "self", "signal", "static", "super",
+		"tool", "true", "var", "void", "when", "while", "yield", "INF", "NAN", "PI", "TAU":
 		return true
 
 	case "serialize", "deserialize", "to_dict", "from_dict", "size", "reset", "new", "clone",

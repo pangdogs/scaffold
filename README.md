@@ -671,7 +671,14 @@ This plugin only targets schemas produced by `excelc proto` and emits `*.excel.g
 - Non-unique indexes: `LookupBy...` returns `[]*Row`; a miss returns `nil`, which can be used as an empty slice. No `Get` method is generated.
 - Single- and multi-column indexes, hash-collision verification, and hash/sorted representations.
 
-The plugin has no custom options. Generated code depends on [`tools/excelc/excelutils`](./tools/excelc/excelutils), so the application Go module must depend on this repository.
+| Option                       | Default             | Description                                             |
+|------------------------------|---------------------|---------------------------------------------------------|
+| `hash_unique_index_prefix`   | `HashUniqueIndex`   | Prefix for hash unique-index lookup and getter methods. |
+| `sorted_unique_index_prefix` | `SortedUniqueIndex` | Prefix for sorted unique-index lookup and getter methods. |
+| `hash_index_prefix`          | `HashIndex`         | Prefix for hash non-unique-index lookup methods.        |
+| `sorted_index_prefix`        | `SortedIndex`       | Prefix for sorted non-unique-index lookup methods.      |
+
+For example, setting both unique prefixes to `U` and both non-unique prefixes to `I` generates names such as `LookupByU...` and `LookupByI...`. Prefixes must be non-empty valid Go identifiers and cannot be Go keywords. Hash and sorted prefixes in the same category may match; unique and non-unique prefixes may not match. Generation also rejects any duplicate final method name produced within one table. Generated code depends on [`tools/excelc/excelutils`](./tools/excelc/excelutils), so the application Go module must depend on this repository.
 
 ### `protoc-gen-gdscript-excel`
 
@@ -684,9 +691,15 @@ This plugin only targets schemas produced by `excelc proto` and emits `*.excel.g
 - On-demand chunk loading from async methods on chunked wrappers.
 - All async methods are main-thread-only. Calls from other threads log an error and return an empty result; background threads must use synchronous methods.
 
-| Option                  | Default | Description                                                                      |
-|-------------------------|---------|----------------------------------------------------------------------------------|
-| `string_as_string_name` | `false` | Must match the setting used by `protoc-gen-gdscript` in the same generation run. |
+| Option                       | Default               | Description                                                                      |
+|------------------------------|-----------------------|----------------------------------------------------------------------------------|
+| `string_as_string_name`      | `false`               | Must match the setting used by `protoc-gen-gdscript` in the same generation run. |
+| `hash_unique_index_prefix`   | `hash_unique_index`   | Prefix for hash unique-index lookup methods.                                     |
+| `sorted_unique_index_prefix` | `sorted_unique_index` | Prefix for sorted unique-index lookup methods.                                   |
+| `hash_index_prefix`          | `hash_index`          | Prefix for hash non-unique-index lookup methods.                                 |
+| `sorted_index_prefix`        | `sorted_index`        | Prefix for sorted non-unique-index lookup methods.                               |
+
+For example, setting both unique prefixes to `u` and both non-unique prefixes to `i` generates names such as `lookup_by_u_...` and `lookup_by_i_...`. Prefixes must be non-empty valid GDScript identifiers and cannot be reserved words. Hash and sorted prefixes in the same category may match; unique and non-unique prefixes may not match. Generation also rejects any duplicate final method name produced within one table.
 
 Generated code requires both [`tools/protoc-gen-gdscript/godot`](./tools/protoc-gen-gdscript/godot) and [`tools/protoc-gen-gdscript-excel/godot`](./tools/protoc-gen-gdscript-excel/godot). Lookup results reference objects in `Rows`; they are not cloned.
 
