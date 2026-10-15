@@ -25,6 +25,7 @@ import (
 	"hash/fnv"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -285,6 +286,7 @@ func emitEnum(g *protogen.GeneratedFile, enum *protogen.Enum) {
 	g.P()
 	emitEnumJSONHelper(g, enum, 0, enumName)
 	emitEnumAliasHelper(g, enum, 0, enumName)
+	emitEnumTextHelper(g, enum, 0, enumName)
 }
 
 func emitMessage(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
@@ -350,6 +352,7 @@ func emitIndentedEnum(g *protogen.GeneratedFile, enum *protogen.Enum, indentLeve
 	g.P()
 	emitEnumJSONHelper(g, enum, indentLevel, enumName)
 	emitEnumAliasHelper(g, enum, indentLevel, enumName)
+	emitEnumTextHelper(g, enum, indentLevel, enumName)
 }
 
 func emitMessageFields(g *protogen.GeneratedFile, file *protogen.File, msg *protogen.Message, importAliases map[string]string) error {
@@ -711,6 +714,47 @@ func emitEnumAliasHelper(g *protogen.GeneratedFile, enum *protogen.Enum, indentL
 		}
 	}
 	g.P(indent, "\treturn int(value)")
+	g.P()
+}
+
+func emitEnumTextHelper(g *protogen.GeneratedFile, enum *protogen.Enum, indentLevel int, typeRef string) {
+	if len(enum.Values) <= 0 {
+		return
+	}
+
+	indent := strings.Repeat("\t", indentLevel)
+	aliases := enumValueAliases(enum)
+	texts := enumValueTexts(enum)
+	g.P(indent, "static func ", enumTextHelperName(enum), "(value: int, key: StringName = &\"default\") -> String:")
+	g.P(indent, "\tmatch value:")
+	for i, value := range enum.Values {
+		valueName := safeIdentifier(string(value.Desc.Name()))
+		g.P(indent, "\t\t", typeRef, ".", valueName, ":")
+
+		keys := make([]string, 0, len(texts[i]))
+		for key := range texts[i] {
+			if key != "default" {
+				keys = append(keys, key)
+			}
+		}
+		sort.Strings(keys)
+		if len(keys) > 0 {
+			g.P(indent, "\t\t\tmatch key:")
+			for _, key := range keys {
+				g.P(indent, "\t\t\t\t&", strconv.Quote(key), ":")
+				g.P(indent, "\t\t\t\t\treturn ", strconv.Quote(texts[i][key]))
+			}
+		}
+
+		if defaultText, ok := texts[i]["default"]; ok {
+			g.P(indent, "\t\t\treturn ", strconv.Quote(defaultText))
+		} else if aliases[i] != "" {
+			g.P(indent, "\t\t\treturn ", strconv.Quote(aliases[i]))
+		} else {
+			g.P(indent, "\t\t\treturn ", strconv.Quote(string(value.Desc.Name())))
+		}
+	}
+	g.P(indent, "\treturn str(value)")
 	g.P()
 }
 
@@ -1247,6 +1291,10 @@ func enumAliasHelperNames(enum *protogen.Enum) (string, string) {
 	return enumName + "_to_alias", enumName + "_from_alias"
 }
 
+func enumTextHelperName(enum *protogen.Enum) string {
+	return safeIdentifier(string(enum.Desc.Name())) + "_to_text"
+}
+
 func enumValueAliases(enum *protogen.Enum) []string {
 	aliases := make([]string, len(enum.Values))
 	ext := findOptionExtension(enum.Desc.ParentFile(), "EnumValueAlias", "google.protobuf.EnumValueOptions")
@@ -1258,17 +1306,67 @@ func enumValueAliases(enum *protogen.Enum) []string {
 		return aliases
 	}
 	for i, value := range enum.Values {
-		data := value.Desc.Options().ProtoReflect().GetUnknown()
-		if len(data) <= 0 {
+		options := decodeEnumValueOptions(value, types)
+		if options == nil || !options.ProtoReflect().Has(ext.TypeDescriptor()) {
 			continue
 		}
-		options := &descriptorpb.EnumValueOptions{}
-		if err := (proto.UnmarshalOptions{Resolver: types}).Unmarshal(data, options); err != nil {
-			continue
-		}
-		aliases[i], _ = proto.GetExtension(options, ext).(string)
+		aliases[i] = options.ProtoReflect().Get(ext.TypeDescriptor()).String()
 	}
 	return aliases
+}
+
+func enumValueTexts(enum *protogen.Enum) []map[string]string {
+	texts := make([]map[string]string, len(enum.Values))
+	ext := findOptionExtension(enum.Desc.ParentFile(), "EnumValueTexts", "google.protobuf.EnumValueOptions")
+	if ext == nil || ext.TypeDescriptor().Message() == nil {
+		return texts
+	}
+
+	types := &protoregistry.Types{}
+	if err := types.RegisterExtension(ext); err != nil {
+		return texts
+	}
+
+	keyField := ext.TypeDescriptor().Message().Fields().ByNumber(1)
+	textField := ext.TypeDescriptor().Message().Fields().ByNumber(2)
+	if keyField == nil || textField == nil {
+		return texts
+	}
+
+	for i, value := range enum.Values {
+		options := decodeEnumValueOptions(value, types)
+		if options == nil || !options.ProtoReflect().Has(ext.TypeDescriptor()) {
+			continue
+		}
+
+		list := options.ProtoReflect().Get(ext.TypeDescriptor()).List()
+		for j := 0; j < list.Len(); j++ {
+			entry := list.Get(j).Message()
+			key := entry.Get(keyField).String()
+			if key == "" {
+				continue
+			}
+			if texts[i] == nil {
+				texts[i] = map[string]string{}
+			}
+			texts[i][key] = entry.Get(textField).String()
+		}
+	}
+
+	return texts
+}
+
+func decodeEnumValueOptions(value *protogen.EnumValue, types *protoregistry.Types) *descriptorpb.EnumValueOptions {
+	data, err := proto.Marshal(value.Desc.Options())
+	if err != nil || len(data) <= 0 {
+		return nil
+	}
+
+	options := &descriptorpb.EnumValueOptions{}
+	if err := (proto.UnmarshalOptions{Resolver: types}).Unmarshal(data, options); err != nil {
+		return nil
+	}
+	return options
 }
 
 func usesPackedInt64Array(field *protogen.Field) bool {

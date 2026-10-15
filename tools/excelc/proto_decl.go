@@ -95,6 +95,11 @@ message ChunkManifest {
 	repeated Chunk Chunks = 2;
 }
 
+message EnumValueText {
+	string Key = 1;
+	string Text = 2;
+}
+
 extend google.protobuf.MessageOptions {
 	optional bool IsColumns = {{Add .CustomOptions 101}};
 	optional bool IsTable = {{Add .CustomOptions 102}};
@@ -116,6 +121,7 @@ extend google.protobuf.FieldOptions {
 
 extend google.protobuf.EnumValueOptions {
 	optional string EnumValueAlias = {{Add .CustomOptions 301}};
+	repeated EnumValueText EnumValueTexts = {{Add .CustomOptions 302}};
 }
 `
 

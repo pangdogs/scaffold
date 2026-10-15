@@ -254,6 +254,7 @@ protoc \
 - GDScript 字段、嵌套消息和枚举。
 - 二进制序列化、反序列化和大小计算。
 - `reset`、`clone`、`equals`、`hash`、`to_dict` 和 `from_dict`。
+- 枚举名称、别名和显示文本的转换辅助函数。
 - repeated、map、packed/unpacked 数值字段与跨文件 `preload`。
 
 | 选项                      | 默认值     | 说明                                                             |
@@ -392,7 +393,7 @@ client/excel/                    # *Table.bin，或 *Table.bin.idx + *Table.bin.
 | `枚举值`              | 留空表示对象字段；填写非负整数表示枚举项。proto3 枚举的第一个枚举项应为 `0`。            |
 | `别名`               | 对象字段或枚举项在数据单元格中的可选别名，可使用中文。                            |
 | `默认值`              | 预留列，当前不参与 schema 生成或数据导出。                                  |
-| `元数据` / `特性` / `Meta` | 支持 `separator`、`scope` 和 `pb_field_number`；索引参数只用于数据分页字段。 |
+| `元数据` / `特性` / `Meta` | 支持 `separator`、`scope`、`pb_field_number` 和枚举项 `text`；索引参数只用于数据分页字段。 |
 | `注释`               | 写入生成的 Protobuf 声明。                                          |
 
 所有会生成 Protobuf 标识符的名称，包括类型名、对象字段名、枚举项名和数据分页字段名，都必须符合 `[A-Za-z][A-Za-z0-9_]*`；名称校验后会转换为大驼峰格式。别名可以包含中文，但不能包含 ASCII 空格、YAML 指示字符（`-?:,[]{}#&*!|>'"%@`）、反引号、反斜杠或 Unicode 控制字符。
@@ -452,7 +453,7 @@ name:Example   # 错误，excelc 会提示在冒号后添加空格
 - 标准 YAML sequence 中的元素不会再次按 separator 切分。对于 repeated string，`D: ["1|2|3"]` 表示只包含一个字符串；`D: "1|2|3"` 则进入 separator 模式并得到三项。
 - 单引号和双引号都属于 YAML 语法，解析后不会写入字符串值；引号内的转义按 YAML 规则处理。任一列表元素解析失败时，整个字段解析失败，不会写入部分结果。
 
-#### 字段 Meta
+#### 字段与枚举项 Meta
 
 Meta 使用 query-string 格式，例如 `scope=client&sorted_unique_index=1`：
 
@@ -461,6 +462,7 @@ Meta 使用 query-string 格式，例如 `scope=client&sorted_unique_index=1`：
 | `scope`               | 可重复的目标标签，只能包含 ASCII 字母、数字和下划线；与 `--targets` 配合裁剪字段，未设置时对所有目标可见。 |
 | `separator`           | repeated 字段单元格的自定义分隔符，默认 `,`，支持多字符；不能为空，且首尾或内部均不能包含空白、控制字符、`: ' " \\ { } [ ]`。map 字段始终按 YAML mapping 解析。 |
 | `pb_field_number`     | 覆盖 Protobuf field number；必须为合法正数、不能位于保留区间，并且在同一消息内不能重复。 |
+| `text` / `text[key]`  | 仅用于 `@types` 枚举项的显示文本；`text=完整名称` 等价于 `text[default]=完整名称`，可用不同 key 配置多种 UI 文本。 |
 | `unique_index`        | 唯一索引逻辑分组，物理结构由 `--pb_unique_index_as` 决定。               |
 | `hash_unique_index`   | 强制使用哈希唯一索引。                                             |
 | `sorted_unique_index` | 强制使用有序唯一索引。                                             |
@@ -468,8 +470,12 @@ Meta 使用 query-string 格式，例如 `scope=client&sorted_unique_index=1`：
 | `hash_index`          | 强制使用哈希非唯一索引。                                            |
 | `sorted_index`        | 强制使用有序非唯一索引。                                            |
 
-所有 Meta 参数均可省略。参数名区分大小写，无法绑定的未知参数会被忽略。`scope` 和各索引参数重复配置时保留全部值；`separator` 和 `pb_field_number` 重复配置时以第一个值为准。成功绑定的值会按字段的校验规则检查，负数索引 tag 会导致编译失败。
-Meta 参数值使用 URL query 编码，因此保留字符需要按需编码。分隔符中常见的替换为：`+` 写作 `%2B`、`&` 写作 `%26`、`%` 写作 `%25`、`;` 写作 `%3B`。
+枚举项可写成 `text=完整名称&text[compact]=简称`。文本 key 区分大小写并且必须符合 `[A-Za-z][A-Za-z0-9_]*`；同一个 key（包括 `text` 与 `text[default]`）重复配置会报错。显式空值有独立语义，例如 `text[compact]=` 会返回空字符串，不再回退。
+
+`protoc-gen-gdscript` 为每个枚举生成 `<Enum>_to_text(value, key = &"default")`。查找顺序是指定 key、`default`、枚举项别名、枚举项标识符；枚举数值未知时最终返回数字字符串。显示文本只用于正向展示，不参与 Excel 枚举值解析，也不会生成 `from_text`；Go 代码不额外生成显示文本映射辅助函数。
+
+所有 Meta 参数均可省略。参数名区分大小写，无法绑定的未知参数会被忽略。`scope` 和各索引参数重复配置时保留全部值；`separator` 和 `pb_field_number` 重复配置时以第一个值为准，`text` 的同 key 重复配置则报错。成功绑定的值会按字段的校验规则检查，负数索引 tag 会导致编译失败。
+Meta 参数值使用 URL query 编码，因此保留字符需要按需编码。常见编码为：`+` 写作 `%2B`、`&` 写作 `%26`、`%` 写作 `%25`、`;` 写作 `%3B`。
 
 ### 索引模型
 

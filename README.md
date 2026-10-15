@@ -254,6 +254,7 @@ For proto3 enums and messages, this plugin generates:
 - GDScript fields, nested messages, and enums.
 - Binary serialization, deserialization, and size calculation.
 - `reset`, `clone`, `equals`, `hash`, `to_dict`, and `from_dict`.
+- Enum name, alias, and display-text conversion helpers.
 - Repeated fields, maps, packed/unpacked numeric fields, and cross-file preloads.
 
 | Option                  | Default | Description                                                                                                 |
@@ -392,7 +393,7 @@ Row 1 contains column names. Starting at row 2, each row declares one object fie
 | `EnumValue` / `Value`                  | Leave blank for an object field, or provide a nonnegative integer for an enum value. A proto3 enum starts at `0`. |
 | `Alias`                                | Optional object-field or enum-value alias accepted in data cells; Chinese text is allowed.                       |
 | `Default`                              | Reserved; it currently does not affect schema generation or data export.                                         |
-| `Meta`                                 | Supports `separator`, `scope`, and `pb_field_number`; index options only apply to data-page fields.              |
+| `Meta`                                 | Supports `separator`, `scope`, `pb_field_number`, and enum-value `text`; index options only apply to data-page fields. |
 | `Comment`                              | Written to the generated Protobuf declaration.                                                                   |
 
 Names emitted as Protobuf identifiers, including type names, object fields, enum values, and data-page fields, must match `[A-Za-z][A-Za-z0-9_]*`; validated names are then converted to UpperCamelCase. Aliases may contain Chinese text but cannot contain ASCII spaces, YAML indicator characters (`-?:,[]{}#&*!|>'"%@`), a backtick, a backslash, or Unicode control characters.
@@ -452,7 +453,7 @@ A YAML mapping cannot contain duplicate keys. This is checked recursively in obj
 - Elements of a standard YAML sequence are not split again. For a repeated string, `D: ["1|2|3"]` means one string item, while `D: "1|2|3"` enters separator mode and produces three items.
 - Single and double quotes are YAML syntax and are removed from assigned string values; escapes inside quotes follow YAML rules. If any list item fails to parse, the complete field fails without writing a partial result.
 
-#### Field Metadata
+#### Field and Enum Value Metadata
 
 Metadata uses query-string syntax, for example `scope=client&sorted_unique_index=1`:
 
@@ -461,6 +462,7 @@ Metadata uses query-string syntax, for example `scope=client&sorted_unique_index
 | `scope`               | Repeatable target label containing only ASCII letters, digits, and underscores; used with `--targets`, while fields without a scope are visible to every target. |
 | `separator`           | Custom separator for repeated-field cells; defaults to `,` and may contain multiple characters. It cannot be empty or contain whitespace (including at either end), control characters, or `: ' " \\ { } [ ]`. Map fields always use YAML mapping syntax. |
 | `pb_field_number`     | Overrides the Protobuf field number. It must be positive, outside the reserved range, and unique within its message. |
+| `text` / `text[key]`  | Display text for an `@types` enum value only. `text=Full name` is equivalent to `text[default]=Full name`; named keys provide variants for different UIs. |
 | `unique_index`        | Logical unique-index group whose representation is selected by `--pb_unique_index_as`.                               |
 | `hash_unique_index`   | Forces a hash-based unique index.                                                                                    |
 | `sorted_unique_index` | Forces a sorted unique index.                                                                                        |
@@ -468,8 +470,12 @@ Metadata uses query-string syntax, for example `scope=client&sorted_unique_index
 | `hash_index`          | Forces a hash-based non-unique index.                                                                                |
 | `sorted_index`        | Forces a sorted non-unique index.                                                                                    |
 
-All Meta parameters are optional. Parameter names are case-sensitive, and unknown parameters that cannot be bound are ignored. Repeated `scope` and index parameters retain every value; repeated `separator` and `pb_field_number` parameters use the first value. Successfully bound values are checked by their field validation rules, and negative index tags cause compilation to fail.
-Meta values use URL query encoding, so reserved characters must be encoded when necessary. Common separator replacements are `+` as `%2B`, `&` as `%26`, `%` as `%25`, and `;` as `%3B`.
+For example, an enum value can use `text=Full name&text[compact]=Short name`. Text keys are case-sensitive and must match `[A-Za-z][A-Za-z0-9_]*`; defining the same key more than once, including through both `text` and `text[default]`, is an error. An explicitly empty value is meaningful: `text[compact]=` returns an empty string without falling back.
+
+`protoc-gen-gdscript` generates `<Enum>_to_text(value, key = &"default")` for every enum. Lookup checks the requested key, `default`, the enum-value alias, and the enum identifier in that order; an unknown enum number ultimately becomes its numeric string. Display text is forward-only, does not participate in Excel enum parsing, and does not generate `from_text`. Go output does not add a display-text mapping helper.
+
+All Meta parameters are optional. Parameter names are case-sensitive, and unknown parameters that cannot be bound are ignored. Repeated `scope` and index parameters retain every value; repeated `separator` and `pb_field_number` parameters use the first value, while duplicate `text` keys are rejected. Successfully bound values are checked by their field validation rules, and negative index tags cause compilation to fail.
+Meta values use URL query encoding, so reserved characters must be encoded when necessary. Common encodings are `+` as `%2B`, `&` as `%26`, `%` as `%25`, and `;` as `%3B`.
 
 ### Index Model
 

@@ -120,15 +120,16 @@ func (ty Type) Repeated() Type {
 }
 
 type Meta struct {
-	Separator         string   `form:"separator" validate:"valid_separator"`
-	Scope             []string `form:"scope" validate:"omitempty,dive,required,valid_scope"`
-	Index             []int32  `form:"index" validate:"omitempty,dive,gte=0"`
-	HashIndex         []int32  `form:"hash_index" validate:"omitempty,dive,gte=0"`
-	SortedIndex       []int32  `form:"sorted_index" validate:"omitempty,dive,gte=0"`
-	UniqueIndex       []int32  `form:"unique_index" validate:"omitempty,dive,gte=0"`
-	HashUniqueIndex   []int32  `form:"hash_unique_index" validate:"omitempty,dive,gte=0"`
-	SortedUniqueIndex []int32  `form:"sorted_unique_index" validate:"omitempty,dive,gte=0"`
-	PbFieldNumber     *int32   `form:"pb_field_number" validate:"omitempty,valid_pb_field_number"`
+	Separator         string            `form:"separator" validate:"valid_separator"`
+	Scope             []string          `form:"scope" validate:"omitempty,dive,required,valid_scope"`
+	Text              map[string]string `form:"text"`
+	Index             []int32           `form:"index" validate:"omitempty,dive,gte=0"`
+	HashIndex         []int32           `form:"hash_index" validate:"omitempty,dive,gte=0"`
+	SortedIndex       []int32           `form:"sorted_index" validate:"omitempty,dive,gte=0"`
+	UniqueIndex       []int32           `form:"unique_index" validate:"omitempty,dive,gte=0"`
+	HashUniqueIndex   []int32           `form:"hash_unique_index" validate:"omitempty,dive,gte=0"`
+	SortedUniqueIndex []int32           `form:"sorted_unique_index" validate:"omitempty,dive,gte=0"`
+	PbFieldNumber     *int32            `form:"pb_field_number" validate:"omitempty,valid_pb_field_number"`
 }
 
 func (m *Meta) MatchTargets() bool {
@@ -156,6 +157,7 @@ func (m *Meta) MatchTargets() bool {
 var defaultMeta = &Meta{
 	Separator:         ",",
 	Scope:             nil,
+	Text:              nil,
 	Index:             nil,
 	HashIndex:         nil,
 	SortedIndex:       nil,
@@ -175,6 +177,10 @@ func parseMeta(str string) (*Meta, error) {
 	values, err := url.ParseQuery(str)
 	if err != nil {
 		return nil, fmt.Errorf("%w; %s", err, metaQueryEncodingHint)
+	}
+
+	if err := normalizeMetaText(values); err != nil {
+		return nil, err
 	}
 
 	err = form.NewDecoder().Decode(&meta, values)
@@ -228,6 +234,31 @@ func parseMeta(str string) (*Meta, error) {
 	}
 
 	return &meta, nil
+}
+
+func normalizeMetaText(values url.Values) error {
+	if defaultValues, ok := values["text"]; ok {
+		delete(values, "text")
+		values["text[default]"] = append(values["text[default]"], defaultValues...)
+	}
+
+	for parameter, textValues := range values {
+		if !strings.HasPrefix(parameter, "text[") {
+			continue
+		}
+		if !strings.HasSuffix(parameter, "]") {
+			return fmt.Errorf("invalid meta text parameter %q", parameter)
+		}
+
+		key := strings.TrimSuffix(strings.TrimPrefix(parameter, "text["), "]")
+		if err := validateTextKey(key); err != nil {
+			return fmt.Errorf("invalid meta text key %q: %w", key, err)
+		}
+		if len(textValues) != 1 {
+			return fmt.Errorf("meta text key %q is defined more than once", key)
+		}
+	}
+	return nil
 }
 
 func checkPbFieldNumber(number int32) error {
@@ -337,6 +368,22 @@ func (f *Field) ProtobufMeta() string {
 			sb.WriteString(fmt.Sprintf("(%s.EnumValueAlias) = '%s'", viper.GetString("pb_package"), f.Alias))
 		} else {
 			sb.WriteString(fmt.Sprintf("(%s.FieldAlias) = '%s'", viper.GetString("pb_package"), f.Alias))
+		}
+	}
+
+	if f.IsEnumValue && f.Meta != nil && len(f.Meta.Text) > 0 {
+		keys := make([]string, 0, len(f.Meta.Text))
+		for key := range f.Meta.Text {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+
+		for _, key := range keys {
+			if sb.Len() > 0 {
+				sb.WriteString(", ")
+			}
+			sb.WriteString(fmt.Sprintf("(%s.EnumValueTexts) = { Key: %s, Text: %s }",
+				viper.GetString("pb_package"), strconv.QuoteToGraphic(key), strconv.QuoteToGraphic(f.Meta.Text[key])))
 		}
 	}
 

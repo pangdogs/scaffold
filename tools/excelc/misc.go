@@ -51,6 +51,14 @@ func validateScope(scope string) error {
 	return nil
 }
 
+func validateTextKey(key string) error {
+	if !pbIdentifierRegexp.MatchString(key) {
+		return fmt.Errorf("must match [A-Za-z][A-Za-z0-9_]*")
+	}
+
+	return nil
+}
+
 func validateYAMLAlias(alias string) error {
 	invalid := yamlAliasInvalidRegexp.FindString(alias)
 	if invalid != "" {
