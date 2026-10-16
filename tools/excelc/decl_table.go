@@ -205,80 +205,9 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 		}
 
 		columnType := Type(columnDesc.Type)
-
-		mapped := columnType.IsMap()
-		if mapped {
-			k, v := columnType.KV()
-
-			var kDecl, vDecl *Decl
-
-			if !k.CanK() {
-				log.Panicf("read excel file %q sheet %q failed: column %q type %q has an invalid key type", file.Path, sheet, columnDesc.Name, columnType)
-			}
-
-			kDecl = &Decl{
-				Type:      k,
-				IsBuiltin: true,
-			}
-
-			if v.IsBuiltin() {
-				vDecl = &Decl{
-					Type:      v,
-					IsBuiltin: true,
-				}
-			} else {
-				var ok bool
-				vDecl, ok = globalDecls.Get(v)
-				if !ok {
-					log.Panicf("read excel file %q sheet %q failed: column %q type %q has an undefined value type", file.Path, sheet, columnDesc.Name, columnType)
-				}
-			}
-
-			columnDecl := &Decl{
-				Type:  columnType,
-				IsMap: true,
-				Mapping: &Mapping{
-					K: kDecl,
-					V: vDecl,
-				},
-			}
-
-			meta, err := parseMeta(columnDesc.Meta)
-			if err != nil {
-				log.Panicf("read excel file %q sheet %q failed: parse meta %q for column %q failed, %s", file.Path, sheet, columnDesc.Meta, columnDesc.Name, err)
-			}
-
-			columnField := &Field{
-				Decl:     columnDecl,
-				IsColumn: true,
-				Number:   tableDecl.ResolvePbFieldNumber(meta),
-				Name:     columnDesc.Name,
-				Meta:     meta,
-				Comment:  columnDesc.Comment,
-			}
-
-			tableDecl.Fields.Add(columnField.Name, columnField)
-			continue
-		}
-
-		repeated := columnType.IsRepeated()
-		if repeated {
-			columnType = columnType.Child()
-		}
-
-		var columnDecl *Decl
-
-		if columnType.IsBuiltin() {
-			columnDecl = &Decl{
-				Type:      columnType,
-				IsBuiltin: true,
-			}
-		} else {
-			var ok bool
-			columnDecl, ok = globalDecls.Get(columnType)
-			if !ok {
-				log.Panicf("read excel file %q sheet %q failed: column %q type %q is undefined", file.Path, sheet, columnDesc.Name, columnType)
-			}
+		columnDecl, err := resolveFieldTypeDecl(columnType, nil, globalDecls)
+		if err != nil {
+			log.Panicf("read excel file %q sheet %q failed: column %q type %q is invalid: %s", file.Path, sheet, columnDesc.Name, columnType, err)
 		}
 
 		meta, err := parseMeta(columnDesc.Meta)
@@ -287,35 +216,14 @@ func parseTableDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *D
 		}
 
 		columnField := &Field{
-			Decl: columnDecl,
-			Meta: defaultMeta,
+			Decl:     columnDecl,
+			IsColumn: true,
+			Number:   tableDecl.ResolvePbFieldNumber(meta),
+			Name:     columnDesc.Name,
+			Meta:     meta,
+			Comment:  columnDesc.Comment,
 		}
-
-		if repeated {
-			parent := &Field{
-				Decl: &Decl{
-					Type:       columnType.Repeated(),
-					IsRepeated: true,
-					Child:      columnField,
-				},
-				Number:   tableDecl.ResolvePbFieldNumber(meta),
-				IsColumn: true,
-				Name:     columnDesc.Name,
-				Meta:     meta,
-				Comment:  columnDesc.Comment,
-			}
-
-			tableDecl.Fields.Add(parent.Name, parent)
-
-		} else {
-			columnField.IsColumn = true
-			columnField.Number = tableDecl.ResolvePbFieldNumber(meta)
-			columnField.Name = columnDesc.Name
-			columnField.Meta = meta
-			columnField.Comment = columnDesc.Comment
-
-			tableDecl.Fields.Add(columnField.Name, columnField)
-		}
+		tableDecl.Fields.Add(columnField.Name, columnField)
 	}
 
 	return &decls

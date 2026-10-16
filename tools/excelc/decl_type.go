@@ -326,6 +326,14 @@ func (f *Field) ProtobufMeta() string {
 		sb.WriteString(fmt.Sprintf("(%s.Separator) = '%s'", viper.GetString("pb_package"), f.Meta.Separator))
 	}
 
+	if f.IsMap && f.Mapping != nil && f.Mapping.K != nil && f.Mapping.K.IsEnum {
+		if sb.Len() > 0 {
+			sb.WriteString(", ")
+		}
+		enumType := fmt.Sprintf("%s.%s", viper.GetString("pb_package"), f.Mapping.K.ProtoType())
+		sb.WriteString(fmt.Sprintf("(%s.MapKeyEnum) = %s", viper.GetString("pb_package"), strconv.QuoteToGraphic(enumType)))
+	}
+
 	if f.IsColumn {
 		for _, tag := range f.Meta.HashIndex {
 			if sb.Len() > 0 {
@@ -415,6 +423,86 @@ type Decl struct {
 	Child       *Field
 	Mapping     *Mapping
 	EnumValue   string
+}
+
+func resolveFieldTypeDecl(ty Type, localDecls, globalDecls *generic.SliceMap[Type, *Decl]) (*Decl, error) {
+	ty = Type(strings.TrimSpace(string(ty)))
+	if ty == "" {
+		return nil, fmt.Errorf("field type cannot be empty")
+	}
+
+	if ty.IsMap() {
+		keyType, valueType := ty.KV()
+		if keyType.IsMap() || keyType.IsRepeated() {
+			return nil, fmt.Errorf("map key type %q is invalid", keyType)
+		}
+		if valueType.IsMap() || valueType.IsRepeated() {
+			return nil, fmt.Errorf("map value type %q is invalid", valueType)
+		}
+
+		keyDecl, err := resolveSingularTypeDecl(keyType, localDecls, globalDecls)
+		if err != nil {
+			return nil, fmt.Errorf("resolve map key type %q: %w", keyType, err)
+		}
+		if (!keyDecl.IsBuiltin || !keyDecl.Type.CanK()) && !keyDecl.IsEnum {
+			return nil, fmt.Errorf("map key type %q must be a protobuf map key type or enum", keyType)
+		}
+
+		valueDecl, err := resolveSingularTypeDecl(valueType, localDecls, globalDecls)
+		if err != nil {
+			return nil, fmt.Errorf("resolve map value type %q: %w", valueType, err)
+		}
+
+		return &Decl{
+			Type:  ty,
+			IsMap: true,
+			Mapping: &Mapping{
+				K: keyDecl,
+				V: valueDecl,
+			},
+		}, nil
+	}
+
+	if ty.IsRepeated() {
+		childType := ty.Child()
+		if childType.IsMap() || childType.IsRepeated() {
+			return nil, fmt.Errorf("array element type %q is invalid", childType)
+		}
+		childDecl, err := resolveSingularTypeDecl(childType, localDecls, globalDecls)
+		if err != nil {
+			return nil, fmt.Errorf("resolve array element type %q: %w", childType, err)
+		}
+		return &Decl{
+			Type:       childDecl.Type.Repeated(),
+			IsRepeated: true,
+			Child: &Field{
+				Decl: childDecl,
+				Meta: defaultMeta,
+			},
+		}, nil
+	}
+
+	return resolveSingularTypeDecl(ty, localDecls, globalDecls)
+}
+
+func resolveSingularTypeDecl(ty Type, localDecls, globalDecls *generic.SliceMap[Type, *Decl]) (*Decl, error) {
+	ty = Type(strings.TrimSpace(string(ty)))
+	if ty.IsBuiltin() {
+		return &Decl{Type: ty, IsBuiltin: true}, nil
+	}
+
+	ty = Type(snake2Camel(string(ty)))
+	if localDecls != nil {
+		if decl, ok := localDecls.Get(ty); ok {
+			return decl, nil
+		}
+	}
+	if globalDecls != nil {
+		if decl, ok := globalDecls.Get(ty); ok {
+			return decl, nil
+		}
+	}
+	return nil, fmt.Errorf("type %q is undefined", ty)
 }
 
 func (d *Decl) EnumFields() generic.UnorderedSliceMap[string, *Field] {
@@ -555,6 +643,16 @@ func (d *Decl) structIndexes(tagsOf func(field *Field) []int32) generic.Unordere
 }
 
 func (d *Decl) ProtoType() string {
+	if d.IsMap {
+		if d.Mapping == nil || d.Mapping.K == nil || d.Mapping.V == nil {
+			log.Panicf("map type %q has an invalid declaration", d.Type)
+		}
+		keyType := d.Mapping.K.ProtoType()
+		if d.Mapping.K.IsEnum {
+			keyType = string(Int32)
+		}
+		return fmt.Sprintf("map<%s, %s>", keyType, d.Mapping.V.ProtoType())
+	}
 	if d.IsEnum {
 		return string(d.Type) + ".Enum"
 	}
@@ -836,17 +934,9 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 		fieldType := Type(fieldDesc.FieldType)
 		fieldAlias := fieldDesc.Alias
 
-		repeated := fieldType.IsRepeated()
-		if repeated {
-			fieldType = fieldType.Child()
-		}
-
-		if !fieldType.IsBuiltin() {
-			fieldType = Type(snake2Camel(string(fieldType)))
-		}
-
+		var fieldDecl *Decl
 		if typeDecl.IsEnum {
-			if repeated {
+			if fieldType.IsRepeated() {
 				log.Panicf("read excel file %q sheet %q row %d failed: enum field types cannot be arrays", file.Path, SheetTypes, i)
 			}
 
@@ -859,68 +949,38 @@ func parseTypeDecls(file *excelize.File, globalDecls *generic.SliceMap[Type, *De
 				log.Panicf("read excel file %q sheet %q row %d failed: enum field value cannot be negative", file.Path, SheetTypes, i)
 			}
 
-			fieldType = Int32
+			fieldDecl = &Decl{
+				Type:        Int32,
+				IsBuiltin:   true,
+				IsEnumValue: true,
+			}
+		} else {
+			var err error
+			fieldDecl, err = resolveFieldTypeDecl(fieldType, &decls, globalDecls)
+			if err != nil {
+				log.Panicf("read excel file %q sheet %q row %d failed: field type %q is invalid: %s", file.Path, SheetTypes, i, fieldType, err)
+			}
 		}
 
 		field := &Field{
-			Meta: defaultMeta,
+			Decl:    fieldDecl,
+			Number:  typeDecl.ResolvePbFieldNumber(meta),
+			Name:    fieldName,
+			Alias:   fieldAlias,
+			Meta:    meta,
+			Comment: fieldDesc.Comment,
 		}
-
-		if fieldType.IsBuiltin() {
-			field.Decl = &Decl{
-				Type:        fieldType,
-				IsBuiltin:   true,
-				IsEnumValue: typeDecl.IsEnum,
-			}
-
-			if typeDecl.IsEnum {
-				field.EnumValue = fieldDesc.EnumValue
-			} else {
-				field.Default = fieldDesc.Default
-			}
-
+		if typeDecl.IsEnum {
+			field.EnumValue = fieldDesc.EnumValue
+		} else if field.IsRepeated {
+			field.Child.Default = fieldDesc.Default
 		} else {
-			fieldDecl, ok := decls.Get(fieldType)
-			if !ok {
-				fieldDecl, ok = globalDecls.Get(fieldType)
-				if !ok {
-					log.Panicf("read excel file %q sheet %q row %d failed: field type %q is undefined", file.Path, SheetTypes, i, fieldType)
-				}
-			}
-			field.Decl = fieldDecl
 			field.Default = fieldDesc.Default
 		}
 
-		if repeated {
-			parent := &Field{
-				Decl: &Decl{
-					Type:       fieldType.Repeated(),
-					IsRepeated: true,
-					Child:      field,
-				},
-				Number:  typeDecl.ResolvePbFieldNumber(meta),
-				Name:    fieldName,
-				Alias:   fieldAlias,
-				Meta:    meta,
-				Comment: fieldDesc.Comment,
-			}
-
-			typeDecl.Fields.Add(parent.Name, parent)
-			if parent.Alias != "" {
-				typeDecl.FieldsAlias.Add(parent.Alias, parent)
-			}
-
-		} else {
-			field.Number = typeDecl.ResolvePbFieldNumber(meta)
-			field.Name = fieldName
-			field.Alias = fieldAlias
-			field.Meta = meta
-			field.Comment = fieldDesc.Comment
-
-			typeDecl.Fields.Add(field.Name, field)
-			if field.Alias != "" {
-				typeDecl.FieldsAlias.Add(field.Alias, field)
-			}
+		typeDecl.Fields.Add(field.Name, field)
+		if field.Alias != "" {
+			typeDecl.FieldsAlias.Add(field.Alias, field)
 		}
 	}
 

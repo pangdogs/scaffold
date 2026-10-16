@@ -849,6 +849,10 @@ func setFieldMappingValue(msg protoreflect.Message, field protoreflect.FieldDesc
 	if vType == nil {
 		return errors.New("field map value type is invalid")
 	}
+	keyEnum, err := mapKeyEnumDescriptor(field, extensions)
+	if err != nil {
+		return err
+	}
 
 	for i := 0; i < len(value.Content); i += 2 {
 		k := value.Content[i]
@@ -862,41 +866,53 @@ func setFieldMappingValue(msg protoreflect.Message, field protoreflect.FieldDesc
 
 		var ik, iv any
 
-		switch kType.Kind() {
-		case protoreflect.BoolKind:
-			b, err := strconv.ParseBool(k.Value)
+		if keyEnum != nil {
+			enumValue, err := parseEnumValue(keyEnum, k.Value, extensions)
 			if err != nil {
-				return err
+				return fmt.Errorf("parse map key %q as enum %q: %w", k.Value, keyEnum.FullName(), err)
 			}
-			ik = b
-		case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-			n, err := strconv.ParseInt(k.Value, 10, 32)
-			if err != nil {
-				return err
+			ik = int32(enumValue.Enum())
+		} else {
+			switch kType.Kind() {
+			case protoreflect.BoolKind:
+				b, err := strconv.ParseBool(k.Value)
+				if err != nil {
+					return err
+				}
+				ik = b
+			case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+				n, err := strconv.ParseInt(k.Value, 10, 32)
+				if err != nil {
+					return err
+				}
+				ik = int32(n)
+			case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+				n, err := strconv.ParseInt(k.Value, 10, 64)
+				if err != nil {
+					return err
+				}
+				ik = n
+			case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+				n, err := strconv.ParseUint(k.Value, 10, 32)
+				if err != nil {
+					return err
+				}
+				ik = uint32(n)
+			case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+				n, err := strconv.ParseUint(k.Value, 10, 64)
+				if err != nil {
+					return err
+				}
+				ik = n
+			case protoreflect.StringKind:
+				ik = k.Value
+			default:
+				return fmt.Errorf("unsupported map key kind %v", kType.Kind())
 			}
-			ik = int32(n)
-		case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-			n, err := strconv.ParseInt(k.Value, 10, 64)
-			if err != nil {
-				return err
-			}
-			ik = n
-		case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-			n, err := strconv.ParseUint(k.Value, 10, 32)
-			if err != nil {
-				return err
-			}
-			ik = uint32(n)
-		case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-			n, err := strconv.ParseUint(k.Value, 10, 64)
-			if err != nil {
-				return err
-			}
-			ik = n
-		case protoreflect.StringKind:
-			ik = k.Value
-		default:
-			return fmt.Errorf("unsupported map key kind %v", kType.Kind())
+		}
+		mapKey := protoreflect.ValueOf(ik).MapKey()
+		if mapping.Has(mapKey) {
+			return fmt.Errorf("map key %q resolves to duplicate key %v", k.Value, ik)
 		}
 
 		switch vType.Kind() {
@@ -974,10 +990,30 @@ func setFieldMappingValue(msg protoreflect.Message, field protoreflect.FieldDesc
 			return fmt.Errorf("unsupported map value kind %v", vType.Kind())
 		}
 
-		mapping.Set(protoreflect.ValueOf(ik).MapKey(), protoreflect.ValueOf(iv))
+		mapping.Set(mapKey, protoreflect.ValueOf(iv))
 	}
 
 	return nil
+}
+
+func mapKeyEnumDescriptor(field protoreflect.FieldDescriptor, extensions *Extensions) (protoreflect.EnumDescriptor, error) {
+	if extensions == nil || extensions.MapKeyEnum == nil || field.Options() == nil {
+		return nil, nil
+	}
+
+	enumName, ok := proto.GetExtension(field.Options(), extensions.MapKeyEnum).(string)
+	if !ok || enumName == "" {
+		return nil, nil
+	}
+	if field.MapKey() == nil || field.MapKey().Kind() != protoreflect.Int32Kind {
+		return nil, fmt.Errorf("field %q has map key enum %q but its protobuf key type is not int32", field.FullName(), enumName)
+	}
+
+	enumType, err := protoregistry.GlobalTypes.FindEnumByName(protoreflect.FullName(enumName))
+	if err != nil {
+		return nil, fmt.Errorf("find map key enum %q for field %q: %w", enumName, field.FullName(), err)
+	}
+	return enumType.Descriptor(), nil
 }
 
 func parseEnumValue(enumDesc protoreflect.EnumDescriptor, value string, extensions *Extensions) (protoreflect.Value, error) {
@@ -1310,7 +1346,7 @@ func encodeYAMLListScalar(value string) (string, error) {
 
 type Extensions struct {
 	IsColumns, IsTable, IsEnum,
-	Separator, FieldAlias, Scope, IndexType, IndexFields,
+	Separator, FieldAlias, MapKeyEnum, Scope, IndexType, IndexFields,
 	HashUniqueIndexTag, SortedUniqueIndexTag, HashIndexTag, SortedIndexTag,
 	EnumValueAlias protoreflect.ExtensionType
 }
@@ -1345,6 +1381,12 @@ func parseExtensions(pbTypes *protoregistry.Types) (*Extensions, error) {
 
 	extName = protoreflect.FullName(fmt.Sprintf("%s.FieldAlias", viper.GetString("pb_package")))
 	extensions.FieldAlias, err = pbTypes.FindExtensionByName(extName)
+	if err != nil {
+		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
+	}
+
+	extName = protoreflect.FullName(fmt.Sprintf("%s.MapKeyEnum", viper.GetString("pb_package")))
+	extensions.MapKeyEnum, err = pbTypes.FindExtensionByName(extName)
 	if err != nil {
 		return nil, fmt.Errorf("find proto option %q failed, %s", extName, err)
 	}

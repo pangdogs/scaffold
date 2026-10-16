@@ -389,7 +389,7 @@ Row 1 contains column names. Starting at row 2, each row declares one object fie
 |----------------------------------------|------------------------------------------------------------------------------------------------------------------|
 | `ObjectType` / `Type`                  | Type name. Reuse it for all fields of one object or all values of one enum.                                      |
 | `FieldName`                            | Object field name or enum value name.                                                                            |
-| `FieldType`                            | Object field type; accepts built-ins, declared types, and `Type[]` arrays. Unused for enum values.               |
+| `FieldType`                            | Object field type; accepts built-ins, declared types, `Type[]` arrays, and `map<K, V>`. Unused for enum values.   |
 | `EnumValue` / `Value`                  | Leave blank for an object field, or provide a nonnegative integer for an enum value. A proto3 enum starts at `0`. |
 | `Alias`                                | Optional object-field or enum-value alias accepted in data cells; Chinese text is allowed.                       |
 | `Default`                              | Reserved; it currently does not affect schema generation or data export.                                         |
@@ -429,7 +429,9 @@ Declaration cells are trimmed, with CRLF and CR normalized to LF. Control charac
 | Repeated scalar | Comma-separated by default, such as `1,2,3`; YAML sequences such as `[1, 2, 3]` are also supported.           |
 | Object          | YAML-style mapping such as `id: 1, name: Example, tags: [1, 2]`; field names and aliases are accepted.       |
 | Repeated object | Use a YAML sequence such as `[{ID: 1}, {ID: 2}]`, or split mapping fragments with the field `separator`, such as `A: 1, B: Hello \| A: 2, B: World`. |
-| Map             | YAML-style mappings only, such as `{1: Alpha, 2: Beta}` or `{1: {id: 1, name: Alpha}}`; `separator` is not used for maps. |
+| Map             | YAML-style mappings only, such as `{1: Alpha, 2: Beta}` or `{1: {id: 1, name: Alpha}}`; `separator` is not used for maps. Maps are supported both as data-page columns and as `@types` object fields. |
+
+Map keys may use any normal Protobuf map-key scalar type. A declared enum is also accepted as a key type, for example `map<Quality, string>`. Enum keys in data cells may be written as their number, enum identifier, or configured alias: `{0: Unknown, Ready: Available, 完成: Finished}`. Because Protobuf does not permit enum map keys, the generated schema and the Go/GDScript APIs expose that key as `int32`; `excelc` retains the enum declaration in a field option so it can validate and resolve the configured text while exporting data. An unknown enum key is an error. Two spellings that resolve to the same number, such as `Ready` and `1`, are also reported as duplicate map keys.
 
 In an object mapping, write each field and value as `field: value`, with a space after the colon:
 

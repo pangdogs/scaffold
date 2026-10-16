@@ -117,6 +117,7 @@ extend google.protobuf.FieldOptions {
 	repeated int32 SortedUniqueIndexTag = {{Add .CustomOptions 207}};
 	repeated int32 HashIndexTag = {{Add .CustomOptions 208}};
 	repeated int32 SortedIndexTag = {{Add .CustomOptions 209}};
+	optional string MapKeyEnum = {{Add .CustomOptions 210}};
 }
 
 extend google.protobuf.EnumValueOptions {
