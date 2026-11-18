@@ -20,6 +20,6 @@
 // Package excelutils provides helpers shared by excel-generated table code.
 /*
 Package excelutils 提供 Excel 表生成代码依赖的通用辅助函数，包括哈希/索引转换、
-表数据加载、查找失败错误构造，以及列表、映射和 protobuf 消息的比较逻辑。
+表数据加载、查找失败错误构造，以及列表、映射和 protobuf 消息的克隆与比较逻辑。
 */
 package excelutils
